@@ -1,0 +1,40 @@
+cd /Users/dante/workspace/dante-code/projects/OmegaRod && claude --dangerously-skip-permissions
+(base) ➜  OmegaRod cd /Users/dante/workspace/dante-code/projects/OmegaRod && claude --dangerously-skip-permissions
+ ▐▛███▜▌   Claude Code v2.1.92
+▝▜█████▛▘  Opus 4.6 (1M context) · Claude Max
+  ▘▘ ▝▝    ~/workspace/dante-code/projects/OmegaRod
+
+  /remote-control is active · Code in CLI or at https://claude.ai/code/session_01VpyCxNNtnbwpDg7ViX7i4L
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ bypass permissions on (shift+tab to cycle)                                                     ◐ medium · /effort
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

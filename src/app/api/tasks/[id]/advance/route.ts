@@ -1,0 +1,181 @@
+import { NextRequest, NextResponse } from "next/server";
+import {
+  query,
+  queryOne,
+  execute,
+  ChainNode,
+  Task,
+  TaskLog,
+  maskSecrets,
+  okResponse,
+  errorResponse,
+} from "@/lib/db";
+
+type Params = { params: Promise<{ id: string }> };
+
+async function resolveNodeResponse(node: ChainNode) {
+  let instruction = node.instruction;
+  if (node.instruction_id) {
+    const inst = await queryOne<{ content: string }>(
+      "SELECT content FROM instructions WHERE id = $1",
+      [node.instruction_id],
+    );
+    if (inst) instruction = inst.content;
+  }
+
+  let credentials = null;
+  if (node.credential_id) {
+    const cred = await queryOne<{
+      service_name: string;
+      title: string;
+      secrets: string;
+    }>("SELECT service_name, title, secrets FROM credentials WHERE id = $1", [
+      node.credential_id,
+    ]);
+    if (cred) {
+      credentials = {
+        service: cred.service_name,
+        title: cred.title,
+        secrets_masked: maskSecrets(cred.secrets),
+      };
+    }
+  }
+
+  return {
+    node_id: node.id,
+    step_order: node.step_order,
+    node_type: node.node_type,
+    title: node.title,
+    instruction,
+    auto_advance: !!node.auto_advance,
+    loop_back_to: node.loop_back_to,
+    credentials,
+  };
+}
+
+export async function POST(request: NextRequest, { params }: Params) {
+  const { id } = await params;
+  const taskId = Number(id);
+  const body = await request.json().catch(() => ({}));
+  const peek = body.peek === true;
+
+  const task = await queryOne<Task>("SELECT * FROM tasks WHERE id = $1", [
+    taskId,
+  ]);
+  if (!task) {
+    const res = errorResponse("NOT_FOUND", "태스크를 찾을 수 없습니다", 404);
+    return NextResponse.json(res.body, { status: res.status });
+  }
+
+  const totalRows = await queryOne<{ count: string }>(
+    "SELECT COUNT(*) as count FROM chain_nodes WHERE chain_id = $1",
+    [task.chain_id],
+  );
+  const totalSteps = Number(totalRows?.count ?? 0);
+
+  // Peek mode
+  if (peek) {
+    const currentNode = await queryOne<ChainNode>(
+      "SELECT * FROM chain_nodes WHERE chain_id = $1 AND step_order = $2",
+      [task.chain_id, task.current_step],
+    );
+
+    let currentLog: TaskLog | undefined;
+    if (currentNode) {
+      currentLog = await queryOne<TaskLog>(
+        "SELECT * FROM task_logs WHERE task_id = $1 AND node_id = $2 ORDER BY id DESC LIMIT 1",
+        [taskId, currentNode.id],
+      );
+    }
+
+    const comments = await query(
+      "SELECT * FROM task_comments WHERE task_id = $1 AND step_order = $2 ORDER BY created_at DESC",
+      [taskId, task.current_step],
+    );
+
+    const res = okResponse({
+      task_id: taskId,
+      current_step: task.current_step,
+      total_steps: totalSteps,
+      status: task.status,
+      context: task.context,
+      node: currentNode ? await resolveNodeResponse(currentNode) : null,
+      log_status: currentLog?.status ?? null,
+      web_response: currentLog?.web_response ?? null,
+      comments: comments.length > 0 ? comments : null,
+    });
+    return NextResponse.json(res.body, { status: res.status });
+  }
+
+  // Advance mode: check current step is completed
+  const currentNode = await queryOne<ChainNode>(
+    "SELECT * FROM chain_nodes WHERE chain_id = $1 AND step_order = $2",
+    [task.chain_id, task.current_step],
+  );
+
+  if (currentNode) {
+    const currentLog = await queryOne<{ status: string }>(
+      "SELECT status FROM task_logs WHERE task_id = $1 AND node_id = $2 ORDER BY id DESC LIMIT 1",
+      [taskId, currentNode.id],
+    );
+    if (!currentLog || currentLog.status !== "completed") {
+      const res = errorResponse(
+        "PRECONDITION_FAILED",
+        `현재 스텝(${task.current_step})이 아직 완료되지 않았습니다`,
+        412,
+      );
+      return NextResponse.json(res.body, { status: res.status });
+    }
+  }
+
+  // Move to next step
+  const nextStep = task.current_step + 1;
+  const nextNode = await queryOne<ChainNode>(
+    "SELECT * FROM chain_nodes WHERE chain_id = $1 AND step_order = $2",
+    [task.chain_id, nextStep],
+  );
+
+  if (!nextNode) {
+    await execute(
+      "UPDATE tasks SET status = 'completed', updated_at = NOW() WHERE id = $1",
+      [taskId],
+    );
+    const res = okResponse({
+      task_id: taskId,
+      finished: true,
+      message: "모든 단계가 완료되었습니다.",
+    });
+    return NextResponse.json(res.body, { status: res.status });
+  }
+
+  await execute(
+    "UPDATE tasks SET current_step = $1, updated_at = NOW() WHERE id = $2",
+    [nextStep, taskId],
+  );
+
+  await execute(
+    "INSERT INTO task_logs (task_id, node_id, step_order, status, node_title, node_type) VALUES ($1, $2, $3, 'pending', $4, $5)",
+    [
+      taskId,
+      nextNode.id,
+      nextNode.step_order,
+      nextNode.title,
+      nextNode.node_type,
+    ],
+  );
+
+  const comments = await query(
+    "SELECT * FROM task_comments WHERE task_id = $1 AND step_order = $2 ORDER BY created_at DESC",
+    [taskId, nextStep],
+  );
+
+  const res = okResponse({
+    task_id: taskId,
+    finished: false,
+    total_steps: totalSteps,
+    context: task.context,
+    current_step: await resolveNodeResponse(nextNode),
+    comments: comments.length > 0 ? comments : null,
+  });
+  return NextResponse.json(res.body, { status: res.status });
+}
