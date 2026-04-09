@@ -1,26 +1,93 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 :root {
+  /* Scandinavian Minimal Nature — UI Design System */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #4a4a4a;
+  --card: #ffffff;
+  --card-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
+  --card-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --accent: #8fbc8f;
+  --accent-foreground: #1c1c1e;
+  --accent-dark: #6b9b6b;
+  --accent-light: #e8f5e8;
+  --warm: #deb887;
+  --warm-foreground: #1c1c1e;
+  --warm-light: #f5ede0;
+  --muted: #8a8a8a;
+  --border: #e8e5e0;
+  --radius: 8px;
+
+  --font-geist-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial,
+    "Apple SD Gothic Neo", sans-serif;
+  --font-geist-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+
+  /* Semantic states */
+  --destructive: #e57373;
+  --destructive-dark: #d95c5c;
+  --destructive-light: #fceaea;
+  --destructive-foreground: #1c1c1e;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-muted: var(--muted);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #1c1c1e;
+    --foreground: #e5e5e5;
+    --card: #2c2c2e;
+    --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+    --card-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.4);
+    --accent: #a8d5a8;
+    --accent-dark: #8fbc8f;
+    --accent-light: #1a2e1a;
+    --warm: #c9a96e;
+    --warm-light: #2a2418;
+    --muted: #999999;
+    --border: #3a3a3c;
+
+    --destructive: #e57373;
+    --destructive-dark: #d95c5c;
+    --destructive-light: rgba(229, 115, 115, 0.18);
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), "Apple SD Gothic Neo", sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* 인라인 코드 — 우드 톤 배경 */
+.prose code:not(pre code) {
+  background: var(--warm-light);
+  color: var(--foreground);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  font-size: 0.875em;
+}
+
+/* 코드 블록 — 절제된 다크 */
+.prose pre {
+  background: #2c2c2e;
+  border-radius: var(--radius);
 }
