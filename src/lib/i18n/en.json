@@ -574,7 +574,9 @@
     "folderVisibilityInvalid": "Child folder cannot be more visible than its parent",
     "credentialInPublicFolder": "Credentials cannot be placed in public folders",
     "folderShareDenied": "Not allowed to manage shares",
-    "folderNotEmpty": "Cannot delete a non-empty folder"
+    "folderNotEmpty": "Cannot delete a non-empty folder",
+    "instructionInUse": "This instruction is referenced by {count} workflow node(s) and cannot be deleted. Detach it from those workflows first.",
+    "credentialInUse": "This credential is referenced by {count} workflow node(s) and cannot be deleted. Detach it from those workflows first."
   },
   "instructionsPage": {
     "title": "Instructions",

@@ -116,6 +116,7 @@ export const DELETE = withAuth<Params>(
         "CREDENTIAL_IN_USE",
         `이 크레덴셜은 ${refCount}개의 워크플로 노드에서 사용 중이라 삭제할 수 없습니다. 해당 워크플로에서 먼저 크레덴셜을 분리하세요.`,
         409,
+        { count: refCount },
       );
       return NextResponse.json(res.body, { status: res.status });
     }

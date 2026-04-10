@@ -12,6 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { translateServerError } from "@/lib/i18n/server-errors";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CommandDialog } from "@/components/ui/command";
@@ -346,16 +347,15 @@ export default function CredentialsPage() {
   const handleDelete = async (id: number) => {
     const res = await fetch(`/api/credentials/${id}`, { method: "DELETE" });
     if (!res.ok) {
-      let message = t("common.deleteFailed");
+      let body: { error?: Parameters<typeof translateServerError>[0] } = {};
       try {
-        const body = (await res.json()) as {
-          error?: { message?: string };
-        };
-        if (body.error?.message) message = body.error.message;
+        body = await res.json();
       } catch {
-        /* fall through with default message */
+        /* ignore non-JSON body */
       }
-      toast.error(message);
+      toast.error(
+        translateServerError(body.error, t, t("common.deleteFailed")),
+      );
       setDeleteTarget(null);
       return;
     }
