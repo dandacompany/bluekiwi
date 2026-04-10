@@ -337,6 +337,14 @@ export function listResponse<T>(data: T[], total: number) {
   return { body: { data, total }, status: 200 };
 }
 
-export function errorResponse(code: string, message: string, status: number) {
-  return { body: { error: { code, message } }, status };
+export function errorResponse(
+  code: string,
+  message: string,
+  status: number,
+  details?: Record<string, unknown>,
+) {
+  return {
+    body: { error: { code, message, ...(details ? { details } : {}) } },
+    status,
+  };
 }

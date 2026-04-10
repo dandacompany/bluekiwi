@@ -574,7 +574,9 @@
     "folderVisibilityInvalid": "자식 폴더는 부모보다 더 넓은 visibility를 가질 수 없습니다",
     "credentialInPublicFolder": "크레덴셜은 공개 폴더에 둘 수 없습니다",
     "folderShareDenied": "공유 관리 권한이 없습니다",
-    "folderNotEmpty": "비어있지 않은 폴더는 삭제할 수 없습니다"
+    "folderNotEmpty": "비어있지 않은 폴더는 삭제할 수 없습니다",
+    "instructionInUse": "이 지침은 {count}개의 워크플로 노드에서 사용 중이라 삭제할 수 없습니다. 해당 워크플로에서 먼저 지침을 분리하세요.",
+    "credentialInUse": "이 크레덴셜은 {count}개의 워크플로 노드에서 사용 중이라 삭제할 수 없습니다. 해당 워크플로에서 먼저 크레덴셜을 분리하세요."
   },
   "instructionsPage": {
     "title": "지침",
