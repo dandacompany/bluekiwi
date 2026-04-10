@@ -1,0 +1,126 @@
+name: Release
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+jobs:
+  verify-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: extract
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          TAG="${REF_NAME#v}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "$TAG" != "$PKG_VERSION" ]; then
+            echo "Tag $TAG does not match package.json version $PKG_VERSION" >&2
+            exit 1
+          fi
+          echo "version=$TAG" >> "$GITHUB_OUTPUT"
+
+  docker-publish:
+    needs: verify-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ghcr.io/dandacompany/bluekiwi
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  npm-publish:
+    needs: verify-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+      - run: npm ci
+      - name: Build MCP
+        run: |
+          cd mcp
+          npm ci
+          npm run build
+      - name: Build CLI
+        run: |
+          cd packages/cli
+          npm ci
+          npm run build
+      - name: Sync CLI version
+        env:
+          RELEASE_VERSION: ${{ needs.verify-version.outputs.version }}
+        run: |
+          cd packages/cli
+          npm version "$RELEASE_VERSION" --no-git-tag-version --allow-same-version
+      - name: Publish CLI
+        run: |
+          cd packages/cli
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  sync-skillsmp:
+    needs: verify-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Push skill files to bluekiwi-skills repo
+        env:
+          GH_TOKEN: ${{ secrets.SKILLSMP_PAT }}
+          RELEASE_VERSION: ${{ needs.verify-version.outputs.version }}
+        run: |
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/dandacompany/bluekiwi-skills.git" /tmp/mp
+          rm -rf /tmp/mp/skills
+          cp -R packages/cli/src/assets/skills /tmp/mp/skills
+          cd /tmp/mp
+          git config user.email "release@bluekiwi.dev"
+          git config user.name "BlueKiwi Release Bot"
+          git add .
+          git commit -m "chore: sync bk-* skills for v${RELEASE_VERSION}" || exit 0
+          git tag "v${RELEASE_VERSION}"
+          git push origin main --tags
+
+  github-release:
+    needs: [docker-publish, npm-publish, sync-skillsmp]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: softprops/action-gh-release@v2
+        env:
+          RELEASE_VERSION: ${{ needs.verify-version.outputs.version }}
+        with:
+          generate_release_notes: true
+          body: |
+            Docker: `ghcr.io/dandacompany/bluekiwi:${{ needs.verify-version.outputs.version }}`
+            NPM: `npm install -g bluekiwi@${{ needs.verify-version.outputs.version }}`
