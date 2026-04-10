@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useWs } from "@/lib/use-ws";
 import { useTranslation } from "@/lib/i18n/context";
+import { useListFetch } from "@/lib/use-list-fetch";
+import { useDeleteHandler } from "@/lib/use-delete-handler";
 
 import {
   CheckCircle,
@@ -16,6 +18,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
+import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -111,50 +114,26 @@ function StatusBadge({
 export default function TasksPage() {
   const searchParams = useSearchParams();
   const { t } = useTranslation();
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState("");
-  const [loading, setLoading] = useState(true);
   const workflowFilter = searchParams.get("workflow_id");
 
-  const deleteTask = async (taskId: number) => {
-    if (!confirm(t("tasks.deleteConfirm", { id: taskId }))) return;
-    const res = await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
-    if (res.ok) {
-      setTasks((prev) => prev.filter((t) => t.id !== taskId));
-    }
-  };
-
-  const fetchTasks = async () => {
-    setLoading(true);
+  const {
+    data: tasks,
+    loading,
+    refetch: fetchTasks,
+  } = useListFetch<Task>(() => {
     const params = new URLSearchParams();
     if (workflowFilter) params.set("workflow_id", workflowFilter);
     if (filter) params.set("status", filter);
-    const res = await fetch(`/api/tasks?${params}`);
-    const json = await res.json();
-    setTasks(json.data ?? []);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadTasks() {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (workflowFilter) params.set("workflow_id", workflowFilter);
-      if (filter) params.set("status", filter);
-      const res = await fetch(`/api/tasks?${params}`);
-      const json = await res.json();
-      if (cancelled) return;
-      setTasks(json.data ?? []);
-      setLoading(false);
-    }
-
-    void loadTasks();
-    return () => {
-      cancelled = true;
-    };
+    return `/api/tasks?${params}`;
   }, [filter, workflowFilter]);
+
+  const { deleteTarget, setDeleteTarget, handleDelete } =
+    useDeleteHandler<Task>({
+      endpoint: (target) => `/api/tasks/${target.id}`,
+      onSuccess: fetchTasks,
+      fallbackMessage: t("common.deleteFailed"),
+    });
 
   // WebSocket real-time updates
   useWs((msg) => {
@@ -271,7 +250,7 @@ export default function TasksPage() {
                         variant="ghost"
                         size="icon"
                         className="text-[var(--destructive)] hover:bg-destructive/10"
-                        onClick={() => deleteTask(task.id)}
+                        onClick={() => setDeleteTarget(task)}
                         title={t("common.delete")}
                         aria-label={`${t("common.delete")} #${task.id}`}
                       >
@@ -322,6 +301,16 @@ export default function TasksPage() {
           })}
         </div>
       )}
+
+      <DeleteConfirmDialog
+        target={deleteTarget}
+        title={t("tasks.deleteTitle")}
+        description={t("tasks.deleteDescription", {
+          id: deleteTarget?.id ?? 0,
+        })}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
     </main>
   );
 }

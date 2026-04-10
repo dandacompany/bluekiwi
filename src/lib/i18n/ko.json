@@ -361,6 +361,8 @@
     "send": "전송",
     "wsRealtime": "실시간 업데이트",
     "deleteConfirm": "태스크 #{id}를 삭제하시겠습니까?",
+    "deleteTitle": "태스크 삭제",
+    "deleteDescription": "태스크 #{id}을(를) 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
     "workflowFallback": "워크플로 #{id}",
     "taskFallback": "태스크 #{id}",
     "stepLabel": "스텝 {step}",
