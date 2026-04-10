@@ -361,6 +361,8 @@
     "send": "Send",
     "wsRealtime": "Real-time updates",
     "deleteConfirm": "Delete task #{id}?",
+    "deleteTitle": "Delete task",
+    "deleteDescription": "Are you sure you want to delete task #{id}? This action cannot be undone.",
     "workflowFallback": "Workflow #{id}",
     "taskFallback": "Task #{id}",
     "stepLabel": "Step {step}",
