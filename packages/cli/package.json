@@ -1,0 +1,22 @@
+{
+  "name": "bluekiwi",
+  "version": "0.0.0",
+  "description": "BlueKiwi CLI — install MCP client and skills into your agent runtime",
+  "license": "MIT",
+  "bin": { "bluekiwi": "./dist/index.js" },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/bundle-assets.mjs",
+    "dev": "tsc -p tsconfig.json --watch"
+  },
+  "dependencies": {
+    "commander": "^12.0.0",
+    "prompts": "^2.4.2",
+    "picocolors": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/prompts": "^2.4.9",
+    "typescript": "^5.5.0"
+  }
+}
