@@ -84,11 +84,14 @@ function newKey() {
 
 export default function WorkflowEditor({
   workflowId,
+  canEdit = true,
 }: {
   workflowId: number | null;
+  canEdit?: boolean;
 }) {
   const router = useRouter();
   const { t } = useTranslation();
+  const readOnly = !canEdit;
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [nodes, setNodes] = useState<NodeDraft[]>([]);
@@ -371,6 +374,12 @@ export default function WorkflowEditor({
       <h1 className="mb-6 text-2xl font-bold tracking-tight">
         {workflowId ? t("editor.editWorkflow") : t("editor.newWorkflow")}
       </h1>
+
+      {readOnly && (
+        <div className="mb-6 rounded border border-yellow-500/40 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-900 dark:text-yellow-200">
+          {t("ownership.readOnlyPreview")}
+        </div>
+      )}
 
       {/* 기본 정보 */}
       <Card className="mb-8">
@@ -748,7 +757,8 @@ export default function WorkflowEditor({
             <Button
               type="button"
               onClick={handleCreate}
-              disabled={!title.trim() || saving}
+              disabled={!title.trim() || saving || readOnly}
+              title={readOnly ? t("ownership.cantEdit") : undefined}
             >
               {saving ? t("editor.saving") : t("common.create")}
             </Button>
@@ -758,7 +768,8 @@ export default function WorkflowEditor({
               <Button
                 type="button"
                 onClick={handlePublishNewVersion}
-                disabled={!title.trim() || saving}
+                disabled={!title.trim() || saving || readOnly}
+                title={readOnly ? t("ownership.cantEdit") : undefined}
               >
                 <Rocket className="mr-2 h-4 w-4" />
                 {saving ? t("editor.saving") : t("workflows.publishNewVersion")}
@@ -776,7 +787,8 @@ export default function WorkflowEditor({
               <Button
                 type="button"
                 onClick={handleSaveInPlace}
-                disabled={!title.trim() || saving}
+                disabled={!title.trim() || saving || readOnly}
+                title={readOnly ? t("ownership.cantEdit") : undefined}
               >
                 {saving ? t("editor.saving") : t("common.save")}
               </Button>
@@ -784,7 +796,8 @@ export default function WorkflowEditor({
                 type="button"
                 variant="secondary"
                 onClick={handleActivateCurrent}
-                disabled={saving}
+                disabled={saving || readOnly}
+                title={readOnly ? t("ownership.cantEdit") : undefined}
               >
                 {t("workflows.activate")}
               </Button>
