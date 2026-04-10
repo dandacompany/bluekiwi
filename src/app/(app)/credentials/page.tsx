@@ -343,7 +343,19 @@ export default function CredentialsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    await fetch(`/api/credentials/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/credentials/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      try {
+        const body = (await res.json()) as {
+          error?: { code?: string; message?: string };
+        };
+        alert(body.error?.message ?? "삭제에 실패했습니다.");
+      } catch {
+        alert("삭제에 실패했습니다.");
+      }
+      setDeleteTarget(null);
+      return;
+    }
     setDeleteTarget(null);
     fetchCredentials();
   };
