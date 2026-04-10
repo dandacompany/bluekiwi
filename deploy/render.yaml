@@ -1,0 +1,17 @@
+# deploy/render.yaml
+services:
+  - type: web
+    name: bluekiwi
+    runtime: docker
+    dockerfilePath: ./docker/Dockerfile
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bluekiwi-db
+          property: connectionString
+databases:
+  - name: bluekiwi-db
+    databaseName: bluekiwi
+    user: bluekiwi
