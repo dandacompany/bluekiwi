@@ -525,7 +525,48 @@
     "empty": "No credentials registered.",
     "emptyDescription": "Manage saved secrets and connection information.",
     "secretCount": "{count} secret(s)",
-    "actionMenu": "Credential {service} action menu"
+    "actionMenu": "Credential {service} action menu",
+    "reveal": "Reveal",
+    "mask": "Mask",
+    "useOnly": "Use only (plaintext hidden)",
+    "noAccess": "You do not have access to this credential",
+    "accessLevelUse": "Use",
+    "accessLevelManage": "Manage"
+  },
+  "folders": {
+    "title": "Folders",
+    "new": "New folder",
+    "myWorkspace": "My Workspace",
+    "publicLibrary": "Public Library",
+    "visibilityPersonal": "Personal",
+    "visibilityGroup": "Group",
+    "visibilityPublic": "Public",
+    "shareWith": "Shared with",
+    "accessLevelViewer": "Viewer",
+    "accessLevelEditor": "Editor",
+    "transferOwnership": "Transfer ownership",
+    "moveTo": "Move",
+    "emptyInFolder": "This folder is empty",
+    "inheritedFromParent": "inherited"
+  },
+  "ownership": {
+    "owner": "Owner",
+    "sharedWith": "Shared groups",
+    "readOnlyPreview": "Read-only preview — editing requires owner or editor share",
+    "cantEdit": "Requires owner or editor share",
+    "cantDelete": "Only the owner can delete",
+    "publicGateAdmin": "Public publish requires admin"
+  },
+  "rbacErrors": {
+    "ownershipRequired": "Owner access required",
+    "visibilityGate": "Admin access required",
+    "credentialUseDenied": "You cannot use this credential",
+    "credentialRevealDenied": "You cannot reveal this credential",
+    "folderDepthExceeded": "Folder nesting is limited to 2 levels",
+    "folderVisibilityInvalid": "Child folder cannot be more visible than its parent",
+    "credentialInPublicFolder": "Credentials cannot be placed in public folders",
+    "folderShareDenied": "Not allowed to manage shares",
+    "folderNotEmpty": "Cannot delete a non-empty folder"
   },
   "instructionsPage": {
     "title": "Instructions",

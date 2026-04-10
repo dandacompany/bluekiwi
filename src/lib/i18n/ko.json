@@ -525,7 +525,48 @@
     "empty": "등록된 크리덴셜이 없습니다.",
     "emptyDescription": "저장된 비밀값과 연결 정보를 관리합니다.",
     "secretCount": "시크릿 {count}개",
-    "actionMenu": "크리덴셜 {service} 액션 메뉴"
+    "actionMenu": "크리덴셜 {service} 액션 메뉴",
+    "reveal": "평문 보기",
+    "mask": "가리기",
+    "useOnly": "사용 전용 (평문 조회 불가)",
+    "noAccess": "이 크레덴셜에 대한 접근 권한이 없습니다",
+    "accessLevelUse": "사용",
+    "accessLevelManage": "관리"
+  },
+  "folders": {
+    "title": "폴더",
+    "new": "새 폴더",
+    "myWorkspace": "내 작업공간",
+    "publicLibrary": "공개 라이브러리",
+    "visibilityPersonal": "개인",
+    "visibilityGroup": "그룹",
+    "visibilityPublic": "공개",
+    "shareWith": "공유 대상",
+    "accessLevelViewer": "읽기",
+    "accessLevelEditor": "편집",
+    "transferOwnership": "소유권 이전",
+    "moveTo": "이동",
+    "emptyInFolder": "이 폴더에 내용이 없습니다",
+    "inheritedFromParent": "상속됨"
+  },
+  "ownership": {
+    "owner": "소유자",
+    "sharedWith": "공유된 그룹",
+    "readOnlyPreview": "읽기 전용 미리보기 — 편집하려면 소유자 또는 editor 공유가 필요합니다",
+    "cantEdit": "소유자 또는 editor 공유 권한이 필요합니다",
+    "cantDelete": "소유자만 삭제할 수 있습니다",
+    "publicGateAdmin": "Public 공개는 관리자 권한이 필요합니다"
+  },
+  "rbacErrors": {
+    "ownershipRequired": "소유자 권한이 필요합니다",
+    "visibilityGate": "관리자 권한이 필요합니다",
+    "credentialUseDenied": "이 크레덴셜에 대한 사용 권한이 없습니다",
+    "credentialRevealDenied": "평문 조회 권한이 없습니다",
+    "folderDepthExceeded": "폴더 중첩은 2단계까지만 가능합니다",
+    "folderVisibilityInvalid": "자식 폴더는 부모보다 더 넓은 visibility를 가질 수 없습니다",
+    "credentialInPublicFolder": "크레덴셜은 공개 폴더에 둘 수 없습니다",
+    "folderShareDenied": "공유 관리 권한이 없습니다",
+    "folderNotEmpty": "비어있지 않은 폴더는 삭제할 수 없습니다"
   },
   "instructionsPage": {
     "title": "지침",
