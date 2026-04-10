@@ -6,15 +6,15 @@ import {
   okResponse,
   errorResponse,
 } from "@/lib/db";
-import { withOptionalAuth } from "@/lib/with-auth";
+import { withAuth } from "@/lib/with-auth";
 
 type Params = { params: Promise<{ id: string }> };
 
 const NOT_FOUND = errorResponse("NOT_FOUND", "지침을 찾을 수 없습니다", 404);
 
-export const GET = withOptionalAuth<Params>(
-  "instructions:read",
-  async (_request, _user, { params }: Params) => {
+export const GET = withAuth<Params>(
+  "workflows:read",
+  async (_request, user, { params }: Params) => {
     const { id } = await params;
 
     const row = await queryOne<Instruction>(
@@ -26,14 +26,20 @@ export const GET = withOptionalAuth<Params>(
       return NextResponse.json(NOT_FOUND.body, { status: NOT_FOUND.status });
     }
 
+    const { canRead } = await import("@/lib/authorization");
+    if (!(await canRead(user, row))) {
+      const res = errorResponse("OWNERSHIP_REQUIRED", "접근 권한 없음", 403);
+      return NextResponse.json(res.body, { status: res.status });
+    }
+
     const res = okResponse(row);
     return NextResponse.json(res.body, { status: res.status });
   },
 );
 
-export const PUT = withOptionalAuth<Params>(
-  "instructions:write",
-  async (request: NextRequest, _user, { params }: Params) => {
+export const PUT = withAuth<Params>(
+  "workflows:update",
+  async (request: NextRequest, user, { params }: Params) => {
     const { id } = await params;
     const body = await request.json();
     const { title, content, agent_type, tags, priority, is_active } = body;
@@ -45,6 +51,12 @@ export const PUT = withOptionalAuth<Params>(
 
     if (!existing) {
       return NextResponse.json(NOT_FOUND.body, { status: NOT_FOUND.status });
+    }
+
+    const { canEdit } = await import("@/lib/authorization");
+    if (!(await canEdit(user, existing))) {
+      const res = errorResponse("OWNERSHIP_REQUIRED", "편집 권한 없음", 403);
+      return NextResponse.json(res.body, { status: res.status });
     }
 
     const newTags =
@@ -79,10 +91,24 @@ export const PUT = withOptionalAuth<Params>(
   },
 );
 
-export const DELETE = withOptionalAuth<Params>(
-  "instructions:write",
-  async (_request, _user, { params }: Params) => {
+export const DELETE = withAuth<Params>(
+  "workflows:delete",
+  async (_request, user, { params }: Params) => {
     const { id } = await params;
+
+    const existing = await queryOne<Instruction>(
+      "SELECT * FROM instructions WHERE id = $1",
+      [Number(id)],
+    );
+    if (!existing) {
+      return NextResponse.json(NOT_FOUND.body, { status: NOT_FOUND.status });
+    }
+
+    const { canDelete } = await import("@/lib/authorization");
+    if (!(await canDelete(user, existing))) {
+      const res = errorResponse("OWNERSHIP_REQUIRED", "삭제 권한 없음", 403);
+      return NextResponse.json(res.body, { status: res.status });
+    }
 
     const result = await execute("DELETE FROM instructions WHERE id = $1", [
       Number(id),

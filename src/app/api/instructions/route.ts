@@ -8,56 +8,33 @@ import {
   listResponse,
   errorResponse,
 } from "@/lib/db";
-import { withOptionalAuth } from "@/lib/with-auth";
+import { withAuth } from "@/lib/with-auth";
 
-export const GET = withOptionalAuth(
-  "instructions:read",
-  async (request: NextRequest) => {
-    const { searchParams } = request.nextUrl;
-
-    const agentType = searchParams.get("agent_type");
-    const activeOnly = searchParams.get("active_only") === "true";
-    const q = searchParams.get("q");
-    const tag = searchParams.get("tag");
-
-    let sql =
-      "SELECT id, title, content, agent_type, tags, priority, is_active, created_at, updated_at FROM instructions WHERE 1=1";
-    const params: unknown[] = [];
-    let paramIdx = 0;
-
-    if (agentType) {
-      paramIdx++;
-      sql += ` AND agent_type = $${paramIdx}`;
-      params.push(agentType);
+export const GET = withAuth(
+  "workflows:read",
+  async (request, user) => {
+    const url = new URL(request.url);
+    const folderId = url.searchParams.get("folder_id");
+    const { buildResourceVisibilityFilter } = await import("@/lib/authorization");
+    const filter = await buildResourceVisibilityFilter("i", user, 1);
+    const params: unknown[] = [...filter.params];
+    const clauses = [filter.sql];
+    if (folderId) {
+      params.push(Number(folderId));
+      clauses.push(`i.folder_id = $${params.length}`);
     }
-    if (activeOnly) {
-      sql += " AND is_active = 1";
-    }
-    if (q) {
-      paramIdx++;
-      const likeIdx = paramIdx;
-      paramIdx++;
-      sql += ` AND (title LIKE $${likeIdx} OR content LIKE $${paramIdx})`;
-      const like = `%${q}%`;
-      params.push(like, like);
-    }
-    if (tag) {
-      paramIdx++;
-      sql += ` AND tags::jsonb ? $${paramIdx}`;
-      params.push(tag);
-    }
-
-    sql += " ORDER BY priority DESC, updated_at DESC";
-
-    const rows = await query<Instruction>(sql, params);
+    const rows = await query<Instruction>(
+      `SELECT i.* FROM instructions i WHERE ${clauses.join(" AND ")} ORDER BY i.updated_at DESC`,
+      params,
+    );
     const res = listResponse(rows, rows.length);
     return NextResponse.json(res.body, { status: res.status });
   },
 );
 
-export const POST = withOptionalAuth(
-  "instructions:write",
-  async (request: NextRequest) => {
+export const POST = withAuth(
+  "workflows:create",
+  async (request: NextRequest, user) => {
     const body = await request.json();
     const { title, content, agent_type, tags, priority } = body;
 
@@ -66,18 +43,58 @@ export const POST = withOptionalAuth(
       return NextResponse.json(res.body, { status: res.status });
     }
 
+    // Resolve target folder: user-provided or default to Public Library
+    const { canEditFolder, loadFolder } = await import("@/lib/authorization");
+    let targetFolderId: number;
+    if (typeof body.folder_id === "number") {
+      const f = await loadFolder(body.folder_id);
+      if (!f) {
+        const res = errorResponse("NOT_FOUND", "folder not found", 404);
+        return NextResponse.json(res.body, { status: res.status });
+      }
+      if (!(await canEditFolder(user, f))) {
+        const res = errorResponse("OWNERSHIP_REQUIRED", "폴더 편집 권한 없음", 403);
+        return NextResponse.json(res.body, { status: res.status });
+      }
+      targetFolderId = f.id;
+    } else {
+      const lib = await queryOne<{ id: number }>(
+        "SELECT id FROM folders WHERE is_system = true AND visibility = 'public' LIMIT 1",
+      );
+      if (!lib) {
+        const res = errorResponse(
+          "VALIDATION_ERROR",
+          "Public Library가 없습니다. 관리자에게 문의하세요",
+          500,
+        );
+        return NextResponse.json(res.body, { status: res.status });
+      }
+      const f = await loadFolder(lib.id);
+      if (!f) {
+        const res = errorResponse("NOT_FOUND", "folder not found", 404);
+        return NextResponse.json(res.body, { status: res.status });
+      }
+      if (!(await canEditFolder(user, f))) {
+        const res = errorResponse("OWNERSHIP_REQUIRED", "폴더 편집 권한 없음", 403);
+        return NextResponse.json(res.body, { status: res.status });
+      }
+      targetFolderId = f.id;
+    }
+
     const tagsJson = JSON.stringify(
       Array.isArray(tags) ? tags.map((t: string) => t.trim()) : [],
     );
 
     const instructionId = await insert(
-      "INSERT INTO instructions (title, content, agent_type, tags, priority) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+      "INSERT INTO instructions (title, content, agent_type, tags, priority, owner_id, folder_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
       [
         title.trim(),
         (content ?? "").trim(),
         (agent_type ?? "general").trim(),
         tagsJson,
         typeof priority === "number" ? priority : 0,
+        user.id,
+        targetFolderId,
       ],
     );
 
