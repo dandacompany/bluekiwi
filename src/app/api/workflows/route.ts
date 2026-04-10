@@ -18,7 +18,8 @@ export const GET = withAuth(
     const includeInactive = url.searchParams.get("include_inactive") === "true";
     const folderId = url.searchParams.get("folder_id");
 
-    const { buildResourceVisibilityFilter } = await import("@/lib/authorization");
+    const { buildResourceVisibilityFilter } =
+      await import("@/lib/authorization");
     const filter = await buildResourceVisibilityFilter("w", user, 1);
 
     const clauses: string[] = [filter.sql];
@@ -93,7 +94,11 @@ export const POST = withAuth(
         return NextResponse.json(res.body, { status: res.status });
       }
       if (!(await canEditFolder(user, f))) {
-        const res = errorResponse("OWNERSHIP_REQUIRED", "폴더 편집 권한 없음", 403);
+        const res = errorResponse(
+          "OWNERSHIP_REQUIRED",
+          "폴더 편집 권한 없음",
+          403,
+        );
         return NextResponse.json(res.body, { status: res.status });
       }
       targetFolderId = f.id;
@@ -114,16 +119,20 @@ export const POST = withAuth(
     }
 
     const created = await withTransaction(async (client) => {
-      // Insert with family_root_id = NULL first, then set it to self id so
-      // the topmost ancestor of every new workflow is itself by default.
+      // Pre-allocate the id via nextval so family_root_id can point to self
+      // inside a single INSERT (the column is NOT NULL so a two-step
+      // INSERT-then-UPDATE isn't possible).
+      const idRow = await client.query("SELECT nextval('chains_id_seq') AS id");
+      const workflowId = Number(idRow.rows[0].id);
       const inserted = await client.query(
         `INSERT INTO workflows (
-           title, description, version, parent_workflow_id,
-           evaluation_contract, owner_id, folder_id
+           id, title, description, version, parent_workflow_id,
+           evaluation_contract, owner_id, folder_id, family_root_id
          )
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $1)
          RETURNING *`,
         [
+          workflowId,
           title.trim(),
           description ?? "",
           versionValue,
@@ -133,12 +142,7 @@ export const POST = withAuth(
           targetFolderId,
         ],
       );
-      // Then set family_root_id = self id (existing pattern).
-      const workflowId = inserted.rows[0].id as number;
-      await client.query(
-        "UPDATE workflows SET family_root_id = $1 WHERE id = $1",
-        [workflowId],
-      );
+      void inserted;
 
       if (Array.isArray(nodes)) {
         for (let i = 0; i < nodes.length; i++) {

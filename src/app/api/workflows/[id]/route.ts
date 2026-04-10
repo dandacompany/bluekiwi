@@ -55,7 +55,11 @@ export const GET = withAuth<Params>(
       [Number(id)],
     );
     if (!workflow) {
-      const res = errorResponse("NOT_FOUND", "워크플로를 찾을 수 없습니다", 404);
+      const res = errorResponse(
+        "NOT_FOUND",
+        "워크플로를 찾을 수 없습니다",
+        404,
+      );
       return NextResponse.json(res.body, { status: res.status });
     }
     const { canRead } = await import("@/lib/authorization");
@@ -63,7 +67,10 @@ export const GET = withAuth<Params>(
       const res = errorResponse("OWNERSHIP_REQUIRED", "접근 권한 없음", 403);
       return NextResponse.json(res.body, { status: res.status });
     }
-    const res = okResponse({ ...workflow, nodes: await resolveNodes(workflow.id) });
+    const res = okResponse({
+      ...workflow,
+      nodes: await resolveNodes(workflow.id),
+    });
     return NextResponse.json(res.body, { status: res.status });
   },
 );
@@ -225,7 +232,7 @@ export const PUT = withAuth<Params>(
 );
 
 export const DELETE = withAuth<Params>(
-  "workflows:delete",
+  "workflows:update",
   async (_request, user, { params }: Params) => {
     const { id } = await params;
     const workflowId = Number(id);
@@ -236,7 +243,11 @@ export const DELETE = withAuth<Params>(
     );
 
     if (!existing) {
-      const res = errorResponse("NOT_FOUND", "워크플로를 찾을 수 없습니다", 404);
+      const res = errorResponse(
+        "NOT_FOUND",
+        "워크플로를 찾을 수 없습니다",
+        404,
+      );
       return NextResponse.json(res.body, { status: res.status });
     }
 
