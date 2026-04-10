@@ -51,6 +51,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/react": "^16.3.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
@@ -61,7 +62,9 @@
     "@types/ws": "^8.18.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
+    "happy-dom": "^19.0.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.4"
   }
 }
