@@ -135,7 +135,9 @@ export function TeamTab() {
       toast.success("Invite created");
       fetchInvites();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create invite");
+      toast.error(
+        err instanceof Error ? err.message : "Failed to create invite",
+      );
     } finally {
       setInviting(false);
     }
@@ -153,7 +155,9 @@ export function TeamTab() {
       toast.success("Invite cancelled");
       fetchInvites();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to cancel invite");
+      toast.error(
+        err instanceof Error ? err.message : "Failed to cancel invite",
+      );
     }
   };
 
@@ -357,7 +361,9 @@ export function TeamTab() {
                           : `Pending until ${new Date(invite.expires_at).toLocaleString()}`}
                       </p>
                     </div>
-                    <Badge variant={ROLE_BADGE_VARIANT[invite.role] ?? "outline"}>
+                    <Badge
+                      variant={ROLE_BADGE_VARIANT[invite.role] ?? "outline"}
+                    >
                       {invite.role}
                     </Badge>
                     {!invite.accepted_at ? (

@@ -35,7 +35,7 @@ export const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>(
 
     const variants: Record<ToggleVariant, string> = {
       default:
-        "bg-[var(--accent-light)] text-[var(--accent-dark)] border border-[color:var(--accent)]",
+        "bg-brand-blue-100 text-brand-blue-700 border border-brand-blue-600",
       outline:
         "bg-transparent text-[var(--foreground)] border border-[var(--border)]",
     };
@@ -62,7 +62,7 @@ export const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>(
         data-state={isPressed ? "on" : "off"}
         onClick={handleClick}
         className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-[var(--radius)] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-[var(--accent-light)] data-[state=on]:text-[var(--accent-dark)]",
+          "inline-flex items-center justify-center gap-2 rounded-[var(--radius)] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-brand-blue-100 data-[state=on]:text-brand-blue-700",
           variants[variant],
           sizes[size],
           className,
