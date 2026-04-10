@@ -1,12 +1,12 @@
 /**
- * OmegaRod API Fallback — MCP 미사용 시 REST API로 대체
+ * BlueKiwi API Fallback — MCP 미사용 시 REST API로 대체
  *
- * MCP 도구 (mcp__omega-rod__*) 사용 불가 시,
+ * MCP 도구 (mcp__blue-kiwi__*) 사용 불가 시,
  * 동일 기능을 REST API + curl로 수행할 수 있습니다.
  *
  * 사용 방법:
  *   1. API Key 발급: npx tsx scripts/cli.ts apikey create --user-id=1 --name=fallback
- *   2. 환경변수 설정: export OMEGAROD_API_KEY=or_xxx
+ *   2. 환경변수 설정: export BLUEKIWI_API_KEY=bk_xxx
  *   3. 아래 함수들로 curl 명령어 생성
  */
 
@@ -19,27 +19,27 @@ interface FallbackConfig {
 
 function getConfig(cfg?: FallbackConfig) {
   const baseUrl =
-    cfg?.baseUrl ?? process.env.OMEGAROD_API_URL ?? DEFAULT_BASE_URL;
-  const apiKey = cfg?.apiKey ?? process.env.OMEGAROD_API_KEY ?? "";
+    cfg?.baseUrl ?? process.env.BLUEKIWI_API_URL ?? DEFAULT_BASE_URL;
+  const apiKey = cfg?.apiKey ?? process.env.BLUEKIWI_API_KEY ?? "";
   const authHeader = apiKey ? `-H "Authorization: Bearer ${apiKey}"` : "";
   return { baseUrl, authHeader };
 }
 
-/** MCP list_chains → GET /api/chains */
-export function curlListChains(cfg?: FallbackConfig): string {
+/** MCP list_workflows → GET /api/workflows */
+export function curlListWorkflows(cfg?: FallbackConfig): string {
   const { baseUrl, authHeader } = getConfig(cfg);
-  return `curl -s ${authHeader} "${baseUrl}/chains"`;
+  return `curl -s ${authHeader} "${baseUrl}/workflows"`;
 }
 
-/** MCP start_chain → POST /api/tasks/start */
-export function curlStartChain(
-  chainId: number,
+/** MCP start_workflow → POST /api/tasks/start */
+export function curlStartWorkflow(
+  workflowId: number,
   opts?: { version?: string; context?: string; session_meta?: string },
   cfg?: FallbackConfig,
 ): string {
   const { baseUrl, authHeader } = getConfig(cfg);
   const body = JSON.stringify({
-    chain_id: chainId,
+    workflow_id: workflowId,
     ...opts,
   });
   return `curl -s -X POST ${authHeader} -H "Content-Type: application/json" -d '${body}' "${baseUrl}/tasks/start"`;
@@ -122,8 +122,8 @@ export function curlRewind(
  *
  * | MCP Tool          | REST Endpoint                  | Method |
  * |-------------------|--------------------------------|--------|
- * | list_chains       | /api/chains                    | GET    |
- * | start_chain       | /api/tasks/start               | POST   |
+ * | list_workflows    | /api/workflows                 | GET    |
+ * | start_workflow    | /api/tasks/start               | POST   |
  * | execute_step      | /api/tasks/:id/execute         | POST   |
  * | advance           | /api/tasks/:id/advance         | POST   |
  * | complete_task     | /api/tasks/:id/complete         | POST   |
@@ -132,16 +132,16 @@ export function curlRewind(
  * | get_comments      | /api/tasks/:id/comments        | GET    |
  * | submit_visual     | /api/tasks/:id/execute (visual_html param) | POST |
  * | get_web_response  | /api/tasks/:id/respond         | GET    |
- * | create_workflow   | /api/chains                    | POST   |
- * | update_workflow   | /api/chains/:id                | PUT    |
- * | delete_workflow   | /api/chains/:id                | DELETE |
+ * | create_workflow   | /api/workflows                 | POST   |
+ * | update_workflow   | /api/workflows/:id             | PUT    |
+ * | delete_workflow   | /api/workflows/:id             | DELETE |
  * | list_credentials  | /api/credentials               | GET    |
  * | save_artifacts    | (Git operation — CLI only)      | -      |
  * | load_artifacts    | (Git operation — CLI only)      | -      |
  */
 export const MCP_REST_MAP = {
-  list_chains: { method: "GET", path: "/api/chains" },
-  start_chain: { method: "POST", path: "/api/tasks/start" },
+  list_workflows: { method: "GET", path: "/api/workflows" },
+  start_workflow: { method: "POST", path: "/api/tasks/start" },
   execute_step: { method: "POST", path: "/api/tasks/:id/execute" },
   advance: { method: "POST", path: "/api/tasks/:id/advance" },
   complete_task: { method: "POST", path: "/api/tasks/:id/complete" },
@@ -150,8 +150,8 @@ export const MCP_REST_MAP = {
   get_comments: { method: "GET", path: "/api/tasks/:id/comments" },
   submit_visual: { method: "POST", path: "/api/tasks/:id/execute" },
   get_web_response: { method: "GET", path: "/api/tasks/:id/respond" },
-  create_workflow: { method: "POST", path: "/api/chains" },
-  update_workflow: { method: "PUT", path: "/api/chains/:id" },
-  delete_workflow: { method: "DELETE", path: "/api/chains/:id" },
+  create_workflow: { method: "POST", path: "/api/workflows" },
+  update_workflow: { method: "PUT", path: "/api/workflows/:id" },
+  delete_workflow: { method: "DELETE", path: "/api/workflows/:id" },
   list_credentials: { method: "GET", path: "/api/credentials" },
 } as const;

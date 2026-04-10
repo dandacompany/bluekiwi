@@ -3,7 +3,7 @@ import {
   query,
   queryOne,
   execute,
-  ChainNode,
+  WorkflowNode,
   Task,
   TaskLog,
   maskSecrets,
@@ -13,7 +13,7 @@ import {
 
 type Params = { params: Promise<{ id: string }> };
 
-async function resolveNodeResponse(node: ChainNode) {
+async function resolveNodeResponse(node: WorkflowNode) {
   let instruction = node.instruction;
   if (node.instruction_id) {
     const inst = await queryOne<{ content: string }>(
@@ -27,15 +27,13 @@ async function resolveNodeResponse(node: ChainNode) {
   if (node.credential_id) {
     const cred = await queryOne<{
       service_name: string;
-      title: string;
       secrets: string;
-    }>("SELECT service_name, title, secrets FROM credentials WHERE id = $1", [
+    }>("SELECT service_name, secrets FROM credentials WHERE id = $1", [
       node.credential_id,
     ]);
     if (cred) {
       credentials = {
         service: cred.service_name,
-        title: cred.title,
         secrets_masked: maskSecrets(cred.secrets),
       };
     }
@@ -68,16 +66,16 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 
   const totalRows = await queryOne<{ count: string }>(
-    "SELECT COUNT(*) as count FROM chain_nodes WHERE chain_id = $1",
-    [task.chain_id],
+    "SELECT COUNT(*) as count FROM workflow_nodes WHERE workflow_id = $1",
+    [task.workflow_id],
   );
   const totalSteps = Number(totalRows?.count ?? 0);
 
   // Peek mode
   if (peek) {
-    const currentNode = await queryOne<ChainNode>(
-      "SELECT * FROM chain_nodes WHERE chain_id = $1 AND step_order = $2",
-      [task.chain_id, task.current_step],
+    const currentNode = await queryOne<WorkflowNode>(
+      "SELECT * FROM workflow_nodes WHERE workflow_id = $1 AND step_order = $2",
+      [task.workflow_id, task.current_step],
     );
 
     let currentLog: TaskLog | undefined;
@@ -108,9 +106,9 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 
   // Advance mode: check current step is completed
-  const currentNode = await queryOne<ChainNode>(
-    "SELECT * FROM chain_nodes WHERE chain_id = $1 AND step_order = $2",
-    [task.chain_id, task.current_step],
+  const currentNode = await queryOne<WorkflowNode>(
+    "SELECT * FROM workflow_nodes WHERE workflow_id = $1 AND step_order = $2",
+    [task.workflow_id, task.current_step],
   );
 
   if (currentNode) {
@@ -130,9 +128,9 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   // Move to next step
   const nextStep = task.current_step + 1;
-  const nextNode = await queryOne<ChainNode>(
-    "SELECT * FROM chain_nodes WHERE chain_id = $1 AND step_order = $2",
-    [task.chain_id, nextStep],
+  const nextNode = await queryOne<WorkflowNode>(
+    "SELECT * FROM workflow_nodes WHERE workflow_id = $1 AND step_order = $2",
+    [task.workflow_id, nextStep],
   );
 
   if (!nextNode) {

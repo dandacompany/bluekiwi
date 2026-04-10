@@ -7,7 +7,10 @@ import {
 const RETRY_DELAYS_MS = [100, 500, 2000];
 
 export class BlueKiwiClient {
-  constructor(private baseUrl: string, private apiKey: string) {
+  constructor(
+    private baseUrl: string,
+    private apiKey: string,
+  ) {
     if (!baseUrl) throw new Error("BlueKiwiClient: baseUrl is required");
     if (!apiKey) throw new Error("BlueKiwiClient: apiKey is required");
   }
@@ -42,7 +45,10 @@ export class BlueKiwiClient {
         const text = await res.text();
         return (text ? JSON.parse(text) : null) as T;
       } catch (err) {
-        if (err instanceof BlueKiwiAuthError || err instanceof BlueKiwiApiError) {
+        if (
+          err instanceof BlueKiwiAuthError ||
+          err instanceof BlueKiwiApiError
+        ) {
           throw err;
         }
         lastError = err;
@@ -52,7 +58,7 @@ export class BlueKiwiClient {
         }
         throw new BlueKiwiNetworkError(
           `Failed to reach ${url} after ${RETRY_DELAYS_MS.length + 1} attempts`,
-          err
+          err,
         );
       }
     }

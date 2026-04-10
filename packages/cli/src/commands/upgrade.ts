@@ -7,12 +7,16 @@ import { getAllAdapters } from "../runtimes/detect.js";
 
 export async function upgradeCommand(): Promise<void> {
   console.log(pc.cyan("→ Upgrading bluekiwi..."));
-  execFileSync("npm", ["install", "-g", "bluekiwi@latest"], { stdio: "inherit" });
+  execFileSync("npm", ["install", "-g", "bluekiwi@latest"], {
+    stdio: "inherit",
+  });
 
   const cfg = loadConfig();
   if (!cfg) {
     console.log(
-      pc.yellow("No config found. Run `bluekiwi accept` or `bluekiwi init` next."),
+      pc.yellow(
+        "No config found. Run `bluekiwi accept` or `bluekiwi init` next.",
+      ),
     );
     return;
   }

@@ -28,21 +28,21 @@ export const GET = withOptionalAuth<Params>(
     const logs = await query<TaskLog & { credential_service: string | null }>(
       `SELECT tl.*, (
        SELECT c.service_name FROM credentials c
-       JOIN chain_nodes cn2 ON cn2.credential_id = c.id
+       JOIN workflow_nodes cn2 ON cn2.credential_id = c.id
        WHERE cn2.id = tl.node_id
      ) as credential_service
      FROM task_logs tl WHERE tl.task_id = $1 ORDER BY tl.step_order ASC`,
       [task.id],
     );
 
-    const chain = await queryOne<{ title: string }>(
-      "SELECT title FROM chains WHERE id = $1",
-      [task.chain_id],
+    const workflow = await queryOne<{ title: string }>(
+      "SELECT title FROM workflows WHERE id = $1",
+      [task.workflow_id],
     );
 
     const res = okResponse({
       ...task,
-      chain_title: chain?.title ?? null,
+      workflow_title: workflow?.title ?? null,
       logs,
     });
     return NextResponse.json(res.body, { status: res.status });

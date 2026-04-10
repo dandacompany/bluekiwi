@@ -2,7 +2,9 @@
   "name": "blue-kiwi",
   "version": "0.1.0",
   "private": true,
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "bash scripts/dev.sh start",
     "dev:stop": "bash scripts/dev.sh stop",

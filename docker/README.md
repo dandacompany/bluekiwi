@@ -1,4 +1,4 @@
-# OmegaRod Docker Deployment
+# BlueKiwi Docker Deployment
 
 ## Architecture
 
@@ -10,7 +10,7 @@
 │  │ PostgreSQL│   │  Redis   │   │   Next.js App    │ │
 │  │  :5432    │   │  :6379   │   │   :3000          │ │
 │  │           │◄──┤          │◄──┤                  │ │
-│  │  omegarod │   │  cache   │   │  API routes      │ │
+│  │  bluekiwi │   │  cache   │   │  API routes      │ │
 │  │  database │   │  pub/sub │   │  Web UI          │ │
 │  └──────────┘   └──────────┘   └──────────────────┘ │
 │       ▲                              ▲               │
@@ -71,11 +71,11 @@ docker compose logs app --tail 20
 
 | Variable            | Default             | Description         |
 | ------------------- | ------------------- | ------------------- |
-| `POSTGRES_DB`       | omegarod            | DB 이름             |
-| `POSTGRES_USER`     | omegarod            | DB 사용자           |
-| `POSTGRES_PASSWORD` | omegarod_dev_2026   | DB 비밀번호         |
+| `POSTGRES_DB`       | bluekiwi            | DB 이름             |
+| `POSTGRES_USER`     | bluekiwi            | DB 사용자           |
+| `POSTGRES_PASSWORD` | bluekiwi_dev_2026   | DB 비밀번호         |
 | `DB_PORT`           | 5432                | PostgreSQL 포트     |
-| `REDIS_PASSWORD`    | omegarod_redis_2026 | Redis 비밀번호      |
+| `REDIS_PASSWORD`    | bluekiwi_redis_2026 | Redis 비밀번호      |
 | `REDIS_PORT`        | 6379                | Redis 포트          |
 | `APP_PORT`          | 3000                | Next.js 앱 포트     |
 | `WS_PORT`           | 3001                | WebSocket 중계 포트 |
@@ -92,7 +92,7 @@ docker compose up db redis -d
 
 # 호스트에서 앱 실행
 cd ..
-DATABASE_URL=postgresql://omegarod:omegarod_dev_2026@localhost:5432/omegarod npm run dev
+DATABASE_URL=postgresql://bluekiwi:bluekiwi_dev_2026@localhost:5432/bluekiwi npm run dev
 
 # WS Relay
 npm run ws
@@ -105,11 +105,11 @@ npm run ws
 ```json
 {
   "mcpServers": {
-    "omega-rod": {
+    "blue-kiwi": {
       "command": "node",
-      "args": ["/path/to/OmegaRod/mcp/dist/server.js"],
+      "args": ["/path/to/BlueKiwi/mcp/dist/server.js"],
       "env": {
-        "DATABASE_URL": "postgresql://omegarod:omegarod_dev_2026@localhost:5432/omegarod"
+        "DATABASE_URL": "postgresql://bluekiwi:bluekiwi_dev_2026@localhost:5432/bluekiwi"
       }
     }
   }
@@ -125,8 +125,8 @@ npm run ws
 7개 테이블:
 
 - `instructions` — 에이전트 지침
-- `chains` — 워크플로 정의
-- `chain_nodes` — 워크플로 노드 (단계)
+- `workflows` — 워크플로 정의
+- `workflow_nodes` — 워크플로 노드 (단계)
 - `tasks` — 태스크 인스턴스
 - `task_logs` — 단계별 실행 로그
 - `task_artifacts` — 산출물 참조 (파일, git, URL)
@@ -136,20 +136,20 @@ npm run ws
 
 ```bash
 # psql로 직접 접속
-docker compose exec db psql -U omegarod -d omegarod
+docker compose exec db psql -U bluekiwi -d bluekiwi
 
 # 외부에서 접속
-psql postgresql://omegarod:omegarod_dev_2026@localhost:5432/omegarod
+psql postgresql://bluekiwi:bluekiwi_dev_2026@localhost:5432/bluekiwi
 ```
 
 ### 데이터 백업/복원
 
 ```bash
 # 백업
-docker compose exec db pg_dump -U omegarod omegarod > backup.sql
+docker compose exec db pg_dump -U bluekiwi bluekiwi > backup.sql
 
 # 복원
-cat backup.sql | docker compose exec -T db psql -U omegarod -d omegarod
+cat backup.sql | docker compose exec -T db psql -U bluekiwi -d bluekiwi
 ```
 
 ### 초기화
@@ -189,7 +189,7 @@ docker compose --env-file .env.production up -d
 
 ```bash
 # PostgreSQL 상태 확인
-docker compose exec db pg_isready -U omegarod
+docker compose exec db pg_isready -U bluekiwi
 
 # 로그 확인
 docker compose logs db --tail 50
@@ -204,7 +204,7 @@ init.sql은 첫 실행 시에만 적용됩니다. 스키마를 변경한 경우:
 docker compose down -v && docker compose up -d
 
 # 또는 수동으로 ALTER TABLE 실행
-docker compose exec db psql -U omegarod -d omegarod -c "ALTER TABLE ..."
+docker compose exec db psql -U bluekiwi -d bluekiwi -c "ALTER TABLE ..."
 ```
 
 ### 앱 빌드 실패

@@ -11,7 +11,9 @@ export async function statusCommand(): Promise<void> {
   }
 
   console.log(`${pc.bold("Server:")}   ${cfg.server_url}`);
-  console.log(`${pc.bold("User:")}     ${cfg.user.username} (${cfg.user.role})`);
+  console.log(
+    `${pc.bold("User:")}     ${cfg.user.username} (${cfg.user.role})`,
+  );
   console.log(`${pc.bold("Runtimes:")} ${cfg.runtimes.join(", ") || "(none)"}`);
 
   try {

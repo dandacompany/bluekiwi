@@ -30,7 +30,7 @@ export const POST = withOptionalAuth(
   "credentials:write",
   async (request: NextRequest) => {
     const body = await request.json();
-    const { service_name, title, description, secrets } = body;
+    const { service_name, description, secrets } = body;
 
     if (
       !service_name ||
@@ -44,10 +44,6 @@ export const POST = withOptionalAuth(
       );
       return NextResponse.json(res.body, { status: res.status });
     }
-    if (!title || typeof title !== "string" || !title.trim()) {
-      const res = errorResponse("VALIDATION_ERROR", "title is required", 400);
-      return NextResponse.json(res.body, { status: res.status });
-    }
     if (!secrets || typeof secrets !== "object") {
       const res = errorResponse(
         "VALIDATION_ERROR",
@@ -58,10 +54,9 @@ export const POST = withOptionalAuth(
     }
 
     const credentialId = await insert(
-      "INSERT INTO credentials (service_name, title, description, secrets) VALUES ($1, $2, $3, $4) RETURNING id",
+      "INSERT INTO credentials (service_name, description, secrets) VALUES ($1, $2, $3) RETURNING id",
       [
         service_name.trim(),
-        title.trim(),
         (description ?? "").trim(),
         JSON.stringify(secrets),
       ],

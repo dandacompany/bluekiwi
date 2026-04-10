@@ -8,8 +8,12 @@ async function list() {
   const cfg = loadConfig();
   const installed = new Set(cfg?.runtimes ?? []);
   for (const adapter of getAllAdapters()) {
-    const detected = adapter.isInstalled() ? pc.green("detected") : pc.dim("not installed");
-    const active = installed.has(adapter.name) ? pc.green("● active") : pc.dim("○ inactive");
+    const detected = adapter.isInstalled()
+      ? pc.green("detected")
+      : pc.dim("not installed");
+    const active = installed.has(adapter.name)
+      ? pc.green("● active")
+      : pc.dim("○ inactive");
     console.log(`${adapter.displayName.padEnd(14)} ${detected}  ${active}`);
   }
 }
@@ -27,7 +31,10 @@ async function add(name: string) {
     args: [BUNDLED_MCP_PATH],
     env: { BLUEKIWI_API_URL: cfg.server_url, BLUEKIWI_API_KEY: cfg.api_key },
   });
-  saveConfig({ ...cfg, runtimes: Array.from(new Set([...cfg.runtimes, name])) });
+  saveConfig({
+    ...cfg,
+    runtimes: Array.from(new Set([...cfg.runtimes, name])),
+  });
   console.log(pc.green(`✓ Installed to ${adapter.displayName}`));
 }
 
@@ -39,7 +46,10 @@ async function remove(name: string) {
     process.exit(1);
   }
   adapter.uninstall();
-  saveConfig({ ...cfg, runtimes: cfg.runtimes.filter((runtime) => runtime !== name) });
+  saveConfig({
+    ...cfg,
+    runtimes: cfg.runtimes.filter((runtime) => runtime !== name),
+  });
   console.log(pc.green(`✓ Removed ${adapter.displayName}`));
 }
 

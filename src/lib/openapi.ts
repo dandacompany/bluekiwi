@@ -1,14 +1,14 @@
 export const openApiSpec = {
   openapi: "3.0.3",
   info: {
-    title: "OmegaRod API",
-    description: "에이전트 지침 관리 시스템 API",
+    title: "BlueKiwi API",
+    description: "에이전트 지침 시스템 API",
     version: "1.0.0",
   },
   servers: [{ url: "/", description: "Current server" }],
   tags: [
     { name: "Instructions", description: "에이전트 지침 CRUD" },
-    { name: "Chains", description: "체인(워크플로) 관리" },
+    { name: "Workflows", description: "워크플로 관리" },
     { name: "Tasks", description: "태스크 실행 및 모니터링" },
     { name: "Credentials", description: "API 시크릿/인증정보 관리" },
   ],
@@ -226,13 +226,13 @@ export const openApiSpec = {
         },
       },
     },
-    "/api/chains": {
+    "/api/workflows": {
       get: {
-        tags: ["Chains"],
-        summary: "체인 목록 조회",
+        tags: ["Workflows"],
+        summary: "워크플로 목록 조회",
         responses: {
           "200": {
-            description: "체인 목록 (노드 포함)",
+            description: "워크플로 목록 (노드 포함)",
             content: {
               "application/json": {
                 schema: {
@@ -240,7 +240,7 @@ export const openApiSpec = {
                   properties: {
                     data: {
                       type: "array",
-                      items: { $ref: "#/components/schemas/ChainWithNodes" },
+                      items: { $ref: "#/components/schemas/WorkflowWithNodes" },
                     },
                     total: { type: "integer" },
                   },
@@ -251,25 +251,25 @@ export const openApiSpec = {
         },
       },
       post: {
-        tags: ["Chains"],
-        summary: "체인 생성",
+        tags: ["Workflows"],
+        summary: "워크플로 생성",
         requestBody: {
           required: true,
           content: {
             "application/json": {
-              schema: { $ref: "#/components/schemas/ChainCreate" },
+              schema: { $ref: "#/components/schemas/WorkflowCreate" },
             },
           },
         },
         responses: {
           "201": {
-            description: "생성된 체인",
+            description: "생성된 워크플로",
             content: {
               "application/json": {
                 schema: {
                   type: "object",
                   properties: {
-                    data: { $ref: "#/components/schemas/ChainWithNodes" },
+                    data: { $ref: "#/components/schemas/WorkflowWithNodes" },
                   },
                 },
               },
@@ -286,10 +286,10 @@ export const openApiSpec = {
         },
       },
     },
-    "/api/chains/{id}": {
+    "/api/workflows/{id}": {
       get: {
-        tags: ["Chains"],
-        summary: "체인 단건 조회",
+        tags: ["Workflows"],
+        summary: "워크플로 단건 조회",
         parameters: [
           {
             name: "id",
@@ -300,20 +300,20 @@ export const openApiSpec = {
         ],
         responses: {
           "200": {
-            description: "체인 상세",
+            description: "워크플로 상세",
             content: {
               "application/json": {
                 schema: {
                   type: "object",
                   properties: {
-                    data: { $ref: "#/components/schemas/ChainWithNodes" },
+                    data: { $ref: "#/components/schemas/WorkflowWithNodes" },
                   },
                 },
               },
             },
           },
           "404": {
-            description: "체인을 찾을 수 없음",
+            description: "워크플로를 찾을 수 없음",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/ErrorResponse" },
@@ -323,8 +323,8 @@ export const openApiSpec = {
         },
       },
       put: {
-        tags: ["Chains"],
-        summary: "체인 수정",
+        tags: ["Workflows"],
+        summary: "워크플로 수정",
         description: "nodes 배열을 전송하면 기존 노드를 모두 교체합니다.",
         parameters: [
           {
@@ -338,26 +338,26 @@ export const openApiSpec = {
           required: true,
           content: {
             "application/json": {
-              schema: { $ref: "#/components/schemas/ChainCreate" },
+              schema: { $ref: "#/components/schemas/WorkflowCreate" },
             },
           },
         },
         responses: {
           "200": {
-            description: "수정된 체인",
+            description: "수정된 워크플로",
             content: {
               "application/json": {
                 schema: {
                   type: "object",
                   properties: {
-                    data: { $ref: "#/components/schemas/ChainWithNodes" },
+                    data: { $ref: "#/components/schemas/WorkflowWithNodes" },
                   },
                 },
               },
             },
           },
           "404": {
-            description: "체인을 찾을 수 없음",
+            description: "워크플로를 찾을 수 없음",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/ErrorResponse" },
@@ -367,8 +367,8 @@ export const openApiSpec = {
         },
       },
       delete: {
-        tags: ["Chains"],
-        summary: "체인 삭제",
+        tags: ["Workflows"],
+        summary: "워크플로 삭제",
         parameters: [
           {
             name: "id",
@@ -398,7 +398,7 @@ export const openApiSpec = {
             },
           },
           "404": {
-            description: "체인을 찾을 수 없음",
+            description: "워크플로를 찾을 수 없음",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/ErrorResponse" },
@@ -414,10 +414,10 @@ export const openApiSpec = {
         summary: "태스크 목록 조회",
         parameters: [
           {
-            name: "chain_id",
+            name: "workflow_id",
             in: "query",
             schema: { type: "integer" },
-            description: "체인 ID로 필터링",
+            description: "워크플로 ID로 필터링",
           },
           {
             name: "status",
@@ -451,15 +451,15 @@ export const openApiSpec = {
       },
       post: {
         tags: ["Tasks"],
-        summary: "태스크 생성 (체인 실행 시작)",
+        summary: "태스크 생성 (워크플로 실행 시작)",
         requestBody: {
           required: true,
           content: {
             "application/json": {
               schema: {
                 type: "object",
-                required: ["chain_id"],
-                properties: { chain_id: { type: "integer" } },
+                required: ["workflow_id"],
+                properties: { workflow_id: { type: "integer" } },
               },
             },
           },
@@ -485,7 +485,7 @@ export const openApiSpec = {
             },
           },
           "404": {
-            description: "체인을 찾을 수 없음",
+            description: "워크플로를 찾을 수 없음",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/ErrorResponse" },
@@ -690,17 +690,12 @@ export const openApiSpec = {
             "application/json": {
               schema: {
                 type: "object",
-                required: ["service_name", "title"],
+                required: ["service_name"],
                 properties: {
                   service_name: {
                     type: "string",
                     example: "threads",
                     description: "서비스 식별자",
-                  },
-                  title: {
-                    type: "string",
-                    example: "단테 Threads 계정",
-                    description: "사람이 읽는 이름",
                   },
                   description: { type: "string", example: "Threads Graph API" },
                   secrets: {
@@ -794,7 +789,6 @@ export const openApiSpec = {
                 type: "object",
                 properties: {
                   service_name: { type: "string" },
-                  title: { type: "string" },
                   description: { type: "string" },
                   secrets: {
                     type: "object",
@@ -947,11 +941,11 @@ export const openApiSpec = {
           },
         },
       },
-      ChainNode: {
+      WorkflowNode: {
         type: "object",
         properties: {
           id: { type: "integer" },
-          chain_id: { type: "integer" },
+          workflow_id: { type: "integer" },
           step_order: { type: "integer", example: 1 },
           title: { type: "string", example: "PR 목록 수집" },
           instruction: {
@@ -961,7 +955,7 @@ export const openApiSpec = {
           created_at: { type: "string", format: "date-time" },
         },
       },
-      ChainWithNodes: {
+      WorkflowWithNodes: {
         type: "object",
         properties: {
           id: { type: "integer" },
@@ -972,13 +966,13 @@ export const openApiSpec = {
           },
           nodes: {
             type: "array",
-            items: { $ref: "#/components/schemas/ChainNode" },
+            items: { $ref: "#/components/schemas/WorkflowNode" },
           },
           created_at: { type: "string", format: "date-time" },
           updated_at: { type: "string", format: "date-time" },
         },
       },
-      ChainCreate: {
+      WorkflowCreate: {
         type: "object",
         required: ["title"],
         properties: {
@@ -1000,7 +994,7 @@ export const openApiSpec = {
         type: "object",
         properties: {
           id: { type: "integer" },
-          chain_id: { type: "integer" },
+          workflow_id: { type: "integer" },
           status: {
             type: "string",
             enum: ["pending", "running", "completed", "failed"],
@@ -1027,8 +1021,8 @@ export const openApiSpec = {
         type: "object",
         properties: {
           id: { type: "integer" },
-          chain_id: { type: "integer" },
-          chain_title: { type: "string", nullable: true },
+          workflow_id: { type: "integer" },
+          workflow_title: { type: "string", nullable: true },
           status: { type: "string" },
           current_step: { type: "integer" },
           logs: {
@@ -1049,10 +1043,6 @@ export const openApiSpec = {
             type: "string",
             example: "threads",
             description: "서비스 식별자",
-          },
-          title: {
-            type: "string",
-            example: "단테 Threads 계정",
           },
           description: { type: "string" },
           secrets_masked: {

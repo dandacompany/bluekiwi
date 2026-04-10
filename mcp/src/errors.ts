@@ -6,14 +6,20 @@ export class BlueKiwiAuthError extends Error {
 }
 
 export class BlueKiwiApiError extends Error {
-  constructor(public readonly status: number, public readonly body: string) {
+  constructor(
+    public readonly status: number,
+    public readonly body: string,
+  ) {
     super(`BlueKiwi API error ${status}: ${body}`);
     this.name = "BlueKiwiApiError";
   }
 }
 
 export class BlueKiwiNetworkError extends Error {
-  constructor(message: string, public readonly cause?: unknown) {
+  constructor(
+    message: string,
+    public readonly cause?: unknown,
+  ) {
     super(message);
     this.name = "BlueKiwiNetworkError";
   }
