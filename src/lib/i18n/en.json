@@ -13,7 +13,8 @@
     "loading": "Loading...",
     "confirm": "Confirm",
     "search": "Search...",
-    "noResults": "No results"
+    "noResults": "No results",
+    "deleteFailed": "Failed to delete."
   },
   "tutorial": {
     "guideTitle": "User Guide",
@@ -458,7 +459,14 @@
     "roleViewer": "Viewer",
     "allFieldsRequired": "Please fill in all fields.",
     "loadFailed": "Failed to load members.",
-    "noMembers": "No members registered."
+    "noMembers": "No members registered.",
+    "invitesLoadFailed": "Failed to load invites.",
+    "emailRequired": "Email is required.",
+    "inviteCreated": "Invite link created.",
+    "inviteCreateFailed": "Failed to create invite.",
+    "inviteCancelled": "Invite cancelled.",
+    "inviteCancelFailed": "Failed to cancel invite.",
+    "inviteLinkCopied": "Invite link copied."
   },
   "editor": {
     "editWorkflow": "Edit Workflow",
