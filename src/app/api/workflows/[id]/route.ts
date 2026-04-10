@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  queryOne,
   execute,
   withTransaction,
   Workflow,
   resolveNodes,
   okResponse,
-  errorResponse,
 } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canDelete, canEdit, canRead } from "@/lib/authorization";
+import { loadResourceOrFail, withResource } from "@/lib/api-helpers";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -47,33 +46,20 @@ function incrementWorkflowVersion(version: string): string {
   return parts.join(".") + suffix;
 }
 
-export const GET = withAuth<Params>(
-  "workflows:read",
-  async (_request, user, { params }: Params) => {
-    const { id } = await params;
-    const workflow = await queryOne<Workflow>(
-      "SELECT * FROM workflows WHERE id = $1",
-      [Number(id)],
-    );
-    if (!workflow) {
-      const res = errorResponse(
-        "NOT_FOUND",
-        "워크플로를 찾을 수 없습니다",
-        404,
-      );
-      return NextResponse.json(res.body, { status: res.status });
-    }
-    if (!(await canRead(user, workflow))) {
-      const res = errorResponse("OWNERSHIP_REQUIRED", "접근 권한 없음", 403);
-      return NextResponse.json(res.body, { status: res.status });
-    }
+export const GET = withResource<Workflow>({
+  permission: "workflows:read",
+  table: "workflows",
+  check: canRead,
+  notFoundMessage: "워크플로를 찾을 수 없습니다",
+  forbiddenMessage: "접근 권한 없음",
+  handler: async ({ resource: workflow }) => {
     const res = okResponse({
       ...workflow,
       nodes: await resolveNodes(workflow.id),
     });
     return NextResponse.json(res.body, { status: res.status });
   },
-);
+});
 
 export const PUT = withAuth<Params>(
   "workflows:update",
@@ -90,23 +76,16 @@ export const PUT = withAuth<Params>(
     } = body;
     const workflowId = Number(id);
 
-    const existing = await queryOne<Workflow>(
-      "SELECT * FROM workflows WHERE id = $1",
-      [workflowId],
-    );
-    if (!existing) {
-      const res = errorResponse(
-        "NOT_FOUND",
-        "워크플로를 찾을 수 없습니다",
-        404,
-      );
-      return NextResponse.json(res.body, { status: res.status });
-    }
-
-    if (!(await canEdit(user, existing))) {
-      const res = errorResponse("OWNERSHIP_REQUIRED", "편집 권한 없음", 403);
-      return NextResponse.json(res.body, { status: res.status });
-    }
+    const { resource: existing, response: errResp } =
+      await loadResourceOrFail<Workflow>({
+        table: "workflows",
+        id: workflowId,
+        user,
+        check: canEdit,
+        notFoundMessage: "워크플로를 찾을 수 없습니다",
+        forbiddenMessage: "편집 권한 없음",
+      });
+    if (errResp) return errResp;
 
     const updated = await withTransaction(async (client) => {
       const shouldCreateNewVersion =
@@ -230,34 +209,15 @@ export const PUT = withAuth<Params>(
   },
 );
 
-export const DELETE = withAuth<Params>(
-  "workflows:update",
-  async (_request, user, { params }: Params) => {
-    const { id } = await params;
-    const workflowId = Number(id);
-
-    const existing = await queryOne<Workflow>(
-      "SELECT * FROM workflows WHERE id = $1",
-      [workflowId],
-    );
-
-    if (!existing) {
-      const res = errorResponse(
-        "NOT_FOUND",
-        "워크플로를 찾을 수 없습니다",
-        404,
-      );
-      return NextResponse.json(res.body, { status: res.status });
-    }
-
-    if (!(await canDelete(user, existing))) {
-      const res = errorResponse("OWNERSHIP_REQUIRED", "삭제 권한 없음", 403);
-      return NextResponse.json(res.body, { status: res.status });
-    }
-
-    await execute("DELETE FROM workflows WHERE id = $1", [workflowId]);
-
-    const res = okResponse({ id: workflowId, deleted: true });
+export const DELETE = withResource<Workflow>({
+  permission: "workflows:update",
+  table: "workflows",
+  check: canDelete,
+  notFoundMessage: "워크플로를 찾을 수 없습니다",
+  forbiddenMessage: "삭제 권한 없음",
+  handler: async ({ resource: existing }) => {
+    await execute("DELETE FROM workflows WHERE id = $1", [existing.id]);
+    const res = okResponse({ id: existing.id, deleted: true });
     return NextResponse.json(res.body, { status: res.status });
   },
-);
+});

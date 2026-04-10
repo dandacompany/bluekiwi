@@ -11,8 +11,9 @@ import {
   canReadFolder,
   canEditFolder,
   canDeleteFolder,
-  loadFolder,
+  type OwnedFolder,
 } from "@/lib/authorization";
+import { loadResourceOrFail } from "@/lib/api-helpers";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -20,19 +21,17 @@ export const GET = withAuth<Params>(
   "workflows:read",
   async (_request, user, { params }) => {
     const { id } = await params;
-    const folder = await loadFolder(Number(id));
-    if (!folder) {
-      const res = errorResponse("NOT_FOUND", "폴더를 찾을 수 없습니다", 404);
-      return NextResponse.json(res.body, { status: res.status });
-    }
-    if (!(await canReadFolder(user, folder))) {
-      const res = errorResponse("OWNERSHIP_REQUIRED", "접근 권한 없음", 403);
-      return NextResponse.json(res.body, { status: res.status });
-    }
-    const full = await queryOne<Folder>("SELECT * FROM folders WHERE id = $1", [
-      Number(id),
-    ]);
-    const res = okResponse(full);
+    const { resource: folder, response: errResp } =
+      await loadResourceOrFail<Folder>({
+        table: "folders",
+        id,
+        user,
+        check: (u, f) => canReadFolder(u, f as unknown as OwnedFolder),
+        notFoundMessage: "폴더를 찾을 수 없습니다",
+        forbiddenMessage: "접근 권한 없음",
+      });
+    if (errResp) return errResp;
+    const res = okResponse(folder);
     return NextResponse.json(res.body, { status: res.status });
   },
 );
@@ -44,15 +43,17 @@ export const PUT = withAuth<Params>(
     const body = await request.json();
     const { name, description, parent_id } = body;
 
-    const folder = await loadFolder(Number(id));
-    if (!folder) {
-      const res = errorResponse("NOT_FOUND", "폴더를 찾을 수 없습니다", 404);
-      return NextResponse.json(res.body, { status: res.status });
-    }
-    if (!(await canEditFolder(user, folder))) {
-      const res = errorResponse("OWNERSHIP_REQUIRED", "편집 권한 없음", 403);
-      return NextResponse.json(res.body, { status: res.status });
-    }
+    const { resource: folder, response: errResp } =
+      await loadResourceOrFail<Folder>({
+        table: "folders",
+        id,
+        user,
+        check: (u, f) => canEditFolder(u, f as unknown as OwnedFolder),
+        notFoundMessage: "폴더를 찾을 수 없습니다",
+        forbiddenMessage: "편집 권한 없음",
+      });
+    if (errResp) return errResp;
+
     if (folder.is_system && (name !== undefined || parent_id !== undefined)) {
       const res = errorResponse(
         "OWNERSHIP_REQUIRED",
@@ -80,15 +81,15 @@ export const DELETE = withAuth<Params>(
   "workflows:delete",
   async (_request, user, { params }) => {
     const { id } = await params;
-    const folder = await loadFolder(Number(id));
-    if (!folder) {
-      const res = errorResponse("NOT_FOUND", "폴더를 찾을 수 없습니다", 404);
-      return NextResponse.json(res.body, { status: res.status });
-    }
-    if (!(await canDeleteFolder(user, folder))) {
-      const res = errorResponse("OWNERSHIP_REQUIRED", "삭제 권한 없음", 403);
-      return NextResponse.json(res.body, { status: res.status });
-    }
+    const { response: errResp } = await loadResourceOrFail<Folder>({
+      table: "folders",
+      id,
+      user,
+      check: (u, f) => canDeleteFolder(u, f as unknown as OwnedFolder),
+      notFoundMessage: "폴더를 찾을 수 없습니다",
+      forbiddenMessage: "삭제 권한 없음",
+    });
+    if (errResp) return errResp;
 
     // Emptiness check — consolidated into a single round trip
     const usage = await queryOne<{
