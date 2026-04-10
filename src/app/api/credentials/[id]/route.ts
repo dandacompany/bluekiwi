@@ -13,33 +13,25 @@ import {
   canListCredential,
 } from "@/lib/authorization";
 import { withAuth } from "@/lib/with-auth";
+import { loadResourceOrFail, withResource } from "@/lib/api-helpers";
 
 type Params = { params: Promise<{ id: string }> };
 
 // GET: canListCredential; if canReveal=false, return masked
-export const GET = withAuth<Params>(
-  "credentials:read",
-  async (_request, user, { params }) => {
-    const { id } = await params;
-    const cred = await queryOne<Credential>(
-      "SELECT * FROM credentials WHERE id = $1",
-      [Number(id)],
-    );
-    if (!cred) {
-      const res = errorResponse("NOT_FOUND", "크레덴셜 없음", 404);
-      return NextResponse.json(res.body, { status: res.status });
-    }
-    if (!(await canListCredential(user, cred))) {
-      const res = errorResponse("OWNERSHIP_REQUIRED", "접근 권한 없음", 403);
-      return NextResponse.json(res.body, { status: res.status });
-    }
+export const GET = withResource<Credential>({
+  permission: "credentials:read",
+  table: "credentials",
+  check: canListCredential,
+  notFoundMessage: "크레덴셜 없음",
+  forbiddenMessage: "접근 권한 없음",
+  handler: async ({ resource: cred }) => {
     const res = okResponse({
       ...cred,
       secrets: JSON.stringify(maskSecrets(cred.secrets)),
     });
     return NextResponse.json(res.body, { status: res.status });
   },
-);
+});
 
 // PUT: canEditCredential
 export const PUT = withAuth<Params>(
@@ -47,22 +39,18 @@ export const PUT = withAuth<Params>(
   async (request, user, { params }) => {
     const { id } = await params;
     const body = await request.json();
-    const cred = await queryOne<Credential>(
-      "SELECT * FROM credentials WHERE id = $1",
-      [Number(id)],
-    );
-    if (!cred) {
-      const res = errorResponse("NOT_FOUND", "크레덴셜 없음", 404);
-      return NextResponse.json(res.body, { status: res.status });
-    }
-    if (!(await canEditCredential(user, cred))) {
-      const res = errorResponse(
-        "CREDENTIAL_REVEAL_DENIED",
-        "수정 권한 없음",
-        403,
-      );
-      return NextResponse.json(res.body, { status: res.status });
-    }
+
+    const { response: errResp } = await loadResourceOrFail<Credential>({
+      table: "credentials",
+      id,
+      user,
+      check: canEditCredential,
+      notFoundMessage: "크레덴셜 없음",
+      forbiddenCode: "CREDENTIAL_REVEAL_DENIED",
+      forbiddenMessage: "수정 권한 없음",
+    });
+    if (errResp) return errResp;
+
     const updated = await queryOne<Credential>(
       `UPDATE credentials SET
          service_name = COALESCE($1, service_name),
@@ -92,18 +80,16 @@ export const DELETE = withAuth<Params>(
   "credentials:write",
   async (_request, user, { params }) => {
     const { id } = await params;
-    const cred = await queryOne<Credential>(
-      "SELECT * FROM credentials WHERE id = $1",
-      [Number(id)],
-    );
-    if (!cred) {
-      const res = errorResponse("NOT_FOUND", "크레덴셜 없음", 404);
-      return NextResponse.json(res.body, { status: res.status });
-    }
-    if (!(await canDelete(user, cred as never))) {
-      const res = errorResponse("OWNERSHIP_REQUIRED", "삭제 권한 없음", 403);
-      return NextResponse.json(res.body, { status: res.status });
-    }
+
+    const { response: errResp } = await loadResourceOrFail<Credential>({
+      table: "credentials",
+      id,
+      user,
+      check: (u, c) => canDelete(u, c as never),
+      notFoundMessage: "크레덴셜 없음",
+      forbiddenMessage: "삭제 권한 없음",
+    });
+    if (errResp) return errResp;
 
     // Refuse delete if any workflow_nodes still reference this credential.
     // The DB-level RESTRICT FK is the ultimate guard; the application layer

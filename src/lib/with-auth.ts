@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { errorResponse } from "@/lib/db";
+import { errorResponse } from "./db";
 import {
   authenticateRequest,
   checkPermission,
   type Permission,
   type User,
-} from "@/lib/auth";
+} from "./auth";
 
 type Handler = (
   request: NextRequest,

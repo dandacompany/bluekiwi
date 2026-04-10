@@ -8,34 +8,21 @@ import {
 } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canDelete, canEdit, canRead } from "@/lib/authorization";
+import { loadResourceOrFail, withResource } from "@/lib/api-helpers";
 
 type Params = { params: Promise<{ id: string }> };
 
-const NOT_FOUND = errorResponse("NOT_FOUND", "지침을 찾을 수 없습니다", 404);
-
-export const GET = withAuth<Params>(
-  "workflows:read",
-  async (_request, user, { params }: Params) => {
-    const { id } = await params;
-
-    const row = await queryOne<Instruction>(
-      "SELECT * FROM instructions WHERE id = $1",
-      [Number(id)],
-    );
-
-    if (!row) {
-      return NextResponse.json(NOT_FOUND.body, { status: NOT_FOUND.status });
-    }
-
-    if (!(await canRead(user, row))) {
-      const res = errorResponse("OWNERSHIP_REQUIRED", "접근 권한 없음", 403);
-      return NextResponse.json(res.body, { status: res.status });
-    }
-
-    const res = okResponse(row);
+export const GET = withResource<Instruction>({
+  permission: "workflows:read",
+  table: "instructions",
+  check: canRead,
+  notFoundMessage: "지침을 찾을 수 없습니다",
+  forbiddenMessage: "접근 권한 없음",
+  handler: async ({ resource }) => {
+    const res = okResponse(resource);
     return NextResponse.json(res.body, { status: res.status });
   },
-);
+});
 
 export const PUT = withAuth<Params>(
   "workflows:update",
@@ -44,19 +31,16 @@ export const PUT = withAuth<Params>(
     const body = await request.json();
     const { title, content, agent_type, tags, priority, is_active } = body;
 
-    const existing = await queryOne<Instruction>(
-      "SELECT * FROM instructions WHERE id = $1",
-      [Number(id)],
-    );
-
-    if (!existing) {
-      return NextResponse.json(NOT_FOUND.body, { status: NOT_FOUND.status });
-    }
-
-    if (!(await canEdit(user, existing))) {
-      const res = errorResponse("OWNERSHIP_REQUIRED", "편집 권한 없음", 403);
-      return NextResponse.json(res.body, { status: res.status });
-    }
+    const { resource: existing, response: errResp } =
+      await loadResourceOrFail<Instruction>({
+        table: "instructions",
+        id,
+        user,
+        check: canEdit,
+        notFoundMessage: "지침을 찾을 수 없습니다",
+        forbiddenMessage: "편집 권한 없음",
+      });
+    if (errResp) return errResp;
 
     const newTags =
       tags !== undefined
@@ -95,18 +79,15 @@ export const DELETE = withAuth<Params>(
   async (_request, user, { params }: Params) => {
     const { id } = await params;
 
-    const existing = await queryOne<Instruction>(
-      "SELECT * FROM instructions WHERE id = $1",
-      [Number(id)],
-    );
-    if (!existing) {
-      return NextResponse.json(NOT_FOUND.body, { status: NOT_FOUND.status });
-    }
-
-    if (!(await canDelete(user, existing))) {
-      const res = errorResponse("OWNERSHIP_REQUIRED", "삭제 권한 없음", 403);
-      return NextResponse.json(res.body, { status: res.status });
-    }
+    const { response: errResp } = await loadResourceOrFail<Instruction>({
+      table: "instructions",
+      id,
+      user,
+      check: canDelete,
+      notFoundMessage: "지침을 찾을 수 없습니다",
+      forbiddenMessage: "삭제 권한 없음",
+    });
+    if (errResp) return errResp;
 
     // Refuse delete if any workflow_nodes still reference this instruction.
     // The DB-level RESTRICT FK is the ultimate guard, but we front-load a
@@ -131,7 +112,8 @@ export const DELETE = withAuth<Params>(
     ]);
 
     if (result.rowCount === 0) {
-      return NextResponse.json(NOT_FOUND.body, { status: NOT_FOUND.status });
+      const res = errorResponse("NOT_FOUND", "지침을 찾을 수 없습니다", 404);
+      return NextResponse.json(res.body, { status: res.status });
     }
 
     const res = okResponse({ id: Number(id), deleted: true });
