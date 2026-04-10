@@ -97,11 +97,11 @@ export function TeamTab() {
       const json = await res.json();
       setInvites(json.invites ?? []);
     } catch {
-      toast.error("Failed to load invites");
+      toast.error(t("team.invitesLoadFailed"));
     } finally {
       setInviteLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchMembers();
@@ -110,7 +110,7 @@ export function TeamTab() {
 
   const handleInvite = async () => {
     if (!inviteEmail.trim()) {
-      toast.error("Email is required");
+      toast.error(t("team.emailRequired"));
       return;
     }
 
@@ -127,16 +127,16 @@ export function TeamTab() {
 
       if (!res.ok) {
         const json = await res.json();
-        throw new Error(json.error ?? "Failed to create invite");
+        throw new Error(json.error ?? t("team.inviteCreateFailed"));
       }
 
       const data = (await res.json()) as { url: string; expires_at: string };
       setInviteResult(data);
-      toast.success("Invite created");
+      toast.success(t("team.inviteCreated"));
       fetchInvites();
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to create invite",
+        err instanceof Error ? err.message : t("team.inviteCreateFailed"),
       );
     } finally {
       setInviting(false);
@@ -150,13 +150,13 @@ export function TeamTab() {
       });
       if (!res.ok) {
         const json = await res.json().catch(() => null);
-        throw new Error(json?.error ?? "Failed to cancel invite");
+        throw new Error(json?.error ?? t("team.inviteCancelFailed"));
       }
-      toast.success("Invite cancelled");
+      toast.success(t("team.inviteCancelled"));
       fetchInvites();
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to cancel invite",
+        err instanceof Error ? err.message : t("team.inviteCancelFailed"),
       );
     }
   };
@@ -250,7 +250,7 @@ export function TeamTab() {
                   <Button
                     onClick={() => {
                       navigator.clipboard.writeText(inviteResult.url);
-                      toast.success("Invite link copied");
+                      toast.success(t("team.inviteLinkCopied"));
                     }}
                   >
                     <Copy className="h-4 w-4" />

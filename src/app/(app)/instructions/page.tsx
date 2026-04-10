@@ -224,7 +224,7 @@ export default function InstructionsPage() {
   const handleDelete = async (id: number) => {
     const res = await fetch(`/api/instructions/${id}`, { method: "DELETE" });
     if (!res.ok) {
-      let message = "삭제에 실패했습니다.";
+      let message = t("common.deleteFailed");
       try {
         const body = (await res.json()) as {
           error?: { message?: string };

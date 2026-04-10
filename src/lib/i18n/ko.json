@@ -13,7 +13,8 @@
     "loading": "로딩 중...",
     "confirm": "확인",
     "search": "검색...",
-    "noResults": "결과 없음"
+    "noResults": "결과 없음",
+    "deleteFailed": "삭제에 실패했습니다."
   },
   "tutorial": {
     "guideTitle": "사용 가이드",
@@ -458,7 +459,14 @@
     "roleViewer": "조회자",
     "allFieldsRequired": "모든 필드를 입력해주세요.",
     "loadFailed": "멤버 목록을 불러오는데 실패했습니다.",
-    "noMembers": "등록된 멤버가 없습니다."
+    "noMembers": "등록된 멤버가 없습니다.",
+    "invitesLoadFailed": "초대 목록을 불러오는데 실패했습니다.",
+    "emailRequired": "이메일을 입력해주세요.",
+    "inviteCreated": "초대 링크가 생성되었습니다.",
+    "inviteCreateFailed": "초대 생성에 실패했습니다.",
+    "inviteCancelled": "초대가 취소되었습니다.",
+    "inviteCancelFailed": "초대 취소에 실패했습니다.",
+    "inviteLinkCopied": "초대 링크가 복사되었습니다."
   },
   "editor": {
     "editWorkflow": "워크플로 편집",
