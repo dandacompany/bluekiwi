@@ -11,6 +11,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CommandDialog } from "@/components/ui/command";
@@ -228,7 +229,7 @@ export default function CredentialsPage() {
       method: "POST",
     });
     if (!res.ok) {
-      alert(t("rbacErrors.credentialRevealDenied"));
+      toast.error(t("rbacErrors.credentialRevealDenied"));
       return;
     }
     const json = await res.json();
@@ -239,7 +240,7 @@ export default function CredentialsPage() {
           : json.data.secrets;
       setRevealedSecrets((prev) => ({ ...prev, [credId]: parsed }));
     } catch {
-      alert(t("rbacErrors.credentialRevealDenied"));
+      toast.error(t("rbacErrors.credentialRevealDenied"));
     }
   };
   const [saving, setSaving] = useState(false);
@@ -345,14 +346,16 @@ export default function CredentialsPage() {
   const handleDelete = async (id: number) => {
     const res = await fetch(`/api/credentials/${id}`, { method: "DELETE" });
     if (!res.ok) {
+      let message = "삭제에 실패했습니다.";
       try {
         const body = (await res.json()) as {
-          error?: { code?: string; message?: string };
+          error?: { message?: string };
         };
-        alert(body.error?.message ?? "삭제에 실패했습니다.");
+        if (body.error?.message) message = body.error.message;
       } catch {
-        alert("삭제에 실패했습니다.");
+        /* fall through with default message */
       }
+      toast.error(message);
       setDeleteTarget(null);
       return;
     }
