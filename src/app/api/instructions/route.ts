@@ -67,7 +67,7 @@ export const POST = withAuth(
       );
       if (!lib) {
         const res = errorResponse(
-          "VALIDATION_ERROR",
+          "PUBLIC_LIBRARY_MISSING",
           "Public Library가 없습니다. 관리자에게 문의하세요",
           500,
         );

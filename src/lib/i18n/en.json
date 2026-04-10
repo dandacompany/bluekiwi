@@ -578,6 +578,19 @@
     "instructionInUse": "This instruction is referenced by {count} workflow node(s) and cannot be deleted. Detach it from those workflows first.",
     "credentialInUse": "This credential is referenced by {count} workflow node(s) and cannot be deleted. Detach it from those workflows first."
   },
+  "serverErrors": {
+    "notFound": "Requested resource not found",
+    "unauthorized": "Authentication required",
+    "forbidden": "Access denied",
+    "conflict": "Request conflicts with current state",
+    "preconditionFailed": "Precondition failed",
+    "publicLibraryMissing": "Public Library is missing. Contact your administrator.",
+    "myWorkspaceMissing": "My Workspace is missing. Contact your administrator.",
+    "versionInactive": "This workflow version is inactive"
+  },
+  "validationErrors": {
+    "generic": "Invalid input"
+  },
   "instructionsPage": {
     "title": "Instructions",
     "newInstruction": "New Instruction",

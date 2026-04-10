@@ -111,7 +111,7 @@ export const POST = withAuth(
       );
       if (!mw) {
         const res = errorResponse(
-          "VALIDATION_ERROR",
+          "MY_WORKSPACE_MISSING",
           "My Workspace가 없습니다. 관리자에게 문의하세요",
           500,
         );
