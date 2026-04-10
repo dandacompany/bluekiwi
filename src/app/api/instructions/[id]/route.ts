@@ -110,6 +110,23 @@ export const DELETE = withAuth<Params>(
       return NextResponse.json(res.body, { status: res.status });
     }
 
+    // Refuse delete if any workflow_nodes still reference this instruction.
+    // The DB-level RESTRICT FK is the ultimate guard, but we front-load a
+    // friendly count-aware error so the UI can show something meaningful.
+    const refs = await queryOne<{ c: string }>(
+      "SELECT COUNT(*)::text AS c FROM workflow_nodes WHERE instruction_id = $1",
+      [Number(id)],
+    );
+    const refCount = Number(refs?.c ?? 0);
+    if (refCount > 0) {
+      const res = errorResponse(
+        "INSTRUCTION_IN_USE",
+        `이 지침은 ${refCount}개의 워크플로 노드에서 사용 중이라 삭제할 수 없습니다. 해당 워크플로에서 먼저 지침을 분리하세요.`,
+        409,
+      );
+      return NextResponse.json(res.body, { status: res.status });
+    }
+
     const result = await execute("DELETE FROM instructions WHERE id = $1", [
       Number(id),
     ]);
