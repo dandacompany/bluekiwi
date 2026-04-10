@@ -106,7 +106,8 @@ export default function TutorialPage() {
               작업 흐름을 만드는 가장 짧은 경로
             </h1>
             <p className="mx-auto max-w-2xl leading-relaxed text-muted-foreground">
-              BlueKiwi에서 <strong>지침 작성, 워크플로 조립, 실행, 결과 확인</strong>
+              BlueKiwi에서{" "}
+              <strong>지침 작성, 워크플로 조립, 실행, 결과 확인</strong>
               까지 실제 사용 흐름을 빠르게 익힐 수 있도록 구성한 안내서입니다.
             </p>
           </div>
@@ -169,8 +170,8 @@ export default function TutorialPage() {
 
           <Section id="instructions" num={2} title="지침 만들기">
             <p className="mb-4 leading-relaxed text-muted-foreground">
-              지침은 워크플로의 최소 단위입니다. 한 지침에는 하나의 목적과 하나의
-              기대 결과만 담는 편이 좋습니다.
+              지침은 워크플로의 최소 단위입니다. 한 지침에는 하나의 목적과
+              하나의 기대 결과만 담는 편이 좋습니다.
             </p>
 
             <div className="mb-5 grid gap-4 md:grid-cols-2">
@@ -282,7 +283,10 @@ export default function TutorialPage() {
               {[
                 ["실행 중", "현재 단계가 진행 중이며 새 로그가 계속 쌓입니다."],
                 ["대기", "사용자 응답 또는 외부 조건을 기다리는 상태입니다."],
-                ["실패", "중단 원인을 확인하고 필요하면 다시 실행하거나 되감습니다."],
+                [
+                  "실패",
+                  "중단 원인을 확인하고 필요하면 다시 실행하거나 되감습니다.",
+                ],
               ].map(([title, desc]) => (
                 <div key={title} className={S.panel}>
                   <p className="text-sm font-semibold">{title}</p>
@@ -332,19 +336,30 @@ export default function TutorialPage() {
             <p className="mb-4 leading-relaxed text-muted-foreground">
               처음 써보는 사용자라면 추상적인 설명보다 실제 한 번의 운영 흐름을
               따라가 보는 편이 훨씬 쉽습니다. 아래는
-              <strong> UI 점검 워크플로</strong>를 만드는 가장 현실적인 예시입니다.
+              <strong> UI 점검 워크플로</strong>를 만드는 가장 현실적인
+              예시입니다.
             </p>
 
-            <h3 className={S.subheading}>직접 해보기: 크리덴셜 카드 점검 워크플로</h3>
+            <h3 className={S.subheading}>
+              직접 해보기: 크리덴셜 카드 점검 워크플로
+            </h3>
             <div className="space-y-4">
               <div className={S.panel}>
-                <p className="text-sm font-semibold">Step 1. 지침 3개를 만듭니다</p>
+                <p className="text-sm font-semibold">
+                  Step 1. 지침 3개를 만듭니다
+                </p>
                 <div className="mt-3 space-y-2 text-sm text-muted-foreground">
                   <p>
-                    1. <Code>현재 크리덴셜 카드 UI를 점검하고 문제를 목록화한다</Code>
+                    1.{" "}
+                    <Code>
+                      현재 크리덴셜 카드 UI를 점검하고 문제를 목록화한다
+                    </Code>
                   </p>
                   <p>
-                    2. <Code>문제를 중요도 순으로 정리하고 수정 우선순위를 제안한다</Code>
+                    2.{" "}
+                    <Code>
+                      문제를 중요도 순으로 정리하고 수정 우선순위를 제안한다
+                    </Code>
                   </p>
                   <p>
                     3. <Code>수정 후 다시 점검하고 남은 이슈를 요약한다</Code>
@@ -353,7 +368,9 @@ export default function TutorialPage() {
               </div>
 
               <div className={S.panel}>
-                <p className="text-sm font-semibold">Step 2. 워크플로를 조립합니다</p>
+                <p className="text-sm font-semibold">
+                  Step 2. 워크플로를 조립합니다
+                </p>
                 <div className="mt-3 space-y-2 text-sm text-muted-foreground">
                   <p>1. Action: 현재 상태 점검</p>
                   <p>2. Gate: 이 중 무엇을 먼저 고칠지 사용자 확인</p>
@@ -363,7 +380,9 @@ export default function TutorialPage() {
               </div>
 
               <div className={S.panel}>
-                <p className="text-sm font-semibold">Step 3. 실행 시 이렇게 적습니다</p>
+                <p className="text-sm font-semibold">
+                  Step 3. 실행 시 이렇게 적습니다
+                </p>
                 <p className="mt-3 text-sm text-muted-foreground">
                   태스크 컨텍스트에는 이렇게 구체적으로 적는 편이 좋습니다.
                 </p>
@@ -375,9 +394,13 @@ export default function TutorialPage() {
               </div>
 
               <div className={S.panel}>
-                <p className="text-sm font-semibold">Step 4. 실행 후 태스크에서 확인할 것</p>
+                <p className="text-sm font-semibold">
+                  Step 4. 실행 후 태스크에서 확인할 것
+                </p>
                 <div className="mt-3 space-y-2 text-sm text-muted-foreground">
-                  <p>1. 목록에서 어떤 워크플로가 어떤 상태인지 빠르게 확인합니다.</p>
+                  <p>
+                    1. 목록에서 어떤 워크플로가 어떤 상태인지 빠르게 확인합니다.
+                  </p>
                   <p>2. 상세에서 각 단계 결과와 코멘트를 읽습니다.</p>
                   <p>3. Gate 단계가 나오면 바로 응답해서 흐름을 이어갑니다.</p>
                   <p>4. 결과가 마음에 들지 않으면 rewind 후 다시 진행합니다.</p>
@@ -386,11 +409,15 @@ export default function TutorialPage() {
             </div>
           </Section>
 
-          <Section id="mcp-loop" num={7} title="MCP로 자동 생성하고 자기개선하기">
+          <Section
+            id="mcp-loop"
+            num={7}
+            title="MCP로 자동 생성하고 자기개선하기"
+          >
             <p className="mb-4 leading-relaxed text-muted-foreground">
-              BlueKiwi는 사람이 직접 지침과 워크플로를 만드는 데서 끝나지 않습니다.
-              MCP를 이용하면 지침과 워크플로 자체를 자동으로 만들거나 갱신하는
-              흐름도 설계할 수 있습니다.
+              BlueKiwi는 사람이 직접 지침과 워크플로를 만드는 데서 끝나지
+              않습니다. MCP를 이용하면 지침과 워크플로 자체를 자동으로 만들거나
+              갱신하는 흐름도 설계할 수 있습니다.
             </p>
 
             <div className="mb-6 grid gap-4 md:grid-cols-2">
@@ -407,8 +434,12 @@ export default function TutorialPage() {
                 <p className="text-sm font-semibold">기대할 수 있는 효과</p>
                 <div className="mt-3 space-y-2 text-sm text-muted-foreground">
                   <p>1. 사람이 초안을 쓰는 시간을 줄일 수 있습니다.</p>
-                  <p>2. 잘 동작한 패턴을 다음 워크플로에 재사용할 수 있습니다.</p>
-                  <p>3. 실패 원인을 반영하며 점진적으로 품질을 높일 수 있습니다.</p>
+                  <p>
+                    2. 잘 동작한 패턴을 다음 워크플로에 재사용할 수 있습니다.
+                  </p>
+                  <p>
+                    3. 실패 원인을 반영하며 점진적으로 품질을 높일 수 있습니다.
+                  </p>
                 </div>
               </div>
             </div>
@@ -417,8 +448,13 @@ export default function TutorialPage() {
             <div className={S.panel}>
               <ol className="space-y-3 text-sm">
                 <li>1. 현재 워크플로를 실행하고 태스크 로그를 수집합니다.</li>
-                <li>2. 어떤 단계에서 자주 막히는지, 어떤 응답이 반복되는지 분석합니다.</li>
-                <li>3. MCP로 지침 문구나 단계 순서를 수정한 새 버전을 만듭니다.</li>
+                <li>
+                  2. 어떤 단계에서 자주 막히는지, 어떤 응답이 반복되는지
+                  분석합니다.
+                </li>
+                <li>
+                  3. MCP로 지침 문구나 단계 순서를 수정한 새 버전을 만듭니다.
+                </li>
                 <li>4. 새 버전을 다시 실행해 이전 결과와 비교합니다.</li>
                 <li>5. 더 나아진 패턴만 남기고 다음 루프에 반영합니다.</li>
               </ol>
@@ -427,14 +463,17 @@ export default function TutorialPage() {
             <p className="mt-4 text-sm text-muted-foreground">
               핵심은 처음부터 완벽한 워크플로를 만들려 하지 않는 것입니다.
               BlueKiwi에서는 사람이 직접 만든 초안을 시작점으로 삼고, MCP 기반
-              자동 생성과 재조합을 통해 조금씩 더 나은 흐름으로 키워갈 수 있습니다.
+              자동 생성과 재조합을 통해 조금씩 더 나은 흐름으로 키워갈 수
+              있습니다.
             </p>
           </Section>
 
           <Section id="tips" num={8} title="운영 팁">
             <div className="grid gap-4 md:grid-cols-2">
               <div className={S.panel}>
-                <p className="text-sm font-semibold">처음에는 짧게 시작합니다</p>
+                <p className="text-sm font-semibold">
+                  처음에는 짧게 시작합니다
+                </p>
                 <p className="mt-2 text-sm text-muted-foreground">
                   3~4단계 안에서 끝나는 짧은 워크플로를 먼저 성공시킨 뒤 점점
                   승인 단계나 반복 단계를 추가하는 편이 안정적입니다.
@@ -448,17 +487,21 @@ export default function TutorialPage() {
                 </p>
               </div>
               <div className={S.panel}>
-                <p className="text-sm font-semibold">Gate는 꼭 필요한 곳에만 둡니다</p>
+                <p className="text-sm font-semibold">
+                  Gate는 꼭 필요한 곳에만 둡니다
+                </p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  사용자의 응답이 정말 의사결정에 필요한 단계가 아니라면 Action으로
-                  끝내는 편이 실행 속도와 사용성이 좋습니다.
+                  사용자의 응답이 정말 의사결정에 필요한 단계가 아니라면
+                  Action으로 끝내는 편이 실행 속도와 사용성이 좋습니다.
                 </p>
               </div>
               <div className={S.panel}>
-                <p className="text-sm font-semibold">이름을 구체적으로 짓습니다</p>
+                <p className="text-sm font-semibold">
+                  이름을 구체적으로 짓습니다
+                </p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  워크플로 제목, 지침 제목, 태스크 컨텍스트가 구체적일수록 목록과
-                  상세 breadcrumb에서 바로 맥락을 읽을 수 있습니다.
+                  워크플로 제목, 지침 제목, 태스크 컨텍스트가 구체적일수록
+                  목록과 상세 breadcrumb에서 바로 맥락을 읽을 수 있습니다.
                 </p>
               </div>
             </div>
@@ -466,12 +509,19 @@ export default function TutorialPage() {
             <div className="mt-6 rounded-[1.5rem] border border-brand-blue-200 bg-brand-blue-100/60 p-5">
               <p className="text-sm font-semibold">바로 시작하려면</p>
               <p className="mt-2 text-sm text-muted-foreground">
-                먼저 <Link href="/instructions" className={S.accent}>지침</Link>
+                먼저{" "}
+                <Link href="/instructions" className={S.accent}>
+                  지침
+                </Link>
                 에서 작업 단위를 만들고, 그다음{" "}
-                <Link href="/workflows" className={S.accent}>워크플로</Link>에서
-                순서를 조립해 보세요. 실행 결과는{" "}
-                <Link href="/tasks" className={S.accent}>태스크</Link>에서 바로
-                확인할 수 있습니다.
+                <Link href="/workflows" className={S.accent}>
+                  워크플로
+                </Link>
+                에서 순서를 조립해 보세요. 실행 결과는{" "}
+                <Link href="/tasks" className={S.accent}>
+                  태스크
+                </Link>
+                에서 바로 확인할 수 있습니다.
               </p>
               <p className="mt-4 text-sm">
                 추천 첫 목표: <Code>UI 점검 워크플로</Code> 또는{" "}
