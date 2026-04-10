@@ -4,7 +4,7 @@ import { Pool, PoolClient } from "pg";
 
 const DATABASE_URL =
   process.env.DATABASE_URL ??
-  "postgresql://omegarod:omegarod_dev_2026@localhost:5432/omegarod";
+  "postgresql://bluekiwi:bluekiwi_dev_2026@localhost:5433/bluekiwi";
 
 let pool: Pool | null = null;
 
@@ -81,12 +81,14 @@ export interface Instruction {
   updated_at: string;
 }
 
-export interface Chain {
+export interface Workflow {
   id: number;
   title: string;
   description: string;
   version: string;
-  parent_chain_id: number | null;
+  parent_workflow_id: number | null;
+  family_root_id: number;
+  is_active: boolean;
   evaluation_contract: string | null; // JSONB stored as string
   created_at: string;
   updated_at: string;
@@ -119,7 +121,7 @@ export interface EvaluationContract {
 export interface WorkflowEvaluation {
   id: number;
   task_id: number;
-  chain_id: number;
+  workflow_id: number;
   version: string;
   score_quantitative: number | null;
   score_qualitative: number | null;
@@ -130,9 +132,9 @@ export interface WorkflowEvaluation {
 
 export type NodeType = "action" | "gate" | "loop";
 
-export interface ChainNode {
+export interface WorkflowNode {
   id: number;
-  chain_id: number;
+  workflow_id: number;
   instruction_id: number | null;
   credential_id: number | null;
   step_order: number;
@@ -144,19 +146,20 @@ export interface ChainNode {
   created_at: string;
 }
 
-export interface ResolvedChainNode extends ChainNode {
+export interface ResolvedWorkflowNode extends WorkflowNode {
   resolved_instruction: string;
 }
 
 export interface Task {
   id: number;
-  chain_id: number;
+  workflow_id: number;
   user_id: number | null;
   status: string;
   current_step: number;
   context: string;
   running_context: string;
   session_meta: string;
+  target_meta: unknown | null;
   summary: string;
   created_at: string;
   updated_at: string;
@@ -174,6 +177,8 @@ export interface TaskLog {
   node_id: number;
   step_order: number;
   status: string;
+  rule_id: string | null;
+  severity: string | null;
   output: string;
   visual_html: string | null;
   web_response: string | null;
@@ -206,6 +211,8 @@ export interface TaskComment {
   id: number;
   task_id: number;
   step_order: number;
+  rule_id: string | null;
+  severity: string | null;
   comment: string;
   created_at: string;
 }
@@ -213,7 +220,6 @@ export interface TaskComment {
 export interface Credential {
   id: number;
   service_name: string;
-  title: string;
   description: string;
   secrets: string;
   created_at: string;
@@ -244,14 +250,14 @@ export function maskSecrets(secretsJson: string): Record<string, string> {
 // ─── Node resolver (async) ───
 
 export async function resolveNodes(
-  chainId: number,
-): Promise<ResolvedChainNode[]> {
-  const nodes = await query<ChainNode>(
-    "SELECT * FROM chain_nodes WHERE chain_id = $1 ORDER BY step_order ASC",
-    [chainId],
+  workflowId: number,
+): Promise<ResolvedWorkflowNode[]> {
+  const nodes = await query<WorkflowNode>(
+    "SELECT * FROM workflow_nodes WHERE workflow_id = $1 ORDER BY step_order ASC",
+    [workflowId],
   );
 
-  const resolved: ResolvedChainNode[] = [];
+  const resolved: ResolvedWorkflowNode[] = [];
   for (const node of nodes) {
     let instruction = node.instruction;
     if (node.instruction_id) {
