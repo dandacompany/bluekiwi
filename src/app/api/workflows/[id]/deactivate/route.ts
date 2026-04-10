@@ -6,13 +6,13 @@ import {
   okResponse,
   errorResponse,
 } from "@/lib/db";
-import { withOptionalAuth } from "@/lib/with-auth";
+import { withAuth } from "@/lib/with-auth";
 
 type Params = { params: Promise<{ id: string }> };
 
-export const POST = withOptionalAuth<Params>(
+export const POST = withAuth<Params>(
   "workflows:update",
-  async (_request: NextRequest, _user, { params }: Params) => {
+  async (_request: NextRequest, user, { params }: Params) => {
     const { id } = await params;
     const workflowId = Number(id);
 
@@ -26,6 +26,12 @@ export const POST = withOptionalAuth<Params>(
         "워크플로를 찾을 수 없습니다",
         404,
       );
+      return NextResponse.json(res.body, { status: res.status });
+    }
+
+    const { canEdit } = await import("@/lib/authorization");
+    if (!(await canEdit(user, target))) {
+      const res = errorResponse("OWNERSHIP_REQUIRED", "편집 권한 없음", 403);
       return NextResponse.json(res.body, { status: res.status });
     }
 
