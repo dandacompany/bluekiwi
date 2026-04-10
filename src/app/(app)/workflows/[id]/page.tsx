@@ -16,6 +16,7 @@ import {
   Search,
 } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
+import { VisibilityBadge } from "@/components/shared/visibility-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,9 +44,18 @@ interface WorkflowDetail {
   family_root_id: number;
   is_active: boolean;
   evaluation_contract: string | null;
+  owner_id: number;
+  folder_id: number;
+  visibility_override: "personal" | null;
   created_at: string;
   updated_at: string;
   nodes: WorkflowNode[];
+}
+
+interface MeResponse {
+  id: number;
+  username: string;
+  role: "viewer" | "editor" | "admin" | "superuser";
 }
 
 interface VersionRow {
@@ -198,6 +208,21 @@ export default function WorkflowDetailPage() {
   const historySectionRef = useRef<HTMLDivElement | null>(null);
   const [versions, setVersions] = useState<VersionsResponse | null>(null);
   const [versionsLoading, setVersionsLoading] = useState(false);
+  const [me, setMe] = useState<MeResponse | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (j?.data) setMe(j.data as MeResponse);
+      })
+      .catch(() => {});
+  }, []);
+
+  const canEdit =
+    !!me &&
+    !!workflow &&
+    (me.id === workflow.owner_id || me.role === "superuser");
 
   const fetchWorkflow = useCallback(async () => {
     setLoading(true);
@@ -425,6 +450,8 @@ export default function WorkflowDetailPage() {
             <Button
               variant="secondary"
               onClick={() => router.push(`/workflows/${workflow.id}/edit`)}
+              disabled={!canEdit}
+              title={canEdit ? undefined : t("ownership.cantEdit")}
             >
               <Pencil className="mr-2 h-4 w-4" />
               {t("workflows.goEdit")}
@@ -450,6 +477,10 @@ export default function WorkflowDetailPage() {
                 ? t("workflows.activeBadge")
                 : t("workflows.inactiveBadge")}
             </Badge>
+            <VisibilityBadge
+              visibility={workflow.visibility_override ?? "personal"}
+              inherited={workflow.visibility_override === null}
+            />
           </p>
           <p className="inline-flex items-center gap-2">
             <ListTree className="h-3.5 w-3.5" />
