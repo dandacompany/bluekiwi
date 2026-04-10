@@ -358,7 +358,7 @@
     "comments": "코멘트",
     "addComment": "코멘트 추가...",
     "send": "전송",
-    "wsRealtime": "WebSocket 실시간 업데이트",
+    "wsRealtime": "실시간 업데이트",
     "deleteConfirm": "태스크 #{id}를 삭제하시겠습니까?",
     "workflowFallback": "워크플로 #{id}",
     "taskFallback": "태스크 #{id}",

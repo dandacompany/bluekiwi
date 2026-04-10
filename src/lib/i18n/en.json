@@ -358,7 +358,7 @@
     "comments": "Comments",
     "addComment": "Add a comment...",
     "send": "Send",
-    "wsRealtime": "WebSocket real-time updates",
+    "wsRealtime": "Real-time updates",
     "deleteConfirm": "Delete task #{id}?",
     "workflowFallback": "Workflow #{id}",
     "taskFallback": "Task #{id}",
