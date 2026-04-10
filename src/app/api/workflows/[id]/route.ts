@@ -8,7 +8,7 @@ import {
   okResponse,
   errorResponse,
 } from "@/lib/db";
-import { withOptionalAuth } from "@/lib/with-auth";
+import { withAuth } from "@/lib/with-auth";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -46,35 +46,31 @@ function incrementWorkflowVersion(version: string): string {
   return parts.join(".") + suffix;
 }
 
-export const GET = withOptionalAuth<Params>(
+export const GET = withAuth<Params>(
   "workflows:read",
-  async (_request, _user, { params }: Params) => {
+  async (_request, user, { params }: Params) => {
     const { id } = await params;
-
     const workflow = await queryOne<Workflow>(
       "SELECT * FROM workflows WHERE id = $1",
       [Number(id)],
     );
     if (!workflow) {
-      const res = errorResponse(
-        "NOT_FOUND",
-        "워크플로를 찾을 수 없습니다",
-        404,
-      );
+      const res = errorResponse("NOT_FOUND", "워크플로를 찾을 수 없습니다", 404);
       return NextResponse.json(res.body, { status: res.status });
     }
-
-    const res = okResponse({
-      ...workflow,
-      nodes: await resolveNodes(workflow.id),
-    });
+    const { canRead } = await import("@/lib/authorization");
+    if (!(await canRead(user, workflow))) {
+      const res = errorResponse("OWNERSHIP_REQUIRED", "접근 권한 없음", 403);
+      return NextResponse.json(res.body, { status: res.status });
+    }
+    const res = okResponse({ ...workflow, nodes: await resolveNodes(workflow.id) });
     return NextResponse.json(res.body, { status: res.status });
   },
 );
 
-export const PUT = withOptionalAuth<Params>(
+export const PUT = withAuth<Params>(
   "workflows:update",
-  async (request: NextRequest, _user, { params }: Params) => {
+  async (request: NextRequest, user, { params }: Params) => {
     const { id } = await params;
     const body = await request.json();
     const {
@@ -97,6 +93,12 @@ export const PUT = withOptionalAuth<Params>(
         "워크플로를 찾을 수 없습니다",
         404,
       );
+      return NextResponse.json(res.body, { status: res.status });
+    }
+
+    const { canEdit } = await import("@/lib/authorization");
+    if (!(await canEdit(user, existing))) {
+      const res = errorResponse("OWNERSHIP_REQUIRED", "편집 권한 없음", 403);
       return NextResponse.json(res.body, { status: res.status });
     }
 
@@ -124,8 +126,8 @@ export const PUT = withOptionalAuth<Params>(
         const { rows: workflowRows } = await client.query(
           `INSERT INTO workflows
              (title, description, version, parent_workflow_id, family_root_id,
-              is_active, evaluation_contract)
-           VALUES ($1, $2, $3, $4, $5, TRUE, $6) RETURNING id`,
+              is_active, evaluation_contract, owner_id, folder_id)
+           VALUES ($1, $2, $3, $4, $5, TRUE, $6, $7, $8) RETURNING id`,
           [
             (title ?? existing.title).trim(),
             (description ?? existing.description).trim(),
@@ -133,6 +135,8 @@ export const PUT = withOptionalAuth<Params>(
             workflowId,
             existing.family_root_id,
             evaluationContractValue,
+            existing.owner_id,
+            existing.folder_id,
           ],
         );
         const newWorkflowId = workflowRows[0].id as number;
@@ -220,24 +224,31 @@ export const PUT = withOptionalAuth<Params>(
   },
 );
 
-export const DELETE = withOptionalAuth<Params>(
+export const DELETE = withAuth<Params>(
   "workflows:delete",
-  async (_request, _user, { params }: Params) => {
+  async (_request, user, { params }: Params) => {
     const { id } = await params;
-    const result = await execute("DELETE FROM workflows WHERE id = $1", [
-      Number(id),
-    ]);
+    const workflowId = Number(id);
 
-    if (result.rowCount === 0) {
-      const res = errorResponse(
-        "NOT_FOUND",
-        "워크플로를 찾을 수 없습니다",
-        404,
-      );
+    const existing = await queryOne<Workflow>(
+      "SELECT * FROM workflows WHERE id = $1",
+      [workflowId],
+    );
+
+    if (!existing) {
+      const res = errorResponse("NOT_FOUND", "워크플로를 찾을 수 없습니다", 404);
       return NextResponse.json(res.body, { status: res.status });
     }
 
-    const res = okResponse({ id: Number(id), deleted: true });
+    const { canDelete } = await import("@/lib/authorization");
+    if (!(await canDelete(user, existing))) {
+      const res = errorResponse("OWNERSHIP_REQUIRED", "삭제 권한 없음", 403);
+      return NextResponse.json(res.body, { status: res.status });
+    }
+
+    await execute("DELETE FROM workflows WHERE id = $1", [workflowId]);
+
+    const res = okResponse({ id: workflowId, deleted: true });
     return NextResponse.json(res.body, { status: res.status });
   },
 );
