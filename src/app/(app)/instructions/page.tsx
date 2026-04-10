@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { VisibilityBadge } from "@/components/shared/visibility-badge";
 import { CommandDialog } from "@/components/ui/command";
 import {
   AlertDialog,
@@ -54,6 +55,8 @@ interface Instruction {
   tags: string;
   priority: number;
   is_active: number;
+  owner_id?: number;
+  visibility_override?: "personal" | null;
   created_at: string;
   updated_at: string;
 }
@@ -542,6 +545,10 @@ export default function InstructionsPage() {
                               {t("instructionsPage.inactive")}
                             </Badge>
                           )}
+                          <VisibilityBadge
+                            visibility={inst.visibility_override ?? "public"}
+                            inherited={inst.visibility_override === null}
+                          />
                         </div>
                       </div>
                       <DropdownMenu>
