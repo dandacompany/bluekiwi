@@ -1,5 +1,5 @@
 #!/bin/bash
-# OmegaRod Full Chain E2E Test
+# BlueKiwi Full Chain E2E Test
 # 브레인스토밍 체인 11 스텝 완주 + 서버 태스크 기록 검증
 #
 # Usage: bash tests/2/run-full-chain.sh
@@ -72,7 +72,7 @@ log() {
 
 # ─── 사전 조건: DB 리셋 + Seed ───
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "OmegaRod Full Chain E2E"
+echo "BlueKiwi Full Chain E2E"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 log "서버 + 데이터 확인..."
@@ -82,20 +82,20 @@ if ! curl -s -o /dev/null http://localhost:3000 2>/dev/null; then
 fi
 
 # 체인이 있는지 확인, 없으면 seed
-CHAIN_COUNT=$(curl -s "$API/chains" 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('total',0))" 2>/dev/null || echo 0)
-if [ "$CHAIN_COUNT" -eq 0 ]; then
-  log "체인이 없습니다. Seed 실행..."
+WF_COUNT=$(curl -s "$API/workflows" 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('total',0))" 2>/dev/null || echo 0)
+if [ "$WF_COUNT" -eq 0 ]; then
+  log "워크플로가 없습니다. Seed 실행..."
   bash "$WORKDIR/scripts/seed-v2.sh" > /dev/null 2>&1
   log "✅ Seed 완료"
 else
-  log "✅ 기존 데이터 사용 (체인 ${CHAIN_COUNT}개)"
+  log "✅ 기존 데이터 사용 (워크플로 ${WF_COUNT}개)"
 fi
 
-curl -s "$API/chains" | python3 -c "
+curl -s "$API/workflows" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
 for c in d.get('data',[]):
-    print(f'  Chain #{c[\"id\"]}: {c[\"title\"]} ({len(c.get(\"nodes\",[]))} steps)')
+    print(f'  Workflow #{c[\"id\"]}: {c[\"title\"]} ({len(c.get(\"nodes\",[]))} steps)')
 " 2>/dev/null || echo "  (서버 조회 실패)"
 
 echo ""

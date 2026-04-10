@@ -1,10 +1,10 @@
 #!/bin/bash
-# OmegaRod E2E Test — tmux + Claude Code 스킬/MCP 통합 테스트
+# BlueKiwi E2E Test — tmux + Claude Code 스킬/MCP 통합 테스트
 #
 # 테스트 시나리오: "프로젝트 관리 도구 웹앱 신규 개발 브레인스토밍" 체인 실행
 #
 # 사전 조건:
-#   - OmegaRod 웹서버 실행 중 (npm run dev, 포트 3000)
+#   - BlueKiwi 웹서버 실행 중 (npm run dev, 포트 3000)
 #   - seed 데이터 적용 완료 (bash scripts/seed-v2.sh)
 #   - claude CLI 사용 가능
 #
@@ -22,7 +22,7 @@ mkdir -p "$LOGDIR"
 rm -f "$LOGDIR"/*.txt
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "OmegaRod E2E Test"
+echo "BlueKiwi E2E Test"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Log dir: $LOGDIR"
 echo ""
@@ -35,13 +35,13 @@ if ! curl -s -o /dev/null -w "" http://localhost:3000 2>/dev/null; then
 fi
 echo "  ✅ 웹서버 OK"
 
-echo "[CHECK] 체인 데이터..."
-CHAIN_COUNT=$(curl -s http://localhost:3000/api/chains | python3 -c "import sys,json; print(json.load(sys.stdin).get('total',0))" 2>/dev/null || echo 0)
-if [ "$CHAIN_COUNT" -eq 0 ]; then
-  echo "  ❌ 체인이 없습니다. bash scripts/seed-v2.sh를 먼저 실행하세요."
+echo "[CHECK] 워크플로 데이터..."
+WF_COUNT=$(curl -s http://localhost:3000/api/workflows | python3 -c "import sys,json; print(json.load(sys.stdin).get('total',0))" 2>/dev/null || echo 0)
+if [ "$WF_COUNT" -eq 0 ]; then
+  echo "  ❌ 워크플로가 없습니다. bash scripts/seed-v2.sh를 먼저 실행하세요."
   exit 1
 fi
-echo "  ✅ 체인 ${CHAIN_COUNT}개 확인"
+echo "  ✅ 워크플로 ${WF_COUNT}개 확인"
 
 echo "[CHECK] tmux..."
 if ! command -v tmux &>/dev/null; then
@@ -141,10 +141,10 @@ capture_pane "01-or-start-sent"
 # 또는 체인이 자동 매칭되어 바로 시작될 수 있음
 if wait_for_text "체인" 60; then
   echo "  ✅ 체인 관련 출력 확인"
-  capture_pane "02-chain-response"
+  capture_pane "02-workflow-response"
 else
   echo "  ⚠️ 체인 응답을 감지하지 못했습니다. 캡처 확인 필요."
-  capture_pane "02-chain-response-timeout"
+  capture_pane "02-workflow-response-timeout"
 fi
 
 # AskUserQuestion picker가 나왔으면 Enter로 선택
@@ -234,7 +234,7 @@ try:
     for t in d.get('data', []):
         logs = t.get('logs', [])
         completed = sum(1 for l in logs if l.get('status') == 'completed')
-        print(f'  Task #{t[\"id\"]}: {t.get(\"chain_title\", \"?\")} [{t[\"status\"]}] {completed}/{len(logs)} steps')
+        print(f'  Task #{t[\"id\"]}: {t.get(\"workflow_title\", \"?\")} [{t[\"status\"]}] {completed}/{len(logs)} steps')
         for l in logs:
             icon = '✅' if l['status'] == 'completed' else '🔄' if l['status'] == 'running' else '⏳' if l['status'] == 'pending' else '❌'
             out = (l.get('output','') or '')[:80].replace(chr(10),' ')

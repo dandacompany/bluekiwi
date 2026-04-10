@@ -8,7 +8,7 @@ import { createInterface } from "readline/promises";
 
 const DATABASE_URL =
   process.env.DATABASE_URL ??
-  "postgresql://omegarod:omegarod_dev_2026@localhost:5433/omegarod";
+  "postgresql://bluekiwi:bluekiwi_dev_2026@localhost:5433/bluekiwi";
 
 const pool = new Pool({ connectionString: DATABASE_URL, max: 5 });
 
@@ -31,7 +31,7 @@ function hasFlag(name: string): boolean {
 
 function generateApiKey(): { rawKey: string; prefix: string; keyHash: string } {
   const bytes = randomBytes(32);
-  const rawKey = "or_" + bytes.toString("base64url");
+  const rawKey = "bk_" + bytes.toString("base64url");
   const prefix = rawKey.slice(0, 10);
   const keyHash = createHash("sha256").update(rawKey).digest("hex");
   return { rawKey, prefix, keyHash };
@@ -135,7 +135,7 @@ async function userList() {
 
 async function userRemove() {
   const username = process.argv[4];
-  if (!username) die("Usage: omegarod user remove <username> [--hard]");
+  if (!username) die("Usage: bluekiwi user remove <username> [--hard]");
 
   const hard = hasFlag("hard");
 
@@ -250,7 +250,7 @@ async function apikeyList() {
 
 async function apikeyRevoke() {
   const idStr = process.argv[4];
-  if (!idStr) die("Usage: omegarod apikey revoke <id>");
+  if (!idStr) die("Usage: bluekiwi apikey revoke <id>");
   const id = Number(idStr);
   if (Number.isNaN(id)) die("API key ID must be a number");
 
@@ -264,7 +264,7 @@ async function apikeyRevoke() {
 
 function printUsage() {
   console.log(`
-OmegaRod CLI
+BlueKiwi CLI
 
 Usage: npx tsx scripts/cli.ts <command> [subcommand] [options]
 

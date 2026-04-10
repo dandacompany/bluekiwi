@@ -1,6 +1,6 @@
 #!/bin/bash
-# OmegaRod E2E Test — 기능 브레인스토밍 전체 흐름 (격리 환경)
-# 작업 디렉토리: tests/3/ (OmegaRod 프로젝트와 격리)
+# BlueKiwi E2E Test — 기능 브레인스토밍 전체 흐름 (격리 환경)
+# 작업 디렉토리: tests/3/ (BlueKiwi 프로젝트와 격리)
 #
 # Usage: bash tests/3/run-brainstorm.sh
 
@@ -48,12 +48,12 @@ except Exception as e:
 
 # ─── 사전 조건 ───
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "OmegaRod Brainstorm E2E"
+echo "BlueKiwi Brainstorm E2E"
 echo "작업 디렉토리: $WORKDIR"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 log "서버 확인..."
-curl -s "$API/chains" | python3 -c "
+curl -s "$API/workflows" | python3 -c "
 import sys, json
 for c in json.load(sys.stdin).get('data',[]):
     print(f'  Chain #{c[\"id\"]}: {c[\"title\"]} ({len(c.get(\"nodes\",[]))} steps)')
@@ -65,7 +65,7 @@ sleep 1
 
 log "Claude Code 시작 (격리 디렉토리: tests/3/)..."
 tmux new-session -d -s "$SESSION" -x 140 -y 50
-# tests/3/ 디렉토리에서 Claude 시작 — OmegaRod 프로젝트와 격리
+# tests/3/ 디렉토리에서 Claude 시작 — BlueKiwi 프로젝트와 격리
 tmux send-keys -t "$SESSION" "cd $WORKDIR && claude --dangerously-skip-permissions" Enter
 
 log "초기화 대기 (20s)..."
@@ -74,7 +74,7 @@ sleep 20
 # MCP 실패 체크
 pane=$(tmux capture-pane -t "$SESSION" -p -S -50 2>/dev/null || echo "")
 if echo "$pane" | grep -q "MCP server failed"; then
-  log "⚠️ MCP 실패. OmegaRod 디렉토리에서 재시작..."
+  log "⚠️ MCP 실패. BlueKiwi 디렉토리에서 재시작..."
   tmux kill-session -t "$SESSION" 2>/dev/null; sleep 1
   tmux new-session -d -s "$SESSION" -x 140 -y 50
   tmux send-keys -t "$SESSION" "cd $OR_ROOT && claude --dangerously-skip-permissions" Enter

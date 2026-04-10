@@ -5,7 +5,7 @@ import {
   insert,
   Task,
   TaskLog,
-  Chain,
+  Workflow,
   okResponse,
   listResponse,
   errorResponse,
@@ -16,17 +16,17 @@ export const GET = withOptionalAuth(
   "tasks:read",
   async (request: NextRequest) => {
     const { searchParams } = request.nextUrl;
-    const chainId = searchParams.get("chain_id");
+    const workflowId = searchParams.get("workflow_id");
     const status = searchParams.get("status");
 
     let sql = "SELECT * FROM tasks WHERE 1=1";
     const params: unknown[] = [];
     let paramIdx = 0;
 
-    if (chainId) {
+    if (workflowId) {
       paramIdx++;
-      sql += ` AND chain_id = $${paramIdx}`;
-      params.push(Number(chainId));
+      sql += ` AND workflow_id = $${paramIdx}`;
+      params.push(Number(workflowId));
     }
     if (status) {
       paramIdx++;
@@ -51,11 +51,11 @@ export const GET = withOptionalAuth(
           "SELECT * FROM task_logs WHERE task_id = $1 ORDER BY step_order ASC",
           [task.id],
         );
-        const chain = await queryOne<{ title: string }>(
-          "SELECT title FROM chains WHERE id = $1",
-          [task.chain_id],
+        const workflow = await queryOne<{ title: string }>(
+          "SELECT title FROM workflows WHERE id = $1",
+          [task.workflow_id],
         );
-        return { ...task, chain_title: chain?.title ?? null, logs };
+        return { ...task, workflow_title: workflow?.title ?? null, logs };
       }),
     );
 
@@ -68,28 +68,33 @@ export const POST = withOptionalAuth(
   "tasks:create",
   async (request: NextRequest) => {
     const body = await request.json();
-    const { chain_id } = body;
+    const { workflow_id } = body;
 
-    if (!chain_id) {
+    if (!workflow_id) {
       const res = errorResponse(
         "VALIDATION_ERROR",
-        "chain_id is required",
+        "workflow_id is required",
         400,
       );
       return NextResponse.json(res.body, { status: res.status });
     }
 
-    const chain = await queryOne<Chain>("SELECT * FROM chains WHERE id = $1", [
-      Number(chain_id),
-    ]);
-    if (!chain) {
-      const res = errorResponse("NOT_FOUND", "체인을 찾을 수 없습니다", 404);
+    const workflow = await queryOne<Workflow>(
+      "SELECT * FROM workflows WHERE id = $1",
+      [Number(workflow_id)],
+    );
+    if (!workflow) {
+      const res = errorResponse(
+        "NOT_FOUND",
+        "워크플로를 찾을 수 없습니다",
+        404,
+      );
       return NextResponse.json(res.body, { status: res.status });
     }
 
     const taskId = await insert(
-      "INSERT INTO tasks (chain_id, status, current_step) VALUES ($1, 'running', 1) RETURNING id",
-      [Number(chain_id)],
+      "INSERT INTO tasks (workflow_id, status, current_step) VALUES ($1, 'running', 1) RETURNING id",
+      [Number(workflow_id)],
     );
 
     const task = await queryOne<Task>("SELECT * FROM tasks WHERE id = $1", [

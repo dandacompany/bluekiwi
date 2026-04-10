@@ -29,7 +29,14 @@ function findSkillsSource(from: string): string | null {
   let current = resolve(from);
 
   while (true) {
-    const candidate = join(current, "packages", "cli", "src", "assets", "skills");
+    const candidate = join(
+      current,
+      "packages",
+      "cli",
+      "src",
+      "assets",
+      "skills",
+    );
     if (existsSync(candidate)) {
       return candidate;
     }

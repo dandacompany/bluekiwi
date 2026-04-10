@@ -1,12 +1,12 @@
 #!/bin/bash
-# OmegaRod 더미 데이터 시드 스크립트
+# BlueKiwi 더미 데이터 시드 스크립트
 # Usage: bash scripts/seed.sh
 
 BASE="http://localhost:3000/api"
 H="Content-Type: application/json"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "OmegaRod 더미 데이터 시드"
+echo "BlueKiwi 더미 데이터 시드"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ─── 재사용 가능한 지침 블록 ───
@@ -57,7 +57,7 @@ echo "  ✅ #$I5: 구현 계획 작성"
 echo ""
 echo "🔗 체인 생성..."
 
-curl -s -X POST "$BASE/chains" -H "$H" -d "{
+curl -s -X POST "$BASE/workflows" -H "$H" -d "{
   \"title\": \"기능 브레인스토밍\",
   \"description\": \"새 기능 아이디어를 탐색하고 설계 문서로 정리하는 워크플로 (brainstorming 스킬 모델)\",
   \"nodes\": [
@@ -106,7 +106,7 @@ curl -s -X POST "$BASE/chains" -H "$H" -d "{
 }" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)['data']
-print(f'  ✅ Chain #{d[\"id\"]}: {d[\"title\"]} ({len(d[\"nodes\"])} steps)')
+print(f'  ✅ Workflow #{d[\"id\"]}: {d[\"title\"]} ({len(d[\"nodes\"])} steps)')
 types = {'action': '⚡', 'gate': '🚪', 'loop': '🔄'}
 for n in d['nodes']:
     t = types.get(n['node_type'], '?')
@@ -116,7 +116,7 @@ for n in d['nodes']:
 "
 
 # ─── 체인 2: PR 보안 리뷰 ───
-curl -s -X POST "$BASE/chains" -H "$H" -d "{
+curl -s -X POST "$BASE/workflows" -H "$H" -d "{
   \"title\": \"PR 보안 리뷰\",
   \"description\": \"Pull Request의 변경사항을 보안 관점으로 검토하는 워크플로\",
   \"nodes\": [
@@ -144,7 +144,7 @@ curl -s -X POST "$BASE/chains" -H "$H" -d "{
 }" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)['data']
-print(f'  ✅ Chain #{d[\"id\"]}: {d[\"title\"]} ({len(d[\"nodes\"])} steps)')
+print(f'  ✅ Workflow #{d[\"id\"]}: {d[\"title\"]} ({len(d[\"nodes\"])} steps)')
 types = {'action': '⚡', 'gate': '🚪', 'loop': '🔄'}
 for n in d['nodes']:
     t = types.get(n['node_type'], '?')
@@ -153,7 +153,7 @@ for n in d['nodes']:
 "
 
 # ─── 체인 3: 데이터 분석 파이프라인 ───
-curl -s -X POST "$BASE/chains" -H "$H" -d '{
+curl -s -X POST "$BASE/workflows" -H "$H" -d '{
   "title": "데이터 분석 파이프라인",
   "description": "데이터를 수집, 정제, 분석, 시각화하는 단계별 워크플로",
   "nodes": [
@@ -191,7 +191,7 @@ curl -s -X POST "$BASE/chains" -H "$H" -d '{
 }' | python3 -c "
 import sys, json
 d = json.load(sys.stdin)['data']
-print(f'  ✅ Chain #{d[\"id\"]}: {d[\"title\"]} ({len(d[\"nodes\"])} steps)')
+print(f'  ✅ Workflow #{d[\"id\"]}: {d[\"title\"]} ({len(d[\"nodes\"])} steps)')
 types = {'action': '⚡', 'gate': '🚪', 'loop': '🔄'}
 for n in d['nodes']:
     t = types.get(n['node_type'], '?')

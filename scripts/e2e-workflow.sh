@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# OmegaRod E2E Workflow Test via REST API
+# BlueKiwi E2E Workflow Test via REST API
 # Runs a full workflow cycle using curl (MCP fallback)
-# Usage: bash scripts/e2e-workflow.sh [chain_id] [api_key]
+# Usage: bash scripts/e2e-workflow.sh [workflow_id] [api_key]
 
 set -euo pipefail
 
-API="${OMEGAROD_API_URL:-http://localhost:3000/api}"
-CHAIN_ID="${1:-}"
-API_KEY="${2:-${OMEGAROD_API_KEY:-}}"
+API="${BLUEKIWI_API_URL:-http://localhost:3000/api}"
+WORKFLOW_ID="${1:-}"
+API_KEY="${2:-${BLUEKIWI_API_KEY:-}}"
 AUTH=""
 [ -n "$API_KEY" ] && AUTH="-H \"Authorization: Bearer $API_KEY\""
 
@@ -34,32 +34,32 @@ api() {
 
 py() { python3 -c "import sys,json; d=json.load(sys.stdin); $1"; }
 
-# ─── Select chain ───
-if [ -z "$CHAIN_ID" ]; then
+# ─── Select workflow ───
+if [ -z "$WORKFLOW_ID" ]; then
   bold "Available workflows:"
-  api GET /chains | py "
+  api GET /workflows | py "
 for c in d['data']:
     print(f\"  [{c['id']}] {c['title']} (v{c['version']}, {len(c.get('nodes',[]))} steps)\")
 "
   echo ""
-  read -rp "Chain ID to run: " CHAIN_ID
+  read -rp "Workflow ID to run: " WORKFLOW_ID
 fi
 
-if [ -z "$CHAIN_ID" ]; then
-  red "No chain selected."; exit 1
+if [ -z "$WORKFLOW_ID" ]; then
+  red "No workflow selected."; exit 1
 fi
 
 # ─── Start ───
 bold ""
-bold "=== Starting workflow (chain_id=$CHAIN_ID) ==="
-START=$(api POST /tasks/start "{\"chain_id\":$CHAIN_ID,\"context\":\"E2E test run\"}")
+bold "=== Starting workflow (workflow_id=$WORKFLOW_ID) ==="
+START=$(api POST /tasks/start "{\"workflow_id\":$WORKFLOW_ID,\"context\":\"E2E test run\"}")
 
 TASK_ID=$(echo "$START" | py "print(d['data']['task_id'])")
-CHAIN_TITLE=$(echo "$START" | py "print(d['data']['chain_title'])")
+WORKFLOW_TITLE=$(echo "$START" | py "print(d['data']['workflow_title'])")
 TOTAL=$(echo "$START" | py "print(d['data']['total_steps'])")
 VERSION=$(echo "$START" | py "print(d['data'].get('version','?'))")
 
-green "Task $TASK_ID started: $CHAIN_TITLE v$VERSION ($TOTAL steps)"
+green "Task $TASK_ID started: $WORKFLOW_TITLE v$VERSION ($TOTAL steps)"
 
 NODE_ID=$(echo "$START" | py "print(d['data']['current_step']['node_id'])")
 STEP_TITLE=$(echo "$START" | py "print(d['data']['current_step']['title'])")
@@ -119,7 +119,7 @@ done
 api POST "/tasks/$TASK_ID/complete" '{"status":"completed","summary":"E2E test completed successfully."}' > /dev/null
 
 bold ""
-green "=== Workflow finished: $CHAIN_TITLE v$VERSION ==="
+green "=== Workflow finished: $WORKFLOW_TITLE v$VERSION ==="
 green "  Task ID: $TASK_ID"
 green "  Steps completed: $STEP/$TOTAL"
 green "  View: http://localhost:3000/tasks/$TASK_ID"

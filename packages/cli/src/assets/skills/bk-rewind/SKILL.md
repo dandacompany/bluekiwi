@@ -25,11 +25,13 @@ user_invocable: true
 ### 1. 현재 태스크 확인
 
 `advance`를 `peek: true`로 호출하여 활성 태스크를 확인한다.
+
 - 활성 태스크가 없으면 → "활성 태스크가 없습니다." 안내 후 종료.
 
 ### 2. 되돌아갈 스텝 결정
 
 인자가 없으면 `AskUserQuestion`으로 선택 UI를 표시한다:
+
 - 완료된 스텝 목록을 옵션으로 제공
 - 각 옵션의 description에 해당 스텝의 output 요약 포함
 - preview에 해당 스텝에 달린 코멘트 표시
@@ -40,11 +42,13 @@ user_invocable: true
 ### 3. 사용자 요구사항 확인
 
 되돌아가기 전에 `AskUserQuestion`으로 물어본다:
+
 ```
 "Step [N]([제목])으로 되돌아갑니다. 이 단계를 다시 실행할 때 특별히 반영할 요구사항이 있으신가요?"
 ```
 
 옵션:
+
 - "그대로 다시 진행 (Recommended)" — 추가 컨텍스트 없이 진행
 - "요구사항 있음" — Other로 자유 입력
 
@@ -55,6 +59,7 @@ user_invocable: true
 `mcp__bluekiwi__rewind`를 호출하여 해당 스텝으로 되돌아간다.
 
 결과 표시:
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 Step [N]/[Total]로 되돌아갑니다: [노드 제목] [[node_type]]

@@ -16,7 +16,9 @@ export async function acceptCommand(
     const err = (await validateRes.json().catch(() => ({}))) as {
       error?: string;
     };
-    console.error(pc.red(`Invite invalid: ${err.error ?? validateRes.statusText}`));
+    console.error(
+      pc.red(`Invite invalid: ${err.error ?? validateRes.statusText}`),
+    );
     process.exit(1);
   }
   const invite = (await validateRes.json()) as { email: string; role: string };
@@ -51,7 +53,9 @@ export async function acceptCommand(
   const choices = all.map((adapter) => ({
     title: adapter.displayName,
     value: adapter.name,
-    selected: detected.some((detectedAdapter) => detectedAdapter.name === adapter.name),
+    selected: detected.some(
+      (detectedAdapter) => detectedAdapter.name === adapter.name,
+    ),
     disabled: !adapter.isInstalled(),
   }));
 

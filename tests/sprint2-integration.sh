@@ -36,11 +36,11 @@ assert_contains() {
 }
 
 db_query() {
-  PGPASSWORD=omegarod_dev_2026 psql -h localhost -p 5433 -U omegarod -d omegarod -t -A -c "$1" | head -1
+  PGPASSWORD=bluekiwi_dev_2026 psql -h localhost -p 5433 -U bluekiwi -d bluekiwi -t -A -c "$1" | head -1
 }
 
 db_exec() {
-  PGPASSWORD=omegarod_dev_2026 psql -h localhost -p 5433 -U omegarod -d omegarod -q -c "$1"
+  PGPASSWORD=bluekiwi_dev_2026 psql -h localhost -p 5433 -U bluekiwi -d bluekiwi -q -c "$1"
 }
 
 cleanup() {
@@ -129,20 +129,20 @@ assert_contains "superuser rejected" "$BAD" "superuser"
 bold "F7: apikey create for admin"
 ADMIN_ID=$(db_query "SELECT id FROM users WHERE username='testadmin';")
 AK_OUT=$($CLI apikey create --user-id="$ADMIN_ID" --name=admin-key --expires=30 2>&1)
-assert_contains "admin key created" "$AK_OUT" "or_"
-ADMIN_KEY=$(echo "$AK_OUT" | grep "or_" | tail -1 | tr -d '[:space:]')
+assert_contains "admin key created" "$AK_OUT" "bk_"
+ADMIN_KEY=$(echo "$AK_OUT" | grep "bk_" | tail -1 | tr -d '[:space:]')
 
 bold "F8: apikey create for editor"
 EDITOR_ID=$(db_query "SELECT id FROM users WHERE username='testeditor';")
 AK_OUT2=$($CLI apikey create --user-id="$EDITOR_ID" --name=editor-key 2>&1)
-EDITOR_KEY=$(echo "$AK_OUT2" | grep "or_" | tail -1 | tr -d '[:space:]')
-assert_contains "editor key created" "$AK_OUT2" "or_"
+EDITOR_KEY=$(echo "$AK_OUT2" | grep "bk_" | tail -1 | tr -d '[:space:]')
+assert_contains "editor key created" "$AK_OUT2" "bk_"
 
 bold "F9: apikey create for viewer"
 VIEWER_ID=$(db_query "SELECT id FROM users WHERE username='testviewer';")
 AK_OUT3=$($CLI apikey create --user-id="$VIEWER_ID" --name=viewer-key 2>&1)
-VIEWER_KEY=$(echo "$AK_OUT3" | grep "or_" | tail -1 | tr -d '[:space:]')
-assert_contains "viewer key created" "$AK_OUT3" "or_"
+VIEWER_KEY=$(echo "$AK_OUT3" | grep "bk_" | tail -1 | tr -d '[:space:]')
+assert_contains "viewer key created" "$AK_OUT3" "bk_"
 
 bold "F10: apikey list"
 AK_LIST=$($CLI apikey list 2>&1)
@@ -159,7 +159,7 @@ R=$(curl -s "$API/users" | python3 -c "import sys,json; print(json.load(sys.stdi
 assert_eq "no auth = UNAUTHORIZED" "UNAUTHORIZED" "$R"
 
 bold "G2: invalid key -> 401"
-R=$(curl -s -H "Authorization: Bearer or_badkey" "$API/users" | python3 -c "import sys,json; print(json.load(sys.stdin).get('error',{}).get('code','X'))")
+R=$(curl -s -H "Authorization: Bearer bk_badkey" "$API/users" | python3 -c "import sys,json; print(json.load(sys.stdin).get('error',{}).get('code','X'))")
 assert_eq "bad key = UNAUTHORIZED" "UNAUTHORIZED" "$R"
 
 bold "G3: admin key -> users -> 200"
@@ -199,7 +199,7 @@ bold "H1: viewer creates own key"
 R=$(curl -s -X POST -H "Authorization: Bearer $VIEWER_KEY" -H "Content-Type: application/json" \
   -d '{"name":"self-key","expires_in_days":7}' "$API/apikeys")
 VK_RAW=$(echo "$R" | python3 -c "import sys,json; print(json.load(sys.stdin).get('data',{}).get('raw_key','FAIL'))")
-assert_contains "viewer self-key created" "$VK_RAW" "or_"
+assert_contains "viewer self-key created" "$VK_RAW" "bk_"
 
 bold "H2: viewer sees only own keys"
 R=$(curl -s -H "Authorization: Bearer $VIEWER_KEY" "$API/apikeys" | python3 -c "import sys,json; print(json.load(sys.stdin).get('total',0))")

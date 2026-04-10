@@ -1,0 +1,64 @@
+# BlueKiwi Dev Stack — DB + Redis + App (hot-reload)
+# Usage: docker compose -f docker/docker-compose.dev.yml up [-d]
+
+services:
+  # ─── PostgreSQL 16 ───
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bluekiwi
+      POSTGRES_USER: bluekiwi
+      POSTGRES_PASSWORD: bluekiwi_dev_2026
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bluekiwi"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis 7 ───
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass bluekiwi_redis_2026
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "bluekiwi_redis_2026", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── Next.js App (dev mode with hot-reload) ───
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3100}:3000"
+    environment:
+      DATABASE_URL: postgresql://bluekiwi:bluekiwi_dev_2026@db:5432/bluekiwi
+      REDIS_URL: redis://:bluekiwi_redis_2026@redis:6379
+      NODE_ENV: development
+      NEXT_TELEMETRY_DISABLED: "1"
+    volumes:
+      - ..:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  redisdata:

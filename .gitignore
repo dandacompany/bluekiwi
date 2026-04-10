@@ -45,3 +45,36 @@ docker/.env
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.dev/
+ref/
+
+# Agent/dev meta (local only)
+.claude/
+.agents/
+.codex/
+.remember/
+.superpowers/
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+docs/superpowers/
+
+# Local MCP/plugin/legacy artifacts
+.mcp.json
+plugin/
+1/
+mcp/dist/
+*.db
+*.db-shm
+*.db-wal
+.vscode/
+.idea/
+*.log
+
+# Historical test logs and internal design docs
+tests/2/logs/
+tests/2/logs-full/
+tests/3/logs/
+tests/*/logs/
+docs/plans/
+docs/specs/

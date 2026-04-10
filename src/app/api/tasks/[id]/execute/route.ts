@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query, queryOne, execute, okResponse, errorResponse } from "@/lib/db";
+import { queryOne, execute, okResponse, errorResponse } from "@/lib/db";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -125,9 +125,10 @@ export async function POST(request: NextRequest, { params }: Params) {
       title: string;
       node_type: string;
       step_order: number;
-    }>("SELECT title, node_type, step_order FROM chain_nodes WHERE id = $1", [
-      node_id,
-    ]);
+    }>(
+      "SELECT title, node_type, step_order FROM workflow_nodes WHERE id = $1",
+      [node_id],
+    );
     if (node) {
       await execute(
         "INSERT INTO task_logs (task_id, node_id, step_order, status, node_title, node_type) VALUES ($1, $2, $3, 'pending', $4, $5)",

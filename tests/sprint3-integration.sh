@@ -45,10 +45,10 @@ assert_not_eq() {
 }
 
 db_exec() {
-  PGPASSWORD=omegarod_dev_2026 psql -h localhost -p 5433 -U omegarod -d omegarod -q -c "$1"
+  PGPASSWORD=bluekiwi_dev_2026 psql -h localhost -p 5433 -U bluekiwi -d bluekiwi -q -c "$1"
 }
 
-TEST_CHAIN_ID=""
+TEST_WORKFLOW_ID=""
 TEST_TASK_ID=""
 TASK2_ID=""
 
@@ -61,7 +61,7 @@ cleanup() {
       db_exec "DELETE FROM tasks WHERE id = $TID;" 2>/dev/null || true
     fi
   done
-  [ -n "$TEST_CHAIN_ID" ] && curl -s -X DELETE "$API/chains/$TEST_CHAIN_ID" >/dev/null 2>&1 || true
+  [ -n "$TEST_WORKFLOW_ID" ] && curl -s -X DELETE "$API/workflows/$TEST_WORKFLOW_ID" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
@@ -71,11 +71,11 @@ bold ""
 
 # -- Setup --
 bold "-- Setup: Create test workflow --"
-CHAIN_RESP=$(curl -s -X POST "$API/chains" \
+WF_RESP=$(curl -s -X POST "$API/workflows" \
   -H "Content-Type: application/json" \
   -d '{"title":"TEST_FALLBACK_WORKFLOW","description":"Sprint 3 test","evaluation_contract":{"steps":{"1":{"min_output_length":100}},"global":{"require_all_context_snapshots":true}},"nodes":[{"title":"Step 1: Research","node_type":"action","instruction":"Do research"},{"title":"Step 2: Analyze","node_type":"action","instruction":"Analyze results"},{"title":"Step 3: Report","node_type":"action","instruction":"Write report"}]}')
-TEST_CHAIN_ID=$(echo "$CHAIN_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
-assert_not_eq "chain created" "" "$TEST_CHAIN_ID"
+TEST_WORKFLOW_ID=$(echo "$WF_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
+assert_not_eq "workflow created" "" "$TEST_WORKFLOW_ID"
 
 echo ""
 
@@ -84,13 +84,13 @@ bold "-- A. POST /tasks/start --"
 
 START_RESP=$(curl -s -X POST "$API/tasks/start" \
   -H "Content-Type: application/json" \
-  -d "{\"chain_id\":$TEST_CHAIN_ID,\"context\":\"test ctx\"}")
+  -d "{\"workflow_id\":$TEST_WORKFLOW_ID,\"context\":\"test ctx\"}")
 
 TEST_TASK_ID=$(echo "$START_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['task_id'])")
 assert_not_eq "task_id" "" "$TEST_TASK_ID"
 
-CT=$(echo "$START_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['chain_title'])")
-assert_eq "chain_title" "TEST_FALLBACK_WORKFLOW" "$CT"
+CT=$(echo "$START_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['workflow_title'])")
+assert_eq "workflow_title" "TEST_FALLBACK_WORKFLOW" "$CT"
 
 TS=$(echo "$START_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['total_steps'])")
 assert_eq "total_steps=3" "3" "$TS"
@@ -107,8 +107,8 @@ VER=$(echo "$START_RESP" | python3 -c "import sys,json; print(json.load(sys.stdi
 assert_eq "version" "1.0" "$VER"
 
 ERR=$(curl -s -X POST "$API/tasks/start" -H "Content-Type: application/json" \
-  -d '{"chain_id":99999}' | python3 -c "import sys,json; print(json.load(sys.stdin).get('error',{}).get('code','X'))")
-assert_eq "bad chain" "NOT_FOUND" "$ERR"
+  -d '{"workflow_id":99999}' | python3 -c "import sys,json; print(json.load(sys.stdin).get('error',{}).get('code','X'))")
+assert_eq "bad workflow" "NOT_FOUND" "$ERR"
 
 echo ""
 
@@ -194,7 +194,7 @@ bold "-- F. POST /tasks/:id/rewind --"
 
 START2=$(curl -s -X POST "$API/tasks/start" \
   -H "Content-Type: application/json" \
-  -d "{\"chain_id\":$TEST_CHAIN_ID}")
+  -d "{\"workflow_id\":$TEST_WORKFLOW_ID}")
 TASK2_ID=$(echo "$START2" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['task_id'])")
 N1=$(echo "$START2" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['current_step']['node_id'])")
 

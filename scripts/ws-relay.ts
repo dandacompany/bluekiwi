@@ -1,5 +1,5 @@
 /**
- * OmegaRod WebSocket Relay Server
+ * BlueKiwi WebSocket Relay Server
  *
  * 역할: MCP 서버 → Browser 실시간 알림 중계
  *
@@ -88,7 +88,7 @@ function broadcast(data: string) {
 }
 
 httpServer.listen(WS_PORT, () => {
-  console.log(`[OmegaRod WS Relay] Running on port ${WS_PORT}`);
+  console.log(`[BlueKiwi WS Relay] Running on port ${WS_PORT}`);
   console.log(`  WebSocket: ws://localhost:${WS_PORT}`);
   console.log(`  Notify:    POST http://localhost:${WS_PORT}/notify`);
   console.log(`  Health:    GET  http://localhost:${WS_PORT}/health`);

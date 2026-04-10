@@ -6,16 +6,16 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-omegarod}
-      POSTGRES_USER: ${POSTGRES_USER:-omegarod}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-omegarod_dev_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-bluekiwi}
+      POSTGRES_USER: ${POSTGRES_USER:-bluekiwi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bluekiwi_dev_2026}
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-omegarod}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bluekiwi}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -26,7 +26,7 @@ services:
     restart: unless-stopped
     ports:
       - "${REDIS_PORT:-6379}:6379"
-    command: redis-server --requirepass ${REDIS_PASSWORD:-omegarod_redis_2026}
+    command: redis-server --requirepass ${REDIS_PASSWORD:-bluekiwi_redis_2026}
     volumes:
       - redisdata:/data
     healthcheck:
@@ -35,7 +35,7 @@ services:
           "CMD",
           "redis-cli",
           "-a",
-          "${REDIS_PASSWORD:-omegarod_redis_2026}",
+          "${REDIS_PASSWORD:-bluekiwi_redis_2026}",
           "ping",
         ]
       interval: 5s
@@ -51,8 +51,8 @@ services:
     ports:
       - "${APP_PORT:-3000}:3000"
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-omegarod}:${POSTGRES_PASSWORD:-omegarod_dev_2026}@db:5432/${POSTGRES_DB:-omegarod}
-      REDIS_URL: redis://:${REDIS_PASSWORD:-omegarod_redis_2026}@redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bluekiwi}:${POSTGRES_PASSWORD:-bluekiwi_dev_2026}@db:5432/${POSTGRES_DB:-bluekiwi}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-bluekiwi_redis_2026}@redis:6379
       NODE_ENV: production
     depends_on:
       db:
@@ -71,7 +71,7 @@ services:
     command: ["node", "scripts/ws-relay.js"]
     environment:
       WS_PORT: 3001
-      REDIS_URL: redis://:${REDIS_PASSWORD:-omegarod_redis_2026}@redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD:-bluekiwi_redis_2026}@redis:6379
     depends_on:
       redis:
         condition: service_healthy

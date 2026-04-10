@@ -1,5 +1,5 @@
 #!/bin/bash
-# gstack 스프린트 파이프라인을 OmegaRod 워크플로로 등록
+# gstack 스프린트 파이프라인을 BlueKiwi 워크플로로 등록
 # Think → Plan → Build → Review → Test → Ship → Reflect
 
 set -euo pipefail
@@ -9,16 +9,16 @@ API_URL="${1:-http://localhost:3000}"
 echo "=== gstack Sprint Pipeline 워크플로 등록 ==="
 echo "API: $API_URL"
 
-# 체인 생성
-RESPONSE=$(curl -s -X POST "$API_URL/api/chains" \
+# 워크플로 생성
+RESPONSE=$(curl -s -X POST "$API_URL/api/workflows" \
   -H "Content-Type: application/json" \
   -d '{"title":"gstack Sprint Pipeline","description":"Think → Plan → Build → Review → Test → Ship → Reflect"}')
 
-CHAIN_ID=$(echo "$RESPONSE" | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['id'])")
-echo "체인 생성: #$CHAIN_ID"
+WORKFLOW_ID=$(echo "$RESPONSE" | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['id'])")
+echo "워크플로 생성: #$WORKFLOW_ID"
 
 # 노드를 포함하여 PUT으로 한 번에 업데이트
-curl -s -X PUT "$API_URL/api/chains/$CHAIN_ID" \
+curl -s -X PUT "$API_URL/api/workflows/$WORKFLOW_ID" \
   -H "Content-Type: application/json" \
   -d @- << 'PAYLOAD' > /dev/null
 {
@@ -103,7 +103,7 @@ PAYLOAD
 
 echo ""
 echo "=== 등록 완료 ==="
-echo "워크플로 ID: #$CHAIN_ID (12 단계)"
+echo "워크플로 ID: #$WORKFLOW_ID (12 단계)"
 echo ""
 echo "  Think:   1.Office Hours → 2.CEO Review"
 echo "  Plan:    3.Eng Review(auto) → 4.Design Review → 5.구현계획(auto) → 6.승인"
@@ -112,4 +112,4 @@ echo "  Review:  8.Code Review(auto) → 9.QA(auto) → 10.Security(auto)"
 echo "  Ship:    11.PR 생성"
 echo "  Reflect: 12.Retro"
 echo ""
-echo "/or-start 로 시작하세요!"
+echo "/bk-start 로 시작하세요!"

@@ -1,10 +1,10 @@
 #!/bin/bash
-# OmegaRod v2 시드 — brainstorming 완전 매핑 체인
+# BlueKiwi v2 시드 — brainstorming 완전 매핑 체인
 BASE="http://localhost:3000/api"
 H="Content-Type: application/json"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "OmegaRod v2 시드"
+echo "BlueKiwi v2 시드"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # 재사용 지침 블록
@@ -51,11 +51,11 @@ I5=$(curl -s -X POST "$BASE/instructions" -H "$H" -d '{
 }' | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
 echo "  ✅ #$I5: 구현 계획 작성"
 
-# Chain #1: 기능 브레인스토밍 (brainstorming 완전 매핑, 11 steps)
+# Workflow #1: 기능 브레인스토밍 (brainstorming 완전 매핑, 11 steps)
 echo ""
 echo "🔗 체인 생성..."
 
-curl -s -X POST "$BASE/chains" -H "$H" -d "{
+curl -s -X POST "$BASE/workflows" -H "$H" -d "{
   \"title\": \"기능 브레인스토밍\",
   \"description\": \"brainstorming 스킬의 전체 흐름을 체인으로 구현. 컨텍스트 탐색 → 비주얼 컴패니언 → 명확화 질문 → 접근 방식 → 설계 → 검토 → 구현 전환\",
   \"nodes\": [
@@ -131,7 +131,7 @@ curl -s -X POST "$BASE/chains" -H "$H" -d "{
 }" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)['data']
-print(f'  ✅ Chain #{d[\"id\"]}: {d[\"title\"]} ({len(d[\"nodes\"])} steps)')
+print(f'  ✅ Workflow #{d[\"id\"]}: {d[\"title\"]} ({len(d[\"nodes\"])} steps)')
 types = {'action': 'A', 'gate': 'G', 'loop': 'L'}
 for n in d['nodes']:
     t = types.get(n['node_type'], '?')

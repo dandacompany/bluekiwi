@@ -41,14 +41,16 @@ execute_step 호출 시 반드시 아래 파라미터를 채운다:
 - `user_name`: 사용자 이름 (알 수 없으면 생략 가능)
 
 파일을 생성하거나 수정한 경우, `artifacts` 배열에 기록한다:
+
 - 파일 생성: `{artifact_type: "file", title: "설계 문서", file_path: "docs/specs/design.md"}`
 - 커밋한 경우: `{artifact_type: "git_commit", title: "Phase 1 구현", git_ref: "커밋해시"}`
 - URL 생성: `{artifact_type: "url", title: "PR", url: "https://..."}`
-</HARD-RULE>
+  </HARD-RULE>
 
 ## Git 아티���트 저장
 
 코드나 문서를 생성/수정한 단계를 완료한 후, 사용자에게 `save_artifacts`로 Git 브랜치에 저장할지 물어본다:
+
 - "산출���을 Git 브랜치에 저장하시겠습니까?" (AskUserQuestion: "저장 (Recommended)" / "건너뛰기")
 - 저장 시 `save_artifacts(task_id, message, file_paths)` 호출
 
@@ -86,18 +88,21 @@ auto_advance=false인 단계를 만날 때까지 이 루프를 반복한다.
 ## 타입별 처리
 
 ### action 단계
+
 1. instruction을 읽고 수행한다. 태스크 context를 참고한다.
 2. **heartbeat를 적극 사용한다**: 30초 이상 걸리는 작업에서는 반드시 heartbeat를 보낸다. 예: "아키텍처 섹션 분석 중...", "API 엔드포인트 설계 중...", "설계 문서 119행 작성 중..."
 3. 수행 결과를 사용자에게 보여준다.
 4. `execute_step`으로 저장한다.
 
 ### gate 단계
+
 1. `get_web_response`로 웹 응답 먼저 확인.
 2. 없으면 `AskUserQuestion`으로 자연스럽게 질문.
 3. **부분 수정 옵션**: 승인/수정 질문에는 "승인 (Recommended)" / "부분 수정" / "전체 재작성" 3개 옵션.
 4. 응답을 `execute_step`으로 저장.
 
 ### loop 단계
+
 1. instruction 수행.
 2. **종료 전 사용자 확인**: 종료 조건 충족 시 자동 종료하지 않고 AskUserQuestion으로 확인한다:
    - "수집된 정보가 충분합니다. 추가로 확인할 사항이 있으신가요?"
@@ -108,6 +113,7 @@ auto_advance=false인 단계를 만날 때까지 이 루프를 반복한다.
 ## 로드맵 표시
 
 매 단계 시작 시 진행 상황을 한 줄로 표시한다:
+
 ```
 ✅1 → ✅2 → ✅3 → **4** → 5 → 6 → 7 → 8 → 9 → 10 → 11
 ```
@@ -129,6 +135,7 @@ complete_task(task_id=N, status="completed", summary="## 결정 사항\n- 목적
 ```
 
 사용자에게 완료 메시지 표시:
+
 ```
 🎉 브레인스토밍 완료!
 ━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -155,31 +162,39 @@ complete_task(task_id=N, status="completed", summary="## 결정 사항\n- 목적
 </HARD-RULE>
 
 action:
+
 ```markdown
 ## 수행 내용
+
 프로젝트 컨텍스트를 분석했습니다.
 
 ## 결과
+
 - **프로젝트명**: recipe-sharing-app
 - **현재 상태**: 초기 단계 (코드 없음)
 - **기술 스택**: 미정
 - **주요 발견**: ...
 
 ## 산출물
+
 설계 문서를 `/tmp/or-test-verify/docs/specs/2026-04-08-recipe-design.md`에 저장했습니다.
 ```
 
 gate:
+
 ```markdown
 ## 질문
+
 이 프로젝트 관리 도구가 해결하려는 핵심 문제는 무엇인가요?
 
 ## 선택지
+
 1. 개인 태스크 관리 (추천)
 2. 팀 협업
 3. 교육용
 
 ## 응답
+
 "개인 태스크 관리"를 선택했습니다 — 개인 생산성 향상을 위한 태스크 추적 도구로 진행합니다.
 ```
 

@@ -4,7 +4,7 @@ import {
   queryOne,
   execute,
   Task,
-  ChainNode,
+  WorkflowNode,
   maskSecrets,
   okResponse,
   errorResponse,
@@ -31,9 +31,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json(res.body, { status: res.status });
   }
 
-  const targetNode = await queryOne<ChainNode>(
-    "SELECT * FROM chain_nodes WHERE chain_id = $1 AND step_order = $2",
-    [task.chain_id, to_step],
+  const targetNode = await queryOne<WorkflowNode>(
+    "SELECT * FROM workflow_nodes WHERE workflow_id = $1 AND step_order = $2",
+    [task.workflow_id, to_step],
   );
   if (!targetNode) {
     const res = errorResponse(
@@ -77,15 +77,13 @@ export async function POST(request: NextRequest, { params }: Params) {
   if (targetNode.credential_id) {
     const cred = await queryOne<{
       service_name: string;
-      title: string;
       secrets: string;
-    }>("SELECT service_name, title, secrets FROM credentials WHERE id = $1", [
+    }>("SELECT service_name, secrets FROM credentials WHERE id = $1", [
       targetNode.credential_id,
     ]);
     if (cred) {
       credentials = {
         service: cred.service_name,
-        title: cred.title,
         secrets_masked: maskSecrets(cred.secrets),
       };
     }
@@ -97,8 +95,8 @@ export async function POST(request: NextRequest, { params }: Params) {
   );
 
   const totalRows = await queryOne<{ count: string }>(
-    "SELECT COUNT(*) as count FROM chain_nodes WHERE chain_id = $1",
-    [task.chain_id],
+    "SELECT COUNT(*) as count FROM workflow_nodes WHERE workflow_id = $1",
+    [task.workflow_id],
   );
 
   const res = okResponse({
