@@ -16,6 +16,7 @@ export interface ServerErrorBody {
  * working without immediate migration.
  */
 const CODE_TO_I18N_KEY: Record<string, string> = {
+  // RBAC / domain-specific (already mapped)
   OWNERSHIP_REQUIRED: "rbacErrors.ownershipRequired",
   VISIBILITY_GATE: "rbacErrors.visibilityGate",
   CREDENTIAL_USE_DENIED: "rbacErrors.credentialUseDenied",
@@ -27,6 +28,17 @@ const CODE_TO_I18N_KEY: Record<string, string> = {
   FOLDER_NOT_EMPTY: "rbacErrors.folderNotEmpty",
   INSTRUCTION_IN_USE: "rbacErrors.instructionInUse",
   CREDENTIAL_IN_USE: "rbacErrors.credentialInUse",
+  // Generic HTTP-style codes
+  NOT_FOUND: "serverErrors.notFound",
+  UNAUTHORIZED: "serverErrors.unauthorized",
+  FORBIDDEN: "serverErrors.forbidden",
+  CONFLICT: "serverErrors.conflict",
+  PRECONDITION_FAILED: "serverErrors.preconditionFailed",
+  VALIDATION_ERROR: "validationErrors.generic",
+  // System / state codes
+  PUBLIC_LIBRARY_MISSING: "serverErrors.publicLibraryMissing",
+  MY_WORKSPACE_MISSING: "serverErrors.myWorkspaceMissing",
+  VERSION_INACTIVE: "serverErrors.versionInactive",
 };
 
 /**
