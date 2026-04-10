@@ -31,7 +31,12 @@ export const GET = withAuth("workflows:read", async (request, user) => {
 
 export const POST = withAuth("workflows:create", async (request, user) => {
   const body = await request.json();
-  const { name, description = "", parent_id = null, visibility = "personal" } = body;
+  const {
+    name,
+    description = "",
+    parent_id = null,
+    visibility = "personal",
+  } = body;
 
   if (!name || typeof name !== "string" || !name.trim()) {
     const res = errorResponse("VALIDATION_ERROR", "name is required", 400);
@@ -69,7 +74,10 @@ export const POST = withAuth("workflows:create", async (request, user) => {
     }
     // Enforce child visibility <= parent visibility
     const rank = { personal: 0, group: 1, public: 2 } as const;
-    if (rank[visibility as "personal" | "group" | "public"] > rank[parent.visibility]) {
+    if (
+      rank[visibility as "personal" | "group" | "public"] >
+      rank[parent.visibility]
+    ) {
       const res = errorResponse(
         "FOLDER_VISIBILITY_INVALID",
         "자식 폴더는 부모보다 더 넓은 visibility를 가질 수 없습니다",

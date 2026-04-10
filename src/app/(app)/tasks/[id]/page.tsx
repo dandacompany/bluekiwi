@@ -62,9 +62,8 @@ interface TaskDetail {
 /* ------------------------------------------------------------------ */
 
 function normalizeComments(raw: unknown): StepComment[] {
-  const list = Array.isArray((raw as { data?: unknown[] })?.data)
-    ? (raw as { data?: unknown[] }).data
-    : [];
+  const maybeList = (raw as { data?: unknown[] })?.data;
+  const list: unknown[] = Array.isArray(maybeList) ? maybeList : [];
 
   return list
     .map((item) => {

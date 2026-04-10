@@ -10,27 +10,24 @@ import {
 } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 
-export const GET = withAuth(
-  "workflows:read",
-  async (request, user) => {
-    const url = new URL(request.url);
-    const folderId = url.searchParams.get("folder_id");
-    const { buildResourceVisibilityFilter } = await import("@/lib/authorization");
-    const filter = await buildResourceVisibilityFilter("i", user, 1);
-    const params: unknown[] = [...filter.params];
-    const clauses = [filter.sql];
-    if (folderId) {
-      params.push(Number(folderId));
-      clauses.push(`i.folder_id = $${params.length}`);
-    }
-    const rows = await query<Instruction>(
-      `SELECT i.* FROM instructions i WHERE ${clauses.join(" AND ")} ORDER BY i.updated_at DESC`,
-      params,
-    );
-    const res = listResponse(rows, rows.length);
-    return NextResponse.json(res.body, { status: res.status });
-  },
-);
+export const GET = withAuth("workflows:read", async (request, user) => {
+  const url = new URL(request.url);
+  const folderId = url.searchParams.get("folder_id");
+  const { buildResourceVisibilityFilter } = await import("@/lib/authorization");
+  const filter = await buildResourceVisibilityFilter("i", user, 1);
+  const params: unknown[] = [...filter.params];
+  const clauses = [filter.sql];
+  if (folderId) {
+    params.push(Number(folderId));
+    clauses.push(`i.folder_id = $${params.length}`);
+  }
+  const rows = await query<Instruction>(
+    `SELECT i.* FROM instructions i WHERE ${clauses.join(" AND ")} ORDER BY i.updated_at DESC`,
+    params,
+  );
+  const res = listResponse(rows, rows.length);
+  return NextResponse.json(res.body, { status: res.status });
+});
 
 export const POST = withAuth(
   "workflows:create",
@@ -53,7 +50,11 @@ export const POST = withAuth(
         return NextResponse.json(res.body, { status: res.status });
       }
       if (!(await canEditFolder(user, f))) {
-        const res = errorResponse("OWNERSHIP_REQUIRED", "폴더 편집 권한 없음", 403);
+        const res = errorResponse(
+          "OWNERSHIP_REQUIRED",
+          "폴더 편집 권한 없음",
+          403,
+        );
         return NextResponse.json(res.body, { status: res.status });
       }
       targetFolderId = f.id;
@@ -75,7 +76,11 @@ export const POST = withAuth(
         return NextResponse.json(res.body, { status: res.status });
       }
       if (!(await canEditFolder(user, f))) {
-        const res = errorResponse("OWNERSHIP_REQUIRED", "폴더 편집 권한 없음", 403);
+        const res = errorResponse(
+          "OWNERSHIP_REQUIRED",
+          "폴더 편집 권한 없음",
+          403,
+        );
         return NextResponse.json(res.body, { status: res.status });
       }
       targetFolderId = f.id;

@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { queryOne, type Instruction, okResponse, errorResponse } from "@/lib/db";
+import {
+  queryOne,
+  type Instruction,
+  okResponse,
+  errorResponse,
+} from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canTransferOwnership } from "@/lib/authorization";
 
@@ -11,7 +16,11 @@ export const POST = withAuth<Params>(
     const { id } = await params;
     const { new_owner_id } = await request.json();
     if (typeof new_owner_id !== "number") {
-      const res = errorResponse("VALIDATION_ERROR", "new_owner_id required", 400);
+      const res = errorResponse(
+        "VALIDATION_ERROR",
+        "new_owner_id required",
+        400,
+      );
       return NextResponse.json(res.body, { status: res.status });
     }
     const inst = await queryOne<Instruction>(
@@ -42,4 +51,3 @@ export const POST = withAuth<Params>(
     return NextResponse.json(res.body, { status: res.status });
   },
 );
-

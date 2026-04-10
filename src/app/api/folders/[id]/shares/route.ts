@@ -52,7 +52,11 @@ export const POST = withAuth<Params>(
       return NextResponse.json(res.body, { status: res.status });
     }
     if (!["viewer", "editor"].includes(access_level)) {
-      const res = errorResponse("VALIDATION_ERROR", "invalid access_level", 400);
+      const res = errorResponse(
+        "VALIDATION_ERROR",
+        "invalid access_level",
+        400,
+      );
       return NextResponse.json(res.body, { status: res.status });
     }
     const folder = await loadFolder(Number(id));

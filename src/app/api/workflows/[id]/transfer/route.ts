@@ -11,7 +11,11 @@ export const POST = withAuth<Params>(
     const { id } = await params;
     const { new_owner_id } = await request.json();
     if (typeof new_owner_id !== "number") {
-      const res = errorResponse("VALIDATION_ERROR", "new_owner_id required", 400);
+      const res = errorResponse(
+        "VALIDATION_ERROR",
+        "new_owner_id required",
+        400,
+      );
       return NextResponse.json(res.body, { status: res.status });
     }
     const workflow = await queryOne<Workflow>(
