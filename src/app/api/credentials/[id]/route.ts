@@ -14,7 +14,7 @@ type Params = { params: Promise<{ id: string }> };
 
 const NOT_FOUND = errorResponse(
   "NOT_FOUND",
-  "크레덴셜을 찾을 수 없습니다",
+  "크리덴셜을 찾을 수 없습니다",
   404,
 );
 
@@ -38,7 +38,7 @@ export const GET = withOptionalAuth<Params>(
     }
 
     const linkedNodes = await query<{ cnt: string }>(
-      "SELECT COUNT(*)::text AS cnt FROM chain_nodes WHERE credential_id = $1",
+      "SELECT COUNT(*)::text AS cnt FROM workflow_nodes WHERE credential_id = $1",
       [Number(id)],
     );
     const linked_nodes = Number(linkedNodes[0]?.cnt ?? 0);
@@ -53,7 +53,7 @@ export const PUT = withOptionalAuth<Params>(
   async (request: NextRequest, _user, { params }: Params) => {
     const { id } = await params;
     const body = await request.json();
-    const { service_name, title, description, secrets } = body;
+    const { service_name, description, secrets } = body;
 
     const existing = await queryOne<Credential>(
       "SELECT * FROM credentials WHERE id = $1",
@@ -84,11 +84,10 @@ export const PUT = withOptionalAuth<Params>(
 
     await execute(
       `UPDATE credentials
-     SET service_name = $1, title = $2, description = $3, secrets = $4, updated_at = NOW()
-     WHERE id = $5`,
+     SET service_name = $1, description = $2, secrets = $3, updated_at = NOW()
+     WHERE id = $4`,
       [
         (service_name ?? existing.service_name).trim(),
-        (title ?? existing.title).trim(),
         (description ?? existing.description).trim(),
         mergedSecretsJson,
         Number(id),
