@@ -280,3 +280,21 @@ describe("credential use vs reveal", () => {
     }
   });
 });
+
+describe("list filter builders", () => {
+  it("user sees own resources only in visible set", async () => {
+    const { buildResourceVisibilityFilter } = await import(
+      "../src/lib/authorization"
+    );
+    const filter = await buildResourceVisibilityFilter("w", userA, 1);
+    const rows = await query(
+      `SELECT w.id FROM (VALUES
+        (9001::int, ${userA.id}::int, ${folderPersonal.id}::int, null::text),
+        (9002::int, ${userB.id}::int, ${folderPersonal.id}::int, null::text)
+       ) AS w(id, owner_id, folder_id, visibility_override)
+       WHERE ${filter.sql}`,
+      filter.params,
+    );
+    expect(rows.map((r: { id: number }) => r.id)).toEqual([9001]);
+  });
+});
