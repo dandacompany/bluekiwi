@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { generateApiKey, hashPassword } from "@/lib/auth";
-import {
-  errorResponse,
-  queryOne,
-  withTransaction,
-  type Role,
-} from "@/lib/db";
+import { errorResponse, queryOne, withTransaction, type Role } from "@/lib/db";
 import { isExpired } from "@/lib/invites";
 
 type Params = { params: Promise<{ token: string }> };

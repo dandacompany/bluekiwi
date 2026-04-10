@@ -1,6 +1,6 @@
 import { randomBytes, createHash } from "crypto";
 import bcrypt from "bcryptjs";
-import { queryOne, query } from "./db";
+import { queryOne } from "./db";
 
 // ─── Types ───
 
@@ -53,7 +53,7 @@ export async function verifyPassword(
 
 // ─── API Key Generation ───
 
-const API_KEY_PREFIX = "or_";
+const API_KEY_PREFIX = "bk_";
 const API_KEY_BYTES = 32;
 
 export function generateApiKey(): {
@@ -119,10 +119,10 @@ export function hasPermission(userRole: Role, requiredRole: Role): boolean {
 // Permission matrix
 export const PERMISSIONS = {
   // Workflow/Chain
-  "chains:read": "viewer" as Role,
-  "chains:create": "editor" as Role,
-  "chains:update": "editor" as Role,
-  "chains:delete": "admin" as Role,
+  "workflows:read": "viewer" as Role,
+  "workflows:create": "editor" as Role,
+  "workflows:update": "editor" as Role,
+  "workflows:delete": "admin" as Role,
 
   // Tasks
   "tasks:read": "viewer" as Role,
@@ -166,7 +166,7 @@ export async function authenticateRequest(
 ): Promise<{ user: User; apiKey: ApiKey } | null> {
   if (!authHeader) return null;
 
-  const match = authHeader.match(/^Bearer\s+(or_.+)$/i);
+  const match = authHeader.match(/^Bearer\s+(bk_.+)$/i);
   if (!match) return null;
 
   return validateApiKey(match[1]);
