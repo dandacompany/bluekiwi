@@ -52,8 +52,10 @@ ref/
 .claude/
 .agents/
 .codex/
+.codex-runs/
 .remember/
 .superpowers/
+.worktrees/
 CLAUDE.md
 AGENTS.md
 GEMINI.md
@@ -64,6 +66,7 @@ docs/superpowers/
 plugin/
 1/
 mcp/dist/
+packages/cli/dist/
 *.db
 *.db-shm
 *.db-wal
