@@ -3,8 +3,8 @@ import {
   query,
   queryOne,
   insert,
-  Chain,
-  ChainNode,
+  Workflow,
+  WorkflowNode,
   maskSecrets,
   okResponse,
   errorResponse,
@@ -12,69 +12,113 @@ import {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { chain_id, version, context, session_meta } = body;
+  const { workflow_id, version, context, session_meta, target } = body;
 
-  if (!chain_id) {
-    const res = errorResponse("VALIDATION_ERROR", "chain_id is required", 400);
+  if (!workflow_id) {
+    const res = errorResponse(
+      "VALIDATION_ERROR",
+      "workflow_id is required",
+      400,
+    );
     return NextResponse.json(res.body, { status: res.status });
   }
 
-  // Resolve chain (optionally by version)
-  let chain: Chain | undefined;
+  if (
+    target !== undefined &&
+    (typeof target !== "object" || target === null || Array.isArray(target))
+  ) {
+    const res = errorResponse(
+      "VALIDATION_ERROR",
+      "target는 객체여야 합니다",
+      400,
+    );
+    return NextResponse.json(res.body, { status: res.status });
+  }
+
+  // Resolve workflow. The caller may pass workflow_id directly or pass
+  // workflow_id + version to pick a specific version within the same family.
+  // Version lookup uses family_root_id (not title) so workflow renames
+  // do not break version pinning.
+  let workflow: Workflow | undefined;
   if (version) {
-    const requested = await queryOne<Chain>(
-      "SELECT * FROM chains WHERE id = $1",
-      [Number(chain_id)],
+    const requested = await queryOne<Workflow>(
+      "SELECT * FROM workflows WHERE id = $1",
+      [Number(workflow_id)],
     );
     if (!requested) {
-      const res = errorResponse("NOT_FOUND", "체인을 찾을 수 없습니다", 404);
-      return NextResponse.json(res.body, { status: res.status });
-    }
-    chain = await queryOne<Chain>(
-      "SELECT * FROM chains WHERE title = $1 AND version = $2",
-      [requested.title, version],
-    );
-    if (!chain) {
       const res = errorResponse(
         "NOT_FOUND",
-        `버전 ${version}에 해당하는 체인을 찾을 수 없습니다`,
+        "워크플로를 찾을 수 없습니다",
+        404,
+      );
+      return NextResponse.json(res.body, { status: res.status });
+    }
+    workflow = await queryOne<Workflow>(
+      "SELECT * FROM workflows WHERE family_root_id = $1 AND version = $2",
+      [requested.family_root_id, version],
+    );
+    if (!workflow) {
+      const res = errorResponse(
+        "NOT_FOUND",
+        `버전 ${version}에 해당하는 워크플로를 찾을 수 없습니다`,
         404,
       );
       return NextResponse.json(res.body, { status: res.status });
     }
   } else {
-    chain = await queryOne<Chain>("SELECT * FROM chains WHERE id = $1", [
-      Number(chain_id),
-    ]);
-    if (!chain) {
-      const res = errorResponse("NOT_FOUND", "체인을 찾을 수 없습니다", 404);
+    workflow = await queryOne<Workflow>(
+      "SELECT * FROM workflows WHERE id = $1",
+      [Number(workflow_id)],
+    );
+    if (!workflow) {
+      const res = errorResponse(
+        "NOT_FOUND",
+        "워크플로를 찾을 수 없습니다",
+        404,
+      );
       return NextResponse.json(res.body, { status: res.status });
     }
   }
 
-  const firstNode = await queryOne<ChainNode>(
-    "SELECT * FROM chain_nodes WHERE chain_id = $1 ORDER BY step_order ASC LIMIT 1",
-    [chain.id],
+  // Only active versions can be used to start new tasks. Archived versions
+  // remain readable (for history/diff UI) but cannot be pinned by a new run.
+  if (!workflow.is_active) {
+    const res = errorResponse(
+      "VERSION_INACTIVE",
+      `워크플로 버전 ${workflow.version}은 비활성 상태입니다. 활성 버전을 사용하거나 먼저 활성화하세요.`,
+      409,
+    );
+    return NextResponse.json(res.body, { status: res.status });
+  }
+
+  const firstNode = await queryOne<WorkflowNode>(
+    "SELECT * FROM workflow_nodes WHERE workflow_id = $1 ORDER BY step_order ASC LIMIT 1",
+    [workflow.id],
   );
   if (!firstNode) {
     const res = errorResponse(
       "VALIDATION_ERROR",
-      "체인에 노드가 없습니다",
+      "워크플로에 노드가 없습니다",
       400,
     );
     return NextResponse.json(res.body, { status: res.status });
   }
 
   const totalRows = await queryOne<{ count: string }>(
-    "SELECT COUNT(*) as count FROM chain_nodes WHERE chain_id = $1",
-    [chain.id],
+    "SELECT COUNT(*) as count FROM workflow_nodes WHERE workflow_id = $1",
+    [workflow.id],
   );
   const totalSteps = Number(totalRows?.count ?? 0);
 
   // Create task
   const taskId = await insert(
-    "INSERT INTO tasks (chain_id, status, current_step, context, session_meta) VALUES ($1, 'running', 1, $2, $3) RETURNING id",
-    [chain.id, context ?? "", session_meta ?? "{}"],
+    "INSERT INTO tasks (workflow_id, status, current_step, context, session_meta, target_meta) VALUES ($1, 'running', 1, $2, $3, $4) RETURNING id",
+    [
+      workflow.id,
+      context ?? "",
+      session_meta ?? "{}",
+      target ? JSON.stringify(target) : null,
+    ],
   );
 
   // Create first pending log
@@ -104,15 +148,13 @@ export async function POST(request: NextRequest) {
   if (firstNode.credential_id) {
     const cred = await queryOne<{
       service_name: string;
-      title: string;
       secrets: string;
-    }>("SELECT service_name, title, secrets FROM credentials WHERE id = $1", [
+    }>("SELECT service_name, secrets FROM credentials WHERE id = $1", [
       firstNode.credential_id,
     ]);
     if (cred) {
       credentials = {
         service: cred.service_name,
-        title: cred.title,
         secrets_masked: maskSecrets(cred.secrets),
       };
     }
@@ -121,10 +163,10 @@ export async function POST(request: NextRequest) {
   const res = okResponse(
     {
       task_id: taskId,
-      chain_id: chain.id,
-      chain_title: chain.title,
-      version: chain.version,
-      evaluation_contract: chain.evaluation_contract ?? null,
+      workflow_id: workflow.id,
+      workflow_title: workflow.title,
+      version: workflow.version,
+      evaluation_contract: workflow.evaluation_contract ?? null,
       total_steps: totalSteps,
       current_step: {
         node_id: firstNode.id,
