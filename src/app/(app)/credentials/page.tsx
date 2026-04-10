@@ -2,7 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { KeyRound, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  KeyRound,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CommandDialog } from "@/components/ui/command";
@@ -203,6 +211,37 @@ export default function CredentialsPage() {
   const { t } = useTranslation();
   const [credentials, setCredentials] = useState<MaskedCredential[]>([]);
   const [loading, setLoading] = useState(true);
+  const [revealedSecrets, setRevealedSecrets] = useState<
+    Record<number, Record<string, string>>
+  >({});
+
+  const toggleReveal = async (credId: number) => {
+    if (revealedSecrets[credId]) {
+      setRevealedSecrets((prev) => {
+        const next = { ...prev };
+        delete next[credId];
+        return next;
+      });
+      return;
+    }
+    const res = await fetch(`/api/credentials/${credId}/reveal`, {
+      method: "POST",
+    });
+    if (!res.ok) {
+      alert(t("rbacErrors.credentialRevealDenied"));
+      return;
+    }
+    const json = await res.json();
+    try {
+      const parsed =
+        typeof json.data.secrets === "string"
+          ? JSON.parse(json.data.secrets)
+          : json.data.secrets;
+      setRevealedSecrets((prev) => ({ ...prev, [credId]: parsed }));
+    } catch {
+      alert(t("rbacErrors.credentialRevealDenied"));
+    }
+  };
   const [saving, setSaving] = useState(false);
   const [editTarget, setEditTarget] = useState<MaskedCredential | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -481,18 +520,43 @@ export default function CredentialsPage() {
                   </div>
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {Object.entries(cred.secrets_masked).map(([key, masked]) => (
-                    <span
-                      key={key}
-                      className="inline-flex items-center gap-1.5 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] px-2 py-1 font-mono text-xs"
-                    >
-                      <span className="text-[var(--muted-foreground)]">
-                        {key}:
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {Object.entries(cred.secrets_masked).map(([key, masked]) => {
+                    const revealed = revealedSecrets[cred.id]?.[key];
+                    return (
+                      <span
+                        key={key}
+                        className="inline-flex items-center gap-1.5 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] px-2 py-1 font-mono text-xs"
+                      >
+                        <span className="text-[var(--muted-foreground)]">
+                          {key}:
+                        </span>
+                        <span className="text-[var(--foreground)]">
+                          {revealed ?? masked}
+                        </span>
                       </span>
-                      <span className="text-[var(--foreground)]">{masked}</span>
-                    </span>
-                  ))}
+                    );
+                  })}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleReveal(cred.id);
+                    }}
+                    title={
+                      revealedSecrets[cred.id]
+                        ? t("credentials.mask")
+                        : t("credentials.reveal")
+                    }
+                  >
+                    {revealedSecrets[cred.id] ? (
+                      <EyeOff className="h-3.5 w-3.5" />
+                    ) : (
+                      <Eye className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
                 </div>
 
                 <p className="mt-3 text-[11px] text-[var(--muted-foreground)]">
