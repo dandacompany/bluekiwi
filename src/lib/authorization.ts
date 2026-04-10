@@ -102,3 +102,172 @@ export async function userCredentialShareLevel(
   if (rows.length === 0) return null;
   return rows.some((r) => r.access_level === "manage") ? "manage" : "use";
 }
+
+// ─── Permission predicates ───
+
+function isPrivileged(user: User, roles: Array<User["role"]>): boolean {
+  return roles.includes(user.role);
+}
+
+export async function canRead(
+  user: User,
+  resource: OwnedResource,
+): Promise<boolean> {
+  if (resource.owner_id === user.id) return true;
+  if (isPrivileged(user, ["admin", "superuser"])) return true;
+
+  const vis = await effectiveResourceVisibility(resource);
+  if (vis === "public") return true;
+  if (vis === "group") {
+    return (await userFolderShareLevel(user, resource.folder_id)) !== null;
+  }
+  return false;
+}
+
+export async function canEdit(
+  user: User,
+  resource: OwnedResource,
+): Promise<boolean> {
+  if (resource.owner_id === user.id) return true;
+  if (user.role === "superuser") return true;
+
+  const vis = await effectiveResourceVisibility(resource);
+  if (vis === "group") {
+    const lvl = await userFolderShareLevel(user, resource.folder_id);
+    return lvl === "editor";
+  }
+  return false;
+}
+
+export async function canDelete(
+  user: User,
+  resource: OwnedResource,
+): Promise<boolean> {
+  return resource.owner_id === user.id || user.role === "superuser";
+}
+
+export async function canExecute(
+  user: User,
+  resource: OwnedResource,
+): Promise<boolean> {
+  return canRead(user, resource);
+}
+
+export async function canTransferOwnership(
+  user: User,
+  resource: OwnedResource,
+): Promise<boolean> {
+  return (
+    resource.owner_id === user.id || isPrivileged(user, ["admin", "superuser"])
+  );
+}
+
+/** For workflow/instruction visibility_override (only 'personal' or null). */
+export async function canChangeResourceVisibility(
+  user: User,
+  resource: OwnedResource,
+): Promise<boolean> {
+  return canEdit(user, resource);
+}
+
+// ─── Folder predicates ───
+
+export async function canReadFolder(
+  user: User,
+  folder: OwnedFolder,
+): Promise<boolean> {
+  if (folder.owner_id === user.id) return true;
+  if (isPrivileged(user, ["admin", "superuser"])) return true;
+  if (folder.visibility === "public") return true;
+  if (folder.visibility === "group") {
+    return (await userFolderShareLevel(user, folder.id)) !== null;
+  }
+  return false;
+}
+
+export async function canEditFolder(
+  user: User,
+  folder: OwnedFolder,
+): Promise<boolean> {
+  if (folder.owner_id === user.id) return true;
+  if (user.role === "superuser") return true;
+  if (folder.visibility === "group") {
+    return (await userFolderShareLevel(user, folder.id)) === "editor";
+  }
+  return false;
+}
+
+export async function canDeleteFolder(
+  user: User,
+  folder: OwnedFolder,
+): Promise<boolean> {
+  if (folder.is_system) return false;
+  // Non-empty guard is enforced by the caller (needs to count contents).
+  return folder.owner_id === user.id || user.role === "superuser";
+}
+
+export async function canChangeFolderVisibility(
+  user: User,
+  folder: OwnedFolder,
+  newVisibility: Visibility,
+): Promise<boolean> {
+  if (newVisibility === "public" || folder.visibility === "public") {
+    return isPrivileged(user, ["admin", "superuser"]);
+  }
+  return (
+    folder.owner_id === user.id || isPrivileged(user, ["admin", "superuser"])
+  );
+}
+
+export async function canManageFolderShares(
+  user: User,
+  folder: OwnedFolder,
+): Promise<boolean> {
+  return (
+    folder.owner_id === user.id || isPrivileged(user, ["admin", "superuser"])
+  );
+}
+
+// ─── Credential predicates ───
+
+export async function canUseCredential(
+  user: User,
+  cred: OwnedCredential,
+): Promise<boolean> {
+  if (cred.owner_id === user.id) return true;
+  if (user.role === "superuser") return true;
+  const lvl = await userCredentialShareLevel(user, cred.id);
+  return lvl !== null; // use or manage
+}
+
+export async function canRevealCredential(
+  user: User,
+  cred: OwnedCredential,
+): Promise<boolean> {
+  if (cred.owner_id === user.id) return true;
+  if (user.role === "superuser") return true;
+  const lvl = await userCredentialShareLevel(user, cred.id);
+  return lvl === "manage";
+}
+
+export async function canListCredential(
+  user: User,
+  cred: OwnedCredential,
+): Promise<boolean> {
+  if (await canUseCredential(user, cred)) return true;
+  return user.role === "admin";
+}
+
+export async function canEditCredential(
+  user: User,
+  cred: OwnedCredential,
+): Promise<boolean> {
+  return canRevealCredential(user, cred);
+}
+
+export async function canManageCredentialShares(
+  user: User,
+  cred: OwnedCredential,
+): Promise<boolean> {
+  return canRevealCredential(user, cred);
+}
