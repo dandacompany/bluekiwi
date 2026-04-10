@@ -1,5 +1,5 @@
 {
-  "name": "omega-rod-mcp",
+  "name": "bluekiwi-mcp",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -8,12 +8,11 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.1",
-    "pg": "^8.20.0"
+    "@modelcontextprotocol/sdk": "^1.12.1"
   },
   "devDependencies": {
     "@types/node": "^20",
-    "@types/pg": "^8.20.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.3"
   }
 }
