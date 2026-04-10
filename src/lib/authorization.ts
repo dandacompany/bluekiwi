@@ -1,4 +1,4 @@
-import { query, queryOne, type Folder, type Visibility } from "./db";
+import { query, queryOne, type Visibility } from "./db";
 import type { User } from "./auth";
 
 // ─── Resource shape (minimum fields needed by permission funcs) ───

@@ -20,7 +20,8 @@
     "ws": "npx tsx scripts/ws-relay.ts",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run --dir tests"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
