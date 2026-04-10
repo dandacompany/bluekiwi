@@ -13,6 +13,9 @@ const eslintConfig = defineConfig([
     "build/**",
     "mcp/dist/**",
     "next-env.d.ts",
+    ".worktrees/**",
+    "packages/cli/dist/**",
+    ".codex-runs/**",
   ]),
 ]);
 

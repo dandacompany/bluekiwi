@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect } from "vitest";
 import { query, queryOne } from "../src/lib/db";
 
 describe("migration 007 — ownership backfill", () => {
