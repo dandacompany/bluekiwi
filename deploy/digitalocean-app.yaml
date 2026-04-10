@@ -1,0 +1,15 @@
+# deploy/digitalocean-app.yaml
+name: bluekiwi
+services:
+  - name: web
+    dockerfile_path: docker/Dockerfile
+    http_port: 3000
+    instance_size_slug: basic-xxs
+    envs:
+      - { key: JWT_SECRET, scope: RUN_TIME, type: SECRET }
+      - { key: DATABASE_URL, scope: RUN_TIME, type: SECRET }
+databases:
+  - name: bluekiwi-db
+    engine: PG
+    version: "16"
+    size: db-s-dev-database

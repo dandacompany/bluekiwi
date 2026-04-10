@@ -1,0 +1,17 @@
+# deploy/fly.toml
+app = "bluekiwi"
+primary_region = "nrt"
+
+[build]
+  dockerfile = "../docker/Dockerfile"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
