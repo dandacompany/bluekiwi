@@ -90,28 +90,25 @@ export const DELETE = withAuth<Params>(
       return NextResponse.json(res.body, { status: res.status });
     }
 
-    // Emptiness check
-    const workflowCount = await queryOne<{ c: string }>(
-      "SELECT COUNT(*)::text as c FROM workflows WHERE folder_id = $1",
-      [Number(id)],
-    );
-    const instructionCount = await queryOne<{ c: string }>(
-      "SELECT COUNT(*)::text as c FROM instructions WHERE folder_id = $1",
-      [Number(id)],
-    );
-    const credCount = await queryOne<{ c: string }>(
-      "SELECT COUNT(*)::text as c FROM credentials WHERE folder_id = $1",
-      [Number(id)],
-    );
-    const childCount = await queryOne<{ c: string }>(
-      "SELECT COUNT(*)::text as c FROM folders WHERE parent_id = $1",
+    // Emptiness check — consolidated into a single round trip
+    const usage = await queryOne<{
+      workflow_count: number;
+      instruction_count: number;
+      credential_count: number;
+      child_count: number;
+    }>(
+      `SELECT
+         (SELECT COUNT(*) FROM workflows    WHERE folder_id = $1)::int AS workflow_count,
+         (SELECT COUNT(*) FROM instructions WHERE folder_id = $1)::int AS instruction_count,
+         (SELECT COUNT(*) FROM credentials  WHERE folder_id = $1)::int AS credential_count,
+         (SELECT COUNT(*) FROM folders      WHERE parent_id = $1)::int AS child_count`,
       [Number(id)],
     );
     const total =
-      Number(workflowCount?.c ?? 0) +
-      Number(instructionCount?.c ?? 0) +
-      Number(credCount?.c ?? 0) +
-      Number(childCount?.c ?? 0);
+      (usage?.workflow_count ?? 0) +
+      (usage?.instruction_count ?? 0) +
+      (usage?.credential_count ?? 0) +
+      (usage?.child_count ?? 0);
 
     if (total > 0) {
       const res = errorResponse(
