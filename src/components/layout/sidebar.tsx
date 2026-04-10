@@ -37,7 +37,7 @@ interface SidebarProps {
 export function Sidebar({ user }: SidebarProps) {
   const router = useRouter();
   const { t, locale, setLocale } = useTranslation();
-  const [collapsed, setCollapsed] = useState(() => {
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     const saved = window.localStorage.getItem("sidebar-collapsed");
     return saved !== null ? JSON.parse(saved) : false;

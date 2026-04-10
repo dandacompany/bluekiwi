@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { queryOne, type Instruction, okResponse, errorResponse } from "@/lib/db";
+import {
+  queryOne,
+  type Instruction,
+  okResponse,
+  errorResponse,
+} from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canEdit } from "@/lib/authorization";
 
@@ -34,4 +39,3 @@ export const POST = withAuth<Params>(
     return NextResponse.json(res.body, { status: res.status });
   },
 );
-

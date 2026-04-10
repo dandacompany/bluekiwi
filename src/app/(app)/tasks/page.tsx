@@ -42,7 +42,7 @@ interface Task {
 
 function formatTaskRelativeTime(
   date: string,
-  t: (key: string) => string,
+  t: (key: string, params?: Record<string, string | number>) => string,
 ): string {
   const now = Date.now();
   const target = new Date(date).getTime();

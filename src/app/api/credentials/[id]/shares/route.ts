@@ -9,7 +9,10 @@ import {
   errorResponse,
 } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
-import { canListCredential, canManageCredentialShares } from "@/lib/authorization";
+import {
+  canListCredential,
+  canManageCredentialShares,
+} from "@/lib/authorization";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -80,4 +83,3 @@ export const POST = withAuth<Params>(
     return NextResponse.json(res.body, { status: res.status });
   },
 );
-

@@ -10,26 +10,22 @@ import {
 } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 
-export const GET = withAuth(
-  "credentials:read",
-  async (request, user) => {
-    const { buildCredentialVisibilityFilter } = await import(
-      "@/lib/authorization"
-    );
-    const filter = await buildCredentialVisibilityFilter("c", user, 1);
-    const rows = await query<Credential>(
-      `SELECT c.* FROM credentials c WHERE ${filter.sql} ORDER BY c.updated_at DESC`,
-      filter.params,
-    );
-    // Always mask secrets in list responses. Reveal is a separate endpoint.
-    const masked = rows.map((c) => ({
-      ...c,
-      secrets: JSON.stringify(maskSecrets(c.secrets)),
-    }));
-    const res = listResponse(masked, masked.length);
-    return NextResponse.json(res.body, { status: res.status });
-  },
-);
+export const GET = withAuth("credentials:read", async (request, user) => {
+  const { buildCredentialVisibilityFilter } =
+    await import("@/lib/authorization");
+  const filter = await buildCredentialVisibilityFilter("c", user, 1);
+  const rows = await query<Credential>(
+    `SELECT c.* FROM credentials c WHERE ${filter.sql} ORDER BY c.updated_at DESC`,
+    filter.params,
+  );
+  // Always mask secrets in list responses. Reveal is a separate endpoint.
+  const masked = rows.map((c) => ({
+    ...c,
+    secrets: JSON.stringify(maskSecrets(c.secrets)),
+  }));
+  const res = listResponse(masked, masked.length);
+  return NextResponse.json(res.body, { status: res.status });
+});
 
 export const POST = withAuth("credentials:write", async (request, user) => {
   const body = await request.json();

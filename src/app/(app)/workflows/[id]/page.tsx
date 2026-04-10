@@ -96,7 +96,10 @@ function formatDateTime(date: string) {
   return new Date(date).toLocaleString();
 }
 
-function taskStatusLabel(status: string, t: (key: string) => string) {
+function taskStatusLabel(
+  status: string,
+  t: (key: string, params?: Record<string, string | number>) => string,
+) {
   if (status === "completed") return t("tasks.completed");
   if (status === "running") return t("tasks.running");
   if (status === "failed") return t("tasks.failed");
@@ -129,7 +132,7 @@ function StatusBadge({
   t,
 }: {
   status: string;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }) {
   const Icon =
     STATUS_ICON_MAP[(status as keyof typeof STATUS_ICON_MAP) ?? "pending"];
@@ -144,7 +147,7 @@ function StatusBadge({
 
 function nodeTypeLabel(
   type: "action" | "gate" | "loop",
-  t: (key: string) => string,
+  t: (key: string, params?: Record<string, string | number>) => string,
 ) {
   if (type === "gate") return t("editor.gate");
   if (type === "loop") return t("editor.loop");
@@ -166,7 +169,7 @@ function NodeCard({
   t,
 }: {
   node: WorkflowNode;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }) {
   return (
     <Card>

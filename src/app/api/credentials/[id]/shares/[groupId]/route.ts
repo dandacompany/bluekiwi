@@ -31,4 +31,3 @@ export const DELETE = withAuth<Params>(
     return NextResponse.json(res.body, { status: res.status });
   },
 );
-

@@ -283,9 +283,8 @@ describe("credential use vs reveal", () => {
 
 describe("list filter builders", () => {
   it("user sees own resources only in visible set", async () => {
-    const { buildResourceVisibilityFilter } = await import(
-      "../src/lib/authorization"
-    );
+    const { buildResourceVisibilityFilter } =
+      await import("../src/lib/authorization");
     const filter = await buildResourceVisibilityFilter("w", userA, 1);
     const rows = await query(
       `SELECT w.id FROM (VALUES
