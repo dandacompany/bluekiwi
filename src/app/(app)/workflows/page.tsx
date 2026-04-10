@@ -22,6 +22,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { VisibilityBadge } from "@/components/shared/visibility-badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,6 +60,8 @@ interface WorkflowItem {
   description: string;
   nodes: WorkflowNodeItem[];
   created_at: string;
+  owner_id?: number;
+  visibility_override?: "personal" | null;
 }
 
 function NodeBadge({ node }: { node: WorkflowNodeItem }) {
@@ -230,6 +233,12 @@ export default function WorkflowsPage() {
                         <p className="mt-0.5 line-clamp-1 text-xs text-[var(--muted-foreground)]">
                           {wf.description || "\u00A0"}
                         </p>
+                        <div className="mt-1.5">
+                          <VisibilityBadge
+                            visibility={wf.visibility_override ?? "personal"}
+                            inherited={wf.visibility_override === null}
+                          />
+                        </div>
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
