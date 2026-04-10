@@ -2,92 +2,217 @@
 @plugin "@tailwindcss/typography";
 
 :root {
-  /* Scandinavian Minimal Nature — UI Design System */
-  --background: #ffffff;
-  --foreground: #4a4a4a;
-  --card: #ffffff;
-  --card-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
-  --card-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.08);
-  --accent: #8fbc8f;
-  --accent-foreground: #1c1c1e;
-  --accent-dark: #6b9b6b;
-  --accent-light: #e8f5e8;
-  --warm: #deb887;
-  --warm-foreground: #1c1c1e;
-  --warm-light: #f5ede0;
-  --muted: #8a8a8a;
-  --border: #e8e5e0;
-  --radius: 8px;
+  color-scheme: light;
+
+  /* Brand primitives */
+  --brand-blue-700: #3557be;
+  --brand-blue-600: #4169e1;
+  --brand-blue-500: #6d8ef0;
+  --brand-blue-100: #eaf0ff;
+
+  --kiwi-700: #92ad38;
+  --kiwi-600: #b7cf57;
+  --kiwi-500: #d9eb8f;
+  --kiwi-100: #f4f8dd;
+
+  --ink-900: #1e2a44;
+  --ink-700: #44506a;
+  --ink-500: #6d7690;
+
+  --canvas: #f8fbff;
+  --surface: #ffffff;
+  --surface-soft: #f3f7fb;
+  --surface-strong: #edf3fb;
+  --border-soft: #dce4ef;
+
+  --success: #2f8f6b;
+  --warning: #b78226;
+  --danger: #c94d5d;
+  --focus: #96b4ff;
+
+  --radius: 1rem;
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+  --radius-xl: 2rem;
+
+  --shadow-soft: 0 16px 40px rgba(30, 42, 68, 0.08);
+  --shadow-card: 0 10px 24px rgba(30, 42, 68, 0.08);
+
+  /* shadcn/ui semantic tokens */
+  --background: var(--canvas);
+  --foreground: var(--ink-900);
+  --card: var(--surface);
+  --card-foreground: var(--ink-900);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink-900);
+
+  --primary: var(--brand-blue-600);
+  --primary-foreground: #ffffff;
+  --secondary: var(--surface-strong);
+  --secondary-foreground: var(--ink-900);
+  --muted: var(--surface-soft);
+  --muted-foreground: var(--ink-500);
+  --accent: var(--kiwi-600);
+  --accent-foreground: var(--ink-900);
+  --destructive: var(--danger);
+  --destructive-foreground: #ffffff;
+  --border: var(--border-soft);
+  --input: var(--border-soft);
+  --ring: var(--focus);
+
+  /* Sidebar */
+  --sidebar-background: #f4f8fd;
+  --sidebar-foreground: var(--ink-900);
+  --sidebar-primary: var(--brand-blue-600);
+  --sidebar-accent: var(--brand-blue-100);
+  --sidebar-border: var(--border-soft);
 
   --font-geist-sans:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial,
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial,
     "Apple SD Gothic Neo", sans-serif;
   --font-geist-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
-
-  /* Semantic states */
-  --destructive: #e57373;
-  --destructive-dark: #d95c5c;
-  --destructive-light: #fceaea;
-  --destructive-foreground: #1c1c1e;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
-  --color-primary: var(--accent);
-  --color-primary-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-accent-light: var(--accent-light);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-brand-blue-700: var(--brand-blue-700);
+  --color-brand-blue-600: var(--brand-blue-600);
+  --color-brand-blue-500: var(--brand-blue-500);
+  --color-brand-blue-100: var(--brand-blue-100);
+  --color-kiwi-700: var(--kiwi-700);
+  --color-kiwi-600: var(--kiwi-600);
+  --color-kiwi-500: var(--kiwi-500);
+  --color-kiwi-100: var(--kiwi-100);
+  --color-ink-900: var(--ink-900);
+  --color-ink-700: var(--ink-700);
+  --color-ink-500: var(--ink-500);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-soft: var(--surface-soft);
+  --color-surface-strong: var(--surface-strong);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --color-sidebar-background: var(--sidebar-background);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-border: var(--sidebar-border);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #1c1c1e;
-    --foreground: #e5e5e5;
-    --card: #2c2c2e;
-    --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-    --card-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.4);
-    --accent: #a8d5a8;
-    --accent-dark: #8fbc8f;
-    --accent-light: #1a2e1a;
-    --warm: #c9a96e;
-    --warm-light: #2a2418;
-    --muted: #999999;
-    --border: #3a3a3c;
+    color-scheme: dark;
 
-    --destructive: #e57373;
-    --destructive-dark: #d95c5c;
-    --destructive-light: rgba(229, 115, 115, 0.18);
+    --canvas: #0f1728;
+    --surface: #162033;
+    --surface-soft: #1d2a40;
+    --surface-strong: #243249;
+    --border-soft: #2f3a50;
+
+    --ink-900: #eef4ff;
+    --ink-700: #c6d3e8;
+    --ink-500: #94a5bf;
+
+    --brand-blue-100: rgba(109, 142, 240, 0.18);
+    --kiwi-100: rgba(183, 207, 87, 0.18);
+    --focus: rgba(150, 180, 255, 0.72);
+
+    --background: var(--canvas);
+    --foreground: var(--ink-900);
+    --card: var(--surface);
+    --card-foreground: var(--ink-900);
+    --popover: var(--surface);
+    --popover-foreground: var(--ink-900);
+    --primary: #6d8ef0;
+    --primary-foreground: #ffffff;
+    --secondary: var(--surface-strong);
+    --secondary-foreground: var(--ink-900);
+    --muted: var(--surface-soft);
+    --muted-foreground: var(--ink-500);
+    --accent: #b7cf57;
+    --accent-foreground: #10203a;
+    --destructive: #de6a78;
+    --destructive-foreground: #ffffff;
+    --border: var(--border-soft);
+    --input: var(--border-soft);
+    --ring: var(--focus);
+
+    --sidebar-background: #121b2c;
+    --sidebar-foreground: var(--ink-900);
+    --sidebar-primary: var(--primary);
+    --sidebar-accent: rgba(109, 142, 240, 0.16);
+    --sidebar-border: var(--border-soft);
+
+    --shadow-soft: 0 18px 42px rgba(2, 6, 23, 0.36);
+    --shadow-card: 0 10px 26px rgba(2, 6, 23, 0.3);
   }
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(109, 142, 240, 0.14),
+      transparent 28%
+    ),
+    linear-gradient(180deg, #ffffff 0%, var(--background) 100%);
   color: var(--foreground);
   font-family: var(--font-geist-sans), "Apple SD Gothic Neo", sans-serif;
   letter-spacing: -0.01em;
 }
 
-/* 인라인 코드 — 우드 톤 배경 */
+.dark body,
+html.dark body {
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(109, 142, 240, 0.1),
+      transparent 28%
+    ),
+    linear-gradient(180deg, #121a2b 0%, var(--background) 100%);
+}
+
 .prose code:not(pre code) {
-  background: var(--warm-light);
-  color: var(--foreground);
+  background: var(--brand-blue-100);
+  color: var(--brand-blue-700);
   padding: 0.15em 0.4em;
-  border-radius: 4px;
+  border-radius: 0.4rem;
   font-size: 0.875em;
 }
 
-/* 코드 블록 — 절제된 다크 */
 .prose pre {
-  background: #2c2c2e;
+  background: #132038;
   border-radius: var(--radius);
+  border: 1px solid rgba(109, 142, 240, 0.12);
+}
+
+[data-slot="card"] {
+  box-shadow: var(--shadow-card);
 }
