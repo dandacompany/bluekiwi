@@ -197,6 +197,7 @@ export default function WorkflowDetailPage() {
   const [activeTab, setActiveTab] = useState("history");
   const [versions, setVersions] = useState<VersionsResponse | null>(null);
   const [versionsLoading, setVersionsLoading] = useState(false);
+  const [selectedRunVersionId, setSelectedRunVersionId] = useState<number>(0);
 
   const fetchWorkflow = useCallback(async () => {
     const res = await fetch(`/api/workflows/${workflowId}`);
@@ -315,12 +316,24 @@ export default function WorkflowDetailPage() {
     if (!workflow) return;
     setStarting(true);
     try {
+      // Default target: whatever the user picked in the version dropdown,
+      // falling back to the current page's workflow id (which is what
+      // the Run button has always meant). If the picked version is
+      // archived the server returns 409 and we surface a clear message.
+      const targetId =
+        selectedRunVersionId && selectedRunVersionId > 0
+          ? selectedRunVersionId
+          : workflow.id;
       const res = await fetch("/api/tasks/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workflow_id: workflow.id }),
+        body: JSON.stringify({ workflow_id: targetId }),
       });
       if (!res.ok) {
+        if (res.status === 409) {
+          toast.error(t("workflows.inactiveStartBlocked"));
+          return;
+        }
         toast.error(t("workflows.runFailed"));
         return;
       }
@@ -385,6 +398,23 @@ export default function WorkflowDetailPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {versions && versions.versions.length > 1 && (
+              <select
+                value={selectedRunVersionId || workflow.id}
+                onChange={(e) =>
+                  setSelectedRunVersionId(Number(e.target.value))
+                }
+                className="h-9 rounded-md border border-[var(--border)] bg-background px-2 text-xs"
+                aria-label={t("workflows.pickVersion")}
+              >
+                {versions.versions.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    v{v.version}
+                    {v.is_active ? " ✓" : ` (${t("workflows.inactiveBadge")})`}
+                  </option>
+                ))}
+              </select>
+            )}
             <Button
               variant="secondary"
               onClick={() => router.push(`/workflows/${workflow.id}/edit`)}
