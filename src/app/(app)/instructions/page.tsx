@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -12,23 +12,12 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { toast } from "sonner";
-import { translateServerError } from "@/lib/i18n/server-errors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { VisibilityBadge } from "@/components/shared/visibility-badge";
+import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import { CommandDialog } from "@/components/ui/command";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +37,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useTranslation } from "@/lib/i18n/context";
+import { useListFetch } from "@/lib/use-list-fetch";
+import { useDeleteHandler } from "@/lib/use-delete-handler";
 
 interface Instruction {
   id: number;
@@ -106,10 +97,8 @@ const markdownPreviewClass =
 
 export default function InstructionsPage() {
   const { t } = useTranslation();
-  const [instructions, setInstructions] = useState<Instruction[]>([]);
   const [editing, setEditing] = useState<Instruction | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<Instruction | null>(null);
   const [draftTag, setDraftTag] = useState("");
   const [editorMode, setEditorMode] = useState<"edit" | "preview" | "split">(
     "split",
@@ -122,37 +111,23 @@ export default function InstructionsPage() {
     priority: 0,
   });
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
 
-  const fetchAll = async () => {
-    setLoading(true);
+  const {
+    data: instructions,
+    loading,
+    refetch: fetchAll,
+  } = useListFetch<Instruction>(() => {
     const params = new URLSearchParams();
     if (search) params.set("q", search);
-    const res = await fetch(`/api/instructions?${params}`);
-    const json = await res.json();
-    setInstructions(json.data ?? []);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadInstructions() {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (search) params.set("q", search);
-      const res = await fetch(`/api/instructions?${params}`);
-      const json = await res.json();
-      if (cancelled) return;
-      setInstructions(json.data ?? []);
-      setLoading(false);
-    }
-
-    void loadInstructions();
-    return () => {
-      cancelled = true;
-    };
+    return `/api/instructions?${params}`;
   }, [search]);
+
+  const { deleteTarget, setDeleteTarget, handleDelete } =
+    useDeleteHandler<Instruction>({
+      endpoint: (target) => `/api/instructions/${target.id}`,
+      onSuccess: fetchAll,
+      fallbackMessage: t("common.deleteFailed"),
+    });
 
   const resetForm = () => {
     setForm({
@@ -220,25 +195,6 @@ export default function InstructionsPage() {
     setDraftTag("");
     setEditorMode("split");
     setEditorOpen(true);
-  };
-
-  const handleDelete = async (id: number) => {
-    const res = await fetch(`/api/instructions/${id}`, { method: "DELETE" });
-    if (!res.ok) {
-      let body: { error?: Parameters<typeof translateServerError>[0] } = {};
-      try {
-        body = await res.json();
-      } catch {
-        /* ignore non-JSON body */
-      }
-      toast.error(
-        translateServerError(body.error, t, t("common.deleteFailed")),
-      );
-      setDeleteTarget(null);
-      return;
-    }
-    setDeleteTarget(null);
-    fetchAll();
   };
 
   const handleToggle = async (inst: Instruction) => {
@@ -485,35 +441,16 @@ export default function InstructionsPage() {
         </form>
       </CommandDialog>
 
-      <AlertDialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t("instructionsPage.deleteTitle")}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("instructionsPage.deleteDescription").replace(
-                "{title}",
-                deleteTarget?.title ?? t("instructionsPage.title"),
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={() => deleteTarget && handleDelete(deleteTarget.id)}
-            >
-              {t("common.delete")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmDialog
+        target={deleteTarget}
+        title={t("instructionsPage.deleteTitle")}
+        description={t("instructionsPage.deleteDescription").replace(
+          "{title}",
+          deleteTarget?.title ?? t("instructionsPage.title"),
+        )}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
 
       {/* List */}
       {loading ? (
