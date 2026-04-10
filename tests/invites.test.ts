@@ -19,7 +19,7 @@ describe("invites", () => {
 
   it("builds invite url with token", () => {
     expect(buildInviteUrl("https://team.example.com", "abc")).toBe(
-      "https://team.example.com/invite/abc"
+      "https://team.example.com/invite/abc",
     );
   });
 
