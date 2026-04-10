@@ -7,6 +7,11 @@ import {
   errorResponse,
   maskSecrets,
 } from "@/lib/db";
+import {
+  canDelete,
+  canEditCredential,
+  canListCredential,
+} from "@/lib/authorization";
 import { withAuth } from "@/lib/with-auth";
 
 type Params = { params: Promise<{ id: string }> };
@@ -24,7 +29,6 @@ export const GET = withAuth<Params>(
       const res = errorResponse("NOT_FOUND", "크레덴셜 없음", 404);
       return NextResponse.json(res.body, { status: res.status });
     }
-    const { canListCredential } = await import("@/lib/authorization");
     if (!(await canListCredential(user, cred))) {
       const res = errorResponse("OWNERSHIP_REQUIRED", "접근 권한 없음", 403);
       return NextResponse.json(res.body, { status: res.status });
@@ -51,7 +55,6 @@ export const PUT = withAuth<Params>(
       const res = errorResponse("NOT_FOUND", "크레덴셜 없음", 404);
       return NextResponse.json(res.body, { status: res.status });
     }
-    const { canEditCredential } = await import("@/lib/authorization");
     if (!(await canEditCredential(user, cred))) {
       const res = errorResponse(
         "CREDENTIAL_REVEAL_DENIED",
@@ -97,7 +100,6 @@ export const DELETE = withAuth<Params>(
       const res = errorResponse("NOT_FOUND", "크레덴셜 없음", 404);
       return NextResponse.json(res.body, { status: res.status });
     }
-    const { canDelete } = await import("@/lib/authorization");
     if (!(await canDelete(user, cred as never))) {
       const res = errorResponse("OWNERSHIP_REQUIRED", "삭제 권한 없음", 403);
       return NextResponse.json(res.body, { status: res.status });

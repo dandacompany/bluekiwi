@@ -8,11 +8,14 @@ import {
   listResponse,
   errorResponse,
 } from "@/lib/db";
+import {
+  buildCredentialVisibilityFilter,
+  canEditFolder,
+  loadFolder,
+} from "@/lib/authorization";
 import { withAuth } from "@/lib/with-auth";
 
 export const GET = withAuth("credentials:read", async (request, user) => {
-  const { buildCredentialVisibilityFilter } =
-    await import("@/lib/authorization");
   const filter = await buildCredentialVisibilityFilter("c", user, 1);
   const rows = await query<Credential>(
     `SELECT c.* FROM credentials c WHERE ${filter.sql} ORDER BY c.updated_at DESC`,
@@ -36,7 +39,6 @@ export const POST = withAuth("credentials:write", async (request, user) => {
   }
 
   // Resolve folder: credentials cannot live in public folders.
-  const { canEditFolder, loadFolder } = await import("@/lib/authorization");
   let targetFolderId: number;
   if (typeof folder_id === "number") {
     const f = await loadFolder(folder_id);

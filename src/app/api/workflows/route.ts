@@ -10,6 +10,11 @@ import {
   errorResponse,
 } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
+import {
+  buildResourceVisibilityFilter,
+  canEditFolder,
+  loadFolder,
+} from "@/lib/authorization";
 
 export const GET = withAuth(
   "workflows:read",
@@ -18,8 +23,6 @@ export const GET = withAuth(
     const includeInactive = url.searchParams.get("include_inactive") === "true";
     const folderId = url.searchParams.get("folder_id");
 
-    const { buildResourceVisibilityFilter } =
-      await import("@/lib/authorization");
     const filter = await buildResourceVisibilityFilter("w", user, 1);
 
     const clauses: string[] = [filter.sql];
@@ -85,7 +88,6 @@ export const POST = withAuth(
           : JSON.stringify(evaluation_contract);
 
     // Resolve target folder: user-provided or default to My Workspace
-    const { canEditFolder, loadFolder } = await import("@/lib/authorization");
     let targetFolderId: number;
     if (typeof body.folder_id === "number") {
       const f = await loadFolder(body.folder_id);
