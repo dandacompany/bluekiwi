@@ -1,122 +1,104 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import {
-  query,
   queryOne,
   execute,
-  Credential,
-  maskSecrets,
+  type Credential,
   okResponse,
   errorResponse,
+  maskSecrets,
 } from "@/lib/db";
-import { withOptionalAuth } from "@/lib/with-auth";
+import { withAuth } from "@/lib/with-auth";
 
 type Params = { params: Promise<{ id: string }> };
 
-const NOT_FOUND = errorResponse(
-  "NOT_FOUND",
-  "크리덴셜을 찾을 수 없습니다",
-  404,
-);
-
-function toMaskedCredential(row: Credential) {
-  const { secrets, ...rest } = row;
-  return { ...rest, secrets_masked: maskSecrets(secrets) };
-}
-
-export const GET = withOptionalAuth<Params>(
+// GET: canListCredential; if canReveal=false, return masked
+export const GET = withAuth<Params>(
   "credentials:read",
-  async (_request, _user, { params }: Params) => {
+  async (_request, user, { params }) => {
     const { id } = await params;
-
-    const row = await queryOne<Credential>(
+    const cred = await queryOne<Credential>(
       "SELECT * FROM credentials WHERE id = $1",
       [Number(id)],
     );
-
-    if (!row) {
-      return NextResponse.json(NOT_FOUND.body, { status: NOT_FOUND.status });
+    if (!cred) {
+      const res = errorResponse("NOT_FOUND", "크레덴셜 없음", 404);
+      return NextResponse.json(res.body, { status: res.status });
     }
-
-    const linkedNodes = await query<{ cnt: string }>(
-      "SELECT COUNT(*)::text AS cnt FROM workflow_nodes WHERE credential_id = $1",
-      [Number(id)],
-    );
-    const linked_nodes = Number(linkedNodes[0]?.cnt ?? 0);
-
-    const res = okResponse({ ...toMaskedCredential(row), linked_nodes });
+    const { canListCredential } = await import("@/lib/authorization");
+    if (!(await canListCredential(user, cred))) {
+      const res = errorResponse("OWNERSHIP_REQUIRED", "접근 권한 없음", 403);
+      return NextResponse.json(res.body, { status: res.status });
+    }
+    const res = okResponse({
+      ...cred,
+      secrets: JSON.stringify(maskSecrets(cred.secrets)),
+    });
     return NextResponse.json(res.body, { status: res.status });
   },
 );
 
-export const PUT = withOptionalAuth<Params>(
+// PUT: canEditCredential
+export const PUT = withAuth<Params>(
   "credentials:write",
-  async (request: NextRequest, _user, { params }: Params) => {
+  async (request, user, { params }) => {
     const { id } = await params;
     const body = await request.json();
-    const { service_name, description, secrets } = body;
-
-    const existing = await queryOne<Credential>(
+    const cred = await queryOne<Credential>(
       "SELECT * FROM credentials WHERE id = $1",
       [Number(id)],
     );
-
-    if (!existing) {
-      return NextResponse.json(NOT_FOUND.body, { status: NOT_FOUND.status });
+    if (!cred) {
+      const res = errorResponse("NOT_FOUND", "크레덴셜 없음", 404);
+      return NextResponse.json(res.body, { status: res.status });
     }
-
-    // secrets 병합: 빈 값이면 기존 유지
-    let mergedSecretsJson = existing.secrets;
-    if (secrets && typeof secrets === "object") {
-      const existingSecrets = JSON.parse(existing.secrets) as Record<
-        string,
-        string
-      >;
-      const newSecrets = secrets as Record<string, string>;
-      const merged: Record<string, string> = { ...existingSecrets };
-      for (const [key, value] of Object.entries(newSecrets)) {
-        if (typeof value === "string" && value.length > 0) {
-          merged[key] = value;
-        }
-        // 빈 값이면 기존 유지
-      }
-      mergedSecretsJson = JSON.stringify(merged);
+    const { canEditCredential } = await import("@/lib/authorization");
+    if (!(await canEditCredential(user, cred))) {
+      const res = errorResponse("CREDENTIAL_REVEAL_DENIED", "수정 권한 없음", 403);
+      return NextResponse.json(res.body, { status: res.status });
     }
-
-    await execute(
-      `UPDATE credentials
-     SET service_name = $1, description = $2, secrets = $3, updated_at = NOW()
-     WHERE id = $4`,
+    const updated = await queryOne<Credential>(
+      `UPDATE credentials SET
+         service_name = COALESCE($1, service_name),
+         description = COALESCE($2, description),
+         secrets = COALESCE($3, secrets),
+         folder_id = COALESCE($4, folder_id),
+         updated_at = NOW()
+       WHERE id = $5 RETURNING *`,
       [
-        (service_name ?? existing.service_name).trim(),
-        (description ?? existing.description).trim(),
-        mergedSecretsJson,
+        body.service_name ?? null,
+        body.description ?? null,
+        body.secrets ?? null,
+        body.folder_id ?? null,
         Number(id),
       ],
     );
-
-    const updated = await queryOne<Credential>(
-      "SELECT * FROM credentials WHERE id = $1",
-      [Number(id)],
-    );
-
-    const res = okResponse(updated ? toMaskedCredential(updated) : null);
+    const res = okResponse({
+      ...updated!,
+      secrets: JSON.stringify(maskSecrets(updated!.secrets)),
+    });
     return NextResponse.json(res.body, { status: res.status });
   },
 );
 
-export const DELETE = withOptionalAuth<Params>(
+// DELETE: canDelete
+export const DELETE = withAuth<Params>(
   "credentials:write",
-  async (_request, _user, { params }: Params) => {
+  async (_request, user, { params }) => {
     const { id } = await params;
-
-    const result = await execute("DELETE FROM credentials WHERE id = $1", [
-      Number(id),
-    ]);
-
-    if (result.rowCount === 0) {
-      return NextResponse.json(NOT_FOUND.body, { status: NOT_FOUND.status });
+    const cred = await queryOne<Credential>(
+      "SELECT * FROM credentials WHERE id = $1",
+      [Number(id)],
+    );
+    if (!cred) {
+      const res = errorResponse("NOT_FOUND", "크레덴셜 없음", 404);
+      return NextResponse.json(res.body, { status: res.status });
     }
-
+    const { canDelete } = await import("@/lib/authorization");
+    if (!(await canDelete(user, cred as never))) {
+      const res = errorResponse("OWNERSHIP_REQUIRED", "삭제 권한 없음", 403);
+      return NextResponse.json(res.body, { status: res.status });
+    }
+    await execute("DELETE FROM credentials WHERE id = $1", [Number(id)]);
     const res = okResponse({ id: Number(id), deleted: true });
     return NextResponse.json(res.body, { status: res.status });
   },
