@@ -271,3 +271,129 @@ export async function canManageCredentialShares(
 ): Promise<boolean> {
   return canRevealCredential(user, cred);
 }
+
+// ─── List filter predicate builders ───
+// These return a WHERE clause fragment + params for callers to compose
+// into their own SELECTs. Parameter numbering starts at the given offset.
+
+export interface AuthFilter {
+  sql: string;
+  params: unknown[];
+}
+
+export async function buildResourceVisibilityFilter(
+  tableAlias: string,
+  user: User,
+  nextParamIndex: number,
+): Promise<AuthFilter> {
+  const groups = await userGroupIds(user.id);
+  if (user.role === "admin" || user.role === "superuser") {
+    return { sql: "TRUE", params: [] };
+  }
+  const params: unknown[] = [user.id];
+  let p = nextParamIndex;
+  const userIdx = p;
+  p += 1;
+
+  let groupClause = "FALSE";
+  if (groups.length > 0) {
+    params.push(groups);
+    groupClause = `(
+      f.visibility = 'group' AND EXISTS (
+        SELECT 1 FROM folder_shares fs
+        WHERE fs.folder_id IN (f.id, f.parent_id)
+          AND fs.group_id = ANY($${p}::int[])
+      )
+    )`;
+    p += 1;
+  }
+
+  const sql = `(
+    ${tableAlias}.owner_id = $${userIdx}
+    OR EXISTS (
+      SELECT 1 FROM folders f
+      WHERE f.id = ${tableAlias}.folder_id
+        AND (
+          ${tableAlias}.visibility_override IS NULL
+          AND (
+            f.visibility = 'public'
+            OR ${groupClause}
+          )
+        )
+    )
+  )`;
+
+  return { sql, params };
+}
+
+export async function buildFolderVisibilityFilter(
+  tableAlias: string,
+  user: User,
+  nextParamIndex: number,
+): Promise<AuthFilter> {
+  if (user.role === "admin" || user.role === "superuser") {
+    return { sql: "TRUE", params: [] };
+  }
+  const groups = await userGroupIds(user.id);
+  const params: unknown[] = [user.id];
+  let p = nextParamIndex;
+  const userIdx = p;
+  p += 1;
+
+  let groupClause = "FALSE";
+  if (groups.length > 0) {
+    params.push(groups);
+    groupClause = `(
+      ${tableAlias}.visibility = 'group' AND EXISTS (
+        SELECT 1 FROM folder_shares fs
+        WHERE fs.folder_id IN (${tableAlias}.id, ${tableAlias}.parent_id)
+          AND fs.group_id = ANY($${p}::int[])
+      )
+    )`;
+    p += 1;
+  }
+
+  const sql = `(
+    ${tableAlias}.owner_id = $${userIdx}
+    OR ${tableAlias}.visibility = 'public'
+    OR ${groupClause}
+  )`;
+
+  return { sql, params };
+}
+
+export async function buildCredentialVisibilityFilter(
+  tableAlias: string,
+  user: User,
+  nextParamIndex: number,
+): Promise<AuthFilter> {
+  if (user.role === "superuser") {
+    return { sql: "TRUE", params: [] };
+  }
+  const groups = await userGroupIds(user.id);
+  const params: unknown[] = [user.id];
+  let p = nextParamIndex;
+  const userIdx = p;
+  p += 1;
+
+  let groupClause = "FALSE";
+  if (groups.length > 0) {
+    params.push(groups);
+    groupClause = `EXISTS (
+      SELECT 1 FROM credential_shares cs
+      WHERE cs.credential_id = ${tableAlias}.id
+        AND cs.group_id = ANY($${p}::int[])
+    )`;
+    p += 1;
+  }
+
+  const adminClause = user.role === "admin" ? "OR TRUE" : "";
+
+  const sql = `(
+    ${tableAlias}.owner_id = $${userIdx}
+    OR ${groupClause}
+    ${adminClause}
+  )`;
+
+  return { sql, params };
+}
