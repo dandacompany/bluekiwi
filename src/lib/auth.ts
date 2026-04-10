@@ -130,8 +130,8 @@ export const PERMISSIONS = {
   "tasks:execute": "editor" as Role,
 
   // Credentials
-  "credentials:read": "admin" as Role,
-  "credentials:write": "admin" as Role,
+  "credentials:read": "viewer" as Role,
+  "credentials:write": "editor" as Role,
 
   // Users
   "users:read": "admin" as Role,
