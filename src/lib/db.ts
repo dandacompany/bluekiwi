@@ -77,6 +77,9 @@ export interface Instruction {
   tags: string;
   priority: number;
   is_active: number;
+  owner_id: number;
+  folder_id: number;
+  visibility_override: "personal" | null;
   created_at: string;
   updated_at: string;
 }
@@ -89,7 +92,10 @@ export interface Workflow {
   parent_workflow_id: number | null;
   family_root_id: number;
   is_active: boolean;
-  evaluation_contract: string | null; // JSONB stored as string
+  evaluation_contract: string | null;
+  owner_id: number;
+  folder_id: number;
+  visibility_override: "personal" | null;
   created_at: string;
   updated_at: string;
 }
@@ -239,8 +245,40 @@ export interface Credential {
   service_name: string;
   description: string;
   secrets: string;
+  owner_id: number;
+  folder_id: number;
   created_at: string;
   updated_at: string;
+}
+
+export type Visibility = "personal" | "group" | "public";
+export type FolderShareLevel = "viewer" | "editor";
+export type CredentialShareLevel = "use" | "manage";
+
+export interface Folder {
+  id: number;
+  name: string;
+  description: string;
+  owner_id: number;
+  parent_id: number | null;
+  visibility: Visibility;
+  is_system: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FolderShare {
+  folder_id: number;
+  group_id: number;
+  access_level: FolderShareLevel;
+  created_at: string;
+}
+
+export interface CredentialShare {
+  credential_id: number;
+  group_id: number;
+  access_level: CredentialShareLevel;
+  created_at: string;
 }
 
 export function maskSecrets(secretsJson: string): Record<string, string> {
