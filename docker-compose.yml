@@ -1,0 +1,39 @@
+# docker-compose.yml — BlueKiwi self-host template
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: bluekiwi
+      POSTGRES_USER: bluekiwi
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./docker/migrations:/docker-entrypoint-initdb.d/migrations:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bluekiwi"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+
+  app:
+    image: ghcr.io/dandacompany/bluekiwi:${BLUEKIWI_VERSION:-latest}
+    ports:
+      - "${APP_PORT:-3100}:3000"
+    environment:
+      DATABASE_URL: postgresql://bluekiwi:${DB_PASSWORD}@db:5432/bluekiwi
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3100}
+      BLUEKIWI_VERSION: ${BLUEKIWI_VERSION:-latest}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+volumes:
+  pgdata:
