@@ -136,9 +136,10 @@ const server = new Server(
 const tools: Tool[] = [
   tool(
     "list_workflows",
-    "List workflows on the BlueKiwi server. By default only active versions are returned. Pass include_inactive=true to see archived versions as well.",
+    "List workflows visible to the current user. By default only active versions are returned. Pass include_inactive=true to see archived versions. Pass folder_id to filter by a specific folder.",
     {
       include_inactive: { type: "boolean" },
+      folder_id: { type: "number" },
     },
   ),
   tool(
@@ -281,7 +282,7 @@ const tools: Tool[] = [
   tool("list_credentials", "List credentials available to the current user"),
   tool(
     "create_workflow",
-    "Create a new workflow",
+    "Create a new workflow. Optionally place it in a specific folder_id (defaults to the caller's My Workspace).",
     {
       title: { type: "string" },
       description: { type: "string" },
@@ -289,6 +290,7 @@ const tools: Tool[] = [
       parent_workflow_id: { type: "number" },
       evaluation_contract: { type: "object" },
       nodes: { type: "array" },
+      folder_id: { type: "number" },
     },
     ["title"],
   ),
@@ -331,6 +333,71 @@ const tools: Tool[] = [
     },
     ["task_id"],
   ),
+  tool(
+    "list_folders",
+    "List folders visible to the current user. Optionally filter by parent_id.",
+    {
+      parent_id: { type: "number" },
+    },
+  ),
+  tool(
+    "create_folder",
+    "Create a new folder under an optional parent. Visibility defaults to 'personal'.",
+    {
+      name: { type: "string" },
+      description: { type: "string" },
+      parent_id: { type: "number" },
+      visibility: { type: "string" },
+    },
+    ["name"],
+  ),
+  tool(
+    "share_folder",
+    "Share a folder with a user group at the given access level (viewer or editor). Owner or admin only.",
+    {
+      folder_id: { type: "number" },
+      group_id: { type: "number" },
+      access_level: { type: "string" },
+    },
+    ["folder_id", "group_id", "access_level"],
+  ),
+  tool(
+    "unshare_folder",
+    "Remove a group share from a folder.",
+    {
+      folder_id: { type: "number" },
+      group_id: { type: "number" },
+    },
+    ["folder_id", "group_id"],
+  ),
+  tool(
+    "move_workflow",
+    "Move a workflow into a different folder. Caller must have edit permission on the destination folder.",
+    {
+      workflow_id: { type: "number" },
+      folder_id: { type: "number" },
+    },
+    ["workflow_id", "folder_id"],
+  ),
+  tool(
+    "move_instruction",
+    "Move an instruction into a different folder.",
+    {
+      instruction_id: { type: "number" },
+      folder_id: { type: "number" },
+    },
+    ["instruction_id", "folder_id"],
+  ),
+  tool(
+    "transfer_workflow",
+    "Transfer ownership of a workflow to another user. Owner, admin, or superuser only.",
+    {
+      workflow_id: { type: "number" },
+      new_owner_id: { type: "number" },
+    },
+    ["workflow_id", "new_owner_id"],
+  ),
+  tool("list_my_groups", "List user groups the current user belongs to."),
   /*
 scan_repo is the single local-execution exception in an otherwise REST-thin MCP wrapper.
 The REST backend has no visibility into the agent's filesystem, so delegating static
@@ -364,11 +431,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     switch (name) {
       case "list_workflows": {
-        const includeInactive = args.include_inactive === true;
-        const path = includeInactive
-          ? "/api/workflows?include_inactive=true"
-          : "/api/workflows";
-        return wrap(await client.request("GET", path));
+        const qs = new URLSearchParams();
+        if (args.include_inactive === true) qs.set("include_inactive", "true");
+        if (typeof args.folder_id === "number")
+          qs.set("folder_id", String(args.folder_id));
+        const suffix = qs.toString() ? `?${qs.toString()}` : "";
+        return wrap(await client.request("GET", `/api/workflows${suffix}`));
       }
       case "list_workflow_versions": {
         const workflowId = requireNumberArg(args, "workflow_id");
@@ -505,6 +573,65 @@ pattern scans to it is impossible without an upload/clone model. Keeping this st
 in-process preserves determinism and reproducibility of compliance scans. All other
 tools must stay thin proxies — do not replicate this pattern elsewhere.
       */
+      case "list_folders": {
+        const qs = new URLSearchParams();
+        if (typeof args.parent_id === "number")
+          qs.set("parent_id", String(args.parent_id));
+        const suffix = qs.toString() ? `?${qs.toString()}` : "";
+        return wrap(await client.request("GET", `/api/folders${suffix}`));
+      }
+      case "create_folder":
+        return wrap(await client.request("POST", "/api/folders", args));
+      case "share_folder": {
+        const folderId = requireNumberArg(args, "folder_id");
+        return wrap(
+          await client.request("POST", `/api/folders/${folderId}/shares`, {
+            group_id: args.group_id,
+            access_level: args.access_level,
+          }),
+        );
+      }
+      case "unshare_folder": {
+        const folderId = requireNumberArg(args, "folder_id");
+        const groupId = requireNumberArg(args, "group_id");
+        return wrap(
+          await client.request(
+            "DELETE",
+            `/api/folders/${folderId}/shares/${groupId}`,
+          ),
+        );
+      }
+      case "move_workflow": {
+        const workflowId = requireNumberArg(args, "workflow_id");
+        const folderId = requireNumberArg(args, "folder_id");
+        return wrap(
+          await client.request("PUT", `/api/workflows/${workflowId}`, {
+            folder_id: folderId,
+          }),
+        );
+      }
+      case "move_instruction": {
+        const instructionId = requireNumberArg(args, "instruction_id");
+        const folderId = requireNumberArg(args, "folder_id");
+        return wrap(
+          await client.request("PUT", `/api/instructions/${instructionId}`, {
+            folder_id: folderId,
+          }),
+        );
+      }
+      case "transfer_workflow": {
+        const workflowId = requireNumberArg(args, "workflow_id");
+        const newOwnerId = requireNumberArg(args, "new_owner_id");
+        return wrap(
+          await client.request(
+            "POST",
+            `/api/workflows/${workflowId}/transfer`,
+            { new_owner_id: newOwnerId },
+          ),
+        );
+      }
+      case "list_my_groups":
+        return wrap(await client.request("GET", "/api/auth/me/groups"));
       case "scan_repo":
         return await scanRepoLocal(args);
       default:
