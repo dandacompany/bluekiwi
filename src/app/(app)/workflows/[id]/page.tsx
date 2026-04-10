@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -195,11 +195,12 @@ export default function WorkflowDetailPage() {
   const [taskSearch, setTaskSearch] = useState("");
   const [starting, setStarting] = useState(false);
   const [activeTab, setActiveTab] = useState("history");
+  const historySectionRef = useRef<HTMLDivElement | null>(null);
   const [versions, setVersions] = useState<VersionsResponse | null>(null);
   const [versionsLoading, setVersionsLoading] = useState(false);
-  const [selectedRunVersionId, setSelectedRunVersionId] = useState<number>(0);
 
   const fetchWorkflow = useCallback(async () => {
+    setLoading(true);
     const res = await fetch(`/api/workflows/${workflowId}`);
     if (!res.ok) {
       setWorkflow(null);
@@ -272,6 +273,14 @@ export default function WorkflowDetailPage() {
       return;
     }
 
+    // Reset data to avoid stale rendering while the new version loads.
+    // Every section (hero, tabs, tasks, versions) is keyed on workflowId,
+    // so when the dropdown navigates to a different version we want the
+    // UI to visibly reset instead of showing the previous version's rows.
+    setWorkflow(null);
+    setTasks([]);
+    setVersions(null);
+
     void fetchWorkflow();
     void fetchTasks();
     void fetchVersions();
@@ -316,18 +325,13 @@ export default function WorkflowDetailPage() {
     if (!workflow) return;
     setStarting(true);
     try {
-      // Default target: whatever the user picked in the version dropdown,
-      // falling back to the current page's workflow id (which is what
-      // the Run button has always meant). If the picked version is
-      // archived the server returns 409 and we surface a clear message.
-      const targetId =
-        selectedRunVersionId && selectedRunVersionId > 0
-          ? selectedRunVersionId
-          : workflow.id;
+      // The dropdown now navigates to the selected version, so by the time
+      // Run is pressed the page is already showing that version. Starting
+      // the currently viewed workflow is the only sensible action.
       const res = await fetch("/api/tasks/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workflow_id: targetId }),
+        body: JSON.stringify({ workflow_id: workflow.id }),
       });
       if (!res.ok) {
         if (res.status === 409) {
@@ -400,10 +404,13 @@ export default function WorkflowDetailPage() {
           <div className="flex items-center gap-2">
             {versions && versions.versions.length > 1 && (
               <select
-                value={selectedRunVersionId || workflow.id}
-                onChange={(e) =>
-                  setSelectedRunVersionId(Number(e.target.value))
-                }
+                value={workflow.id}
+                onChange={(e) => {
+                  const nextId = Number(e.target.value);
+                  if (nextId && nextId !== workflow.id) {
+                    router.push(`/workflows/${nextId}`);
+                  }
+                }}
                 className="h-9 rounded-md border border-[var(--border)] bg-background px-2 text-xs"
                 aria-label={t("workflows.pickVersion")}
               >
@@ -509,13 +516,6 @@ export default function WorkflowDetailPage() {
               <p className="text-sm font-medium">
                 {t("workflows.recentTasks")}
               </p>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setActiveTab("history")}
-              >
-                {t("workflows.openHistory")}
-              </Button>
             </div>
 
             {taskLoading ? (
@@ -559,327 +559,336 @@ export default function WorkflowDetailPage() {
         </Card>
       </section>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="history">{t("workflows.history")}</TabsTrigger>
-          <TabsTrigger value="nodes">{t("workflows.nodesTab")}</TabsTrigger>
-          <TabsTrigger value="versions">
-            {t("workflows.versionsTab")}
-          </TabsTrigger>
-          <TabsTrigger value="meta">{t("workflows.meta")}</TabsTrigger>
-        </TabsList>
+      <div ref={historySectionRef}>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="history">{t("workflows.history")}</TabsTrigger>
+            <TabsTrigger value="nodes">{t("workflows.nodesTab")}</TabsTrigger>
+            <TabsTrigger value="versions">
+              {t("workflows.versionsTab")}
+            </TabsTrigger>
+            <TabsTrigger value="meta">{t("workflows.meta")}</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="history">
-          <div className="mb-4 flex items-center justify-between gap-2">
-            <div className="text-sm text-[var(--muted-foreground)]">
-              {
-                t("workflows.runningTasks", {
-                  count: tasks.length,
-                }) as unknown as string
-              }
+          <TabsContent value="history">
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <div className="text-sm text-[var(--muted-foreground)]">
+                {
+                  t("workflows.runningTasks", {
+                    count: tasks.length,
+                  }) as unknown as string
+                }
+              </div>
+              <div className="flex w-full max-w-sm items-center gap-2">
+                <Input
+                  value={taskSearch}
+                  onChange={(e) => setTaskSearch(e.target.value)}
+                  placeholder={t("common.search")}
+                  aria-label={t("common.search")}
+                />
+                <Search className="h-4 w-4 text-[var(--muted-foreground)]" />
+              </div>
             </div>
-            <div className="flex w-full max-w-sm items-center gap-2">
-              <Input
-                value={taskSearch}
-                onChange={(e) => setTaskSearch(e.target.value)}
-                placeholder={t("common.search")}
-                aria-label={t("common.search")}
+
+            <div className="mb-4 flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant={taskStatusFilter === "" ? "default" : "outline"}
+                onClick={() => setTaskStatusFilter("")}
+              >
+                {t("tasks.all")}
+              </Button>
+              <Button
+                size="sm"
+                variant={taskStatusFilter === "running" ? "default" : "outline"}
+                onClick={() => setTaskStatusFilter("running")}
+              >
+                {t("tasks.running")}
+              </Button>
+              <Button
+                size="sm"
+                variant={
+                  taskStatusFilter === "completed" ? "default" : "outline"
+                }
+                onClick={() => setTaskStatusFilter("completed")}
+              >
+                {t("tasks.completed")}
+              </Button>
+              <Button
+                size="sm"
+                variant={taskStatusFilter === "failed" ? "default" : "outline"}
+                onClick={() => setTaskStatusFilter("failed")}
+              >
+                {t("tasks.failed")}
+              </Button>
+              <Button
+                size="sm"
+                variant={taskStatusFilter === "pending" ? "default" : "outline"}
+                onClick={() => setTaskStatusFilter("pending")}
+              >
+                {t("tasks.pending")}
+              </Button>
+            </div>
+
+            {taskLoading ? (
+              <Card>
+                <CardContent className="py-10 text-center text-sm text-[var(--muted-foreground)]">
+                  {t("common.loading")}
+                </CardContent>
+              </Card>
+            ) : tasks.length === 0 ? (
+              <EmptyState
+                icon={FileText}
+                title={t("tasks.empty")}
+                description={t("workflows.noTasks")}
               />
-              <Search className="h-4 w-4 text-[var(--muted-foreground)]" />
-            </div>
-          </div>
+            ) : (
+              <div className="space-y-3">
+                {tasks.map((task) => {
+                  const completedSteps = new Set(
+                    task.logs
+                      .filter((l) => l.status === "completed")
+                      .map((l) => l.step_order),
+                  ).size;
+                  const totalSteps = Math.max(
+                    ...task.logs.map((l) => l.step_order),
+                    1,
+                  );
+                  const fillPercent =
+                    task.logs.length > 0
+                      ? (completedSteps / totalSteps) * 100
+                      : 0;
+                  return (
+                    <Card
+                      key={task.id}
+                      className="transition-shadow hover:shadow-soft"
+                    >
+                      <CardContent className="p-4">
+                        <div className="mb-2 flex flex-wrap items-start justify-between gap-3">
+                          <Link
+                            href={`/tasks/${task.id}`}
+                            className="min-w-0 flex-1"
+                          >
+                            <p className="truncate text-sm font-semibold">
+                              {task.workflow_title ??
+                                t("tasks.workflowFallback", {
+                                  id: task.workflow_id,
+                                })}
+                            </p>
+                            <p className="truncate text-xs text-[var(--muted-foreground)]">
+                              {task.context}
+                            </p>
+                          </Link>
+                          <StatusBadge status={task.status} t={t} />
+                        </div>
+                        <div className="mb-2 flex items-center gap-2 text-xs text-[var(--muted-foreground)]">
+                          <Clock4 className="h-3.5 w-3.5" />
+                          <span>
+                            #{task.id} ·{" "}
+                            {task.status === "completed"
+                              ? formatDateTime(task.updated_at)
+                              : formatDateTime(task.created_at)}
+                          </span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-surface-soft">
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              task.status === "failed"
+                                ? "bg-destructive"
+                                : task.status === "pending"
+                                  ? "bg-[var(--muted)]"
+                                  : "bg-brand-blue-600"
+                            }`}
+                            style={{ width: `${fillPercent}%` }}
+                          />
+                        </div>
+                        <p className="mt-1 text-right text-[11px] text-[var(--muted-foreground)]">
+                          {completedSteps}/{totalSteps} {t("tasks.steps")}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
 
-          <div className="mb-4 flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant={taskStatusFilter === "" ? "default" : "outline"}
-              onClick={() => setTaskStatusFilter("")}
-            >
-              {t("tasks.all")}
-            </Button>
-            <Button
-              size="sm"
-              variant={taskStatusFilter === "running" ? "default" : "outline"}
-              onClick={() => setTaskStatusFilter("running")}
-            >
-              {t("tasks.running")}
-            </Button>
-            <Button
-              size="sm"
-              variant={taskStatusFilter === "completed" ? "default" : "outline"}
-              onClick={() => setTaskStatusFilter("completed")}
-            >
-              {t("tasks.completed")}
-            </Button>
-            <Button
-              size="sm"
-              variant={taskStatusFilter === "failed" ? "default" : "outline"}
-              onClick={() => setTaskStatusFilter("failed")}
-            >
-              {t("tasks.failed")}
-            </Button>
-            <Button
-              size="sm"
-              variant={taskStatusFilter === "pending" ? "default" : "outline"}
-              onClick={() => setTaskStatusFilter("pending")}
-            >
-              {t("tasks.pending")}
-            </Button>
-          </div>
+          <TabsContent value="nodes">
+            {workflow.nodes.length === 0 ? (
+              <EmptyState
+                icon={ListTree}
+                title={t("workflows.noNodes")}
+                description={t("workflows.noNodesDesc")}
+              />
+            ) : (
+              <div className="space-y-3">
+                {workflow.nodes.map((node) => (
+                  <NodeCard key={node.id} node={node} t={t} />
+                ))}
+              </div>
+            )}
+          </TabsContent>
 
-          {taskLoading ? (
+          <TabsContent value="versions">
             <Card>
-              <CardContent className="py-10 text-center text-sm text-[var(--muted-foreground)]">
-                {t("common.loading")}
-              </CardContent>
-            </Card>
-          ) : tasks.length === 0 ? (
-            <EmptyState
-              icon={FileText}
-              title={t("tasks.empty")}
-              description={t("workflows.noTasks")}
-            />
-          ) : (
-            <div className="space-y-3">
-              {tasks.map((task) => {
-                const completedSteps = new Set(
-                  task.logs
-                    .filter((l) => l.status === "completed")
-                    .map((l) => l.step_order),
-                ).size;
-                const totalSteps = Math.max(
-                  ...task.logs.map((l) => l.step_order),
-                  1,
-                );
-                const fillPercent =
-                  task.logs.length > 0
-                    ? (completedSteps / totalSteps) * 100
-                    : 0;
-                return (
-                  <Card
-                    key={task.id}
-                    className="transition-shadow hover:shadow-soft"
-                  >
-                    <CardContent className="p-4">
-                      <div className="mb-2 flex flex-wrap items-start justify-between gap-3">
-                        <Link
-                          href={`/tasks/${task.id}`}
-                          className="min-w-0 flex-1"
-                        >
-                          <p className="truncate text-sm font-semibold">
-                            {task.workflow_title ??
-                              t("tasks.workflowFallback", {
-                                id: task.workflow_id,
-                              })}
-                          </p>
-                          <p className="truncate text-xs text-[var(--muted-foreground)]">
-                            {task.context}
-                          </p>
-                        </Link>
-                        <StatusBadge status={task.status} t={t} />
-                      </div>
-                      <div className="mb-2 flex items-center gap-2 text-xs text-[var(--muted-foreground)]">
-                        <Clock4 className="h-3.5 w-3.5" />
-                        <span>
-                          #{task.id} ·{" "}
-                          {task.status === "completed"
-                            ? formatDateTime(task.updated_at)
-                            : formatDateTime(task.created_at)}
+              <CardContent className="space-y-4 p-4 text-sm">
+                <div>
+                  <h2 className="text-base font-semibold">
+                    {t("workflows.versionHistoryTitle")}
+                  </h2>
+                  <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                    {t("workflows.versionHistoryDesc")}
+                  </p>
+                </div>
+
+                {versionsLoading ? (
+                  <p className="text-xs text-[var(--muted-foreground)]">
+                    {t("common.loading")}
+                  </p>
+                ) : !versions || versions.versions.length === 0 ? (
+                  <p className="text-xs text-[var(--muted-foreground)]">
+                    {t("workflows.empty")}
+                  </p>
+                ) : (
+                  <>
+                    <div className="rounded-lg border border-[var(--border)]">
+                      <div className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-3 border-b border-[var(--border)] px-3 py-2 text-[10px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
+                        <span>{t("workflows.version")}</span>
+                        <span>{t("workflows.createdAt")}</span>
+                        <span>{t("workflows.lineage")}</span>
+                        <span />
+                        <span className="text-right">
+                          {t("workflows.actions")}
                         </span>
                       </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-surface-soft">
-                        <div
-                          className={`h-full rounded-full transition-all ${
-                            task.status === "failed"
-                              ? "bg-destructive"
-                              : task.status === "pending"
-                                ? "bg-[var(--muted)]"
-                                : "bg-brand-blue-600"
-                          }`}
-                          style={{ width: `${fillPercent}%` }}
-                        />
-                      </div>
-                      <p className="mt-1 text-right text-[11px] text-[var(--muted-foreground)]">
-                        {completedSteps}/{totalSteps} {t("tasks.steps")}
-                      </p>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="nodes">
-          {workflow.nodes.length === 0 ? (
-            <EmptyState
-              icon={ListTree}
-              title={t("workflows.noNodes")}
-              description={t("workflows.noNodesDesc")}
-            />
-          ) : (
-            <div className="space-y-3">
-              {workflow.nodes.map((node) => (
-                <NodeCard key={node.id} node={node} t={t} />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="versions">
-          <Card>
-            <CardContent className="space-y-4 p-4 text-sm">
-              <div>
-                <h2 className="text-base font-semibold">
-                  {t("workflows.versionHistoryTitle")}
-                </h2>
-                <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                  {t("workflows.versionHistoryDesc")}
-                </p>
-              </div>
-
-              {versionsLoading ? (
-                <p className="text-xs text-[var(--muted-foreground)]">
-                  {t("common.loading")}
-                </p>
-              ) : !versions || versions.versions.length === 0 ? (
-                <p className="text-xs text-[var(--muted-foreground)]">
-                  {t("workflows.empty")}
-                </p>
-              ) : (
-                <>
-                  <div className="rounded-lg border border-[var(--border)]">
-                    <div className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-3 border-b border-[var(--border)] px-3 py-2 text-[10px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                      <span>{t("workflows.version")}</span>
-                      <span>{t("workflows.createdAt")}</span>
-                      <span>{t("workflows.lineage")}</span>
-                      <span />
-                      <span className="text-right">
-                        {t("workflows.actions")}
-                      </span>
-                    </div>
-                    {versions.versions.map((v) => {
-                      const isCurrent = v.id === workflow.id;
-                      return (
-                        <div
-                          key={v.id}
-                          className={`grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-3 border-b border-[var(--border)] px-3 py-2 text-xs last:border-b-0 ${
-                            isCurrent ? "bg-brand-blue-50" : ""
-                          }`}
-                        >
-                          <div className="inline-flex items-center gap-2">
-                            <Link
-                              href={`/workflows/${v.id}`}
-                              className="font-medium text-brand-blue-600 hover:underline"
-                            >
-                              {v.version}
-                            </Link>
-                            {isCurrent && (
-                              <Badge variant="outline" className="text-[10px]">
-                                {t("workflows.currentlyViewing")}
-                              </Badge>
-                            )}
-                          </div>
-                          <span className="text-[var(--muted-foreground)]">
-                            {formatDateTime(v.created_at)}
-                          </span>
-                          <span className="inline-flex items-center gap-1 text-[var(--muted-foreground)]">
-                            <GitBranch className="h-3 w-3" />
-                            {v.parent_workflow_id
-                              ? `#${v.parent_workflow_id}`
-                              : t("workflows.noParent")}
-                          </span>
-                          <Badge
-                            className={
-                              v.is_active
-                                ? "border-kiwi-600/30 bg-kiwi-100 text-kiwi-700"
-                                : "border-[var(--border)] bg-transparent text-[var(--muted-foreground)]"
-                            }
+                      {versions.versions.map((v) => {
+                        const isCurrent = v.id === workflow.id;
+                        return (
+                          <div
+                            key={v.id}
+                            className={`grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-3 border-b border-[var(--border)] px-3 py-2 text-xs last:border-b-0 ${
+                              isCurrent ? "bg-brand-blue-50" : ""
+                            }`}
                           >
-                            {v.is_active ? (
-                              <span className="inline-flex items-center gap-1">
-                                <CheckCircle2 className="h-3 w-3" />
-                                {t("workflows.activeBadge")}
-                              </span>
-                            ) : (
-                              t("workflows.inactiveBadge")
-                            )}
-                          </Badge>
-                          <div className="flex justify-end gap-1">
-                            {v.is_active ? (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => deactivateVersion(v.id)}
+                            <div className="inline-flex items-center gap-2">
+                              <Link
+                                href={`/workflows/${v.id}`}
+                                className="font-medium text-brand-blue-600 hover:underline"
                               >
-                                {t("workflows.deactivate")}
-                              </Button>
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={() => activateVersion(v.id)}
-                              >
-                                {t("workflows.activate")}
-                              </Button>
-                            )}
+                                {v.version}
+                              </Link>
+                              {isCurrent && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px]"
+                                >
+                                  {t("workflows.currentlyViewing")}
+                                </Badge>
+                              )}
+                            </div>
+                            <span className="text-[var(--muted-foreground)]">
+                              {formatDateTime(v.created_at)}
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-[var(--muted-foreground)]">
+                              <GitBranch className="h-3 w-3" />
+                              {v.parent_workflow_id
+                                ? `#${v.parent_workflow_id}`
+                                : t("workflows.noParent")}
+                            </span>
+                            <Badge
+                              className={
+                                v.is_active
+                                  ? "border-kiwi-600/30 bg-kiwi-100 text-kiwi-700"
+                                  : "border-[var(--border)] bg-transparent text-[var(--muted-foreground)]"
+                              }
+                            >
+                              {v.is_active ? (
+                                <span className="inline-flex items-center gap-1">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  {t("workflows.activeBadge")}
+                                </span>
+                              ) : (
+                                t("workflows.inactiveBadge")
+                              )}
+                            </Badge>
+                            <div className="flex justify-end gap-1">
+                              {v.is_active ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => deactivateVersion(v.id)}
+                                >
+                                  {t("workflows.deactivate")}
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => activateVersion(v.id)}
+                                >
+                                  {t("workflows.activate")}
+                                </Button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <p className="text-[11px] text-[var(--muted-foreground)]">
-                    {t("workflows.lineageDesc")}
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="meta">
-          <Card>
-            <CardContent className="space-y-2 p-4 text-sm">
-              <div className="flex items-start justify-between gap-3">
-                <span className="font-medium">{t("workflows.metaId")}</span>
-                <span className="text-[var(--muted-foreground)]">
-                  {workflow.id}
-                </span>
-              </div>
-              <div className="flex items-start justify-between gap-3">
-                <span className="font-medium">
-                  {t("workflows.metaVersion")}
-                </span>
-                <span className="text-[var(--muted-foreground)]">
-                  {workflow.version}
-                </span>
-              </div>
-              <div className="flex items-start justify-between gap-3">
-                <span className="font-medium">{t("workflows.metaParent")}</span>
-                <span className="text-[var(--muted-foreground)]">
-                  {workflow.parent_workflow_id
-                    ? String(workflow.parent_workflow_id)
-                    : t("workflows.metaNoParent")}
-                </span>
-              </div>
-              <div className="mt-2">
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
-                  {t("workflows.metaContract")}
-                </p>
-                {evaluationContract ? (
-                  <pre className="overflow-auto rounded-lg border border-[var(--border)] bg-slate-950 p-3 text-xs text-slate-100">
-                    {evaluationContract}
-                  </pre>
-                ) : (
-                  <p className="text-xs text-[var(--muted-foreground)]">
-                    {t("workflows.noEvaluation")}
-                  </p>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[11px] text-[var(--muted-foreground)]">
+                      {t("workflows.lineageDesc")}
+                    </p>
+                  </>
                 )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="meta">
+            <Card>
+              <CardContent className="space-y-2 p-4 text-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="font-medium">{t("workflows.metaId")}</span>
+                  <span className="text-[var(--muted-foreground)]">
+                    {workflow.id}
+                  </span>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="font-medium">
+                    {t("workflows.metaVersion")}
+                  </span>
+                  <span className="text-[var(--muted-foreground)]">
+                    {workflow.version}
+                  </span>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="font-medium">
+                    {t("workflows.metaParent")}
+                  </span>
+                  <span className="text-[var(--muted-foreground)]">
+                    {workflow.parent_workflow_id
+                      ? String(workflow.parent_workflow_id)
+                      : t("workflows.metaNoParent")}
+                  </span>
+                </div>
+                <div className="mt-2">
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
+                    {t("workflows.metaContract")}
+                  </p>
+                  {evaluationContract ? (
+                    <pre className="overflow-auto rounded-lg border border-[var(--border)] bg-slate-950 p-3 text-xs text-slate-100">
+                      {evaluationContract}
+                    </pre>
+                  ) : (
+                    <p className="text-xs text-[var(--muted-foreground)]">
+                      {t("workflows.noEvaluation")}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </main>
   );
 }
