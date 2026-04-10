@@ -217,6 +217,23 @@ export interface TaskComment {
   created_at: string;
 }
 
+export interface ComplianceFinding {
+  id: number;
+  task_id: number;
+  step_order: number | null;
+  rule_id: string;
+  severity: "BLOCK" | "REVIEW" | "WARN" | "INFO";
+  summary: string;
+  detail: string | null;
+  fix: string | null;
+  authority: string | null;
+  file_path: string | null;
+  line_number: number | null;
+  source: string | null;
+  metadata: unknown | null;
+  created_at: string;
+}
+
 export interface Credential {
   id: number;
   service_name: string;
