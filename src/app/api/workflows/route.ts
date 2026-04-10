@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   query,
+  queryOne,
   withTransaction,
   Workflow,
   resolveNodes,
@@ -8,21 +9,28 @@ import {
   listResponse,
   errorResponse,
 } from "@/lib/db";
-import { withOptionalAuth } from "@/lib/with-auth";
+import { withAuth } from "@/lib/with-auth";
 
-export const GET = withOptionalAuth(
+export const GET = withAuth(
   "workflows:read",
-  async (request: NextRequest) => {
-    const includeInactive =
-      new URL(request.url).searchParams.get("include_inactive") === "true";
+  async (request: NextRequest, user) => {
+    const url = new URL(request.url);
+    const includeInactive = url.searchParams.get("include_inactive") === "true";
+    const folderId = url.searchParams.get("folder_id");
 
-    const workflows = includeInactive
-      ? await query<Workflow>(
-          "SELECT * FROM workflows ORDER BY updated_at DESC",
-        )
-      : await query<Workflow>(
-          "SELECT * FROM workflows WHERE is_active = TRUE ORDER BY updated_at DESC",
-        );
+    const { buildResourceVisibilityFilter } = await import("@/lib/authorization");
+    const filter = await buildResourceVisibilityFilter("w", user, 1);
+
+    const clauses: string[] = [filter.sql];
+    const params: unknown[] = [...filter.params];
+    if (!includeInactive) clauses.push("w.is_active = TRUE");
+    if (folderId) {
+      params.push(Number(folderId));
+      clauses.push(`w.folder_id = $${params.length}`);
+    }
+
+    const sql = `SELECT w.* FROM workflows w WHERE ${clauses.join(" AND ")} ORDER BY w.updated_at DESC`;
+    const workflows = await query<Workflow>(sql, params);
 
     const workflowsWithNodes = await Promise.all(
       workflows.map(async (workflow) => ({
@@ -46,9 +54,9 @@ interface NodeInput {
   auto_advance?: boolean;
 }
 
-export const POST = withOptionalAuth(
+export const POST = withAuth(
   "workflows:create",
-  async (request: NextRequest) => {
+  async (request: NextRequest, user) => {
     const body = await request.json();
     const {
       title,
@@ -75,23 +83,58 @@ export const POST = withOptionalAuth(
           ? evaluation_contract
           : JSON.stringify(evaluation_contract);
 
+    // Resolve target folder: user-provided or default to My Workspace
+    const { canEditFolder, loadFolder } = await import("@/lib/authorization");
+    let targetFolderId: number;
+    if (typeof body.folder_id === "number") {
+      const f = await loadFolder(body.folder_id);
+      if (!f) {
+        const res = errorResponse("NOT_FOUND", "folder not found", 404);
+        return NextResponse.json(res.body, { status: res.status });
+      }
+      if (!(await canEditFolder(user, f))) {
+        const res = errorResponse("OWNERSHIP_REQUIRED", "폴더 편집 권한 없음", 403);
+        return NextResponse.json(res.body, { status: res.status });
+      }
+      targetFolderId = f.id;
+    } else {
+      const mw = await queryOne<{ id: number }>(
+        "SELECT id FROM folders WHERE owner_id = $1 AND is_system = true AND name = 'My Workspace' LIMIT 1",
+        [user.id],
+      );
+      if (!mw) {
+        const res = errorResponse(
+          "VALIDATION_ERROR",
+          "My Workspace가 없습니다. 관리자에게 문의하세요",
+          500,
+        );
+        return NextResponse.json(res.body, { status: res.status });
+      }
+      targetFolderId = mw.id;
+    }
+
     const created = await withTransaction(async (client) => {
       // Insert with family_root_id = NULL first, then set it to self id so
       // the topmost ancestor of every new workflow is itself by default.
-      const { rows: workflowRows } = await client.query(
-        `INSERT INTO workflows
-           (title, description, version, parent_workflow_id, family_root_id,
-            is_active, evaluation_contract)
-         VALUES ($1, $2, $3, $4, NULL, TRUE, $5) RETURNING id`,
+      const inserted = await client.query(
+        `INSERT INTO workflows (
+           title, description, version, parent_workflow_id,
+           evaluation_contract, owner_id, folder_id
+         )
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING *`,
         [
           title.trim(),
-          (description ?? "").trim(),
+          description ?? "",
           versionValue,
           parentWorkflowIdValue,
           evaluationContractValue,
+          user.id,
+          targetFolderId,
         ],
       );
-      const workflowId = workflowRows[0].id as number;
+      // Then set family_root_id = self id (existing pattern).
+      const workflowId = inserted.rows[0].id as number;
       await client.query(
         "UPDATE workflows SET family_root_id = $1 WHERE id = $1",
         [workflowId],
