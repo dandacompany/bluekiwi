@@ -9,6 +9,17 @@ import { logoutCommand } from "./commands/logout.js";
 import { runtimesCommand } from "./commands/runtimes.js";
 import { devLinkCommand } from "./commands/dev-link.js";
 
+function splitCommaSeparatedList(value: string): string[] {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+}
+
+function collectRuntimes(value: string, previous: string[]): string[] {
+  return previous.concat(splitCommaSeparatedList(value));
+}
+
 const program = new Command();
 
 program
@@ -21,7 +32,31 @@ program
   .requiredOption("--server <url>", "BlueKiwi server URL")
   .action(acceptCommand);
 
-program.command("init").action(initCommand);
+program
+  .command("init")
+  .option("--server <url>", "BlueKiwi server URL")
+  .option("--api-key <key>", "API key (bk_...)")
+  .option(
+    "--runtime <name>",
+    "Runtime to install into (repeatable, or comma-separated)",
+    collectRuntimes,
+    [],
+  )
+  .option("--yes", "Suppress all prompts (non-interactive)")
+  .action(
+    (opts: {
+      server?: string;
+      apiKey?: string;
+      runtime?: string[];
+      yes?: boolean;
+    }) =>
+      initCommand({
+        server: opts.server,
+        apiKey: opts.apiKey,
+        runtimes: opts.runtime?.length ? opts.runtime : undefined,
+        yes: opts.yes,
+      }),
+  );
 program.command("status").action(statusCommand);
 program.command("upgrade").action(upgradeCommand);
 program.command("logout").action(logoutCommand);
