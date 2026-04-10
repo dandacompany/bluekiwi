@@ -30,10 +30,40 @@ const server = new Server(
 );
 
 const tools: Tool[] = [
-  tool("list_workflows", "List all workflows available on the BlueKiwi server"),
+  tool(
+    "list_workflows",
+    "List workflows on the BlueKiwi server. By default only active versions are returned. Pass include_inactive=true to see archived versions as well.",
+    {
+      include_inactive: { type: "boolean" },
+    },
+  ),
+  tool(
+    "list_workflow_versions",
+    "List every version in the same family as the given workflow id, including active and archived ones. Returns the active_version_id and an ordered versions array.",
+    {
+      workflow_id: { type: "number" },
+    },
+    ["workflow_id"],
+  ),
+  tool(
+    "activate_workflow",
+    "Activate a specific workflow version. Automatically deactivates the other active version in the same family (one active version per family).",
+    {
+      workflow_id: { type: "number" },
+    },
+    ["workflow_id"],
+  ),
+  tool(
+    "deactivate_workflow",
+    "Deactivate a specific workflow version. Archived versions remain readable but cannot be pinned by new task starts.",
+    {
+      workflow_id: { type: "number" },
+    },
+    ["workflow_id"],
+  ),
   tool(
     "start_workflow",
-    "Start a task from a workflow id",
+    "Start a task from a workflow id. Optionally pin a specific version within the same family. Starting against an archived (inactive) version fails with HTTP 409.",
     {
       workflow_id: { type: "number" },
       version: { type: "string" },
@@ -192,8 +222,34 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     switch (name) {
-      case "list_workflows":
-        return wrap(await client.request("GET", "/api/workflows"));
+      case "list_workflows": {
+        const includeInactive = args.include_inactive === true;
+        const path = includeInactive
+          ? "/api/workflows?include_inactive=true"
+          : "/api/workflows";
+        return wrap(await client.request("GET", path));
+      }
+      case "list_workflow_versions": {
+        const workflowId = requireNumberArg(args, "workflow_id");
+        return wrap(
+          await client.request("GET", `/api/workflows/${workflowId}/versions`),
+        );
+      }
+      case "activate_workflow": {
+        const workflowId = requireNumberArg(args, "workflow_id");
+        return wrap(
+          await client.request("POST", `/api/workflows/${workflowId}/activate`),
+        );
+      }
+      case "deactivate_workflow": {
+        const workflowId = requireNumberArg(args, "workflow_id");
+        return wrap(
+          await client.request(
+            "POST",
+            `/api/workflows/${workflowId}/deactivate`,
+          ),
+        );
+      }
       case "start_workflow":
         return wrap(await client.request("POST", "/api/tasks/start", args));
       case "execute_step": {
@@ -238,7 +294,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
       case "get_web_response": {
         const taskId = requireNumberArg(args, "task_id");
-        return wrap(await client.request("GET", `/api/tasks/${taskId}/respond`));
+        return wrap(
+          await client.request("GET", `/api/tasks/${taskId}/respond`),
+        );
       }
       case "submit_visual": {
         const taskId = requireNumberArg(args, "task_id");
@@ -264,7 +322,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
       case "get_comments": {
         const taskId = requireNumberArg(args, "task_id");
-        return wrap(await client.request("GET", `/api/tasks/${taskId}/comments`));
+        return wrap(
+          await client.request("GET", `/api/tasks/${taskId}/comments`),
+        );
       }
       case "list_credentials":
         return wrap(await client.request("GET", "/api/credentials"));
@@ -347,10 +407,7 @@ function toArgs(
   return args ?? {};
 }
 
-function requireNumberArg(
-  args: Record<string, unknown>,
-  key: string,
-): number {
+function requireNumberArg(args: Record<string, unknown>, key: string): number {
   const value = args[key];
 
   if (typeof value !== "number" || Number.isNaN(value)) {
