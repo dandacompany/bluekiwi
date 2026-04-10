@@ -7,6 +7,7 @@ import {
   errorResponse,
 } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
+import { canDelete, canEdit, canRead } from "@/lib/authorization";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -26,7 +27,6 @@ export const GET = withAuth<Params>(
       return NextResponse.json(NOT_FOUND.body, { status: NOT_FOUND.status });
     }
 
-    const { canRead } = await import("@/lib/authorization");
     if (!(await canRead(user, row))) {
       const res = errorResponse("OWNERSHIP_REQUIRED", "접근 권한 없음", 403);
       return NextResponse.json(res.body, { status: res.status });
@@ -53,7 +53,6 @@ export const PUT = withAuth<Params>(
       return NextResponse.json(NOT_FOUND.body, { status: NOT_FOUND.status });
     }
 
-    const { canEdit } = await import("@/lib/authorization");
     if (!(await canEdit(user, existing))) {
       const res = errorResponse("OWNERSHIP_REQUIRED", "편집 권한 없음", 403);
       return NextResponse.json(res.body, { status: res.status });
@@ -104,7 +103,6 @@ export const DELETE = withAuth<Params>(
       return NextResponse.json(NOT_FOUND.body, { status: NOT_FOUND.status });
     }
 
-    const { canDelete } = await import("@/lib/authorization");
     if (!(await canDelete(user, existing))) {
       const res = errorResponse("OWNERSHIP_REQUIRED", "삭제 권한 없음", 403);
       return NextResponse.json(res.body, { status: res.status });

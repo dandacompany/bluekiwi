@@ -7,6 +7,7 @@ import {
   errorResponse,
 } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
+import { canEdit } from "@/lib/authorization";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -29,7 +30,6 @@ export const POST = withAuth<Params>(
       return NextResponse.json(res.body, { status: res.status });
     }
 
-    const { canEdit } = await import("@/lib/authorization");
     if (!(await canEdit(user, target))) {
       const res = errorResponse("OWNERSHIP_REQUIRED", "편집 권한 없음", 403);
       return NextResponse.json(res.body, { status: res.status });

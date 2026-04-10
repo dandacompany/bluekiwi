@@ -9,11 +9,15 @@ import {
   errorResponse,
 } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
+import {
+  buildResourceVisibilityFilter,
+  canEditFolder,
+  loadFolder,
+} from "@/lib/authorization";
 
 export const GET = withAuth("workflows:read", async (request, user) => {
   const url = new URL(request.url);
   const folderId = url.searchParams.get("folder_id");
-  const { buildResourceVisibilityFilter } = await import("@/lib/authorization");
   const filter = await buildResourceVisibilityFilter("i", user, 1);
   const params: unknown[] = [...filter.params];
   const clauses = [filter.sql];
@@ -41,7 +45,6 @@ export const POST = withAuth(
     }
 
     // Resolve target folder: user-provided or default to Public Library
-    const { canEditFolder, loadFolder } = await import("@/lib/authorization");
     let targetFolderId: number;
     if (typeof body.folder_id === "number") {
       const f = await loadFolder(body.folder_id);
