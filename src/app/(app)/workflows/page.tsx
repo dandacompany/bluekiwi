@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { VisibilityBadge } from "@/components/shared/visibility-badge";
+import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,18 +31,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { useTranslation } from "@/lib/i18n/context";
+import { useListFetch } from "@/lib/use-list-fetch";
+import { useDeleteHandler } from "@/lib/use-delete-handler";
 
 const PAGE_SIZE = 10;
 
@@ -119,47 +112,26 @@ function NodePipeline({ nodes }: { nodes: WorkflowNodeItem[] }) {
 export default function WorkflowsPage() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [workflows, setWorkflows] = useState<WorkflowItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [deleteTarget, setDeleteTarget] = useState<WorkflowItem | null>(null);
   const [page, setPage] = useState(1);
 
-  const fetchWorkflows = async () => {
-    setLoading(true);
-    const res = await fetch("/api/workflows");
-    const json = await res.json();
-    setWorkflows(json.data ?? []);
-    setLoading(false);
-  };
+  const {
+    data: workflows,
+    loading,
+    refetch: fetchWorkflows,
+  } = useListFetch<WorkflowItem>("/api/workflows", []);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadWorkflows() {
-      setLoading(true);
-      const res = await fetch("/api/workflows");
-      const json = await res.json();
-      if (cancelled) return;
-      setWorkflows(json.data ?? []);
-      setLoading(false);
-    }
-
-    void loadWorkflows();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { deleteTarget, setDeleteTarget, handleDelete } =
+    useDeleteHandler<WorkflowItem>({
+      endpoint: (target) => `/api/workflows/${target.id}`,
+      onSuccess: async () => {
+        toast.success(t("workflows.deleted"));
+        await fetchWorkflows();
+      },
+      fallbackMessage: t("common.deleteFailed"),
+    });
 
   const totalPages = Math.max(1, Math.ceil(workflows.length / PAGE_SIZE));
   const paged = workflows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    await fetch(`/api/workflows/${deleteTarget.id}`, { method: "DELETE" });
-    toast.success(t("workflows.deleted"));
-    setDeleteTarget(null);
-    fetchWorkflows();
-  };
 
   const handleDuplicate = async (wf: WorkflowItem) => {
     const res = await fetch("/api/workflows", {
@@ -325,28 +297,13 @@ export default function WorkflowsPage() {
         </>
       )}
 
-      <AlertDialog
-        open={!!deleteTarget}
-        onOpenChange={(o) => !o && setDeleteTarget(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("workflows.deleteConfirm")}</AlertDialogTitle>
-            <AlertDialogDescription>
-              &quot;{deleteTarget?.title}&quot;{t("workflows.deleteDesc")}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-[var(--destructive)] text-[var(--destructive-foreground)]"
-            >
-              {t("common.delete")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmDialog
+        target={deleteTarget}
+        title={t("workflows.deleteConfirm")}
+        description={`"${deleteTarget?.title ?? ""}"${t("workflows.deleteDesc")}`}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
     </main>
   );
 }
