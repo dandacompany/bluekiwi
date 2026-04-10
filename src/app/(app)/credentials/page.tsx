@@ -12,20 +12,12 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { translateServerError } from "@/lib/i18n/server-errors";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CommandDialog } from "@/components/ui/command";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
+import { useListFetch } from "@/lib/use-list-fetch";
+import { useDeleteHandler } from "@/lib/use-delete-handler";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -211,8 +203,11 @@ function CredentialForm({
 
 export default function CredentialsPage() {
   const { t } = useTranslation();
-  const [credentials, setCredentials] = useState<MaskedCredential[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: credentials,
+    loading,
+    refetch: fetchCredentials,
+  } = useListFetch<MaskedCredential>("/api/credentials", []);
   const [revealedSecrets, setRevealedSecrets] = useState<
     Record<number, Record<string, string>>
   >({});
@@ -247,38 +242,16 @@ export default function CredentialsPage() {
   const [saving, setSaving] = useState(false);
   const [editTarget, setEditTarget] = useState<MaskedCredential | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<MaskedCredential | null>(
-    null,
-  );
   const [draftServiceName, setDraftServiceName] = useState("");
   const [serviceNameEditing, setServiceNameEditing] = useState(false);
   const serviceNameInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchCredentials = async () => {
-    setLoading(true);
-    const res = await fetch("/api/credentials");
-    const json = await res.json();
-    setCredentials(json.data ?? []);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadCredentials() {
-      setLoading(true);
-      const res = await fetch("/api/credentials");
-      const json = await res.json();
-      if (cancelled) return;
-      setCredentials(json.data ?? []);
-      setLoading(false);
-    }
-
-    void loadCredentials();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { deleteTarget, setDeleteTarget, handleDelete } =
+    useDeleteHandler<MaskedCredential>({
+      endpoint: (target) => `/api/credentials/${target.id}`,
+      onSuccess: fetchCredentials,
+      fallbackMessage: t("common.deleteFailed"),
+    });
 
   useEffect(() => {
     if (!editorOpen || !serviceNameEditing) return;
@@ -342,25 +315,6 @@ export default function CredentialsPage() {
       fetchCredentials();
     }
     setSaving(false);
-  };
-
-  const handleDelete = async (id: number) => {
-    const res = await fetch(`/api/credentials/${id}`, { method: "DELETE" });
-    if (!res.ok) {
-      let body: { error?: Parameters<typeof translateServerError>[0] } = {};
-      try {
-        body = await res.json();
-      } catch {
-        /* ignore non-JSON body */
-      }
-      toast.error(
-        translateServerError(body.error, t, t("common.deleteFailed")),
-      );
-      setDeleteTarget(null);
-      return;
-    }
-    setDeleteTarget(null);
-    fetchCredentials();
   };
 
   return (
@@ -439,30 +393,13 @@ export default function CredentialsPage() {
         </div>
       </CommandDialog>
 
-      <AlertDialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("common.delete")}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("credentials.deleteConfirm")}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={() => deleteTarget && handleDelete(deleteTarget.id)}
-            >
-              {t("common.delete")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmDialog
+        target={deleteTarget}
+        title={t("common.delete")}
+        description={t("credentials.deleteConfirm")}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
 
       {loading ? (
         <Card>
