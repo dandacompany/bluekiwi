@@ -57,6 +57,7 @@ docker compose up -d
 for i in \$(seq 1 60); do
   curl -sf -o /dev/null "http://localhost:3100/" && break || sleep 2
 done
+curl -sf -o /dev/null "http://localhost:3100/" || { echo "stack never became ready"; exit 1; }
 echo "stack ready"
 REMOTE
   ok "docker compose up on $SERVER"
@@ -69,6 +70,7 @@ REMOTE
     -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
     | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).result.length")"
 
+  [[ "$existing" =~ ^[0-9]+$ ]] || fail "DNS check failed (response: ${existing:-empty})"
   if [[ "$existing" == "0" ]]; then
     curl -sf -X POST \
       "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records" \
@@ -120,8 +122,7 @@ phase_tmux() {
     echo "Enter BlueKiwi API key for tmux test (bk_...):"
     read -r api_key
   fi
-  ssh "$SERVER" "BK_API_KEY=$api_key BLUEKIWI_API_URL=$BLUEKIWI_URL \
-    bash $REMOTE_DIR/scripts/tmux-init.sh"
+  ssh "$SERVER" "BK_API_KEY=${api_key@Q} BLUEKIWI_API_URL=${BLUEKIWI_URL@Q} bash ${REMOTE_DIR@Q}/scripts/tmux-init.sh"
   echo ""
   echo "tmux session 'bk-test' is ready on $SERVER."
   echo "Interact via SSH + tmux capture-pane / send-keys."
