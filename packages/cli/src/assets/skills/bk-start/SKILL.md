@@ -143,3 +143,8 @@ Repeat the loop until reaching a gate step or a hitl=true action step.
   Call `request_approval`, then immediately show the HITL approval AskUserQuestion (same as bk-next HITL Pause). Do NOT stop and tell the user to type `/bk-approve`.
 - **Gate step**: Wait for user response via AskUserQuestion. Do not show `/bk-next` hint.
 - **Loop-back** (execute_step returned `next_action: "loop_back"`): Re-execute the same loop step.
+
+## 피드백 설문 (complete_task 호출 전)
+
+워크플로가 완료되면 bk-next의 **피드백 설문** 섹션과 동일한 플로우를 실행한다.
+`save_feedback` → `complete_task` → 개선안 제안 순서를 따른다.

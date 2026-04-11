@@ -147,6 +147,45 @@ Show progress at the start of each step as a single line:
 - **Loop-back** (execute_step returned `next_action: "loop_back"`): Re-execute the loop step.
 - **Other action step**: Continue automatically — show "✅ [{title}] done → continuing..."
 
+## 피드백 설문 (complete_task 호출 전)
+
+<HARD-RULE>
+워크플로가 모두 완료되어 complete_task를 호출하기 직전, 다음 피드백 플로우를 실행한다:
+
+1. 태스크 로그를 분석하여 설문 질문 2~4개를 동적으로 생성한다.
+   - 예시: "Step 3에서 API 응답 분석이 충분했나요?", "전체 워크플로 흐름에 만족하시나요?"
+   - 질문은 해당 워크플로의 실제 수행 내용을 기반으로 생성 (일반적 질문 금지)
+
+2. AskUserQuestion: "설문에 참여하시겠습니까?"
+   - header: "피드백"
+   - options: ["참여 (추천)", "건너뛰기"]
+
+[건너뛰기] → complete_task 즉시 호출.
+
+[참여]: 3. 질문을 1개씩 AskUserQuestion으로 순차 진행 (최대 4개)
+
+- header: "Q{N}/{total}"
+- options: 2~4개 (내용에 맞게 생성)
+
+4. save_feedback(task_id=<id>, feedback=[{question, answer}, ...]) 호출
+5. complete_task 호출
+6. 피드백을 분석하여 개선 제안 표시:
+   "다음과 같이 개선하겠습니다:\n- Step N instruction: ..."
+7. AskUserQuestion: "이 개선안으로 새 버전을 만드시겠습니까?"
+   - header: "개선안"
+   - options: ["새 버전 생성 (추천)", "수정 후 생성", "건너뛰기"]
+
+[새 버전 생성]:
+→ create*workflow(parent_workflow_id=원본\_id, title="v{N+1}명", nodes=개선된*노드\_배열)
+→ "v{N+1}이 생성되었습니다." 표시
+
+[수정 후 생성]:
+→ AskUserQuestion으로 수정 사항 입력 받기 → 반영 후 create_workflow
+
+[건너뛰기]:
+→ 피드백은 저장됨. 나중에 /bk-improve 호출 시 활용 가능.
+</HARD-RULE>
+
 ## Completion Message
 
 <HARD-RULE>
