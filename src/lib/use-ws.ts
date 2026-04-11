@@ -2,7 +2,16 @@
 
 import { useEffect, useRef, useCallback } from "react";
 
-const WS_BASE = process.env.NEXT_PUBLIC_WS_URL ?? null;
+// NEXT_PUBLIC_WS_URL: explicit override (build-time).
+// Fallback: derive from window.location → same hostname, /ws path (Caddy proxy).
+function resolveWsBase(): string | null {
+  if (process.env.NEXT_PUBLIC_WS_URL) return process.env.NEXT_PUBLIC_WS_URL;
+  if (typeof window === "undefined") return null;
+  const proto = window.location.protocol === "https:" ? "https" : "http";
+  return `${proto}://${window.location.host}/ws`;
+}
+
+const WS_BASE = resolveWsBase();
 const WS_URL = WS_BASE ? WS_BASE.replace(/^http/, "ws") : null;
 
 export interface WsMessage {

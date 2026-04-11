@@ -10,6 +10,7 @@ import {
   okResponse,
   errorResponse,
 } from "@/lib/db";
+import { notifyTaskUpdate } from "@/lib/notify-ws";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -139,6 +140,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       "UPDATE tasks SET status = 'completed', updated_at = NOW() WHERE id = $1",
       [taskId],
     );
+    void notifyTaskUpdate(taskId, "task_completed");
     const res = okResponse({
       task_id: taskId,
       finished: true,
@@ -151,6 +153,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     "UPDATE tasks SET current_step = $1, updated_at = NOW() WHERE id = $2",
     [nextStep, taskId],
   );
+  void notifyTaskUpdate(taskId, "step_advanced", { current_step: nextStep });
 
   await execute(
     "INSERT INTO task_logs (task_id, node_id, step_order, status, node_title, node_type) VALUES ($1, $2, $3, 'pending', $4, $5)",

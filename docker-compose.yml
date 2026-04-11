@@ -28,9 +28,24 @@ services:
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
       PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3100}
       BLUEKIWI_VERSION: ${BLUEKIWI_VERSION:-latest}
+      WS_RELAY_URL: http://ws-relay:3001
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
+      ws-relay:
+        condition: service_started
+
+  ws-relay:
+    image: ghcr.io/dandacompany/bluekiwi:${BLUEKIWI_VERSION:-latest}
+    restart: unless-stopped
+    ports:
+      - "${WS_PORT:-3001}:3001"
+    command: ["node", "scripts/ws-relay.js"]
+    environment:
+      WS_PORT: "3001"
+    depends_on:
       redis:
         condition: service_started
 

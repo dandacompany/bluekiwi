@@ -54,11 +54,14 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-bluekiwi}:${POSTGRES_PASSWORD:-bluekiwi_dev_2026}@db:5432/${POSTGRES_DB:-bluekiwi}
       REDIS_URL: redis://:${REDIS_PASSWORD:-bluekiwi_redis_2026}@redis:6379
       NODE_ENV: production
+      WS_RELAY_URL: http://ws-relay:3001
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+      ws-relay:
+        condition: service_started
 
   # ─── WebSocket Relay ───
   ws-relay:
@@ -68,7 +71,7 @@ services:
     restart: unless-stopped
     ports:
       - "${WS_PORT:-3001}:3001"
-    command: ["node", "scripts/ws-relay.js"]
+    command: ["node", "/app/scripts/ws-relay.js"]
     environment:
       WS_PORT: 3001
       REDIS_URL: redis://:${REDIS_PASSWORD:-bluekiwi_redis_2026}@redis:6379

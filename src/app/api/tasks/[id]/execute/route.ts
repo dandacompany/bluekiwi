@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { queryOne, execute, okResponse, errorResponse } from "@/lib/db";
+import { notifyTaskUpdate } from "@/lib/notify-ws";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -137,6 +138,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
   }
 
+  void notifyTaskUpdate(taskId, "step_executed", { node_id, status });
   const res = okResponse({
     success: true,
     task_id: taskId,
