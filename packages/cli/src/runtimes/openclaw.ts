@@ -1,4 +1,11 @@
-import { existsSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "fs";
+import {
+  existsSync,
+  mkdirSync,
+  writeFileSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+} from "fs";
 import { homedir } from "os";
 import { join } from "path";
 
@@ -47,10 +54,11 @@ export class OpenClawAdapter implements RuntimeAdapter {
   }
 
   uninstall(): void {
-    for (const name of ["bk-start", "bk-next", "bk-status", "bk-rewind"]) {
-      const dir = join(SKILLS_DIR, name);
-      if (existsSync(dir)) {
-        rmSync(dir, { recursive: true, force: true });
+    if (existsSync(SKILLS_DIR)) {
+      for (const entry of readdirSync(SKILLS_DIR)) {
+        if (entry.startsWith("bk-")) {
+          rmSync(join(SKILLS_DIR, entry), { recursive: true, force: true });
+        }
       }
     }
     if (existsSync(MCP_CONFIG)) {
