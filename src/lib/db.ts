@@ -149,6 +149,7 @@ export interface WorkflowNode {
   instruction: string;
   loop_back_to: number | null;
   auto_advance: number;
+  hitl: boolean;
   created_at: string;
 }
 
