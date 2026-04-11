@@ -6,7 +6,8 @@ import type { RuntimeAdapter, SkillBundle, McpServerConfig } from "./base.js";
 
 const BASE = join(homedir(), ".claude");
 const SKILLS_DIR = join(BASE, "skills");
-const MCP_CONFIG = join(BASE, "mcp.json");
+// Claude Code reads MCP config from ~/.claude.json (top-level mcpServers key)
+const MCP_CONFIG = join(homedir(), ".claude.json");
 
 export class ClaudeCodeAdapter implements RuntimeAdapter {
   readonly name = "claude-code";
