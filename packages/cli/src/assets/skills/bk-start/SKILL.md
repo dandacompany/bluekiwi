@@ -114,7 +114,7 @@ Call `list_workflows` to retrieve the list.
 
 Call `start_workflow`. Pass any argument as `context`.
 
-### 3. Execute First Step + auto_advance Loop
+### 3. Execute First Step + Auto-Advance Loop
 
 Read the first step's instruction as an **internal directive and execute immediately**.
 
@@ -129,17 +129,17 @@ Starting: {workflow title} ({n} steps)
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**auto_advance loop**: If the next step has `auto_advance: true`, continue executing without pausing.
+**Auto-advance loop**: If execute_step returns no `next_action`, continue executing the next step without pausing.
 
 <HARD-RULE>
-After executing an auto_advance=true step, always proceed to the next step automatically.
+After executing a step with no next_action, always proceed to the next step automatically.
 Show a brief inline update: "✅ [{title}] done → continuing to next step..."
-Repeat the loop until reaching an auto_advance=false step.
+Repeat the loop until reaching a gate step or a hitl=true action step.
 </HARD-RULE>
 
 ### 4. When Pausing
 
 - **HITL** (execute_step returned `next_action: "wait_for_human_approval"`):
   Call `request_approval`, then immediately show the HITL approval AskUserQuestion (same as bk-next HITL Pause). Do NOT stop and tell the user to type `/bk-approve`.
-- After completing an action step (auto_advance=false, no HITL): "Type `/bk-next` to proceed."
-- After showing a gate question: Wait for user response. Do not show `/bk-next` hint.
+- **Gate step**: Wait for user response via AskUserQuestion. Do not show `/bk-next` hint.
+- **Loop-back** (execute_step returned `next_action: "loop_back"`): Re-execute the same loop step.

@@ -9,7 +9,7 @@ user_invocable: true
 Handle pending approvals in a running workflow. Covers two scenarios:
 
 - **Gate step** (`node_type: gate`): Agent asked the human a question; collect the answer.
-- **HITL step** (`node_type: action`, `auto_advance: false`): Agent completed work and called `request_approval`; human reviews and approves before the workflow continues.
+- **HITL step** (`node_type: action`, `hitl: true`): Agent completed work and called `request_approval`; human reviews and approves before the workflow continues.
 
 ## Argument Handling
 
@@ -40,7 +40,7 @@ Check `log_status` and `node_type` to determine scenario:
    - header: "Gate decision"
    - options: ["Approve (Recommended)", "Approve with edits", "Reject and revise", "Rewind to previous step"]
 4. Call `execute_step` with the decision as `output`, status `"success"`.
-5. Call `advance` to move to the next step and follow the auto_advance loop (see `/bk-next`).
+5. Call `advance` to move to the next step and follow the auto-advance loop (see `/bk-next`).
 
 ### Step 2b: HITL Step
 
@@ -61,7 +61,7 @@ Check `log_status` and `node_type` to determine scenario:
 3. **If Approved**:
    - Call `approve_step(task_id=<id>)` MCP tool.
    - Call `advance` to move to the next step.
-   - Follow the auto_advance loop (see `/bk-next`).
+   - Follow the auto-advance loop (see `/bk-next`).
 
 4. **If Rejected**:
    - Ask the user for the reason.
@@ -74,5 +74,5 @@ Check `log_status` and `node_type` to determine scenario:
 ## Notes
 
 - `approve_step` MCP tool handles authentication automatically using the configured API key.
-- After approving a HITL step, always follow the auto_advance loop — the next step may auto-proceed.
+- After approving a HITL step, always follow the auto-advance loop — the next step may auto-proceed.
 - If `advance` still returns 403 after approval, wait a moment and retry — the approval write may not have propagated yet.
