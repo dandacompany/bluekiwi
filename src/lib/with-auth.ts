@@ -54,10 +54,11 @@ export function withAuth(
       if (token) {
         const session = await verifySession(token);
         if (session) {
-          user = await queryOne<User>(
-            "SELECT * FROM users WHERE id = $1 AND is_active = true",
-            [session.userId],
-          );
+          user =
+            (await queryOne<User>(
+              "SELECT * FROM users WHERE id = $1 AND is_active = true",
+              [session.userId],
+            )) ?? null;
         }
       }
     }
