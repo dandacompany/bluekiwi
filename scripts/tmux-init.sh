@@ -17,12 +17,14 @@ tmux kill-session -t "$SESSION" 2>/dev/null && echo "killed old session" || true
 # Create workspace directory
 mkdir -p "$WORKSPACE"
 
-# Find the MCP server path (must be pre-built: mcp/dist/server.js)
-MCP_SERVER_PATH="$(cd "$(dirname "$0")/.." && pwd)/mcp/dist/server.js"
+# Find and build MCP server if needed
+MCP_DIR="$(cd "$(dirname "$0")/.." && pwd)/mcp"
+MCP_SERVER_PATH="$MCP_DIR/dist/server.js"
 
 if [[ ! -f "$MCP_SERVER_PATH" ]]; then
-  echo "ERROR: MCP server not built. Run 'cd mcp && npm install && npm run build' first." >&2
-  exit 1
+  echo "  → MCP server not built. Building now..."
+  ( cd "$MCP_DIR" && npm install --prefer-offline --silent && npm run build --silent )
+  echo "  ✓ MCP server built"
 fi
 
 # Write .mcp.json to workspace
