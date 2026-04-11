@@ -26,6 +26,7 @@ interface TaskLog {
   status: string;
   output: string;
   visual_html: string | null;
+  visual_selection: boolean | null;
   web_response: string | null;
   structured_output: {
     user_input?: string;
@@ -280,6 +281,7 @@ export default function TaskDetailPage() {
         output: l.output,
         structured_output: l.structured_output,
         visual_html: l.visual_html,
+        visual_selection: l.visual_selection ?? null,
         web_response: l.web_response,
         model_id: l.model_id,
         user_name: l.user_name,

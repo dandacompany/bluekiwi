@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -47,6 +47,7 @@ export interface StepLog {
     assistant_output: string;
   } | null;
   visual_html: string | null;
+  visual_selection: boolean | null;
   web_response: string | null;
   model_id: string | null;
   user_name: string | null;
@@ -233,19 +234,83 @@ function StructuredOutputView({
   );
 }
 
-function VisualViewer({ html }: { html: string }) {
+function VisualSelector({
+  html,
+  taskId,
+  nodeId,
+  isVisualSelection,
+  logStatus,
+  onSelected,
+}: {
+  html: string;
+  taskId: number;
+  nodeId: number;
+  isVisualSelection: boolean;
+  logStatus: string;
+  onSelected?: () => void;
+}) {
   const { t } = useTranslation();
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const canSelect =
+    isVisualSelection &&
+    (logStatus === "pending" || logStatus === "running") &&
+    !submitted;
+
+  useEffect(() => {
+    if (!canSelect) return;
+
+    function handleMessage(event: MessageEvent) {
+      if (event.source !== iframeRef.current?.contentWindow) return;
+      const data = event.data as { type?: string; value?: string };
+      if (data?.type !== "bk_visual_select") return;
+
+      setSubmitting(true);
+      fetch(`/api/tasks/${taskId}/respond`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          node_id: nodeId,
+          response: data.value ?? "",
+        }),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("respond failed");
+          setSubmitted(true);
+          onSelected?.();
+        })
+        .catch(() => {
+          setSubmitting(false);
+        });
+    }
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [canSelect, taskId, nodeId, onSelected]);
+
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          {t("tasks.viewVisual")}
+          {isVisualSelection && canSelect
+            ? t("tasks.selectVisual")
+            : t("tasks.viewVisual")}
         </Button>
       </DialogTrigger>
       <DialogContent className="overflow-hidden p-0">
         <DialogHeader className="border-b border-[var(--border)] p-5">
           <div className="flex items-center justify-between gap-3">
-            <DialogTitle>{t("tasks.visualViewer")}</DialogTitle>
+            <DialogTitle>
+              {isVisualSelection && canSelect
+                ? t("tasks.selectVisual")
+                : t("tasks.visualViewer")}
+            </DialogTitle>
+            {submitting && (
+              <Loader2 className="h-4 w-4 animate-spin text-[var(--muted-foreground)]" />
+            )}
+            {submitted && <CheckCircle2 className="h-4 w-4 text-green-500" />}
             <DialogClose asChild>
               <Button variant="ghost" size="sm">
                 {t("common.close")}
@@ -253,10 +318,16 @@ function VisualViewer({ html }: { html: string }) {
             </DialogClose>
           </div>
         </DialogHeader>
+        {canSelect && (
+          <div className="border-b border-[var(--border)] bg-amber-50 px-5 py-2 text-xs text-amber-700 dark:bg-amber-950/20 dark:text-amber-400">
+            {t("tasks.visualSelectHint")}
+          </div>
+        )}
         <ScrollArea className="max-h-[75vh]">
           <div className="p-5">
             <div className="overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-white">
               <iframe
+                ref={iframeRef}
                 srcDoc={html}
                 className="w-full min-h-[600px] bg-white"
                 sandbox="allow-scripts"
@@ -579,7 +650,16 @@ function StepContent({
         </div>
       ) : null}
 
-      {log.visual_html && <VisualViewer html={log.visual_html} />}
+      {log.visual_html && (
+        <VisualSelector
+          html={log.visual_html}
+          taskId={taskId}
+          nodeId={log.node_id}
+          isVisualSelection={!!log.visual_selection}
+          logStatus={log.status}
+          onSelected={() => onRefresh?.()}
+        />
+      )}
 
       {log.status === "pending" && taskStatus !== "completed" && (
         <WebResponseForm

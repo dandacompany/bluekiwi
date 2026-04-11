@@ -191,6 +191,7 @@ export interface TaskLog {
   severity: string | null;
   output: string;
   visual_html: string | null;
+  visual_selection: boolean | null;
   web_response: string | null;
   node_title: string;
   node_type: string;
