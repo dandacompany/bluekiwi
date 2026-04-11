@@ -63,6 +63,7 @@ APP_PORT=\$port
 PUBLIC_URL=${BLUEKIWI_URL}
 BLUEKIWI_VERSION=latest
 ENV
+docker compose pull
 docker compose up -d
 for i in \$(seq 1 60); do
   curl -sf -o /dev/null "http://localhost:\$port/" && break || sleep 2
