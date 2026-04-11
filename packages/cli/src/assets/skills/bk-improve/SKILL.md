@@ -35,6 +35,16 @@ If "Type my own" → accept free-text improvement direction.
 
 ### Step 3: Analyze the Current Workflow
 
+## 피드백 데이터 활용
+
+워크플로 개선 시, advance(peek=true)로 태스크를 조회하면 `feedback_data` 필드를 확인할 수 있다.
+`feedback_data`가 존재하면 이를 개선 분석의 1차 자료로 활용한다:
+
+1. 각 feedback 항목의 `question`과 `answer`를 읽는다
+2. 부정적 답변(만족하지 않음, 부족함 등)을 식별한다
+3. 해당 feedback과 관련된 단계를 개선 우선순위에 올린다
+4. 개선 제안 시 "사용자 피드백 기반" 임을 명시한다
+
 Display the current workflow node structure:
 
 ```
