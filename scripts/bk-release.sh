@@ -162,10 +162,19 @@ phase_tmux() {
     echo "Enter BlueKiwi API key for tmux test (bk_...):"
     read -r api_key
   fi
-  ssh "$SERVER" "BK_API_KEY=${api_key@Q} BLUEKIWI_API_URL=${BLUEKIWI_URL@Q} bash ${REMOTE_DIR@Q}/scripts/tmux-init.sh"
+
+  # Pass ANTHROPIC_API_KEY if available in local env
+  local anthropic_key="${ANTHROPIC_API_KEY:-}"
+
+  ssh "$SERVER" \
+    "BK_API_KEY=${api_key@Q} \
+     BLUEKIWI_API_URL=${BLUEKIWI_URL@Q} \
+     ANTHROPIC_API_KEY=${anthropic_key@Q} \
+     bash ${REMOTE_DIR@Q}/scripts/tmux-init.sh"
+
   echo ""
   echo "tmux session 'bk-test' is ready on $SERVER."
-  echo "Interact via SSH + tmux capture-pane / send-keys."
+  echo "Interact via: ssh $SERVER 'tmux attach -t bk-test'"
 }
 
 run_phase "ci-check" && phase_ci_check
