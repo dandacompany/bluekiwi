@@ -16,9 +16,10 @@ Design a structured workflow from a natural language goal and register it on the
 ## Core Principles
 
 - One node = **one agent action**. Split overly large chunks.
-- `auto_advance: true` = proceeds without user intervention. Suitable for data collection and transformation steps.
-- `auto_advance: false` = requires user confirmation or judgment.
-- `node_type` must be either `"agent"` (agent execution) or `"gate"` (user decision).
+- `node_type: "action"` = regular agent step; auto-advances unless `hitl: true`.
+- `node_type: "gate"` = user decision point; always pauses for human approval.
+- `node_type: "loop"` = repeating step; set `loop_back_to` to the target step order.
+- `hitl: true` = action node that requires explicit human approval before advancing. Default: `false`.
 
 ## Execution Steps
 
@@ -64,8 +65,8 @@ Analyze the goal and design the nodes.
 {
   "title": "Clarify Goal",
   "instruction": "Analyze the user's stated goal and extract the 3 most important clarifying questions.",
-  "node_type": "agent",
-  "auto_advance": true,
+  "node_type": "action",
+  "hitl": false,
   "order": 1
 }
 ```
@@ -75,11 +76,11 @@ Show the design to the user:
 ```
 Designed workflow: <title>
 ━━━━━━━━━━━━━━━━━━━━━━━━━
-1. [Clarify Goal]     (auto)
-2. [Collect Data]     (auto)
-3. [Run Analysis]     (auto)
-4. [Review Results]   ← pauses here
-5. [Generate Report]  (auto)
+1. [Clarify Goal]     action
+2. [Collect Data]     action
+3. [Run Analysis]     action
+4. [Review Results]   gate ← pauses for human approval
+5. [Generate Report]  action
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 5 steps total
 ```
@@ -122,6 +123,6 @@ Type `/bk-run` to execute it now.
 ## Node Design Guidelines
 
 - 3–7 steps is ideal. Consider splitting if more than 10.
-- The first step should always be `auto_advance: false` (user provides initial context).
-- Insert a `gate` node (result review) before the final step.
+- Use `node_type: "gate"` before the final step to let the user review results.
+- Use `hitl: true` on `action` nodes only when the step requires explicit human judgment mid-flow (e.g., security-sensitive operations, irreversible actions).
 - For nodes requiring external API calls, specify `credential_id`. Create credentials first with `/bk-credential`.
