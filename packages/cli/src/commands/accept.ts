@@ -51,26 +51,34 @@ export async function acceptCommand(
   const client = new BlueKiwiClient(opts.server, result.api_key);
   await client.request("GET", "/api/workflows");
 
-  const detected = detectInstalledAdapters();
+  // Skip runtime installation in non-interactive (CI/script) mode
+  const isInteractive = process.stdin.isTTY;
+  let chosen: string[] = [];
+
+  if (isInteractive) {
+    const detected = detectInstalledAdapters();
+    const all = getAllAdapters();
+    const choices = all.map((adapter) => ({
+      title: adapter.displayName,
+      value: adapter.name,
+      selected: detected.some(
+        (detectedAdapter) => detectedAdapter.name === adapter.name,
+      ),
+      disabled: !adapter.isInstalled(),
+    }));
+
+    const { selected } = (await prompts({
+      type: "multiselect",
+      name: "selected",
+      message: "Install BlueKiwi into which runtimes?",
+      choices,
+      hint: "- Space to toggle. Return to submit",
+    })) as { selected?: string[] };
+
+    chosen = selected ?? [];
+  }
+
   const all = getAllAdapters();
-  const choices = all.map((adapter) => ({
-    title: adapter.displayName,
-    value: adapter.name,
-    selected: detected.some(
-      (detectedAdapter) => detectedAdapter.name === adapter.name,
-    ),
-    disabled: !adapter.isInstalled(),
-  }));
-
-  const { selected } = (await prompts({
-    type: "multiselect",
-    name: "selected",
-    message: "Install BlueKiwi into which runtimes?",
-    choices,
-    hint: "- Space to toggle. Return to submit",
-  })) as { selected?: string[] };
-
-  const chosen = selected ?? [];
   for (const name of chosen) {
     const adapter = all.find((item) => item.name === name);
     if (!adapter) continue;
