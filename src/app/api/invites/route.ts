@@ -57,8 +57,10 @@ export async function POST(request: NextRequest) {
   const publicUrl = process.env.PUBLIC_URL ?? "http://localhost:3100";
 
   return NextResponse.json({
-    ...rows[0],
-    url: buildInviteUrl(publicUrl, token),
+    data: {
+      ...rows[0],
+      url: buildInviteUrl(publicUrl, token),
+    },
   });
 }
 
