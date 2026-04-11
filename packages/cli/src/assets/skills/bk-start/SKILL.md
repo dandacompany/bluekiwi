@@ -118,7 +118,7 @@ Call `start_workflow`. Pass any argument as `context`.
 
 Read the first step's instruction as an **internal directive and execute immediately**.
 
-After execution, save with `execute_step`, then call `advance` to check the next step.
+After execution, save with `execute_step`, then check the response for `next_action` before calling `advance`.
 
 **Show roadmap at start** (#20):
 
@@ -139,5 +139,7 @@ Repeat the loop until reaching an auto_advance=false step.
 
 ### 4. When Pausing
 
-- After completing an action step (auto_advance=false): "Type `/bk-next` to proceed."
+- **HITL** (execute_step returned `next_action: "wait_for_human_approval"`):
+  Call `request_approval`, show "⏸ Waiting for approval ��� use /bk-approve when ready.", stop.
+- After completing an action step (auto_advance=false, no HITL): "Type `/bk-next` to proceed."
 - After showing a gate question: Wait for user response. Do not show `/bk-next` hint.

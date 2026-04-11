@@ -1,77 +1,78 @@
 ---
 name: bk-approve
-description: BlueKiwi gate approval skill. Reviews and approves (or rejects) a pending gate step in a running workflow. This skill should be used when the user says "/bk-approve", "approve this", "approve step", or wants to handle a gate decision in a BlueKiwi workflow.
+description: BlueKiwi approval skill. Handles two approval scenarios — (1) gate steps where the agent asks the human a question, and (2) HITL steps where auto_advance=false and the agent has requested human approval before proceeding. This skill should be used when the user says "/bk-approve", "approve this", "approve step", "yes proceed", or wants to approve a pending step in a BlueKiwi workflow.
 user_invocable: true
 ---
 
-# BlueKiwi Gate Approval
+# BlueKiwi Step Approval
 
-Review and approve (or reject/edit) a pending gate step in a running workflow.
+Handle pending approvals in a running workflow. Covers two scenarios:
+
+- **Gate step** (`node_type: gate`): Agent asked the human a question; collect the answer.
+- **HITL step** (`node_type: action`, `auto_advance: false`): Agent completed work and called `request_approval`; human reviews and approves before the workflow continues.
 
 ## Argument Handling
 
-- `/bk-approve` → Check the current gate step and present the decision.
-- `/bk-approve <task_id>` → Load the gate step for the specified task.
+- `/bk-approve` → Inspect the current step and handle whichever scenario applies.
+- `/bk-approve <task_id>` → Load the pending step for the specified task.
 
 ## Execution Steps
 
-### Step 1: Fetch Current Gate Step
+### Step 1: Inspect Current Step
 
-Call `advance` with `peek: true` to inspect the current step.
+Call `advance` with `peek: true` to inspect the current step and its log status.
 
 If no active task → show "No active task." and exit.
-If the current step is not a `gate` node → show "Current step is not a gate. Use `/bk-next` instead." and exit.
 
-### Step 2: Display Gate Content
+Check `log_status` and `node_type` to determine scenario:
 
-Show the gate question and any supporting context from `task_context`:
+| node_type     | log_status              | Scenario                                        |
+| ------------- | ----------------------- | ----------------------------------------------- |
+| `gate`        | any                     | Gate — collect human answer                     |
+| `action`      | `completed` / `success` | HITL — review agent output and approve          |
+| anything else | `pending` / `running`   | Not ready — tell user the step is still running |
+
+### Step 2a: Gate Step
+
+1. Show the gate question from `instruction`.
+2. Check `get_web_response` for a pre-submitted web response. If found, show it and ask to confirm.
+3. Collect decision via AskUserQuestion:
+   - header: "Gate decision"
+   - options: ["Approve (Recommended)", "Approve with edits", "Reject and revise", "Rewind to previous step"]
+4. Call `execute_step` with the decision as `output`, status `"success"`.
+5. Call `advance` to move to the next step and follow the auto_advance loop (see `/bk-next`).
+
+### Step 2b: HITL Step
+
+1. Show a summary of what the agent completed:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━
-Gate: {node title}
+⏸ Awaiting Approval: {step title}
 ━━━━━━━━━━━━━━━━━━━━━━━━━
-{instruction content}
-
-Previous step summary:
-{task_context.running_context summary}
+{brief summary of agent's output from task log}
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-Check `get_web_response` for any pre-submitted web responses. If one exists, show it and ask the user to confirm.
+2. Ask via AskUserQuestion:
+   - header: "Approve?"
+   - options: ["Approve — proceed to next step (Recommended)", "Reject — rewind to this step", "Rewind to earlier step"]
 
-### Step 3: Collect Decision
+3. **If Approved**:
+   - Call `approve_step(task_id=<id>)` MCP tool.
+   - Call `advance` to move to the next step.
+   - Follow the auto_advance loop (see `/bk-next`).
 
-Ask via AskUserQuestion:
+4. **If Rejected**:
+   - Ask the user for the reason.
+   - Call `rewind` to return to this step so the agent can redo it.
+   - Tell the user: "Rewound to step {N}. Type `/bk-next` to retry."
 
-- header: "Gate decision"
-- options: ["Approve (Recommended)", "Approve with edits", "Reject and revise", "Rewind to previous step"]
+5. **If Rewind to earlier step**:
+   - Switch to `/bk-rewind` flow.
 
-**Approve**: Record approval decision and proceed.
+## Notes
 
-**Approve with edits**: Accept free-text modifications from the user. Include them in the output.
-
-**Reject and revise**: Accept the reason for rejection. Use `rewind` to go back to the appropriate step.
-
-**Rewind to previous step**: Switch to `/bk-rewind` flow.
-
-### Step 4: Execute Step
-
-Call `execute_step` with the decision:
-
-```json
-{
-  "task_id": <id>,
-  "node_id": <id>,
-  "output": "<decision and reasoning>",
-  "status": "success",
-  "context_snapshot": {
-    "gate_decision": "approved",
-    "modifications": "<if any>",
-    "reason": "<if rejected>"
-  }
-}
-```
-
-### Step 5: Advance
-
-Call `advance` to move to the next step and follow the auto_advance loop as defined in `/bk-next`.
+- `approve_step` MCP tool handles authentication automatically using the configured API key.
+- After approving a HITL step, always follow the auto_advance loop — the next step may auto-proceed.
+- If `advance` still returns 403 after approval, wait a moment and retry — the approval write may not have propagated yet.

@@ -223,6 +223,16 @@ const tools: Tool[] = [
     ["task_id"],
   ),
   tool(
+    "approve_step",
+    "Approve the current HITL step on behalf of the human, unlocking advance. " +
+      "ONLY call this when the human explicitly invokes /bk-approve and confirms approval. " +
+      "Never call this autonomously — it must be a deliberate human action.",
+    {
+      task_id: { type: "number" },
+    },
+    ["task_id"],
+  ),
+  tool(
     "heartbeat",
     "Append progress information for a running task step",
     {
@@ -575,6 +585,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             `/api/tasks/${taskId}/request-approval`,
             body,
           ),
+        );
+      }
+      case "approve_step": {
+        const taskId = requireNumberArg(args, "task_id");
+        return wrap(
+          await client.request("POST", `/api/tasks/${taskId}/approve`, {}),
         );
       }
       case "heartbeat": {

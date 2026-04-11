@@ -63,12 +63,13 @@ Record only results (URL, status code, response summary).
 ```
 LOOP:
   1. If the current step is pending → extract response from conversation, save with execute_step
+     → Check execute_step response for next_action field (see HITL section below)
   2. Call advance(peek=false) to fetch the next step
   3. If finished → call complete_task, then end
   4. Execute the next step (see step-type handling below)
   5. Check auto_advance:
      - true  → show brief inline result, then go back to step 2
-     - false → pause and show result to user
+     - false → HITL pause (see below)
 ```
 
 <HARD-RULE>
@@ -76,6 +77,22 @@ After executing an auto_advance=true step, always proceed to the next step autom
 Do not show "type /bk-next to continue" hint.
 Show a brief one-line update: "✅ [{title}] done → continuing to next step..."
 Repeat the loop until reaching an auto_advance=false step.
+</HARD-RULE>
+
+## HITL Pause (auto_advance=false steps)
+
+<HARD-RULE>
+When execute_step returns `next_action: "wait_for_human_approval"`:
+
+1. Call `request_approval` with a brief message summarizing what was done.
+2. Show the user:
+   ```
+   ⏸ Step [{title}] complete — waiting for approval before proceeding.
+   A notification has been sent. Use /bk-approve when ready.
+   ```
+3. STOP. Do NOT call `advance`. Do NOT proceed to the next step.
+
+The server will reject `advance` with 403 until a human approves via /bk-approve.
 </HARD-RULE>
 
 ## Step-Type Handling
@@ -114,8 +131,10 @@ Show progress at the start of each step as a single line:
 
 ## When Pausing (auto_advance=false only)
 
-- After completing an action: "Type `/bk-next` to proceed."
-- After showing a gate question: Wait for user response.
+- **HITL approval required** (execute_step returned `next_action: "wait_for_human_approval"`):
+  Call `request_approval`, show waiting message, stop. Resume only after `/bk-approve`.
+- **Gate step**: Wait for user response via AskUserQuestion.
+- **Other action step pausing without HITL**: "Type `/bk-next` to proceed."
 
 ## Completion Message
 

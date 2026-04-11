@@ -45,6 +45,6 @@ Continue with the same execution loop as `/bk-start`:
 - Show the roadmap.
 - Execute the first step immediately.
 - Follow the auto_advance loop.
-- Pause at `auto_advance: false` steps.
+- Pause at `auto_advance: false` steps — if `execute_step` returns `next_action: "wait_for_human_approval"`, call `request_approval` and stop (HITL pause).
 
-Refer to `/bk-start` for all execution details including credential handling and execute_step requirements.
+Refer to `/bk-start` for all execution details including HITL handling, credential handling, and execute_step requirements.
