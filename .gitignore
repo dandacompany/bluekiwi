@@ -56,6 +56,9 @@ ref/
 .remember/
 .superpowers/
 .worktrees/
+.opencode/
+.gemini/
+.openclaw/
 CLAUDE.md
 AGENTS.md
 GEMINI.md
