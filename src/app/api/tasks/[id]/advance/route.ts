@@ -116,7 +116,8 @@ export async function POST(request: NextRequest, { params }: Params) {
       "SELECT status FROM task_logs WHERE task_id = $1 AND node_id = $2 ORDER BY id DESC LIMIT 1",
       [taskId, currentNode.id],
     );
-    if (!currentLog || currentLog.status !== "completed") {
+    const COMPLETED_STATUSES = ["completed", "success", "skipped"];
+    if (!currentLog || !COMPLETED_STATUSES.includes(currentLog.status)) {
       const res = errorResponse(
         "PRECONDITION_FAILED",
         `현재 스텝(${task.current_step})이 아직 완료되지 않았습니다`,
