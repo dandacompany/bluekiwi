@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "description": "BlueKiwi CLI — install MCP client and skills into your agent runtime",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "bin": {
     "bluekiwi": "./dist/index.js"
