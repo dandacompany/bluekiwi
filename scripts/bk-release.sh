@@ -9,6 +9,7 @@ SERVER="DanteServer"                          # SSH config alias
 REMOTE_DIR='~/projects/bluekiwi'
 BLUEKIWI_URL="${BLUEKIWI_URL:-https://bluekiwi.dante-labs.com}"
 CF_ENV="${CF_ENV:-$HOME/.bluekiwi-deploy.env}"
+APP_PORT="${APP_PORT:-3100}"                  # starting port; auto-increments on conflict
 
 log()  { echo "[bk-release] $*"; }
 ok()   { echo "  ✓ $*"; }
@@ -35,7 +36,7 @@ phase_deploy() {
   : "${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN missing in $CF_ENV}"
   : "${CLOUDFLARE_ZONE_ID:?CLOUDFLARE_ZONE_ID missing in $CF_ENV}"
 
-  # Step 1: Remote git clone + docker compose up
+  # Step 1: Remote git clone + docker compose up (auto port)
   ssh "$SERVER" bash <<REMOTE
 set -euo pipefail
 if [ -d "$REMOTE_DIR" ]; then
@@ -46,21 +47,33 @@ if [ -d "$REMOTE_DIR" ]; then
 fi
 git clone https://github.com/${REPO}.git "$REMOTE_DIR"
 cd "$REMOTE_DIR"
+
+# Auto-detect free port starting from ${APP_PORT}
+port=${APP_PORT}
+while ss -tlnp 2>/dev/null | grep -q ":\${port} "; do
+  port=\$((port + 1))
+done
+echo "[deploy] using port \$port"
+echo "\$port" > /tmp/bk_port
+
 cat > .env <<ENV
 DB_PASSWORD=\$(openssl rand -hex 16)
 JWT_SECRET=\$(openssl rand -hex 32)
-APP_PORT=3100
+APP_PORT=\$port
 PUBLIC_URL=${BLUEKIWI_URL}
 BLUEKIWI_VERSION=latest
 ENV
 docker compose up -d
 for i in \$(seq 1 60); do
-  curl -sf -o /dev/null "http://localhost:3100/" && break || sleep 2
+  curl -sf -o /dev/null "http://localhost:\$port/" && break || sleep 2
 done
-curl -sf -o /dev/null "http://localhost:3100/" || { echo "stack never became ready"; exit 1; }
+curl -sf -o /dev/null "http://localhost:\$port/" || { echo "stack never became ready"; exit 1; }
 echo "stack ready"
 REMOTE
-  ok "docker compose up on $SERVER"
+
+  local remote_port
+  remote_port="$(ssh "$SERVER" "cat /tmp/bk_port")"
+  ok "docker compose up on $SERVER (port $remote_port)"
 
   # Step 2: Cloudflare DNS
   log "Configuring Cloudflare DNS..."
@@ -83,30 +96,43 @@ REMOTE
     ok "DNS record already exists"
   fi
 
-  # Step 3: Caddy config
-  ssh "$SERVER" bash <<'CADDY'
+  # Step 3: Caddy config (pass actual port as $1)
+  ssh "$SERVER" bash -s "$remote_port" <<'CADDY'
+port="$1"
 BLOCK="
 bluekiwi.dante-labs.com {
-    reverse_proxy localhost:3100
+    reverse_proxy localhost:${port}
 }"
 if ! grep -q "bluekiwi.dante-labs.com" /etc/caddy/Caddyfile 2>/dev/null; then
   echo "$BLOCK" | sudo tee -a /etc/caddy/Caddyfile > /dev/null
   sudo systemctl reload caddy
   echo "caddy: block added and reloaded"
+elif ! grep -q "reverse_proxy localhost:${port}" /etc/caddy/Caddyfile; then
+  sudo sed -i "s|reverse_proxy localhost:[0-9]*|reverse_proxy localhost:${port}|g" /etc/caddy/Caddyfile
+  sudo systemctl reload caddy
+  echo "caddy: port updated to ${port} and reloaded"
 else
   echo "caddy: block already present, skipping"
 fi
 CADDY
   ok "Caddy configured"
 
-  # Step 4: Health check (wait up to 30s for DNS/Caddy)
+  # Step 4: Health check (follow redirects; fallback to DanteServer local check)
   log "Health check: ${BLUEKIWI_URL}"
-  local i
-  for i in $(seq 1 15); do
-    curl -sf -o /dev/null "${BLUEKIWI_URL}/" && break || sleep 2
+  local i http_code
+  for i in $(seq 1 20); do
+    http_code="$(curl -sfL -o /dev/null -w "%{http_code}" "${BLUEKIWI_URL}/" 2>/dev/null || echo "0")"
+    [[ "$http_code" =~ ^[23] ]] && break || sleep 3
   done
-  curl -sf -o /dev/null "${BLUEKIWI_URL}/" || fail "health check failed: ${BLUEKIWI_URL}"
-  ok "health check: ${BLUEKIWI_URL} → 200"
+  if [[ "$http_code" =~ ^[23] ]]; then
+    ok "health check: ${BLUEKIWI_URL} → $http_code"
+  else
+    # DNS may not have propagated locally — verify via DanteServer
+    http_code="$(ssh "$SERVER" "curl -sfL -o /dev/null -w '%{http_code}' '${BLUEKIWI_URL}/' 2>/dev/null || echo 0")"
+    [[ "$http_code" =~ ^[23] ]] \
+      || fail "health check failed: ${BLUEKIWI_URL} (local DNS may not have propagated)"
+    ok "health check (via $SERVER): ${BLUEKIWI_URL} → $http_code"
+  fi
 }
 
 phase_e2e() {
