@@ -84,15 +84,22 @@ jobs:
           cd packages/cli
           npm version "$RELEASE_VERSION" --no-git-tag-version --allow-same-version
       - name: Publish CLI
-        run: |
-          cd packages/cli
-          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          RELEASE_VERSION: ${{ needs.verify-version.outputs.version }}
+        run: |
+          cd packages/cli
+          EXISTING=$(npm view "bluekiwi@${RELEASE_VERSION}" version 2>/dev/null || echo "")
+          if [ -n "$EXISTING" ]; then
+            echo "bluekiwi@${EXISTING} already published — skipping"
+          else
+            npm publish --access public
+          fi
 
   sync-skillsmp:
     needs: verify-version
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Push skill files to bluekiwi-skills repo
@@ -100,7 +107,14 @@ jobs:
           GH_TOKEN: ${{ secrets.SKILLSMP_PAT }}
           RELEASE_VERSION: ${{ needs.verify-version.outputs.version }}
         run: |
-          git clone "https://x-access-token:${GH_TOKEN}@github.com/dandacompany/bluekiwi-skills.git" /tmp/mp
+          if [ -z "$GH_TOKEN" ]; then
+            echo "SKILLSMP_PAT not set — skipping skill sync"
+            exit 0
+          fi
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/dandacompany/bluekiwi-skills.git" /tmp/mp || {
+            echo "bluekiwi-skills repo not accessible — skipping skill sync"
+            exit 0
+          }
           rm -rf /tmp/mp/skills
           cp -R packages/cli/src/assets/skills /tmp/mp/skills
           cd /tmp/mp
@@ -108,7 +122,7 @@ jobs:
           git config user.name "BlueKiwi Release Bot"
           git add .
           git commit -m "chore: sync bk-* skills for v${RELEASE_VERSION}" || exit 0
-          git tag "v${RELEASE_VERSION}"
+          git tag "v${RELEASE_VERSION}" || true
           git push origin main --tags
 
   github-release:
@@ -117,8 +131,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: softprops/action-gh-release@v2
-        env:
-          RELEASE_VERSION: ${{ needs.verify-version.outputs.version }}
         with:
           generate_release_notes: true
           body: |
