@@ -281,6 +281,79 @@ const tools: Tool[] = [
   ),
   tool("list_credentials", "List credentials available to the current user"),
   tool(
+    "create_credential",
+    "Create a new credential set (API key, token, etc.). Credentials must be placed in a private folder; they cannot live in public folders. Defaults to the caller's My Workspace if folder_id is omitted. Pass secrets as a JSON-serialisable object.",
+    {
+      service_name: { type: "string" },
+      description: { type: "string" },
+      secrets: { type: "object" },
+      folder_id: { type: "number" },
+    },
+    ["service_name"],
+  ),
+  tool(
+    "update_credential",
+    "Update an existing credential. Pass only the fields you want to change. Replacing secrets overwrites the entire secrets object.",
+    {
+      credential_id: { type: "number" },
+      service_name: { type: "string" },
+      description: { type: "string" },
+      secrets: { type: "object" },
+      folder_id: { type: "number" },
+    },
+    ["credential_id"],
+  ),
+  tool(
+    "delete_credential",
+    "Delete a credential. Fails with 409 if any instruction references this credential.",
+    {
+      credential_id: { type: "number" },
+    },
+    ["credential_id"],
+  ),
+  tool(
+    "list_instructions",
+    "List instruction templates visible to the current user. Optionally filter by folder_id.",
+    {
+      folder_id: { type: "number" },
+    },
+  ),
+  tool(
+    "create_instruction",
+    "Create a new instruction template. agent_type defaults to 'general'. priority is an integer (higher = more important). To reference a credential, include the service_name from list_credentials in the content text — actual credential binding happens at the workflow node level via create_workflow/update_workflow.",
+    {
+      title: { type: "string" },
+      content: { type: "string" },
+      agent_type: { type: "string" },
+      tags: { type: "array" },
+      priority: { type: "number" },
+      folder_id: { type: "number" },
+    },
+    ["title"],
+  ),
+  tool(
+    "update_instruction",
+    "Update an existing instruction template. Pass only the fields you want to change. Set is_active=false to soft-disable without deleting.",
+    {
+      instruction_id: { type: "number" },
+      title: { type: "string" },
+      content: { type: "string" },
+      agent_type: { type: "string" },
+      tags: { type: "array" },
+      priority: { type: "number" },
+      is_active: { type: "boolean" },
+    },
+    ["instruction_id"],
+  ),
+  tool(
+    "delete_instruction",
+    "Delete an instruction template. Fails with 409 if any workflow node references this instruction.",
+    {
+      instruction_id: { type: "number" },
+    },
+    ["instruction_id"],
+  ),
+  tool(
     "create_workflow",
     "Create a new workflow. Optionally place it in a specific folder_id (defaults to the caller's My Workspace).",
     {
@@ -537,6 +610,49 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
       case "list_credentials":
         return wrap(await client.request("GET", "/api/credentials"));
+      case "create_credential":
+        return wrap(await client.request("POST", "/api/credentials", args));
+      case "update_credential": {
+        const credentialId = requireNumberArg(args, "credential_id");
+        const body = { ...args };
+        delete body.credential_id;
+        return wrap(
+          await client.request("PUT", `/api/credentials/${credentialId}`, body),
+        );
+      }
+      case "delete_credential": {
+        const credentialId = requireNumberArg(args, "credential_id");
+        return wrap(
+          await client.request("DELETE", `/api/credentials/${credentialId}`),
+        );
+      }
+      case "list_instructions": {
+        const qs = new URLSearchParams();
+        if (typeof args.folder_id === "number")
+          qs.set("folder_id", String(args.folder_id));
+        const suffix = qs.toString() ? `?${qs.toString()}` : "";
+        return wrap(await client.request("GET", `/api/instructions${suffix}`));
+      }
+      case "create_instruction":
+        return wrap(await client.request("POST", "/api/instructions", args));
+      case "update_instruction": {
+        const instructionId = requireNumberArg(args, "instruction_id");
+        const body = { ...args };
+        delete body.instruction_id;
+        return wrap(
+          await client.request(
+            "PUT",
+            `/api/instructions/${instructionId}`,
+            body,
+          ),
+        );
+      }
+      case "delete_instruction": {
+        const instructionId = requireNumberArg(args, "instruction_id");
+        return wrap(
+          await client.request("DELETE", `/api/instructions/${instructionId}`),
+        );
+      }
       case "create_workflow":
         return wrap(await client.request("POST", "/api/workflows", args));
       case "update_workflow": {
