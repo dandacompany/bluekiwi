@@ -53,6 +53,7 @@ interface NodeInput {
   instruction?: string;
   instruction_id?: number;
   credential_id?: number;
+  hitl?: boolean;
   node_type?: string;
   loop_back_to?: number;
   auto_advance?: boolean;
@@ -152,7 +153,7 @@ export const POST = withAuth(
         for (let i = 0; i < nodes.length; i++) {
           const node: NodeInput = nodes[i];
           await client.query(
-            "INSERT INTO workflow_nodes (workflow_id, step_order, node_type, title, instruction, instruction_id, loop_back_to, auto_advance, credential_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+            "INSERT INTO workflow_nodes (workflow_id, step_order, node_type, title, instruction, instruction_id, loop_back_to, auto_advance, credential_id, hitl) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
             [
               workflowId,
               i + 1,
@@ -161,8 +162,13 @@ export const POST = withAuth(
               (node.instruction ?? "").trim(),
               node.instruction_id ?? null,
               node.loop_back_to ?? null,
-              node.auto_advance ? 1 : 0,
+              (node.node_type ?? "action") === "action"
+                ? 1
+                : node.node_type === "gate"
+                  ? 0
+                  : (node.auto_advance ? 1 : 0),
               node.credential_id ?? null,
+              node.hitl ?? false,
             ],
           );
         }
