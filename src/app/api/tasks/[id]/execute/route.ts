@@ -138,6 +138,13 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
   }
 
+  // 방안 2: auto_advance = false 단계이면 에이전트에게 명시적으로 대기 지시
+  const executedNode = await queryOne<{ auto_advance: number }>(
+    "SELECT auto_advance FROM workflow_nodes WHERE id = $1",
+    [node_id],
+  );
+  const requiresApproval = executedNode ? !executedNode.auto_advance : false;
+
   void notifyTaskUpdate(taskId, "step_executed", { node_id, status });
   const res = okResponse({
     success: true,
@@ -146,6 +153,11 @@ export async function POST(request: NextRequest, { params }: Params) {
     status,
     loop_continue: !!loop_continue,
     artifacts_saved: artifactsSaved,
+    ...(requiresApproval && {
+      next_action: "wait_for_human_approval",
+      agent_instruction:
+        "이 단계는 수동 승인이 필요합니다. request_approval 도구를 호출하여 승인 요청을 알린 후, 사람이 승인할 때까지 advance를 호출하지 마세요.",
+    }),
   });
   return NextResponse.json(res.body, { status: res.status });
 }

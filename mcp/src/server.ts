@@ -180,7 +180,9 @@ const tools: Tool[] = [
   ),
   tool(
     "execute_step",
-    "Submit the result for the current workflow step",
+    "Submit the result for the current workflow step. " +
+      "IMPORTANT: If the response contains next_action='wait_for_human_approval', " +
+      "you MUST call request_approval next and then STOP — do NOT call advance until a human approves.",
     {
       task_id: { type: "number" },
       node_id: { type: "number" },
@@ -200,10 +202,23 @@ const tools: Tool[] = [
   ),
   tool(
     "advance",
-    "Advance a task to the next step or inspect the current step",
+    "Advance a task to the next step, or use peek=true to inspect the current step without advancing. " +
+      "WARNING: Do NOT call advance if execute_step returned next_action='wait_for_human_approval'. " +
+      "In that case, call request_approval and wait. The server will reject advance with 403 until a human approves.",
     {
       task_id: { type: "number" },
       peek: { type: "boolean" },
+    },
+    ["task_id"],
+  ),
+  tool(
+    "request_approval",
+    "Signal that the current step is complete and human approval is needed before proceeding. " +
+      "Call this after execute_step returns next_action='wait_for_human_approval'. " +
+      "After calling this, stop and wait — do NOT call advance until the human approves.",
+    {
+      task_id: { type: "number" },
+      message: { type: "string" },
     },
     ["task_id"],
   ),
@@ -548,6 +563,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         delete body.task_id;
         return wrap(
           await client.request("POST", `/api/tasks/${taskId}/advance`, body),
+        );
+      }
+      case "request_approval": {
+        const taskId = requireNumberArg(args, "task_id");
+        const body = { ...args };
+        delete body.task_id;
+        return wrap(
+          await client.request(
+            "POST",
+            `/api/tasks/${taskId}/request-approval`,
+            body,
+          ),
         );
       }
       case "heartbeat": {

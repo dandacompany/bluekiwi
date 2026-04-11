@@ -198,6 +198,9 @@ export interface TaskLog {
   model_id: string | null;
   started_at: string;
   completed_at: string | null;
+  approval_requested_at: string | null;
+  approved_at: string | null;
+  approved_by: number | null;
 }
 
 export interface TaskArtifact {

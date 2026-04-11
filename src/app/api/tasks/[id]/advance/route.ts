@@ -113,8 +113,11 @@ export async function POST(request: NextRequest, { params }: Params) {
   );
 
   if (currentNode) {
-    const currentLog = await queryOne<{ status: string }>(
-      "SELECT status FROM task_logs WHERE task_id = $1 AND node_id = $2 ORDER BY id DESC LIMIT 1",
+    const currentLog = await queryOne<{
+      status: string;
+      approved_at: string | null;
+    }>(
+      "SELECT status, approved_at FROM task_logs WHERE task_id = $1 AND node_id = $2 ORDER BY id DESC LIMIT 1",
       [taskId, currentNode.id],
     );
     const COMPLETED_STATUSES = ["completed", "success", "skipped"];
@@ -123,6 +126,16 @@ export async function POST(request: NextRequest, { params }: Params) {
         "PRECONDITION_FAILED",
         `현재 스텝(${task.current_step})이 아직 완료되지 않았습니다`,
         412,
+      );
+      return NextResponse.json(res.body, { status: res.status });
+    }
+
+    // 방안 1: auto_advance = false인 단계는 사람의 명시적 승인 필요
+    if (!currentNode.auto_advance && !currentLog.approved_at) {
+      const res = errorResponse(
+        "MANUAL_APPROVAL_REQUIRED",
+        `스텝 ${task.current_step}(${currentNode.title})은 수동 승인이 필요합니다. 사람이 승인한 후에 advance가 가능합니다.`,
+        403,
       );
       return NextResponse.json(res.body, { status: res.status });
     }

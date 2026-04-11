@@ -205,7 +205,10 @@ CREATE TABLE IF NOT EXISTS task_logs (
   model_id TEXT,
   started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   completed_at TIMESTAMPTZ,
-  structured_output JSONB DEFAULT NULL
+  structured_output JSONB DEFAULT NULL,
+  approval_requested_at TIMESTAMPTZ,
+  approved_at TIMESTAMPTZ,
+  approved_by INTEGER REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS workflow_evaluations (
