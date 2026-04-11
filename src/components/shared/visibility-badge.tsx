@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTranslation } from "@/lib/i18n/context";
@@ -33,19 +34,21 @@ export function VisibilityBadge({ visibility, inherited }: Props) {
         : t("folders.visibilityPublic");
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Badge variant="neutral" className="gap-1">
-          <Icon className="h-3 w-3" />
-          {label}
-          {inherited && (
-            <span className="text-[10px] opacity-70">
-              ({t("folders.inheritedFromParent")})
-            </span>
-          )}
-        </Badge>
-      </TooltipTrigger>
-      <TooltipContent>{tooltipText}</TooltipContent>
-    </Tooltip>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge variant="neutral" className="gap-1">
+            <Icon className="h-3 w-3" />
+            {label}
+            {inherited && (
+              <span className="text-[10px] opacity-70">
+                ({t("folders.inheritedFromParent")})
+              </span>
+            )}
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent>{tooltipText}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
