@@ -150,6 +150,7 @@ export interface WorkflowNode {
   loop_back_to: number | null;
   auto_advance: number;
   hitl: boolean;
+  version_note: string | null;
   created_at: string;
 }
 
@@ -168,6 +169,7 @@ export interface Task {
   session_meta: string;
   target_meta: unknown | null;
   summary: string;
+  feedback_data: Array<{ question: string; answer: string }> | null;
   created_at: string;
   updated_at: string;
 }
