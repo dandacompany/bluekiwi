@@ -12,7 +12,7 @@ Design reusable workflows, run them from any AI agent, and watch every step in r
 [![Docker](https://img.shields.io/badge/ghcr.io-bluekiwi-b7cf57)](https://ghcr.io/dandacompany/bluekiwi)
 [![License: MIT](https://img.shields.io/badge/License-MIT-lightgrey)](LICENSE)
 
-[Quick Setup](#quick-setup) · [Usage](#usage) · [Features](#features) · [MCP Tools](#mcp-tools) · [CLI](#cli)
+[Quick Setup](#quick-setup) · [Usage](#usage) · [Features](#features) · [MCP Tools](#mcp-tools) · [CLI](#cli) · [Configuration](#configuration) · [Troubleshooting](#troubleshooting)
 
 🌐 [한국어](README.ko.md)
 
@@ -76,26 +76,52 @@ One-click deploy templates are available under [`deploy/`](./deploy/) for:
 
 ## Usage
 
-### 1. Invite your team
+### 1. First-time setup (superuser)
 
-After setup, go to **Settings → Team** and create an invite link or token for each team member.
+After the server starts, navigate to **`/setup`** in your browser. This one-time wizard lets you create the superuser account. The `/setup` page is only available until the first account is created.
 
-### 2. Team members accept the invite
+If you're using the CLI directly (no invite), run:
+
+```bash
+npm install -g bluekiwi
+
+# Connect using an existing API key (superuser / admin use case)
+bluekiwi init --server https://your-bluekiwi-server.example.com --api-key bk_...
+```
+
+### 2. Invite your team
+
+Go to **Settings → Team** and create an invite link or token for each team member. Assign a role when creating the invite.
+
+### 3. Team members accept the invite
 
 ```bash
 # Install the CLI
 npm install -g bluekiwi
 
-# Accept invite (auto-configures MCP for detected agent runtimes)
+# Accept invite (interactive: asks for username + password, then selects runtimes)
 bluekiwi accept <token> --server https://your-bluekiwi-server.example.com
 
 # Verify the connection
 bluekiwi status
 ```
 
-The `accept` command detects which agent runtimes you have installed (Claude Code, Codex, Gemini CLI, OpenCode, OpenClaw) and installs the BlueKiwi MCP server into each one automatically.
+The `accept` command:
 
-### 3. Use workflows from your agent
+1. Validates the invite token
+2. Prompts you to set a username and password
+3. Creates your account on the server and issues an API key
+4. Detects which agent runtimes are installed on your machine
+5. Installs the BlueKiwi MCP server and skills into each selected runtime
+6. Saves your credentials to `~/.bluekiwi/config.json`
+
+**Non-interactive / CI mode** — skip prompts by passing flags or environment variables:
+
+```bash
+bluekiwi accept <token> --server <url> --username alice --password secret
+```
+
+### 4. Use workflows from your agent
 
 Inside Claude Code (or any supported runtime), you now have these slash commands:
 
@@ -126,7 +152,7 @@ Agent: Step 3/6 — Performance analysis
 While the agent runs, your team can watch the live timeline at  
 `https://your-server/tasks/{id}` — with structured outputs, comments, and artifacts per step.
 
-### 4. Build your own workflows
+### 5. Build your own workflows
 
 Open the web UI → **Workflows → New Workflow** → add steps using the Cmd+K node picker.
 
@@ -135,6 +161,8 @@ Three step types:
 - **Action** — the agent executes autonomously
 - **Gate** — pauses and waits for human approval before continuing
 - **Loop** — repeats until a condition is met
+
+Each step has an **instruction** field (what the agent should do) and an optional **structured output schema** (JSON schema the agent must fill in when the step completes).
 
 ---
 
@@ -166,6 +194,8 @@ Every task execution is tracked step-by-step. Each step shows:
 | Gemini CLI  | `~/.gemini/settings.json`            |
 | OpenCode    | `~/.opencode/mcp.json`               |
 | OpenClaw    | `~/.openclaw/mcp.json`               |
+
+After installing, BlueKiwi also copies its built-in skills (e.g., `/bk-start`) into each runtime's skills directory so they're available as slash commands immediately.
 
 ### Security & RBAC
 
@@ -207,8 +237,9 @@ The `bluekiwi` MCP server exposes 16 tools your agent runtime can call:
 
 ```bash
 cd mcp && npm install && npm run build
+BLUEKIWI_API_URL=https://your-server.example.com \
+BLUEKIWI_API_KEY=bk_... \
 node dist/server.js
-# Env: BLUEKIWI_API_URL, BLUEKIWI_API_KEY
 ```
 
 Full OpenAPI spec available at **`/docs`** on your running server (Swagger UI).
@@ -217,24 +248,174 @@ Full OpenAPI spec available at **`/docs`** on your running server (Swagger UI).
 
 ## CLI
 
-```bash
-# Accept team invite and configure MCP
-bluekiwi accept <token> --server <url>
-
-# Check connection and current user info
-bluekiwi status
-
-# List available workflows
-bluekiwi workflows
-
-# Start a workflow (prints task ID and web UI link)
-bluekiwi run <workflow-id>
-```
-
-Install:
+### Installation
 
 ```bash
 npm install -g bluekiwi
+```
+
+### Commands
+
+| Command                           | Description                                          |
+| --------------------------------- | ---------------------------------------------------- |
+| `bluekiwi accept <token>`         | Accept a team invite and configure runtimes          |
+| `bluekiwi init`                   | Connect with an existing API key (no invite)         |
+| `bluekiwi status`                 | Show connection status and current user info         |
+| `bluekiwi workflows`              | List available workflows                             |
+| `bluekiwi run <workflow-id>`      | Start a workflow (prints task ID and web UI link)    |
+| `bluekiwi runtimes list`          | Show all supported runtimes and their install status |
+| `bluekiwi runtimes add <name>`    | Install BlueKiwi into an additional runtime          |
+| `bluekiwi runtimes remove <name>` | Uninstall BlueKiwi from a runtime                    |
+| `bluekiwi logout`                 | Log out and uninstall from all runtimes              |
+| `bluekiwi upgrade`                | Upgrade to the latest CLI and refresh assets         |
+
+**`bluekiwi accept`** — full flag reference:
+
+```bash
+bluekiwi accept <token> \
+  --server   <url>        # BlueKiwi server URL (required)
+  --username <name>       # Skip username prompt
+  --password <pass>       # Skip password prompt
+```
+
+**`bluekiwi init`** — connect using an existing API key (admin / superuser workflow):
+
+```bash
+bluekiwi init \
+  --server  <url>    # or env BLUEKIWI_SERVER
+  --api-key <key>    # or env BLUEKIWI_API_KEY
+  --runtime <name>   # repeat for multiple; or env BLUEKIWI_RUNTIMES=claude-code,codex
+  --yes              # non-interactive (use detected runtimes)
+```
+
+---
+
+## Configuration
+
+### `~/.bluekiwi/config.json`
+
+After running `bluekiwi accept` or `bluekiwi init`, your credentials are stored at:
+
+```
+~/.bluekiwi/config.json   (mode 0600 — owner read/write only)
+~/.bluekiwi/              (mode 0700 — owner access only)
+```
+
+The file contains:
+
+```json
+{
+  "version": "1.0.0",
+  "server_url": "https://your-bluekiwi-server.example.com",
+  "api_key": "bk_...",
+  "user": {
+    "id": 1,
+    "username": "alice",
+    "email": "alice@example.com",
+    "role": "editor"
+  },
+  "runtimes": ["claude-code", "codex"],
+  "installed_at": "2026-01-01T00:00:00.000Z",
+  "last_used": "2026-01-01T00:00:00.000Z"
+}
+```
+
+To inspect the current config:
+
+```bash
+cat ~/.bluekiwi/config.json
+# or
+bluekiwi status
+```
+
+To reset (log out and remove credentials):
+
+```bash
+bluekiwi logout
+```
+
+### MCP config files (per runtime)
+
+`bluekiwi accept` / `bluekiwi init` injects the MCP server entry directly into each runtime's config:
+
+| Runtime     | Config file modified      |
+| ----------- | ------------------------- |
+| Claude Code | `~/.claude/mcp.json`      |
+| Codex CLI   | `~/.codex/config.toml`    |
+| Gemini CLI  | `~/.gemini/settings.json` |
+| OpenCode    | `~/.opencode/mcp.json`    |
+| OpenClaw    | `~/.openclaw/mcp.json`    |
+
+The injected entry runs the bundled `node dist/server.js` with two env vars:
+
+```
+BLUEKIWI_API_URL  = your server URL
+BLUEKIWI_API_KEY  = your API key
+```
+
+To add a runtime that wasn't installed when you first ran `accept`:
+
+```bash
+# Install the missing runtime first, then:
+bluekiwi runtimes add codex
+```
+
+To see which runtimes are detected and active:
+
+```bash
+bluekiwi runtimes list
+```
+
+---
+
+## Troubleshooting
+
+**"Not authenticated" error**
+
+```
+Error: Not authenticated. Run `npx bluekiwi accept <token> --server <url>` first.
+```
+
+`~/.bluekiwi/config.json` is missing or corrupted. Re-run `bluekiwi accept` or `bluekiwi init`.
+
+---
+
+**"Connection failed" in `bluekiwi status`**
+
+The server is unreachable or the API key has been revoked. Check:
+
+- The server URL in `~/.bluekiwi/config.json` is correct
+- The server is running (`docker compose ps`)
+- Your API key is not expired or revoked (**Settings → API Keys** in the web UI)
+
+---
+
+**Runtime not detected by `bluekiwi accept`**
+
+The CLI checks for runtime binaries at install time. If you install a new agent runtime after running `bluekiwi accept`, add it manually:
+
+```bash
+bluekiwi runtimes add claude-code   # or: codex, gemini-cli, opencode, openclaw
+```
+
+---
+
+**Slash commands not appearing in Claude Code**
+
+BlueKiwi installs skills files into `~/.claude/skills/`. If they're missing, re-run:
+
+```bash
+bluekiwi runtimes remove claude-code
+bluekiwi runtimes add claude-code
+```
+
+---
+
+**Upgrading the CLI**
+
+```bash
+bluekiwi upgrade
+# Equivalent to: npm install -g bluekiwi@latest + reinstall assets into all runtimes
 ```
 
 ---
