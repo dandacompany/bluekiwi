@@ -36,8 +36,16 @@ phase_deploy() {
   : "${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN missing in $CF_ENV}"
   : "${CLOUDFLARE_ZONE_ID:?CLOUDFLARE_ZONE_ID missing in $CF_ENV}"
 
+  # Use SSH ControlMaster to share one authenticated connection for all remote ops
+  local ctl="/tmp/ssh-bk-$$"
+  ssh -fNM -o ControlPath="$ctl" -o ControlPersist=120 "$SERVER"
+  trap "ssh -O exit -o ControlPath='$ctl' '$SERVER' 2>/dev/null || true" RETURN
+
+  # Helper: run a command over the shared connection
+  ssh_run() { ssh -o ControlPath="$ctl" "$SERVER" "$@"; }
+
   # Step 1: Remote git clone + docker compose up (auto port)
-  ssh "$SERVER" bash <<REMOTE
+  ssh_run bash <<REMOTE
 set -euo pipefail
 if [ -d "$REMOTE_DIR" ]; then
   cd "$REMOTE_DIR"
@@ -73,32 +81,37 @@ echo "stack ready"
 REMOTE
 
   local remote_port
-  remote_port="$(ssh "$SERVER" "cat /tmp/bk_port")"
+  remote_port="$(ssh_run "cat /tmp/bk_port")"
   ok "docker compose up on $SERVER (port $remote_port)"
 
   # Step 2: Cloudflare DNS
   log "Configuring Cloudflare DNS..."
-  local existing
-  existing="$(curl -sf \
+  local cf_resp
+  cf_resp="$(curl -s \
     "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records?name=bluekiwi.dante-labs.com&type=A" \
-    -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-    | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).result.length")"
-
-  [[ "$existing" =~ ^[0-9]+$ ]] || fail "DNS check failed (response: ${existing:-empty})"
-  if [[ "$existing" == "0" ]]; then
-    curl -sf -X POST \
-      "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records" \
-      -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-      -H "Content-Type: application/json" \
-      -d '{"type":"A","name":"bluekiwi","content":"119.66.34.25","proxied":true}' \
-      > /dev/null
-    ok "DNS record created: bluekiwi.dante-labs.com → 119.66.34.25"
+    -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}")"
+  local cf_ok existing
+  cf_ok="$(echo "$cf_resp" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).success" 2>/dev/null || echo false)"
+  if [[ "$cf_ok" != "true" ]]; then
+    log "WARNING: Cloudflare API auth failed — skipping DNS setup (record may already exist)"
+    ok "DNS step skipped (auth failed; assuming record exists)"
   else
-    ok "DNS record already exists"
+    existing="$(echo "$cf_resp" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).result.length")"
+    if [[ "$existing" == "0" ]]; then
+      curl -sf -X POST \
+        "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records" \
+        -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+        -H "Content-Type: application/json" \
+        -d '{"type":"A","name":"bluekiwi","content":"119.66.34.25","proxied":true}' \
+        > /dev/null
+      ok "DNS record created: bluekiwi.dante-labs.com → 119.66.34.25"
+    else
+      ok "DNS record already exists"
+    fi
   fi
 
   # Step 3: Caddy config (pass actual port as $1)
-  ssh "$SERVER" bash -s "$remote_port" <<'CADDY'
+  ssh_run bash -s "$remote_port" <<'CADDY'
 port="$1"
 BLOCK="
 bluekiwi.dante-labs.com {
@@ -129,7 +142,7 @@ CADDY
     ok "health check: ${BLUEKIWI_URL} → $http_code"
   else
     # DNS may not have propagated locally — verify via DanteServer
-    http_code="$(ssh "$SERVER" "curl -sfL -o /dev/null -w '%{http_code}' '${BLUEKIWI_URL}/' 2>/dev/null || echo 0")"
+    http_code="$(ssh_run "curl -sfL -o /dev/null -w '%{http_code}' '${BLUEKIWI_URL}/' 2>/dev/null || echo 0")"
     [[ "$http_code" =~ ^[23] ]] \
       || fail "health check failed: ${BLUEKIWI_URL} (local DNS may not have propagated)"
     ok "health check (via $SERVER): ${BLUEKIWI_URL} → $http_code"

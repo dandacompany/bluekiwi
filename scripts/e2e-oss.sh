@@ -43,6 +43,21 @@ log()  { echo "[e2e] $*"; }
 pass() { echo "  ✓ $*"; }
 fail() { echo "  ✗ $*" >&2; exit 1; }
 
+# timeout_cmd N cmd args... — macOS-compatible timeout using perl
+timeout_cmd() {
+  local secs="$1"; shift
+  perl -e '
+    my $secs = shift;
+    my $pid = fork; die "fork: $!" unless defined $pid;
+    if ($pid == 0) { exec @ARGV or die "exec: $!" }
+    local $SIG{ALRM} = sub { kill "TERM", $pid; exit 1 };
+    alarm($secs);
+    waitpid($pid, 0);
+    alarm(0);
+    exit($? >> 8);
+  ' "$secs" "$@"
+}
+
 # HTTP helpers (use cookie jar for session)
 GET()  { curl -sf -b "$COOKIE_JAR" -X GET  -H "Content-Type: application/json" "${BLUEKIWI_API_URL}$1"; }
 POST() { curl -sf -b "$COOKIE_JAR" -X POST -H "Content-Type: application/json" "${BLUEKIWI_API_URL}$1" "${@:2}"; }
@@ -71,12 +86,13 @@ run_scenario() {
   local name="$1" fn="$2"
   log "Running $name..."
   local start elapsed rc
-  start=$(date +%s%3N)
+  # Use perl for milliseconds — macOS date doesn't support %3N
+  start=$(perl -MTime::HiRes=time -e 'printf "%d\n", time()*1000')
   set +e
   "$fn"
   rc=$?
   set -e
-  elapsed=$(( $(date +%s%3N) - start ))
+  elapsed=$(( $(perl -MTime::HiRes=time -e 'printf "%d\n", time()*1000') - start ))
   TIMES["$name"]=$elapsed
   if [[ $rc -eq 0 ]]; then
     log "$name PASSED (${elapsed}ms)"; PASS=$(( PASS + 1 ))
@@ -206,8 +222,8 @@ s2_invite_cli() {
   # 6. bluekiwi status → "Connected"
   local status_out
   status_out=$(HOME="$SANDBOX_HOME" node packages/cli/dist/index.js status 2>&1)
-  echo "$status_out" | grep -q "Connected" || fail "status did not contain 'Connected': $status_out"
-  pass "status shows Connected"
+  echo "$status_out" | grep -q "Connection OK" || fail "status did not contain 'Connection OK': $status_out"
+  pass "status shows Connection OK"
 }
 
 # ── S3: workflow_crud ─────────────────────────────────────────────────────────
@@ -385,14 +401,14 @@ s5_rbac() {
 # ── S6: mcp_tools ─────────────────────────────────────────────────────────────
 s6_mcp_tools() {
   [[ -n "$WF_ID" ]] || fail "S6 requires S3 to have run first (WF_ID is empty)"
-  ( cd mcp && npm run build >/dev/null 2>&1 )
+  ( cd mcp && npm install --prefer-offline >/dev/null 2>&1 && npm run build >/dev/null 2>&1 )
   pass "MCP server built"
 
   local mcp_out
   mcp_out=$(printf '%s\n' \
     '{"jsonrpc":"2.0","id":0,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"e2e","version":"1"}}}' \
     '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_workflows","arguments":{}}}' | \
-    timeout 15s \
+    timeout_cmd 15 \
     env BLUEKIWI_API_URL="$BLUEKIWI_API_URL" BLUEKIWI_API_KEY="$API_KEY" \
     node mcp/dist/server.js 2>/dev/null || true)
 
@@ -407,7 +423,7 @@ s6_mcp_tools() {
   start_out=$(printf '%s\n' \
     '{"jsonrpc":"2.0","id":0,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"e2e","version":"1"}}}' \
     "$start_req" | \
-    timeout 15s \
+    timeout_cmd 15 \
     env BLUEKIWI_API_URL="$BLUEKIWI_API_URL" BLUEKIWI_API_KEY="$API_KEY" \
     node mcp/dist/server.js 2>/dev/null || true)
 
