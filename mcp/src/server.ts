@@ -280,6 +280,16 @@ const tools: Tool[] = [
     ["task_id", "node_id", "visual_html"],
   ),
   tool(
+    "set_visual_html",
+    "Submit shadcn-based selection UI HTML for a visual_selection=true gate node. The web UI will show a '선택하기' button that opens this HTML in an iframe dialog. When the user clicks an element with data-value, the selection is POSTed to /respond. Use get_web_response to poll for the result. CSS tokens: --background:#0A0A0A, --foreground:#F5F5F5, --brand-mint:#00D4AA, --border:rgba(255,255,255,0.1), --radius:8px. Each selectable element must have data-value attribute and onclick: window.parent.postMessage({selected:el.dataset.value},'*').",
+    {
+      task_id: { type: "number" },
+      node_id: { type: "number" },
+      html: { type: "string" },
+    },
+    ["task_id", "node_id", "html"],
+  ),
+  tool(
     "save_artifacts",
     "Save artifacts for a task step",
     {
@@ -692,6 +702,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         delete body.task_id;
         return wrap(
           await client.request("POST", `/api/tasks/${taskId}/visual`, body),
+        );
+      }
+      case "set_visual_html": {
+        const taskId = requireNumberArg(args, "task_id");
+        const nodeId = requireNumberArg(args, "node_id");
+        return wrap(
+          await client.request("POST", `/api/tasks/${taskId}/visual`, {
+            node_id: nodeId,
+            html: args.html,
+          }),
         );
       }
       case "save_artifacts": {

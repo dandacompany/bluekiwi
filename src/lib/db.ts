@@ -151,6 +151,7 @@ export interface WorkflowNode {
   auto_advance: number;
   hitl: boolean;
   version_note: string | null;
+  visual_selection: boolean;
   created_at: string;
 }
 
