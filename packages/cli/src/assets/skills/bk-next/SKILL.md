@@ -85,15 +85,24 @@ Repeat the loop until reaching an auto_advance=false step.
 When execute_step returns `next_action: "wait_for_human_approval"`:
 
 1. Call `request_approval` with a brief message summarizing what was done.
-2. Show the user:
+2. Show a summary of what was completed:
    ```
-   ⏸ Step [{title}] complete — waiting for approval before proceeding.
-   A notification has been sent. Use /bk-approve when ready.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━
+   ⏸ Awaiting Approval: {step title}
+   ━━━━━━━━━━━━━━━━━━━━━━━━━
+   {brief summary of the step's output}
+   ━━━━━━━━━━━━━━━━━━━━━━━━━
    ```
-3. STOP. Do NOT call `advance`. Do NOT proceed to the next step.
+3. Immediately ask via AskUserQuestion — do NOT tell the user to type `/bk-approve`:
+   - header: "Approve?"
+   - options: ["Approve — proceed to next step (Recommended)", "Approve with edits", "Reject — redo this step", "Rewind to earlier step"]
 
-The server will reject `advance` with 403 until a human approves via /bk-approve.
-</HARD-RULE>
+4. Handle the response:
+   - **Approve**: Call `approve_step(task_id=<id>)`, then call `advance` and continue the execution loop.
+   - **Approve with edits**: Ask the user what to change, apply the edits, then approve and continue.
+   - **Reject**: Ask the user for the reason, call `rewind` to return to this step, tell the user "Rewound. Type `/bk-next` to retry."
+   - **Rewind to earlier step**: Switch to `/bk-rewind` flow.
+     </HARD-RULE>
 
 ## Step-Type Handling
 
@@ -132,7 +141,7 @@ Show progress at the start of each step as a single line:
 ## When Pausing (auto_advance=false only)
 
 - **HITL approval required** (execute_step returned `next_action: "wait_for_human_approval"`):
-  Call `request_approval`, show waiting message, stop. Resume only after `/bk-approve`.
+  Call `request_approval`, then immediately show AskUserQuestion for approval (see HITL Pause section). Do NOT stop and wait for `/bk-approve`.
 - **Gate step**: Wait for user response via AskUserQuestion.
 - **Other action step pausing without HITL**: "Type `/bk-next` to proceed."
 

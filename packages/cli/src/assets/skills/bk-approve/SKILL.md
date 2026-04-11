@@ -1,6 +1,6 @@
 ---
 name: bk-approve
-description: BlueKiwi approval skill. Handles two approval scenarios — (1) gate steps where the agent asks the human a question, and (2) HITL steps where auto_advance=false and the agent has requested human approval before proceeding. This skill should be used when the user says "/bk-approve", "approve this", "approve step", "yes proceed", or wants to approve a pending step in a BlueKiwi workflow.
+description: BlueKiwi approval skill. Handles pending approvals when resuming a session that was interrupted mid-HITL, or when the user explicitly wants to approve a paused step. During normal execution, HITL approval is handled inline by bk-start/bk-next. Use this skill when the user says "/bk-approve", "approve this", "approve step", or returns to a session where a HITL step is already waiting.
 user_invocable: true
 ---
 

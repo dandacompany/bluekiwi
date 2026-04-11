@@ -140,6 +140,6 @@ Repeat the loop until reaching an auto_advance=false step.
 ### 4. When Pausing
 
 - **HITL** (execute_step returned `next_action: "wait_for_human_approval"`):
-  Call `request_approval`, show "⏸ Waiting for approval ��� use /bk-approve when ready.", stop.
+  Call `request_approval`, then immediately show the HITL approval AskUserQuestion (same as bk-next HITL Pause). Do NOT stop and tell the user to type `/bk-approve`.
 - After completing an action step (auto_advance=false, no HITL): "Type `/bk-next` to proceed."
 - After showing a gate question: Wait for user response. Do not show `/bk-next` hint.
