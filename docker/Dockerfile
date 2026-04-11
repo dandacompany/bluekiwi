@@ -31,15 +31,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# MCP server
-COPY --from=mcp-builder /app/mcp/dist ./mcp/dist
-COPY --from=mcp-builder /app/mcp/node_modules ./mcp/node_modules
-
-# WS Relay — bundle into a single self-contained JS (includes ws package)
+# WS Relay — bundle FIRST (needs full node_modules for ws package)
+# Must happen before standalone copy so rm -rf node_modules doesn't break Next.js
 COPY --from=deps /app/node_modules ./node_modules
 COPY scripts/ws-relay.ts ./scripts/ws-relay.ts
 RUN npx -y esbuild scripts/ws-relay.ts \
@@ -48,6 +41,15 @@ RUN npx -y esbuild scripts/ws-relay.ts \
       --target=node22 \
       --outfile=scripts/ws-relay.js \
   && rm -rf ./node_modules
+
+# Next.js standalone (brings its own minimal node_modules)
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# MCP server
+COPY --from=mcp-builder /app/mcp/dist ./mcp/dist
+COPY --from=mcp-builder /app/mcp/node_modules ./mcp/node_modules
 
 USER nextjs
 
