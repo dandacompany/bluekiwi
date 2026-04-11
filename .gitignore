@@ -77,10 +77,6 @@ packages/cli/dist/
 .idea/
 *.log
 
-# Historical test logs and internal design docs
-tests/2/logs/
-tests/2/logs-full/
-tests/3/logs/
-tests/*/logs/
-docs/plans/
-docs/specs/
+# Internal docs and tests (not published)
+docs/
+tests/
