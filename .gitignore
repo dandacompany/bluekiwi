@@ -77,6 +77,7 @@ packages/cli/dist/
 .idea/
 *.log
 
-# Internal docs and tests (not published)
+# Internal docs, tests, and local-only scripts (not published)
 docs/
 tests/
+local/
