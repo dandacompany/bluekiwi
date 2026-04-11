@@ -113,6 +113,13 @@ export async function POST(request: NextRequest, { params }: Params) {
       [user.id, keyHash, prefix, "bluekiwi-cli"],
     );
 
+    // Create default "My Workspace" folder for the new user
+    await client.query(
+      `INSERT INTO folders (name, description, owner_id, visibility, is_system)
+       VALUES ('My Workspace', 'Your personal workspace.', $1, 'personal', true)`,
+      [user.id],
+    );
+
     await client.query(
       `UPDATE invites SET accepted_at = NOW(), accepted_by = $1 WHERE id = $2`,
       [user.id, invite.id],

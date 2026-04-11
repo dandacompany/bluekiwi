@@ -1,5 +1,27 @@
 -- BlueKiwi PostgreSQL Schema
 -- docker-entrypoint-initdb.d에 의해 자동 실행
+-- This file is the complete, current schema for fresh installs.
+
+-- ─── Folders (created before tables that reference it) ───
+
+CREATE TABLE IF NOT EXISTS folders (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  owner_id INTEGER NOT NULL,  -- filled after users table is created
+  parent_id INTEGER REFERENCES folders(id) ON DELETE CASCADE,
+  visibility TEXT NOT NULL DEFAULT 'personal'
+    CHECK (visibility IN ('personal','group','public')),
+  is_system BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_folders_owner      ON folders(owner_id);
+CREATE INDEX IF NOT EXISTS idx_folders_parent     ON folders(parent_id);
+CREATE INDEX IF NOT EXISTS idx_folders_visibility ON folders(visibility);
+
+-- ─── Instructions ───
 
 CREATE TABLE IF NOT EXISTS instructions (
   id SERIAL PRIMARY KEY,
@@ -9,20 +31,27 @@ CREATE TABLE IF NOT EXISTS instructions (
   tags TEXT NOT NULL DEFAULT '[]',
   priority INTEGER NOT NULL DEFAULT 0,
   is_active INTEGER NOT NULL DEFAULT 1,
+  owner_id INTEGER,
+  folder_id INTEGER REFERENCES folders(id) ON DELETE RESTRICT,
+  visibility_override TEXT CHECK (visibility_override IN ('personal')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- ─── Credentials ───
 
 CREATE TABLE IF NOT EXISTS credentials (
   id SERIAL PRIMARY KEY,
   service_name TEXT NOT NULL,
   description TEXT NOT NULL DEFAULT '',
   secrets TEXT NOT NULL DEFAULT '{}',
+  owner_id INTEGER,
+  folder_id INTEGER REFERENCES folders(id) ON DELETE RESTRICT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-ALTER TABLE credentials DROP COLUMN IF EXISTS title;
+-- ─── Workflows ───
 
 CREATE TABLE IF NOT EXISTS workflows (
   id SERIAL PRIMARY KEY,
@@ -33,6 +62,9 @@ CREATE TABLE IF NOT EXISTS workflows (
   family_root_id INTEGER REFERENCES workflows(id) ON DELETE SET NULL,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   evaluation_contract JSONB DEFAULT NULL,
+  owner_id INTEGER,
+  folder_id INTEGER REFERENCES folders(id) ON DELETE RESTRICT,
+  visibility_override TEXT CHECK (visibility_override IN ('personal')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -40,16 +72,18 @@ CREATE TABLE IF NOT EXISTS workflows (
 CREATE TABLE IF NOT EXISTS workflow_nodes (
   id SERIAL PRIMARY KEY,
   workflow_id INTEGER NOT NULL REFERENCES workflows(id) ON DELETE CASCADE,
-  instruction_id INTEGER REFERENCES instructions(id) ON DELETE SET NULL,
+  instruction_id INTEGER REFERENCES instructions(id) ON DELETE RESTRICT,
   step_order INTEGER NOT NULL,
   node_type TEXT NOT NULL DEFAULT 'action',
   title TEXT NOT NULL,
   instruction TEXT NOT NULL DEFAULT '',
   loop_back_to INTEGER,
   auto_advance INTEGER NOT NULL DEFAULT 0,
-  credential_id INTEGER REFERENCES credentials(id) ON DELETE SET NULL,
+  credential_id INTEGER REFERENCES credentials(id) ON DELETE RESTRICT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- ─── Users / Groups / API Keys ───
 
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
@@ -62,6 +96,11 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Deferred FK: folders.owner_id → users.id (added after users table exists)
+ALTER TABLE folders
+  ADD CONSTRAINT folders_owner_id_fkey
+  FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE RESTRICT;
 
 CREATE TABLE IF NOT EXISTS user_groups (
   id SERIAL PRIMARY KEY,
@@ -88,6 +127,48 @@ CREATE TABLE IF NOT EXISTS api_keys (
   is_revoked BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- ─── Folder Shares ───
+
+CREATE TABLE IF NOT EXISTS folder_shares (
+  folder_id INTEGER NOT NULL REFERENCES folders(id) ON DELETE CASCADE,
+  group_id INTEGER NOT NULL REFERENCES user_groups(id) ON DELETE CASCADE,
+  access_level TEXT NOT NULL CHECK (access_level IN ('viewer','editor')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (folder_id, group_id)
+);
+CREATE INDEX IF NOT EXISTS idx_folder_shares_group ON folder_shares(group_id);
+
+-- ─── Credential Shares ───
+
+CREATE TABLE IF NOT EXISTS credential_shares (
+  credential_id INTEGER NOT NULL REFERENCES credentials(id) ON DELETE CASCADE,
+  group_id INTEGER NOT NULL REFERENCES user_groups(id) ON DELETE CASCADE,
+  access_level TEXT NOT NULL CHECK (access_level IN ('use','manage')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (credential_id, group_id)
+);
+CREATE INDEX IF NOT EXISTS idx_credential_shares_group ON credential_shares(group_id);
+
+-- ─── Invites ───
+
+CREATE TABLE IF NOT EXISTS invites (
+  id SERIAL PRIMARY KEY,
+  token TEXT UNIQUE NOT NULL,
+  email TEXT NOT NULL,
+  role TEXT NOT NULL CHECK (role IN ('admin', 'editor', 'viewer')),
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  accepted_at TIMESTAMPTZ,
+  accepted_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_invites_token   ON invites(token);
+CREATE INDEX IF NOT EXISTS idx_invites_email   ON invites(email);
+CREATE INDEX IF NOT EXISTS idx_invites_pending ON invites(expires_at) WHERE accepted_at IS NULL;
+
+-- ─── Tasks ───
 
 CREATE TABLE IF NOT EXISTS tasks (
   id SERIAL PRIMARY KEY,
@@ -179,7 +260,47 @@ CREATE TABLE IF NOT EXISTS compliance_findings (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Indexes
+-- ─── Triggers ───
+
+CREATE OR REPLACE FUNCTION enforce_folder_depth()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.parent_id IS NOT NULL THEN
+    IF EXISTS (
+      SELECT 1 FROM folders WHERE id = NEW.parent_id AND parent_id IS NOT NULL
+    ) THEN
+      RAISE EXCEPTION 'Folder nesting limited to 2 levels';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_folder_depth ON folders;
+CREATE TRIGGER trg_folder_depth
+BEFORE INSERT OR UPDATE ON folders
+FOR EACH ROW EXECUTE FUNCTION enforce_folder_depth();
+
+CREATE OR REPLACE FUNCTION enforce_credential_not_public()
+RETURNS TRIGGER AS $$
+DECLARE
+  fv TEXT;
+BEGIN
+  SELECT visibility INTO fv FROM folders WHERE id = NEW.folder_id;
+  IF fv = 'public' THEN
+    RAISE EXCEPTION 'Credentials cannot be placed in public folders';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_credential_not_public ON credentials;
+CREATE TRIGGER trg_credential_not_public
+BEFORE INSERT OR UPDATE ON credentials
+FOR EACH ROW EXECUTE FUNCTION enforce_credential_not_public();
+
+-- ─── Indexes ───
+
 CREATE INDEX IF NOT EXISTS idx_workflow_nodes_workflow_id ON workflow_nodes(workflow_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_workflow_id ON tasks(workflow_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
@@ -208,3 +329,9 @@ CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id);
 CREATE INDEX IF NOT EXISTS idx_api_keys_prefix ON api_keys(prefix);
 CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash);
 CREATE INDEX IF NOT EXISTS idx_tasks_user ON tasks(user_id);
+CREATE INDEX IF NOT EXISTS idx_workflows_owner     ON workflows(owner_id);
+CREATE INDEX IF NOT EXISTS idx_workflows_folder    ON workflows(folder_id);
+CREATE INDEX IF NOT EXISTS idx_instructions_owner  ON instructions(owner_id);
+CREATE INDEX IF NOT EXISTS idx_instructions_folder ON instructions(folder_id);
+CREATE INDEX IF NOT EXISTS idx_credentials_owner   ON credentials(owner_id);
+CREATE INDEX IF NOT EXISTS idx_credentials_folder  ON credentials(folder_id);
