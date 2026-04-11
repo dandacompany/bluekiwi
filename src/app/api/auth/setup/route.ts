@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   if ((result?.count ?? 0) > 0) {
     return NextResponse.json(
       { error: "Setup already completed." },
-      { status: 403 },
+      { status: 409 },
     );
   }
 
