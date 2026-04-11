@@ -30,7 +30,7 @@ jobs:
         run: |
           cd mcp && npx vitest run tests/api-client.test.ts
           cd ..
-          npx vitest run tests/invites.test.ts
+          node_modules/.bin/vitest run tests/invites.test.ts
 
   docker-build:
     runs-on: ubuntu-latest
