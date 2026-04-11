@@ -263,6 +263,7 @@ s3_workflow_crud() {
 
 # ── S4: task_execution ────────────────────────────────────────────────────────
 s4_task_execution() {
+  [[ -n "$WF_ID" ]] || fail "S4 requires S3 to have run first (WF_ID is empty)"
   # 1. Start task
   local start_resp
   start_resp=$(AUTH POST /api/tasks/start "$API_KEY" \
@@ -383,6 +384,7 @@ s5_rbac() {
 
 # ── S6: mcp_tools ─────────────────────────────────────────────────────────────
 s6_mcp_tools() {
+  [[ -n "$WF_ID" ]] || fail "S6 requires S3 to have run first (WF_ID is empty)"
   ( cd mcp && npm run build >/dev/null 2>&1 )
   pass "MCP server built"
 
