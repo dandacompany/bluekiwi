@@ -117,6 +117,24 @@ When execute_step returns `next_action: "wait_for_human_approval"`:
 
 ### gate step
 
+**Check `visual_selection` flag first:**
+
+**If `visual_selection: true` (HTML click-selection gate):**
+
+<HARD-RULE>
+1. Build an HTML page with clickable options. Each clickable element must call:
+   ```js
+   window.parent.postMessage({ type: "bk_visual_select", value: "<chosen_value>" }, "*")
+   ```
+   Use CSS variables for token alignment: `--bk-brand: #4ade80`, `--bk-text: #1a1a1a`, `--bk-border: #e2e8f0`.
+2. Call `set_visual_html(task_id=<id>, node_id=<node_id>, html=<html_string>)` to push the UI.
+3. Show the user a brief note: "Please make your selection in the visual panel that just appeared."
+4. Poll `get_web_response(task_id=<id>)` every 5 seconds (max 10 attempts) until a response arrives.
+5. Once a response is received, save with `execute_step(response=<value>)`.
+</HARD-RULE>
+
+**If `visual_selection: false` (standard gate):**
+
 1. Check `get_web_response` for a web response first.
 2. If none, ask naturally via `AskUserQuestion`.
 3. **Partial edit option**: For approve/modify questions, offer 3 options: "Approve (Recommended)" / "Partial edit" / "Full rewrite".

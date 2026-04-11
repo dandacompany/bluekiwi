@@ -141,7 +141,7 @@ Repeat the loop until reaching a gate step or a hitl=true action step.
 
 - **HITL** (execute_step returned `next_action: "wait_for_human_approval"`):
   Call `request_approval`, then immediately show the HITL approval AskUserQuestion (same as bk-next HITL Pause). Do NOT stop and tell the user to type `/bk-approve`.
-- **Gate step**: Wait for user response via AskUserQuestion. Do not show `/bk-next` hint.
+- **Gate step**: If `visual_selection: true` → call `set_visual_html`, then poll `get_web_response`. If `visual_selection: false` → wait for user response via AskUserQuestion. See bk-next **gate step** section for full details. Do not show `/bk-next` hint.
 - **Loop-back** (execute_step returned `next_action: "loop_back"`): Re-execute the same loop step.
 
 ## 피드백 설문 (complete_task 호출 전)

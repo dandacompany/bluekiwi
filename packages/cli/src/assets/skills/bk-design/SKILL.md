@@ -20,6 +20,7 @@ Design a structured workflow from a natural language goal and register it on the
 - `node_type: "gate"` = user decision point; always pauses for human approval.
 - `node_type: "loop"` = repeating step; set `loop_back_to` to the target step order.
 - `hitl: true` = action node that requires explicit human approval before advancing. Default: `false`.
+- `visual_selection: true` = gate node where the agent renders an HTML UI and the user makes a selection by clicking (instead of typing). Only valid on `gate` nodes. Default: `false`.
 
 ## Execution Steps
 
@@ -125,6 +126,7 @@ Type `/bk-run` to execute it now.
 - 3–7 steps is ideal. Consider splitting if more than 10.
 - Use `node_type: "gate"` before the final step to let the user review results.
 - Use `hitl: true` on `action` nodes only when the step requires explicit human judgment mid-flow (e.g., security-sensitive operations, irreversible actions).
+- Use `visual_selection: true` on `gate` nodes when the selection is best expressed visually — e.g., choosing a layout, picking a chart type, selecting a UI template. The agent must call `set_visual_html` with interactive HTML before executing the step; the user's click supplies the response.
 - For nodes requiring external API calls, specify `credential_id`. Create credentials first with `/bk-credential`.
 
 ## 노드 수정 전략
