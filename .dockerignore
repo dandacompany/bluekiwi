@@ -1,0 +1,52 @@
+# Dependencies (rebuilt in Docker)
+node_modules
+mcp/node_modules
+packages/*/node_modules
+
+# Build outputs
+.next
+out
+dist
+mcp/dist
+
+# Development & local tooling
+local/
+.claude/
+tests/
+docs/
+ref/
+deploy/
+data/
+
+# Git & version control
+.git
+.gitignore
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE & editor files
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+
+# Test files
+**/__tests__
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Logs & temp files
+*.log
+npm-debug.log*
+.npm
+tmp/
+temp/
+
+# TypeScript build info
+tsconfig.tsbuildinfo
