@@ -50,20 +50,20 @@ Build the report from the collected data:
 
 ## Step-by-Step Log
 
-| Step | Title | Status | Key Output |
-|------|-------|--------|------------|
-| 1 | Clarify Goal | ✅ | Defined target market as SMB |
-| 2 | Collect Data | ✅ | 15 competitors identified |
-| 3 | Review | ⏳ | Pending approval |
+| Step | Title        | Status | Key Output                   |
+| ---- | ------------ | ------ | ---------------------------- |
+| 1    | Clarify Goal | ✅     | Defined target market as SMB |
+| 2    | Collect Data | ✅     | 15 competitors identified    |
+| 3    | Review       | ⏳     | Pending approval             |
 
 ---
 
 ## Artifacts
 
-| Type | Title | Location |
-|------|-------|----------|
-| file | Design Doc | `docs/specs/2026-04-11-design.md` |
-| git_commit | Phase 1 | `a1b2c3d` |
+| Type       | Title      | Location                          |
+| ---------- | ---------- | --------------------------------- |
+| file       | Design Doc | `docs/specs/2026-04-11-design.md` |
+| git_commit | Phase 1    | `a1b2c3d`                         |
 
 ---
 

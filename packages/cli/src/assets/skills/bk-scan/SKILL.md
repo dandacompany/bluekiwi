@@ -18,14 +18,14 @@ Scan a local repository for security and compliance risks using built-in static 
 
 The default rule set checks for:
 
-| ID | Severity | Description |
-|----|----------|-------------|
-| PIPA-001-RRN | REVIEW | Korean Resident Registration Number pattern |
-| ISMS-001-SECRET | BLOCK | Hardcoded secret/API key |
-| PIPA-002-FIELD | REVIEW | High-risk PII field names |
-| ISMS-004-HTTP | WARN | Plaintext HTTP URL (external) |
-| LIA-001-GEO | REVIEW | Geolocation API usage |
-| PIPA-004-PRECHECK | REVIEW | Pre-checked consent checkbox |
+| ID                | Severity | Description                                 |
+| ----------------- | -------- | ------------------------------------------- |
+| PIPA-001-RRN      | REVIEW   | Korean Resident Registration Number pattern |
+| ISMS-001-SECRET   | BLOCK    | Hardcoded secret/API key                    |
+| PIPA-002-FIELD    | REVIEW   | High-risk PII field names                   |
+| ISMS-004-HTTP     | WARN     | Plaintext HTTP URL (external)               |
+| LIA-001-GEO       | REVIEW   | Geolocation API usage                       |
+| PIPA-004-PRECHECK | REVIEW   | Pre-checked consent checkbox                |
 
 ## Execution Steps
 

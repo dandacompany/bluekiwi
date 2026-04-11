@@ -26,11 +26,10 @@ jobs:
           cd packages/cli
           npm ci
           npm run build
-      - name: Run unit tests
-        run: |
-          cd mcp && npx vitest run tests/api-client.test.ts
-          cd ..
-          node_modules/.bin/vitest run tests/invites.test.ts
+      - name: Run MCP unit tests
+        run: cd mcp && npx vitest run tests/api-client.test.ts
+      - name: Run root unit tests
+        run: npm test
 
   docker-build:
     runs-on: ubuntu-latest

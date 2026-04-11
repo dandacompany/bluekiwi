@@ -48,9 +48,10 @@ Always populate these parameters when calling execute_step:
 - `user_name`: User name (omit if unknown)
 
 If files were created or modified, record them in the `artifacts` array:
+
 - File created: `{artifact_type: "file", title: "Design Doc", file_path: "docs/specs/design.md"}`
 - Git commit: `{artifact_type: "git_commit", title: "Implementation", git_ref: "<hash>"}`
-</HARD-RULE>
+  </HARD-RULE>
 
 ## Session Metadata Collection
 
@@ -84,7 +85,7 @@ Build a JSON object:
 - `agent`: always "claude-code" when running in Claude Code
 - `model_id`: current model ID (check system prompt)
 - `started_at`: current UTC time
-</HARD-RULE>
+  </HARD-RULE>
 
 ## Credential Handling (API Service Nodes)
 
@@ -104,6 +105,7 @@ Record only results (URL, status code, response summary).
 Call `list_workflows` to retrieve the list.
 
 **Single workflow**: Skip the selection UI, just confirm:
+
 - "Start the '{title}' workflow?" (AskUserQuestion: "Start" / "Cancel")
 
 **Multiple workflows**: Show selection via AskUserQuestion.

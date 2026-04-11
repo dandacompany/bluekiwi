@@ -41,10 +41,11 @@ Always populate these parameters when calling execute_step:
 - `user_name`: User name (omit if unknown)
 
 If files were created or modified, record in the `artifacts` array:
+
 - File created: `{artifact_type: "file", title: "Design Doc", file_path: "docs/specs/design.md"}`
 - Git commit: `{artifact_type: "git_commit", title: "Phase 1 Implementation", git_ref: "<hash>"}`
 - URL: `{artifact_type: "url", title: "PR", url: "https://..."}`
-</HARD-RULE>
+  </HARD-RULE>
 
 ## Credential Handling (API Service Nodes)
 
