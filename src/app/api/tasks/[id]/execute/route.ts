@@ -120,30 +120,32 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
   }
 
-  // Loop continue
-  if (loop_continue) {
-    const node = await queryOne<{
-      title: string;
-      node_type: string;
-      step_order: number;
-    }>(
-      "SELECT title, node_type, step_order FROM workflow_nodes WHERE id = $1",
-      [node_id],
-    );
-    if (node) {
-      await execute(
-        "INSERT INTO task_logs (task_id, node_id, step_order, status, node_title, node_type) VALUES ($1, $2, $3, 'pending', $4, $5)",
-        [taskId, node_id, node.step_order, node.title, node.node_type],
-      );
-    }
-  }
-
-  // 방안 2: auto_advance = false 단계이면 에이전트에게 명시적으로 대기 지시
-  const executedNode = await queryOne<{ auto_advance: number }>(
-    "SELECT auto_advance FROM workflow_nodes WHERE id = $1",
+  const executedNode = await queryOne<{
+    title: string;
+    node_type: string;
+    step_order: number;
+    loop_back_to: number | null;
+    hitl: boolean;
+  }>(
+    "SELECT title, node_type, step_order, loop_back_to, hitl FROM workflow_nodes WHERE id = $1",
     [node_id],
   );
-  const requiresApproval = executedNode ? !executedNode.auto_advance : false;
+
+  // Loop continue
+  if (loop_continue && executedNode) {
+    await execute(
+      "INSERT INTO task_logs (task_id, node_id, step_order, status, node_title, node_type) VALUES ($1, $2, $3, 'pending', $4, $5)",
+      [
+        taskId,
+        node_id,
+        executedNode.step_order,
+        executedNode.title,
+        executedNode.node_type,
+      ],
+    );
+  }
+
+  const requiresApproval = executedNode?.hitl ?? false;
 
   void notifyTaskUpdate(taskId, "step_executed", { node_id, status });
   const res = okResponse({
@@ -153,7 +155,12 @@ export async function POST(request: NextRequest, { params }: Params) {
     status,
     loop_continue: !!loop_continue,
     artifacts_saved: artifactsSaved,
-    ...(requiresApproval && {
+    ...(loop_continue &&
+      executedNode?.loop_back_to != null && {
+        next_action: "loop_back",
+        loop_back_to: executedNode.loop_back_to,
+      }),
+    ...(!loop_continue && requiresApproval && {
       next_action: "wait_for_human_approval",
       agent_instruction:
         "이 단계는 수동 승인이 필요합니다. request_approval 도구를 호출하여 승인 요청을 알린 후, 사람이 승인할 때까지 advance를 호출하지 마세요.",
