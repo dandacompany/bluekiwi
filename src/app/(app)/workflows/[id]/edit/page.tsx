@@ -23,7 +23,7 @@ export default function EditWorkflowPage() {
     fetch("/api/auth/me")
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
-        if (j?.data) setMe(j.data as MeResponse);
+        if (j?.user) setMe(j.user as MeResponse);
       })
       .catch(() => {});
   }, []);
