@@ -4,371 +4,261 @@
 
 # BlueKiwi
 
-**Agent Workflow Engine**
+**AI Agent Workflow Engine**
 
-Design, execute, and monitor AI agent workflows step-by-step.
-Built for Claude Code, Codex, and any MCP-compatible agent runtime.
+Design reusable workflows, run them from any AI agent, and watch every step in real time.
 
-[Quick Start](#quick-start) · [Features](#features) · [How It Works](#how-it-works) · [Tech Stack](#tech-stack) · [API](#api)
+[![npm](https://img.shields.io/npm/v/bluekiwi?color=4169e1)](https://www.npmjs.com/package/bluekiwi)
+[![Docker](https://img.shields.io/badge/ghcr.io-bluekiwi-b7cf57)](https://ghcr.io/dandacompany/bluekiwi)
+[![License: MIT](https://img.shields.io/badge/License-MIT-lightgrey)](LICENSE)
+
+[Quick Setup](#quick-setup) · [Usage](#usage) · [Features](#features) · [MCP Tools](#mcp-tools) · [CLI](#cli)
 
 </div>
 
 ---
 
-## Overview
+## What is BlueKiwi?
 
-BlueKiwi lets you define **reusable AI workflows** as ordered instruction nodes, then execute them from your agent of choice (Claude Code, Codex, or any MCP client). Each step can:
+BlueKiwi is a self-hosted server that turns **multi-step agent instructions into reusable workflows**.
 
-- **Action** — run an instruction autonomously
-- **Gate** — pause for user input before continuing
-- **Loop** — repeat until a condition is met
+You build a workflow once in the web UI, then any connected AI agent (Claude Code, Codex, Gemini CLI, …) can start it, execute steps, pause for human input, and complete it — all tracked in a live timeline your team can watch in the browser.
 
-Progress is tracked in real time, with structured logs (user input / thinking / assistant output), artifacts, and comments — all stored in PostgreSQL and browsable from a web UI.
+```
+You type:  /bk-start "code review"
 
-**Use cases**: code review pipelines, research & analysis workflows, guided onboarding, customer support automation, content generation pipelines, anything that benefits from repeatable multi-step agent execution.
+Agent ──▶ BlueKiwi MCP ──▶ BlueKiwi Server ──▶ Web UI (live timeline)
+          list_workflows      stores logs          your browser
+          start_workflow      enforces RBAC        comments / artifacts
+          execute_step        saves outputs
+```
+
+**No more copy-pasting prompts.** Your best agent workflows become institutional knowledge.
 
 ---
 
-## Quick Start
+## Quick Setup
 
-BlueKiwi has two installation tracks — pick the one that matches your role.
-
-### 🖥️ For server operators (superusers)
-
-Deploy the full BlueKiwi stack for your team.
-
-**Docker (recommended):**
+### Option 1 — Docker (recommended)
 
 ```bash
 mkdir bluekiwi && cd bluekiwi
-curl -L https://raw.githubusercontent.com/dandacompany/bluekiwi/main/docker-compose.yml > docker-compose.yml
-curl -L https://raw.githubusercontent.com/dandacompany/bluekiwi/main/.env.example > .env
-# Edit .env — set DB_PASSWORD and JWT_SECRET
+
+# Download docker-compose and env template
+curl -L https://raw.githubusercontent.com/dandacompany/bluekiwi/main/docker-compose.yml -o docker-compose.yml
+curl -L https://raw.githubusercontent.com/dandacompany/bluekiwi/main/.env.example -o .env
+
+# Set a strong password and secret (required)
+# Edit .env → DB_PASSWORD and JWT_SECRET
+
 docker compose up -d
 ```
 
-Open `http://localhost:3100` → complete `/setup` → you become the **superuser** → invite your team from **Settings → Team**.
+Open **http://localhost:3100** → complete the `/setup` page → you're the **superuser**.
 
-**Managed hosting:** one-click templates are provided for Railway, Fly.io, Render, DigitalOcean App Platform, and Dokku under [`deploy/`](./deploy/).
+> The stack runs Next.js on port `3100` (configurable via `APP_PORT`), PostgreSQL, and Redis — all in Docker.
 
-**Local development:** if you're hacking on BlueKiwi itself, use the dev compose stack with hot reload:
+### Option 2 — Managed platforms
 
-```bash
-git clone https://github.com/dandacompany/bluekiwi.git
-cd bluekiwi
-bash scripts/dev.sh start
-```
+One-click deploy templates are available under [`deploy/`](./deploy/) for:
 
-The dev stack runs sidecar containers: Next.js app on `3100`, PostgreSQL on `5433`, Redis on `6379`.
-
-### 👩‍💻 For end-users (team members)
-
-You've received an invite link or token from your team admin.
-
-```bash
-# From an invite URL shared via Slack/email
-npx bluekiwi accept <token> --server https://your-team.bluekiwi.dev
-
-# Or install the CLI globally first
-npm install -g bluekiwi
-bluekiwi accept <token> --server https://your-team.bluekiwi.dev
-```
-
-The CLI auto-detects Claude Code, Codex CLI, Gemini CLI, OpenCode, and OpenClaw, then installs the `/bk-start`, `/bk-next`, `/bk-status`, `/bk-rewind` slash commands into whichever runtimes you select. Verify with:
-
-```bash
-bluekiwi status
-```
-
-**SkillsMP alternative:** if you prefer skill-marketplace installation,
-
-```bash
-skills add dante-labs/bluekiwi-skills -g --copy -a claude-code
-npx bluekiwi init  # configure server URL + API key
-```
+| Platform         |                         |
+| ---------------- | ----------------------- |
+| Railway          | `deploy/railway.json`   |
+| Fly.io           | `deploy/fly.toml`       |
+| Render           | `deploy/render.yaml`    |
+| DigitalOcean App | `deploy/do-app.yaml`    |
+| Dokku            | `deploy/dokku-setup.sh` |
 
 ---
 
-## How It Works
+## Usage
+
+### 1. Invite your team
+
+After setup, go to **Settings → Team** and create an invite link or token for each team member.
+
+### 2. Team members accept the invite
+
+```bash
+# Install the CLI
+npm install -g bluekiwi
+
+# Accept invite (auto-configures MCP for detected agent runtimes)
+bluekiwi accept <token> --server https://your-bluekiwi-server.example.com
+
+# Verify the connection
+bluekiwi status
+```
+
+The `accept` command detects which agent runtimes you have installed (Claude Code, Codex, Gemini CLI, OpenCode, OpenClaw) and installs the BlueKiwi MCP server into each one automatically.
+
+### 3. Use workflows from your agent
+
+Inside Claude Code (or any supported runtime), you now have these slash commands:
+
+| Command                | What it does                   |
+| ---------------------- | ------------------------------ |
+| `/bk-start <workflow>` | Start a workflow by name or ID |
+| `/bk-next`             | Advance to the next step       |
+| `/bk-status`           | Show current task progress     |
+| `/bk-rewind <step>`    | Jump back to a previous step   |
+
+**Example session:**
 
 ```
-┌──────────────────┐    ┌─────────────────┐    ┌───────────────────┐    ┌────────────┐
-│ User             │    │ Agent runtime   │    │ bluekiwi-mcp      │    │ BlueKiwi   │
-│ /bk-start        │───▶│ runs skill      │───▶│ (REST client,     │───▶│ server     │
-│ "research agent" │    │                 │    │  no DB access)    │    │ REST + UI  │
-└──────────────────┘    └─────────────────┘    └───────────────────┘    └────────────┘
-                                                                                │
-┌───────────────────────────────────────────────────────────────────────────────┘
-│ Browser monitors live progress via timeline view + structured outputs
-▼
-https://your-team.bluekiwi.dev/tasks/{id}
+You:   /bk-start "backend code review"
+
+Agent: Starting workflow "Backend Code Review" (6 steps)
+       Step 1/6 — Read changed files and summarize scope
+       [... executes ...]
+       Step 2/6 — Check for security issues
+       ⏸ Gate: Please review my findings and approve to continue.
+
+You:   /bk-next
+
+Agent: Step 3/6 — Performance analysis
+       [... continues ...]
 ```
 
-The agent calls MCP tools (`list_workflows`, `start_workflow`, `execute_step`, `advance`, `complete_task`…) which send authenticated HTTPS requests to the BlueKiwi REST API. The MCP client has **no database access** — all storage and RBAC is enforced by the server. Humans watch execution in real time from the web UI.
+While the agent runs, your team can watch the live timeline at  
+`https://your-server/tasks/{id}` — with structured outputs, comments, and artifacts per step.
 
-## Supported Agent Runtimes
+### 4. Build your own workflows
 
-| Runtime     | Slash commands                                      | Config file               |
-| ----------- | --------------------------------------------------- | ------------------------- |
-| Claude Code | `/bk-start`, `/bk-next`, `/bk-status`, `/bk-rewind` | `~/.claude/mcp.json`      |
-| Codex CLI   | same                                                | `~/.codex/config.toml`    |
-| Gemini CLI  | same                                                | `~/.gemini/settings.json` |
-| OpenCode    | same                                                | `~/.opencode/mcp.json`    |
-| OpenClaw    | same                                                | `~/.openclaw/mcp.json`    |
+Open the web UI → **Workflows → New Workflow** → add steps using the Cmd+K node picker.
 
-The `bluekiwi` CLI auto-detects which of these you have installed and only writes to the runtimes you confirm during `bluekiwi accept` or `bluekiwi init`.
+Three step types:
+
+- **Action** — the agent executes autonomously
+- **Gate** — pauses and waits for human approval before continuing
+- **Loop** — repeats until a condition is met
 
 ---
 
 ## Features
 
-### 🎨 Workflow Editor
+### Live Timeline
 
-- **Drag-and-drop** node reordering (@dnd-kit)
-- **Cmd+K node picker** — search from saved instruction templates
-- **Horizontal step minimap** — full pipeline at a glance
-- **Version control** — every edit creates a new workflow version
+Every task execution is tracked step-by-step. Each step shows:
 
-### ⚡ Task Execution
+- **Thinking** — the agent's reasoning
+- **Output** — the assistant response
+- **User input** — what the human provided at Gate steps
+- **Artifacts** — any files the agent saved
+- **Comments** — your team's notes on that step
 
-- **Timeline view** — vertical progress bar with step-by-step status
-- **Structured output** — separated panels for user input, thinking, and assistant response
-- **Artifacts** — file attachments tracked per step
-- **Comments** — threaded discussions on individual steps
-- **Rewind & replay** — jump back to any step and re-run
+### Workflow Editor
 
-### 🔐 Auth & RBAC
+- Drag-and-drop step reordering
+- **Cmd+K** node picker — search saved instruction templates
+- Horizontal minimap — full pipeline overview
+- Version history — every edit is non-destructive
 
-- **First-visitor setup** — no default credentials; first registered user becomes superuser
-- **4-tier roles** — `superuser` > `admin` > `editor` > `viewer`
-- **API keys** — `bk_` prefix, SHA-256 hashed, expiry + revocation
-- **JWT sessions** — httpOnly cookies, 7-day expiry
+### Multi-Runtime Support
 
-### 🌐 Internationalization
+| Runtime     | Auto-configured by `bluekiwi accept` |
+| ----------- | ------------------------------------ |
+| Claude Code | `~/.claude/mcp.json`                 |
+| Codex CLI   | `~/.codex/config.toml`               |
+| Gemini CLI  | `~/.gemini/settings.json`            |
+| OpenCode    | `~/.opencode/mcp.json`               |
+| OpenClaw    | `~/.openclaw/mcp.json`               |
 
-- Built-in **Korean / English** translation with a context-based `t()` hook
-- `localStorage`-persisted locale toggle in the user menu
-- Easy to add more languages — just drop a JSON dictionary into `src/lib/i18n/`
+### Security & RBAC
 
-### 🎯 Design System
+- **4-tier roles**: `superuser` → `admin` → `editor` → `viewer`
+- **API keys**: `bk_` prefix, SHA-256 hashed, with expiry and revocation
+- **No default credentials** — first visitor runs `/setup` to create the superuser account
+- The MCP server has **no direct DB access** — all requests go through the authenticated REST API
 
-- **BlueKiwi theme** — Royal Blue (#4169e1) + Kiwi Green (#b7cf57)
-- **shadcn/ui** base with custom variants (rounded-full buttons, soft shadows, 1.5rem radii)
-- **Inter font**, light/dark mode ready
-- Full component guide in `ref/design-guide.html`
+### Internationalization
 
-### 🔧 Developer Experience
-
-- **`/dev` command** — `bash scripts/dev.sh {start|stop|logs|seed|reset|shell}`
-- **Auto port detection** — no more "port in use" errors
-- **Hot reload** — source mounted as volume in the app container
-- **One-shot seed** — pre-populated test workflows for fast iteration
+Built-in Korean / English toggle. Add more languages by dropping a JSON file into `src/lib/i18n/`.
 
 ---
 
-## Tech Stack
+## MCP Tools
 
-| Layer     | Technology                                                 |
-| --------- | ---------------------------------------------------------- |
-| Framework | [Next.js 16](https://nextjs.org) (App Router), React 19    |
-| UI        | [shadcn/ui](https://ui.shadcn.com), Tailwind CSS 4, Lucide |
-| Database  | PostgreSQL 16                                              |
-| Cache     | Redis 7                                                    |
-| Auth      | JWT via [jose](https://github.com/panva/jose), bcryptjs    |
-| DnD       | [@dnd-kit/core](https://dndkit.com) + sortable             |
-| Commands  | [cmdk](https://cmdk.paco.me) for Cmd+K palette             |
-| Toast     | [sonner](https://sonner.emilkowal.ski)                     |
-| Container | Docker Compose                                             |
-| MCP       | Custom stdio server (16 tools)                             |
+The `bluekiwi` MCP server exposes 16 tools your agent runtime can call:
 
----
+| Tool               | Description                       |
+| ------------------ | --------------------------------- |
+| `list_workflows`   | List all available workflows      |
+| `start_workflow`   | Start a workflow → creates a task |
+| `execute_step`     | Save the current step's output    |
+| `advance`          | Move to the next step             |
+| `heartbeat`        | Send progress ping (keep-alive)   |
+| `complete_task`    | Mark the task as done             |
+| `rewind`           | Jump back to a previous step      |
+| `get_web_response` | Fetch a URL (for Gate steps)      |
+| `submit_visual`    | Attach a screenshot/image         |
+| `save_artifacts`   | Persist files to the task         |
+| `load_artifacts`   | Load previously saved files       |
+| `get_comments`     | Read team comments on a step      |
+| `list_credentials` | List stored API secrets           |
+| `create_workflow`  | Create a new workflow via API     |
+| `update_workflow`  | Update an existing workflow       |
+| `delete_workflow`  | Delete a workflow                 |
 
-## API
-
-### REST Endpoints
-
-```
-Auth
-  POST   /api/auth/setup           # create first superuser
-  POST   /api/auth/login           # returns JWT cookie
-  POST   /api/auth/logout
-  GET    /api/auth/me
-  POST   /api/auth/change-password
-
-Workflows
-  GET    /api/workflows            # list (with nodes)
-  POST   /api/workflows            # create (with nodes)
-  GET    /api/workflows/:id
-  PUT    /api/workflows/:id        # update (optionally create new version)
-  DELETE /api/workflows/:id
-
-Tasks
-  GET    /api/tasks                # list active + completed
-  POST   /api/tasks/start          # start a workflow → create task
-  GET    /api/tasks/:id            # task + logs + artifacts
-  POST   /api/tasks/:id/execute    # save current step result
-  POST   /api/tasks/:id/advance    # move to next step
-  POST   /api/tasks/:id/complete   # finalize task
-  POST   /api/tasks/:id/heartbeat  # progress ping
-  POST   /api/tasks/:id/rewind     # jump back to step N
-
-Users & Keys
-  GET    /api/users                # team list (admin+)
-  POST   /api/users                # invite team member
-  GET    /api/apikeys              # user's keys
-  POST   /api/apikeys              # generate new key (bk_xxx)
-  DELETE /api/apikeys/:id          # revoke
-```
-
-Full OpenAPI spec at **`/docs`** (Swagger UI).
-
-### MCP Tools
-
-```
-list_workflows, start_workflow, execute_step, advance,
-heartbeat, complete_task, rewind, get_web_response,
-submit_visual, save_artifacts, load_artifacts,
-get_comments, list_credentials,
-create_workflow, update_workflow, delete_workflow
-```
-
-Run the MCP server:
+**Run the MCP server manually** (for testing or custom integration):
 
 ```bash
-cd mcp && npm run build && node dist/server.js --api-key bk_xxx
+cd mcp && npm install && npm run build
+node dist/server.js
+# Env: BLUEKIWI_API_URL, BLUEKIWI_API_KEY
 ```
 
-### E2E Test
+Full OpenAPI spec available at **`/docs`** on your running server (Swagger UI).
+
+---
+
+## CLI
 
 ```bash
-export BLUEKIWI_API_URL=http://localhost:3100/api
-bash scripts/e2e-workflow.sh <workflow_id>
+# Accept team invite and configure MCP
+bluekiwi accept <token> --server <url>
+
+# Check connection and current user info
+bluekiwi status
+
+# List available workflows
+bluekiwi workflows
+
+# Start a workflow (prints task ID and web UI link)
+bluekiwi run <workflow-id>
 ```
 
----
-
-## Commands
+Install:
 
 ```bash
-# Server lifecycle
-bash scripts/dev.sh start      # spin up DB + Redis + app
-bash scripts/dev.sh stop       # tear down
-bash scripts/dev.sh restart
-bash scripts/dev.sh status     # health check + ports
-
-# Logs
-bash scripts/dev.sh logs       # tail all services
-bash scripts/dev.sh logs app   # app container only
-
-# Data
-bash scripts/dev.sh seed       # insert test workflows
-bash scripts/dev.sh reset      # ⚠ wipe volumes (destructive)
-
-# Troubleshooting
-bash scripts/dev.sh build      # rebuild app container (after npm install)
-bash scripts/dev.sh shell      # open a shell inside the app container
-```
-
-npm aliases: `npm run dev`, `npm run dev:stop`, `npm run dev:status`, `npm run dev:logs`, `npm run dev:seed`, `npm run dev:restart`.
-
----
-
-## Environment Variables
-
-| Variable       | Default                                                    | Purpose               |
-| -------------- | ---------------------------------------------------------- | --------------------- |
-| `DATABASE_URL` | `postgresql://bluekiwi:bluekiwi_dev_2026@db:5432/bluekiwi` | PostgreSQL            |
-| `JWT_SECRET`   | `bluekiwi-dev-secret-change-in-production`                 | JWT signing key       |
-| `APP_PORT`     | `3100`                                                     | Host port for Next.js |
-
-> ⚠ **Production**: always override `JWT_SECRET` with a strong random value and use a dedicated DB password.
-
----
-
-## Project Structure
-
-```
-blue-kiwi/
-├── src/
-│   ├── app/
-│   │   ├── (auth)/          # login, setup, change-password
-│   │   ├── (app)/           # dashboard, workflows, tasks, settings
-│   │   └── api/             # REST endpoints
-│   ├── components/
-│   │   ├── ui/              # shadcn/ui base components
-│   │   ├── layout/          # sidebar, top bar, app shell
-│   │   ├── workflow-editor/ # DnD editor, minimap, node picker
-│   │   ├── task/            # timeline, step detail
-│   │   ├── dashboard/       # stat cards, active tasks, activity feed
-│   │   ├── settings/        # profile, API keys, team tabs
-│   │   └── shared/          # empty states, command palette
-│   └── lib/
-│       ├── db.ts            # PostgreSQL pool + query helpers
-│       ├── auth.ts          # bcrypt, API keys, RBAC matrix
-│       ├── session.ts       # JWT sign / verify
-│       ├── i18n/            # ko + en translation dictionaries
-│       └── node-type-config.ts
-├── mcp/                     # MCP stdio server (16 tools)
-├── docker/
-│   ├── docker-compose.dev.yml  # DB + Redis + app (hot-reload)
-│   ├── docker-compose.yml      # production stack
-│   ├── Dockerfile.dev
-│   ├── Dockerfile              # multi-stage production build
-│   ├── init.sql                # schema: 13 tables
-│   └── migrations/
-├── scripts/
-│   ├── dev.sh               # dev stack manager
-│   ├── cli.ts               # user/apikey CLI
-│   └── e2e-workflow.sh      # REST-based E2E runner
-├── tests/                   # sprint integration tests
-├── ref/                     # design guide + theme reference (gitignored)
-└── public/                  # icons, favicon, OG image
-```
-
----
-
-## Database
-
-13 tables — see `docker/init.sql`:
-
-```
-workflows           # workflow definitions (versioned)
-workflow_nodes      # ordered nodes within a workflow
-instructions        # reusable instruction templates
-credentials         # encrypted API secrets
-tasks               # execution instances
-task_logs           # per-step structured outputs
-task_artifacts      # file attachments
-task_comments       # threaded discussion
-users               # accounts with 4-tier roles
-user_groups         # team groupings
-user_group_members
-api_keys            # bk_* tokens
-workflow_evaluations # quality contracts
+npm install -g bluekiwi
 ```
 
 ---
 
 ## Contributing
 
-This project is a work in progress. Issues and PRs welcome.
+Issues and PRs are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup, architecture notes, and the database schema.
 
-- **Linting**: `npm run lint`
-- **Build check**: `npm run build`
-- **Integration tests**: `bash tests/sprint1-integration.sh`
+```bash
+# Local dev stack (hot reload)
+git clone https://github.com/dandacompany/bluekiwi.git
+cd bluekiwi
+bash scripts/dev.sh start
+```
 
 ---
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
-
+MIT — see [LICENSE](LICENSE).  
 Copyright © 2026 Dante Labs.
 
 ---
 
-## Support
+<div align="center">
 
-- YouTube: [@dante-labs](https://youtube.com/@dante-labs)
-- Email: `dante@dante-labs.com`
-- Buy Me a Coffee: `https://buymeacoffee.com/dante.labs`
+**YouTube** [@dante-labs](https://youtube.com/@dante-labs) · **Email** dante@dante-labs.com · [☕ Buy Me a Coffee](https://buymeacoffee.com/dante.labs)
+
+</div>
