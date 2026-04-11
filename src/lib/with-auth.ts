@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { errorResponse } from "./db";
+import { errorResponse, queryOne } from "./db";
 import {
   authenticateRequest,
   checkPermission,
   type Permission,
   type User,
 } from "./auth";
+import { verifySession } from "./session";
 
 type Handler = (
   request: NextRequest,
@@ -42,20 +43,37 @@ export function withAuth(
     context?: unknown,
   ): Promise<NextResponse> => {
     const authHeader = request.headers.get("authorization");
-    const auth = await authenticateRequest(authHeader);
+    let user: User | null = null;
 
-    if (!auth) {
+    if (authHeader) {
+      const auth = await authenticateRequest(authHeader);
+      user = auth?.user ?? null;
+    } else {
+      // Fallback: session cookie (web UI and first-time API key minting)
+      const token = request.cookies.get("session")?.value;
+      if (token) {
+        const session = await verifySession(token);
+        if (session) {
+          user = await queryOne<User>(
+            "SELECT * FROM users WHERE id = $1 AND is_active = true",
+            [session.userId],
+          );
+        }
+      }
+    }
+
+    if (!user) {
       const res = errorResponse("UNAUTHORIZED", "Unauthorized", 401);
       return NextResponse.json(res.body, { status: res.status });
     }
 
-    if (!checkPermission(auth.user.role, permission)) {
+    if (!checkPermission(user.role, permission)) {
       const res = errorResponse("FORBIDDEN", "Forbidden", 403);
       return NextResponse.json(res.body, { status: res.status });
     }
 
     const authedHandler = handler as Handler;
-    return authedHandler(request, auth.user, context);
+    return authedHandler(request, user, context);
   };
 }
 
