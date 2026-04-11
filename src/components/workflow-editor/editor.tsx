@@ -63,6 +63,7 @@ interface NodeDraft {
   credential_id: number | null;
   loop_back_to: number | null;
   hitl: boolean;
+  visual_selection: boolean;
 }
 
 const NODE_TYPES = [
@@ -156,6 +157,7 @@ export default function WorkflowEditor({
             credential_id: number | null;
             loop_back_to: number | null;
             hitl: boolean;
+            visual_selection: boolean;
           }) => ({
             key: newKey(),
             title: n.title,
@@ -166,6 +168,7 @@ export default function WorkflowEditor({
             credential_id: n.credential_id,
             loop_back_to: n.loop_back_to,
             hitl: n.hitl ?? false,
+            visual_selection: n.visual_selection ?? false,
           }),
         ),
       );
@@ -192,6 +195,7 @@ export default function WorkflowEditor({
         credential_id: null,
         loop_back_to: null,
         hitl: false,
+        visual_selection: false,
         ...overrides,
       },
     ]);
@@ -273,6 +277,7 @@ export default function WorkflowEditor({
       credential_id: n.credential_id,
       loop_back_to: n.node_type === "loop" ? n.loop_back_to : null,
       hitl: n.hitl,
+      visual_selection: n.node_type === "gate" ? n.visual_selection : false,
     })),
   });
 
@@ -485,6 +490,22 @@ export default function WorkflowEditor({
                                   className="h-4 w-4 accent-brand-blue-600"
                                 />
                                 <span>HITL</span>
+                              </label>
+                            )}
+
+                            {node.node_type === "gate" && (
+                              <label className="flex cursor-pointer select-none items-center gap-1.5 text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={node.visual_selection}
+                                  onChange={(e) =>
+                                    updateNode(i, {
+                                      visual_selection: e.target.checked,
+                                    })
+                                  }
+                                  className="h-4 w-4 accent-amber-500"
+                                />
+                                <span>Visual</span>
                               </label>
                             )}
 

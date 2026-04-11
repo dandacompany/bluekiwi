@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  withTransaction,
-  Workflow,
-  okResponse,
-  errorResponse,
-} from "@/lib/db";
+import { withTransaction, Workflow, okResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canEdit } from "@/lib/authorization";
 import { loadResourceOrFail } from "@/lib/api-helpers";
@@ -39,10 +34,22 @@ export const POST = withAuth<Params>(
     void workflow;
 
     const body = await request.json();
-    const { title, instruction, node_type, hitl, credential_id, instruction_id } = body;
+    const {
+      title,
+      instruction,
+      node_type,
+      hitl,
+      visual_selection,
+      credential_id,
+      instruction_id,
+    } = body;
 
     if (!title || !node_type) {
-      const res = errorResponse("VALIDATION_ERROR", "title and node_type are required", 400);
+      const res = errorResponse(
+        "VALIDATION_ERROR",
+        "title and node_type are required",
+        400,
+      );
       return NextResponse.json(res.body, { status: res.status });
     }
 
@@ -69,8 +76,8 @@ export const POST = withAuth<Params>(
       const { rows } = await client.query(
         `INSERT INTO workflow_nodes
            (workflow_id, step_order, node_type, title, instruction, instruction_id,
-            loop_back_to, auto_advance, credential_id, hitl)
-         VALUES ($1, $2, $3, $4, $5, $6, NULL, $7, $8, $9)
+            loop_back_to, auto_advance, credential_id, hitl, visual_selection)
+         VALUES ($1, $2, $3, $4, $5, $6, NULL, $7, $8, $9, $10)
          RETURNING *`,
         [
           workflowId,
@@ -82,6 +89,7 @@ export const POST = withAuth<Params>(
           autoAdvance,
           credential_id ?? null,
           hitl ?? false,
+          resolvedNodeType === "gate" ? (visual_selection ?? false) : false,
         ],
       );
       return rows[0];

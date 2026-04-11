@@ -59,16 +59,22 @@ export const PATCH = withAuth<Params>(
            node_type = $3,
            auto_advance = $4,
            hitl = COALESCE($5, hitl),
-           instruction_id = COALESCE($6, instruction_id),
-           credential_id = COALESCE($7, credential_id),
-           loop_back_to = COALESCE($8, loop_back_to)
-         WHERE id = $9`,
+           visual_selection = COALESCE($6, visual_selection),
+           instruction_id = COALESCE($7, instruction_id),
+           credential_id = COALESCE($8, credential_id),
+           loop_back_to = COALESCE($9, loop_back_to)
+         WHERE id = $10`,
         [
           body.title ?? null,
           body.instruction ?? null,
           newNodeType,
           autoAdvance,
           body.hitl ?? null,
+          body.visual_selection != null
+            ? newNodeType === "gate"
+              ? body.visual_selection
+              : false
+            : null,
           body.instruction_id ?? null,
           body.credential_id ?? null,
           body.loop_back_to ?? null,

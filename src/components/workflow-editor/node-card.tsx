@@ -18,6 +18,7 @@ interface NodeDraft {
   credential_id: number | null;
   loop_back_to: number | null;
   hitl: boolean;
+  visual_selection: boolean;
 }
 
 interface NodeCardProps {
@@ -120,6 +121,11 @@ export default function NodeCard({
               className="ml-auto border-amber-500 text-amber-700"
             >
               HITL
+            </Badge>
+          )}
+          {node.visual_selection && (
+            <Badge variant="outline" className="border-kiwi-500 text-kiwi-700">
+              Visual
             </Badge>
           )}
         </div>

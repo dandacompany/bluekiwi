@@ -15,6 +15,7 @@ interface NodeDraft {
   credential_id: number | null;
   loop_back_to: number | null;
   hitl: boolean;
+  visual_selection: boolean;
 }
 
 interface StepMinimapProps {
