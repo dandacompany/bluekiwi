@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query, queryOne } from "@/lib/db";
+import { query, queryOne, execute } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { createSession } from "@/lib/session";
 
@@ -49,6 +49,14 @@ export async function POST(req: NextRequest) {
   );
 
   const userId = rows[0].id;
+
+  // Create default folders for the superuser
+  await execute(
+    `INSERT INTO folders (name, description, owner_id, visibility, is_system)
+     VALUES ('My Workspace', 'Your personal workspace.', $1, 'personal', true),
+            ('Public Library', 'Shared library of public instructions and workflows.', $1, 'public', true)`,
+    [userId],
+  );
 
   const token = await createSession({
     userId,

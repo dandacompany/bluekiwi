@@ -124,7 +124,9 @@ export const POST = withAuth(
       // Pre-allocate the id via nextval so family_root_id can point to self
       // inside a single INSERT (the column is NOT NULL so a two-step
       // INSERT-then-UPDATE isn't possible).
-      const idRow = await client.query("SELECT nextval('chains_id_seq') AS id");
+      const idRow = await client.query(
+        "SELECT nextval('workflows_id_seq') AS id",
+      );
       const workflowId = Number(idRow.rows[0].id);
       const inserted = await client.query(
         `INSERT INTO workflows (
