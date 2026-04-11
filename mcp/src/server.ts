@@ -415,6 +415,60 @@ const tools: Tool[] = [
     ["workflow_id"],
   ),
   tool(
+    "append_node",
+    "Append a new node at the end of a workflow. node_type determines auto_advance automatically (action=auto, gate=manual). Use hitl=true for action nodes that require human approval before proceeding.",
+    {
+      workflow_id: { type: "number" },
+      title: { type: "string" },
+      instruction: { type: "string" },
+      node_type: { type: "string" },
+      hitl: { type: "boolean" },
+      credential_id: { type: "number" },
+      instruction_id: { type: "number" },
+    },
+    ["workflow_id", "title", "node_type"],
+  ),
+  tool(
+    "insert_node",
+    "Insert a new node after a specific step_order in a workflow. Nodes after the insertion point are shifted by +1.",
+    {
+      workflow_id: { type: "number" },
+      after_step: { type: "number" },
+      title: { type: "string" },
+      instruction: { type: "string" },
+      node_type: { type: "string" },
+      hitl: { type: "boolean" },
+      credential_id: { type: "number" },
+      instruction_id: { type: "number" },
+    },
+    ["workflow_id", "after_step", "title", "node_type"],
+  ),
+  tool(
+    "update_node",
+    "Partially update a single node. Only provided fields are changed. If node_type changes, auto_advance is re-enforced automatically.",
+    {
+      workflow_id: { type: "number" },
+      node_id: { type: "number" },
+      title: { type: "string" },
+      instruction: { type: "string" },
+      node_type: { type: "string" },
+      hitl: { type: "boolean" },
+      credential_id: { type: "number" },
+      instruction_id: { type: "number" },
+      loop_back_to: { type: "number" },
+    },
+    ["workflow_id", "node_id"],
+  ),
+  tool(
+    "remove_node",
+    "Delete a single node and reindex step_order for subsequent nodes (all nodes after the deleted one shift by -1).",
+    {
+      workflow_id: { type: "number" },
+      node_id: { type: "number" },
+    },
+    ["workflow_id", "node_id"],
+  ),
+  tool(
     "save_findings",
     "Save one or more compliance findings for a task",
     {
@@ -710,6 +764,56 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const workflowId = requireNumberArg(args, "workflow_id");
         return wrap(
           await client.request("DELETE", `/api/workflows/${workflowId}`),
+        );
+      }
+      case "append_node": {
+        const workflowId = requireNumberArg(args, "workflow_id");
+        const body = { ...args };
+        delete body.workflow_id;
+        return wrap(
+          await client.request(
+            "POST",
+            `/api/workflows/${workflowId}/nodes`,
+            body,
+          ),
+        );
+      }
+      case "insert_node": {
+        const workflowId = requireNumberArg(args, "workflow_id");
+        const afterStep = requireNumberArg(args, "after_step");
+        const body = { ...args };
+        delete body.workflow_id;
+        delete body.after_step;
+        return wrap(
+          await client.request(
+            "POST",
+            `/api/workflows/${workflowId}/nodes?after=${afterStep}`,
+            body,
+          ),
+        );
+      }
+      case "update_node": {
+        const workflowId = requireNumberArg(args, "workflow_id");
+        const nodeId = requireNumberArg(args, "node_id");
+        const body = { ...args };
+        delete body.workflow_id;
+        delete body.node_id;
+        return wrap(
+          await client.request(
+            "PATCH",
+            `/api/workflows/${workflowId}/nodes/${nodeId}`,
+            body,
+          ),
+        );
+      }
+      case "remove_node": {
+        const workflowId = requireNumberArg(args, "workflow_id");
+        const nodeId = requireNumberArg(args, "node_id");
+        return wrap(
+          await client.request(
+            "DELETE",
+            `/api/workflows/${workflowId}/nodes/${nodeId}`,
+          ),
         );
       }
       case "save_findings": {
