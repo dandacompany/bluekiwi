@@ -1,6 +1,6 @@
 ---
 name: bk-start
-description: BlueKiwi workflow execution skill. Selects a registered workflow and starts the first step immediately. This skill should be used when the user says "/bk-start", "start workflow", "run BlueKiwi", or wants to begin a registered instruction workflow.
+description: BlueKiwi workflow execution skill. Selects a registered workflow and starts the first step immediately. This skill should be used when the user says "/bk-start", "/bk-run", "start workflow", "run workflow", "execute workflow", "run BlueKiwi", or wants to begin a registered instruction workflow.
 user_invocable: true
 ---
 
