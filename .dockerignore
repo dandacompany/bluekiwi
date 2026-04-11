@@ -12,6 +12,8 @@ mcp/dist
 # Development & local tooling
 local/
 .claude/
+CLAUDE.md
+AGENTS.md
 tests/
 docs/
 ref/
