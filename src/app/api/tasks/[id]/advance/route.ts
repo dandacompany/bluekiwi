@@ -46,7 +46,7 @@ async function resolveNodeResponse(node: WorkflowNode) {
     node_type: node.node_type,
     title: node.title,
     instruction,
-    auto_advance: !!node.auto_advance,
+    hitl: node.hitl,
     loop_back_to: node.loop_back_to,
     credentials,
   };
@@ -130,8 +130,8 @@ export async function POST(request: NextRequest, { params }: Params) {
       return NextResponse.json(res.body, { status: res.status });
     }
 
-    // 방안 1: auto_advance = false인 단계는 사람의 명시적 승인 필요
-    if (!currentNode.auto_advance && !currentLog.approved_at) {
+    // hitl=true인 action 단계는 사람의 명시적 승인 필요
+    if (currentNode.hitl && !currentLog.approved_at) {
       const res = errorResponse(
         "MANUAL_APPROVAL_REQUIRED",
         `스텝 ${task.current_step}(${currentNode.title})은 수동 승인이 필요합니다. 사람이 승인한 후에 advance가 가능합니다.`,
