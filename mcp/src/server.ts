@@ -469,6 +469,15 @@ const tools: Tool[] = [
     ["workflow_id", "node_id"],
   ),
   tool(
+    "save_feedback",
+    "Save post-workflow feedback for a completed task. Call this after collecting user survey responses and before calling complete_task. feedback is an array of {question, answer} objects.",
+    {
+      task_id: { type: "number" },
+      feedback: { type: "array" },
+    },
+    ["task_id", "feedback"],
+  ),
+  tool(
     "save_findings",
     "Save one or more compliance findings for a task",
     {
@@ -814,6 +823,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             "DELETE",
             `/api/workflows/${workflowId}/nodes/${nodeId}`,
           ),
+        );
+      }
+      case "save_feedback": {
+        const taskId = requireNumberArg(args, "task_id");
+        return wrap(
+          await client.request("POST", `/api/tasks/${taskId}/feedback`, {
+            feedback: args.feedback,
+          }),
         );
       }
       case "save_findings": {
