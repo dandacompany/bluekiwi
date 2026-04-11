@@ -126,3 +126,13 @@ Type `/bk-run` to execute it now.
 - Use `node_type: "gate"` before the final step to let the user review results.
 - Use `hitl: true` on `action` nodes only when the step requires explicit human judgment mid-flow (e.g., security-sensitive operations, irreversible actions).
 - For nodes requiring external API calls, specify `credential_id`. Create credentials first with `/bk-credential`.
+
+## 노드 수정 전략
+
+<HARD-RULE>
+- 노드 1개 수정 → `update_node(workflow_id, node_id, ...변경할 필드만)`
+- 노드 추가 (끝에) → `append_node(workflow_id, title, instruction, node_type)`
+- 노드 삽입 (중간) → `insert_node(workflow_id, after_step=N, title, instruction, node_type)`
+- 노드 삭제 → `remove_node(workflow_id, node_id)`
+- 전체 재설계가 아닌 이상 `update_workflow(nodes=[...])` 전체 교체 호출 금지
+</HARD-RULE>
