@@ -30,6 +30,8 @@ program
 program
   .command("accept <token>")
   .requiredOption("--server <url>", "BlueKiwi server URL")
+  .option("--username <name>", "Username (non-interactive)")
+  .option("--password <pass>", "Password (non-interactive)")
   .action(acceptCommand);
 
 program

@@ -8,7 +8,7 @@ import { detectInstalledAdapters, getAllAdapters } from "../runtimes/detect.js";
 
 export async function acceptCommand(
   token: string,
-  opts: { server: string },
+  opts: { server: string; username?: string; password?: string },
 ): Promise<void> {
   console.log(pc.cyan("→ Validating invite..."));
   const validateRes = await fetch(`${opts.server}/api/invites/accept/${token}`);
@@ -24,10 +24,13 @@ export async function acceptCommand(
   const invite = (await validateRes.json()) as { email: string; role: string };
   console.log(pc.green(`✓ Invited as ${invite.email} (${invite.role})`));
 
-  const answers = await prompts([
-    { type: "text", name: "username", message: "Choose a username" },
-    { type: "password", name: "password", message: "Set a password" },
-  ]);
+  const answers =
+    opts.username && opts.password
+      ? { username: opts.username, password: opts.password }
+      : await prompts([
+          { type: "text", name: "username", message: "Choose a username" },
+          { type: "password", name: "password", message: "Set a password" },
+        ]);
 
   console.log(pc.cyan("→ Creating account..."));
   const acceptRes = await fetch(`${opts.server}/api/invites/accept/${token}`, {
