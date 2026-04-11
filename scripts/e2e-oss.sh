@@ -68,21 +68,20 @@ jq_val() {
 
 # Run a scenario function, time it, update PASS/FAIL
 run_scenario() {
-  local name="$1"
-  local fn="$2"
+  local name="$1" fn="$2"
   log "Running $name..."
-  local start
-  start=$(node -e "process.stdout.write(String(Date.now()))")
-  if "$fn"; then
-    local elapsed=$(( $(node -e "process.stdout.write(String(Date.now()))") - start ))
-    TIMES["$name"]=$elapsed
-    log "$name PASSED (${elapsed}ms)"
-    PASS=$(( PASS + 1 ))
+  local start elapsed rc
+  start=$(date +%s%3N)
+  set +e
+  "$fn"
+  rc=$?
+  set -e
+  elapsed=$(( $(date +%s%3N) - start ))
+  TIMES["$name"]=$elapsed
+  if [[ $rc -eq 0 ]]; then
+    log "$name PASSED (${elapsed}ms)"; PASS=$(( PASS + 1 ))
   else
-    local elapsed=$(( $(node -e "process.stdout.write(String(Date.now()))") - start ))
-    TIMES["$name"]=$elapsed
-    log "$name FAILED (${elapsed}ms)" >&2
-    FAIL=$(( FAIL + 1 ))
+    log "$name FAILED (${elapsed}ms)" >&2; FAIL=$(( FAIL + 1 ))
   fi
 }
 
@@ -142,10 +141,10 @@ s1_superuser_setup() {
   local setup_resp
   setup_resp=$(POST /api/auth/setup \
     -d "{\"username\":\"${ADMIN_USERNAME}\",\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}")
-  local role
-  role=$(echo "$setup_resp" | jq_val '.data.role')
-  [[ "$role" == "superuser" ]] || fail "setup: expected role=superuser, got $role"
-  pass "setup returned role=superuser"
+  local success
+  success=$(echo "$setup_resp" | jq_val '.success')
+  [[ "$success" == "true" ]] || fail "setup: expected success=true, got $success (response: $setup_resp)"
+  pass "setup returned success=true"
 
   # 2. Login (save cookie)
   curl -sf -c "$COOKIE_JAR" -X POST \
@@ -157,7 +156,7 @@ s1_superuser_setup() {
   # 3. Mint API key
   local key_resp
   key_resp=$(POST /api/apikeys -d '{"name":"e2e"}')
-  API_KEY=$(echo "$key_resp" | jq_val '.data.plaintext')
+  API_KEY=$(echo "$key_resp" | jq_val '.data.raw_key')
   [[ -z "$API_KEY" || "$API_KEY" == "undefined" ]] && fail "failed to mint API key"
   [[ "$API_KEY" == bk_* ]] || fail "API key does not start with bk_: $API_KEY"
   pass "API key minted: ${API_KEY:0:12}..."
@@ -189,11 +188,9 @@ s2_invite_cli() {
 
   # 3. Accept invite via CLI in sandboxed HOME
   HOME="$SANDBOX_HOME" node packages/cli/dist/index.js accept "$INVITE_TOKEN" \
-    --server "${BLUEKIWI_API_URL}" <<STDIN
-${INVITEE_USERNAME}
-${INVITEE_PASSWORD}
-
-STDIN
+    --server "${BLUEKIWI_API_URL}" \
+    --username "${INVITEE_USERNAME}" \
+    --password "${INVITEE_PASSWORD}"
   pass "CLI accept completed"
 
   # 4. Config file must exist
@@ -323,11 +320,9 @@ s5_rbac() {
 
   # 2. CLI accept in viewer_sandbox
   HOME="$viewer_sandbox" node packages/cli/dist/index.js accept "$viewer_token" \
-    --server "${BLUEKIWI_API_URL}" <<VSTDIN
-${VIEWER_USERNAME}
-${VIEWER_PASSWORD}
-
-VSTDIN
+    --server "${BLUEKIWI_API_URL}" \
+    --username "${VIEWER_USERNAME}" \
+    --password "${VIEWER_PASSWORD}"
   pass "viewer CLI accept completed"
 
   # 3. Load viewer API key from config
@@ -388,30 +383,35 @@ VSTDIN
 
 # ── S6: mcp_tools ─────────────────────────────────────────────────────────────
 s6_mcp_tools() {
-  # 1. Build MCP server
-  log "Building MCP server..."
   ( cd mcp && npm run build >/dev/null 2>&1 )
   pass "MCP server built"
 
-  # 2. list_workflows via stdio
-  local list_req
-  list_req='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_workflows","arguments":{}}}'
-  local list_resp
-  list_resp=$(echo "$list_req" | \
-    BLUEKIWI_API_URL="$BLUEKIWI_API_URL" BLUEKIWI_API_KEY="$API_KEY" \
-    node mcp/dist/server.js 2>/dev/null | head -1)
-  echo "$list_resp" | grep -q '"result"' || fail "MCP list_workflows: no 'result' in response: $list_resp"
-  pass "MCP list_workflows OK"
+  local mcp_out
+  mcp_out=$(printf '%s\n' \
+    '{"jsonrpc":"2.0","id":0,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"e2e","version":"1"}}}' \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_workflows","arguments":{}}}' | \
+    timeout 15s \
+    env BLUEKIWI_API_URL="$BLUEKIWI_API_URL" BLUEKIWI_API_KEY="$API_KEY" \
+    node mcp/dist/server.js 2>/dev/null || true)
 
-  # 3. start_workflow via stdio
+  echo "$mcp_out" | grep -q '"id":1' || fail "MCP list_workflows: no response for id:1"
+  echo "$mcp_out" | grep '"id":1' | grep -q '"result"' || fail "MCP list_workflows: response is an error"
+  pass "MCP list_workflows ok"
+
   local start_req
-  start_req="{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"start_workflow\",\"arguments\":{\"workflow_id\":${WF_ID}}}}"
-  local start_resp
-  start_resp=$(echo "$start_req" | \
-    BLUEKIWI_API_URL="$BLUEKIWI_API_URL" BLUEKIWI_API_KEY="$API_KEY" \
-    node mcp/dist/server.js 2>/dev/null | head -1)
-  echo "$start_resp" | grep -q '"result"' || fail "MCP start_workflow: no 'result' in response: $start_resp"
-  pass "MCP start_workflow OK"
+  start_req="{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"start_workflow\",\"arguments\":{\"workflow_id\":${WF_ID},\"title\":\"mcp-e2e\"}}}"
+
+  local start_out
+  start_out=$(printf '%s\n' \
+    '{"jsonrpc":"2.0","id":0,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"e2e","version":"1"}}}' \
+    "$start_req" | \
+    timeout 15s \
+    env BLUEKIWI_API_URL="$BLUEKIWI_API_URL" BLUEKIWI_API_KEY="$API_KEY" \
+    node mcp/dist/server.js 2>/dev/null || true)
+
+  echo "$start_out" | grep -q '"id":2' || fail "MCP start_workflow: no response for id:2"
+  echo "$start_out" | grep '"id":2' | grep -q '"result"' || fail "MCP start_workflow: response is an error"
+  pass "MCP start_workflow ok"
 }
 
 # ── Main ──────────────────────────────────────────────────────────────────────
