@@ -14,7 +14,7 @@ interface NodeDraft {
   instruction_id: number | null;
   credential_id: number | null;
   loop_back_to: number | null;
-  auto_advance: boolean;
+  hitl: boolean;
 }
 
 interface StepMinimapProps {

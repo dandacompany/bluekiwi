@@ -2,14 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import {
-  GripVertical,
-  MessageSquare,
-  Play,
-  Repeat,
-  X,
-  Zap,
-} from "lucide-react";
+import { GripVertical, MessageSquare, Repeat, X, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "@/lib/i18n/context";
 
@@ -24,7 +17,7 @@ interface NodeDraft {
   instruction_id: number | null;
   credential_id: number | null;
   loop_back_to: number | null;
-  auto_advance: boolean;
+  hitl: boolean;
 }
 
 interface NodeCardProps {
@@ -121,13 +114,12 @@ export default function NodeCard({
             {node.title || t("editor.nodeTitle")}
           </span>
 
-          {node.auto_advance && (
+          {node.hitl && (
             <Badge
               variant="outline"
-              className="ml-auto border-brand-blue-600 text-brand-blue-700"
+              className="ml-auto border-amber-500 text-amber-700"
             >
-              <Play className="h-3 w-3" />
-              {t("editor.auto")}
+              HITL
             </Badge>
           )}
         </div>

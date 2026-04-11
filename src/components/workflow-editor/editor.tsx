@@ -22,8 +22,6 @@ import {
 import {
   AlertTriangle,
   MessageSquare,
-  Pause,
-  Play,
   Plus,
   Repeat,
   Rocket,
@@ -35,7 +33,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Toggle } from "@/components/ui/toggle";
 
 import NodeCard from "./node-card";
 import StepMinimap from "./step-minimap";
@@ -65,7 +62,7 @@ interface NodeDraft {
   instruction_id: number | null;
   credential_id: number | null;
   loop_back_to: number | null;
-  auto_advance: boolean;
+  hitl: boolean;
 }
 
 const NODE_TYPES = [
@@ -158,7 +155,7 @@ export default function WorkflowEditor({
             instruction_id: number | null;
             credential_id: number | null;
             loop_back_to: number | null;
-            auto_advance: number;
+            hitl: boolean;
           }) => ({
             key: newKey(),
             title: n.title,
@@ -168,7 +165,7 @@ export default function WorkflowEditor({
             instruction_id: n.instruction_id,
             credential_id: n.credential_id,
             loop_back_to: n.loop_back_to,
-            auto_advance: !!n.auto_advance,
+            hitl: n.hitl ?? false,
           }),
         ),
       );
@@ -194,7 +191,7 @@ export default function WorkflowEditor({
         instruction_id: null,
         credential_id: null,
         loop_back_to: null,
-        auto_advance: false,
+        hitl: false,
         ...overrides,
       },
     ]);
@@ -275,7 +272,7 @@ export default function WorkflowEditor({
       instruction_id: n.source === "reference" ? n.instruction_id : null,
       credential_id: n.credential_id,
       loop_back_to: n.node_type === "loop" ? n.loop_back_to : null,
-      auto_advance: n.auto_advance,
+      hitl: n.hitl,
     })),
   });
 
@@ -475,30 +472,21 @@ export default function WorkflowEditor({
                               className="h-9 min-w-[220px] flex-1"
                             />
 
-                            <Toggle
-                              pressed={node.auto_advance}
-                              onPressedChange={(pressed) =>
-                                updateNode(i, { auto_advance: pressed })
-                              }
-                              size="sm"
-                              className={
-                                node.auto_advance
-                                  ? "border-brand-blue-600"
-                                  : undefined
-                              }
-                              title={t("editor.autoAdvanceTitle")}
-                            >
-                              {node.auto_advance ? (
-                                <Play className="h-4 w-4" />
-                              ) : (
-                                <Pause className="h-4 w-4" />
-                              )}
-                              <span className="hidden sm:inline">
-                                {node.auto_advance
-                                  ? t("editor.auto")
-                                  : t("editor.manual")}
-                              </span>
-                            </Toggle>
+                            {node.node_type === "action" && (
+                              <label className="flex cursor-pointer select-none items-center gap-1.5 text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={node.hitl}
+                                  onChange={(e) =>
+                                    updateNode(i, {
+                                      hitl: e.target.checked,
+                                    })
+                                  }
+                                  className="h-4 w-4 accent-brand-blue-600"
+                                />
+                                <span>HITL</span>
+                              </label>
+                            )}
 
                             <select
                               value={node.credential_id ?? ""}
