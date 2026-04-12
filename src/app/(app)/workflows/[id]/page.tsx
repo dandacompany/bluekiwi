@@ -33,6 +33,8 @@ interface WorkflowNode {
   title: string;
   instruction_id: number | null;
   resolved_instruction: string;
+  hitl: boolean;
+  visual_selection: boolean;
 }
 
 interface WorkflowDetail {
@@ -182,6 +184,22 @@ function NodeCard({
             <p className="text-sm font-medium">
               {node.step_order}. {node.title}
             </p>
+            {node.hitl && (
+              <Badge
+                variant="outline"
+                className="border-amber-500 text-amber-700"
+              >
+                HITL
+              </Badge>
+            )}
+            {node.visual_selection && (
+              <Badge
+                variant="outline"
+                className="border-kiwi-500 text-kiwi-700"
+              >
+                Visual
+              </Badge>
+            )}
           </div>
           <Badge variant="outline">
             {t("workflows.nodeStep", { step: node.step_order })}
