@@ -1,7 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { MessageSquare, Repeat, Zap } from "lucide-react";
+import {
+  FolderOpen,
+  Lock,
+  MessageSquare,
+  Repeat,
+  Shield,
+  Terminal,
+  Users,
+  Zap,
+} from "lucide-react";
 import { useTranslation } from "@/lib/i18n/context";
 
 const S = {
@@ -177,6 +186,44 @@ export default function TutorialPage() {
                 t("tutorial.s1Use3"),
               ]}
             />
+
+            <h3 className={S.subheading}>{t("tutorial.s1FoldersTitle")}</h3>
+            <p className="mb-4 text-sm text-muted-foreground">
+              {t("tutorial.s1FoldersDesc")}
+            </p>
+            <div className="mb-3 grid gap-2 md:grid-cols-2">
+              {(
+                [
+                  {
+                    Icon: Lock,
+                    text: t("tutorial.s1VisPersonal"),
+                  },
+                  {
+                    Icon: Users,
+                    text: t("tutorial.s1VisGroup"),
+                  },
+                  {
+                    Icon: Shield,
+                    text: t("tutorial.s1VisPublic"),
+                  },
+                  {
+                    Icon: FolderOpen,
+                    text: t("tutorial.s1VisInherit"),
+                  },
+                ] as const
+              ).map((item) => (
+                <div
+                  key={item.text}
+                  className="flex items-start gap-2.5 rounded-xl border border-border/60 px-3.5 py-2.5"
+                >
+                  <item.Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="text-sm">{item.text}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t("tutorial.s1VisTip")}
+            </p>
           </Section>
 
           {/* Section 2: Create Instructions */}
@@ -284,6 +331,18 @@ export default function TutorialPage() {
               ]}
             />
 
+            <h3 className={S.subheading}>{t("tutorial.s4HitlTitle")}</h3>
+            <p className="mb-3 text-sm text-muted-foreground">
+              {t("tutorial.s4HitlDesc")}
+            </p>
+            <BulletList
+              items={[
+                t("tutorial.s4Hitl1"),
+                t("tutorial.s4Hitl2"),
+                t("tutorial.s4Hitl3"),
+              ]}
+            />
+
             <h3 className={S.subheading}>{t("tutorial.s4StatusTitle")}</h3>
             <div className="grid gap-3 md:grid-cols-3">
               {[
@@ -387,50 +446,105 @@ export default function TutorialPage() {
             </div>
           </Section>
 
-          {/* Section 7: MCP Automation */}
+          {/* Section 7: MCP Integration */}
           <Section id="mcp-loop" num={7} title={t("tutorial.s7Title")}>
             <p className="mb-4 leading-relaxed text-muted-foreground">
               {t("tutorial.s7Intro")}
             </p>
 
-            <div className="mb-6 grid gap-4 md:grid-cols-2">
-              <div className={S.panel}>
-                <p className="text-sm font-semibold">
-                  {t("tutorial.s7AutoTitle")}
-                </p>
-                <div className="mt-3 space-y-2 text-sm text-muted-foreground">
-                  <p>{t("tutorial.s7Auto1")}</p>
-                  <p>{t("tutorial.s7Auto2")}</p>
-                  <p>{t("tutorial.s7Auto3")}</p>
-                </div>
-              </div>
-
-              <div className={S.panel}>
-                <p className="text-sm font-semibold">
-                  {t("tutorial.s7EffectTitle")}
-                </p>
-                <div className="mt-3 space-y-2 text-sm text-muted-foreground">
-                  <p>{t("tutorial.s7Effect1")}</p>
-                  <p>{t("tutorial.s7Effect2")}</p>
-                  <p>{t("tutorial.s7Effect3")}</p>
-                </div>
-              </div>
-            </div>
-
-            <h3 className={S.subheading}>{t("tutorial.s7LoopTitle")}</h3>
+            <h3 className={S.subheading}>{t("tutorial.s7SetupTitle")}</h3>
             <div className={S.panel}>
               <ol className="space-y-3 text-sm">
-                <li>{t("tutorial.s7Loop1")}</li>
-                <li>{t("tutorial.s7Loop2")}</li>
-                <li>{t("tutorial.s7Loop3")}</li>
-                <li>{t("tutorial.s7Loop4")}</li>
-                <li>{t("tutorial.s7Loop5")}</li>
+                <li>
+                  1. <Code>npm install -g bluekiwi</Code>{" "}
+                  <span className="text-muted-foreground">
+                    {t("tutorial.s7Setup1").replace(
+                      "npm install -g bluekiwi 로 ",
+                      "",
+                    )}
+                  </span>
+                </li>
+                <li>
+                  2.{" "}
+                  <span className="text-muted-foreground">
+                    {t("tutorial.s7Setup2")}
+                  </span>
+                </li>
+                <li>
+                  3. <Code>{"bluekiwi accept <token> --server <url>"}</Code>
+                </li>
+                <li>
+                  4. <Code>bluekiwi init</Code>{" "}
+                  <span className="text-muted-foreground">
+                    {t("tutorial.s7Setup4").replace("bluekiwi init 으로 ", "")}
+                  </span>
+                </li>
+                <li>
+                  5. <Code>bluekiwi status</Code>{" "}
+                  <span className="text-muted-foreground">
+                    {t("tutorial.s7Setup5").replace("bluekiwi status 로 ", "")}
+                  </span>
+                </li>
               </ol>
             </div>
 
-            <p className="mt-4 text-sm text-muted-foreground">
-              {t("tutorial.s7Outro")}
+            <h3 className={S.subheading}>{t("tutorial.s7ToolsTitle")}</h3>
+            <div className="overflow-x-auto">
+              <table className={S.table}>
+                <thead>
+                  <tr>
+                    <th className={S.th}>
+                      <Terminal className="mr-1.5 inline h-3.5 w-3.5" />
+                      Tool
+                    </th>
+                    <th className={S.th}>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(
+                    [
+                      ["start_workflow", t("tutorial.s7ToolStartWorkflow")],
+                      ["advance", t("tutorial.s7ToolAdvance")],
+                      ["execute_step", t("tutorial.s7ToolExecuteStep")],
+                      ["request_approval", t("tutorial.s7ToolRequestApproval")],
+                      ["complete_task", t("tutorial.s7ToolCompleteTask")],
+                      ["rewind", t("tutorial.s7ToolRewind")],
+                      ["heartbeat", t("tutorial.s7ToolHeartbeat")],
+                    ] as const
+                  ).map(([tool, desc]) => (
+                    <tr key={tool}>
+                      <td className={S.td}>
+                        <code className={S.code}>{tool}</code>
+                      </td>
+                      <td className={`${S.td} ${S.muted}`}>{desc}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <h3 className={S.subheading}>{t("tutorial.s7FlowTitle")}</h3>
+            <div className={S.panel}>
+              <ol className="space-y-3 text-sm">
+                <li>{t("tutorial.s7Flow1")}</li>
+                <li>{t("tutorial.s7Flow2")}</li>
+                <li>{t("tutorial.s7Flow3")}</li>
+                <li>{t("tutorial.s7Flow4")}</li>
+                <li>{t("tutorial.s7Flow5")}</li>
+              </ol>
+            </div>
+
+            <h3 className={S.subheading}>{t("tutorial.s7AutoTitle")}</h3>
+            <p className="mb-3 text-sm text-muted-foreground">
+              {t("tutorial.s7AutoDesc")}
             </p>
+            <BulletList
+              items={[
+                t("tutorial.s7Auto1"),
+                t("tutorial.s7Auto2"),
+                t("tutorial.s7Auto3"),
+              ]}
+            />
           </Section>
 
           {/* Section 8: Tips */}
