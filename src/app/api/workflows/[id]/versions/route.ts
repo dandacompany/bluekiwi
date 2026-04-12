@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query, queryOne, Workflow, okResponse, errorResponse } from "@/lib/db";
-import { withOptionalAuth } from "@/lib/with-auth";
+import { withAuth } from "@/lib/with-auth";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -15,7 +15,7 @@ interface VersionRow {
   updated_at: string;
 }
 
-export const GET = withOptionalAuth<Params>(
+export const GET = withAuth<Params>(
   "workflows:read",
   async (_request: NextRequest, _user, { params }: Params) => {
     const { id } = await params;

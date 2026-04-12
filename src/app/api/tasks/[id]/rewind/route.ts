@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+import { requireAuth } from "@/lib/with-auth";
   query,
   queryOne,
   execute,
@@ -13,6 +14,9 @@ import {
 type Params = { params: Promise<{ id: string }> };
 
 export async function POST(request: NextRequest, { params }: Params) {
+  const authResult = await requireAuth(request, "tasks:execute");
+  if (authResult instanceof NextResponse) return authResult;
+
   const { id } = await params;
   const taskId = Number(id);
   const body = await request.json();

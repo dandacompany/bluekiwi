@@ -11,10 +11,13 @@ import {
   errorResponse,
 } from "@/lib/db";
 import { notifyTaskUpdate } from "@/lib/notify-ws";
+import { requireAuth } from "@/lib/with-auth";
+import { canUseCredential } from "@/lib/authorization";
+import type { User } from "@/lib/auth";
 
 type Params = { params: Promise<{ id: string }> };
 
-async function resolveNodeResponse(node: WorkflowNode) {
+async function resolveNodeResponse(node: WorkflowNode, user: User) {
   let instruction = node.instruction;
   if (node.instruction_id) {
     const inst = await queryOne<{ content: string }>(
@@ -27,12 +30,16 @@ async function resolveNodeResponse(node: WorkflowNode) {
   let credentials = null;
   if (node.credential_id) {
     const cred = await queryOne<{
+      id: number;
+      owner_id: number;
+      folder_id: number;
       service_name: string;
       secrets: string;
-    }>("SELECT service_name, secrets FROM credentials WHERE id = $1", [
-      node.credential_id,
-    ]);
-    if (cred) {
+    }>(
+      "SELECT id, owner_id, folder_id, service_name, secrets FROM credentials WHERE id = $1",
+      [node.credential_id],
+    );
+    if (cred && (await canUseCredential(user, cred))) {
       credentials = {
         service: cred.service_name,
         secrets_masked: maskSecrets(cred.secrets),
@@ -53,6 +60,10 @@ async function resolveNodeResponse(node: WorkflowNode) {
 }
 
 export async function POST(request: NextRequest, { params }: Params) {
+  const authResult = await requireAuth(request, "tasks:execute");
+  if (authResult instanceof NextResponse) return authResult;
+  const user = authResult;
+
   const { id } = await params;
   const taskId = Number(id);
   const body = await request.json().catch(() => ({}));
@@ -98,7 +109,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       total_steps: totalSteps,
       status: task.status,
       context: task.context,
-      node: currentNode ? await resolveNodeResponse(currentNode) : null,
+      node: currentNode ? await resolveNodeResponse(currentNode, user) : null,
       log_status: currentLog?.status ?? null,
       web_response: currentLog?.web_response ?? null,
       comments: comments.length > 0 ? comments : null,
@@ -189,7 +200,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     finished: false,
     total_steps: totalSteps,
     context: task.context,
-    current_step: await resolveNodeResponse(nextNode),
+    current_step: await resolveNodeResponse(nextNode, user),
     comments: comments.length > 0 ? comments : null,
   });
   return NextResponse.json(res.body, { status: res.status });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { execute, queryOne, okResponse, errorResponse } from "@/lib/db";
+import { requireAuth } from "@/lib/with-auth";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -10,6 +11,9 @@ type Params = { params: Promise<{ id: string }> };
  * 에이전트가 set_visual_html 호출 시 사용 (output/status 변경 없음).
  */
 export async function POST(request: NextRequest, { params }: Params) {
+  const authResult = await requireAuth(request, "tasks:execute");
+  if (authResult instanceof NextResponse) return authResult;
+
   const { id } = await params;
   const taskId = Number(id);
   const body = await request.json();

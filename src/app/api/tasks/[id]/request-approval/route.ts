@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { queryOne, execute, okResponse, errorResponse, Task } from "@/lib/db";
 import { notifyTaskUpdate } from "@/lib/notify-ws";
+import { requireAuth } from "@/lib/with-auth";
 
 type Params = { params: Promise<{ id: string }> };
 
 // 에이전트가 호출: "나는 준비됐으니 사람이 승인해 주세요"
 export async function POST(request: NextRequest, { params }: Params) {
+  const authResult = await requireAuth(request, "tasks:execute");
+  if (authResult instanceof NextResponse) return authResult;
+
   const { id } = await params;
   const taskId = Number(id);
   const body = await request.json().catch(() => ({}));

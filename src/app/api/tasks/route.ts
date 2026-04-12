@@ -10,38 +10,39 @@ import {
   listResponse,
   errorResponse,
 } from "@/lib/db";
-import { withOptionalAuth } from "@/lib/with-auth";
+import { withAuth } from "@/lib/with-auth";
+import { buildResourceVisibilityFilter, canExecute } from "@/lib/authorization";
 
-export const GET = withOptionalAuth(
+export const GET = withAuth(
   "tasks:read",
-  async (request: NextRequest) => {
+  async (request: NextRequest, user) => {
     const { searchParams } = request.nextUrl;
     const workflowId = searchParams.get("workflow_id");
     const status = searchParams.get("status");
 
-    let sql = "SELECT * FROM tasks WHERE 1=1";
-    const params: unknown[] = [];
-    let paramIdx = 0;
+    const filter = await buildResourceVisibilityFilter("w", user, 1);
+
+    let sql = `SELECT t.* FROM tasks t
+      JOIN workflows w ON w.id = t.workflow_id
+      WHERE ${filter.sql}`;
+    const params: unknown[] = [...filter.params];
 
     if (workflowId) {
-      paramIdx++;
-      sql += ` AND workflow_id = $${paramIdx}`;
       params.push(Number(workflowId));
+      sql += ` AND t.workflow_id = $${params.length}`;
     }
     if (status) {
-      paramIdx++;
-      sql += ` AND status = $${paramIdx}`;
       params.push(status);
+      sql += ` AND t.status = $${params.length}`;
     }
 
     const q = searchParams.get("q");
     if (q) {
-      paramIdx++;
-      sql += ` AND context LIKE $${paramIdx}`;
       params.push(`%${q}%`);
+      sql += ` AND t.context LIKE $${params.length}`;
     }
 
-    sql += " ORDER BY created_at DESC";
+    sql += " ORDER BY t.created_at DESC";
 
     const tasks = await query<Task>(sql, params);
 
@@ -73,43 +74,45 @@ export const GET = withOptionalAuth(
   },
 );
 
-export const POST = withOptionalAuth(
-  "tasks:create",
-  async (request: NextRequest) => {
-    const body = await request.json();
-    const { workflow_id } = body;
+export const POST = withAuth("tasks:execute", async (request, user) => {
+  const body = await request.json();
+  const { workflow_id } = body;
 
-    if (!workflow_id) {
-      const res = errorResponse(
-        "VALIDATION_ERROR",
-        "workflow_id is required",
-        400,
-      );
-      return NextResponse.json(res.body, { status: res.status });
-    }
-
-    const workflow = await queryOne<Workflow>(
-      "SELECT * FROM workflows WHERE id = $1",
-      [Number(workflow_id)],
+  if (!workflow_id) {
+    const res = errorResponse(
+      "VALIDATION_ERROR",
+      "workflow_id is required",
+      400,
     );
-    if (!workflow) {
-      const res = errorResponse(
-        "NOT_FOUND",
-        "워크플로를 찾을 수 없습니다",
-        404,
-      );
-      return NextResponse.json(res.body, { status: res.status });
-    }
-
-    const taskId = await insert(
-      "INSERT INTO tasks (workflow_id, status, current_step) VALUES ($1, 'running', 1) RETURNING id",
-      [Number(workflow_id)],
-    );
-
-    const task = await queryOne<Task>("SELECT * FROM tasks WHERE id = $1", [
-      taskId,
-    ]);
-    const res = okResponse(task, 201);
     return NextResponse.json(res.body, { status: res.status });
-  },
-);
+  }
+
+  const workflow = await queryOne<Workflow>(
+    "SELECT * FROM workflows WHERE id = $1",
+    [Number(workflow_id)],
+  );
+  if (!workflow) {
+    const res = errorResponse("NOT_FOUND", "워크플로를 찾을 수 없습니다", 404);
+    return NextResponse.json(res.body, { status: res.status });
+  }
+
+  if (!(await canExecute(user, workflow))) {
+    const res = errorResponse(
+      "FORBIDDEN",
+      "워크플로 실행 권한이 없습니다",
+      403,
+    );
+    return NextResponse.json(res.body, { status: res.status });
+  }
+
+  const taskId = await insert(
+    "INSERT INTO tasks (workflow_id, status, current_step) VALUES ($1, 'running', 1) RETURNING id",
+    [Number(workflow_id)],
+  );
+
+  const task = await queryOne<Task>("SELECT * FROM tasks WHERE id = $1", [
+    taskId,
+  ]);
+  const res = okResponse(task, 201);
+  return NextResponse.json(res.body, { status: res.status });
+});

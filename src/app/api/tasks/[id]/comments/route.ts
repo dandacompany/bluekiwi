@@ -8,10 +8,14 @@ import {
   listResponse,
   errorResponse,
 } from "@/lib/db";
+import { requireAuth } from "@/lib/with-auth";
 
 type Params = { params: Promise<{ id: string }> };
 
-export async function GET(_request: NextRequest, { params }: Params) {
+export async function GET(request: NextRequest, { params }: Params) {
+  const authResult = await requireAuth(request, "tasks:read");
+  if (authResult instanceof NextResponse) return authResult;
+
   const { id } = await params;
 
   const comments = await query<TaskComment>(
@@ -23,6 +27,9 @@ export async function GET(_request: NextRequest, { params }: Params) {
 }
 
 export async function POST(request: NextRequest, { params }: Params) {
+  const authResult = await requireAuth(request, "tasks:execute");
+  if (authResult instanceof NextResponse) return authResult;
+
   const { id } = await params;
   const body = await request.json();
   const { step_order, comment } = body;

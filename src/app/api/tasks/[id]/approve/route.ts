@@ -8,12 +8,16 @@ import {
   WorkflowNode,
 } from "@/lib/db";
 import { notifyTaskUpdate } from "@/lib/notify-ws";
+import { requireAuth } from "@/lib/with-auth";
 import { authenticateRequest } from "@/lib/auth";
 
 type Params = { params: Promise<{ id: string }> };
 
 // 사람(UI)이 호출: 현재 스텝을 승인하여 advance 잠금 해제
 export async function POST(request: NextRequest, { params }: Params) {
+  const authResult = await requireAuth(request, "tasks:execute");
+  if (authResult instanceof NextResponse) return authResult;
+
   const { id } = await params;
   const taskId = Number(id);
 

@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { execute, okResponse, errorResponse } from "@/lib/db";
+import { requireAuth } from "@/lib/with-auth";
 
 type Params = { params: Promise<{ id: string }> };
 
 // 웹 UI에서 사용자가 gate 노드에 응답할 때 호출
 export async function POST(request: NextRequest, { params }: Params) {
+  const authResult = await requireAuth(request, "tasks:execute");
+  if (authResult instanceof NextResponse) return authResult;
+
   const { id } = await params;
   const body = await request.json();
   const { node_id, response } = body;

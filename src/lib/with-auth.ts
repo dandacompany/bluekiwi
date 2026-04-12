@@ -79,6 +79,51 @@ export function withAuth(
 }
 
 /**
+ * Inline auth check for bare route handlers that can't use withAuth wrapper.
+ * Returns the authenticated user or a 401/403 NextResponse.
+ */
+export async function requireAuth(
+  request: NextRequest,
+  permission: Permission,
+): Promise<User | NextResponse> {
+  const authHeader = request.headers.get("authorization");
+  let user: User | null = null;
+
+  if (authHeader) {
+    const auth = await authenticateRequest(authHeader);
+    user = auth?.user ?? null;
+  } else {
+    const token = request.cookies.get("session")?.value;
+    if (token) {
+      const session = await verifySession(token);
+      if (session) {
+        user =
+          (await queryOne<User>(
+            "SELECT * FROM users WHERE id = $1 AND is_active = true",
+            [session.userId],
+          )) ?? null;
+      }
+    }
+  }
+
+  if (!user) {
+    return NextResponse.json(
+      errorResponse("UNAUTHORIZED", "Unauthorized", 401).body,
+      { status: 401 },
+    );
+  }
+
+  if (!checkPermission(user.role, permission)) {
+    return NextResponse.json(
+      errorResponse("FORBIDDEN", "Forbidden", 403).body,
+      { status: 403 },
+    );
+  }
+
+  return user;
+}
+
+/**
  * Optional auth wrapper — if API key is present, validate and check permission.
  * If no API key header, pass through with user=null (backward compatible with web UI).
  */

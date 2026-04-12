@@ -8,13 +8,13 @@ import {
   okResponse,
   errorResponse,
 } from "@/lib/db";
-import { withOptionalAuth } from "@/lib/with-auth";
+import { withAuth } from "@/lib/with-auth";
 
 type Params = { params: Promise<{ id: string }> };
 
 const SEVERITY_VALUES = new Set(["BLOCK", "REVIEW", "WARN", "INFO"]);
 
-export const GET = withOptionalAuth<Params>(
+export const GET = withAuth<Params>(
   "tasks:read",
   async (_request, _user, { params }) => {
     const { id } = await params;
@@ -50,7 +50,7 @@ export const GET = withOptionalAuth<Params>(
   },
 );
 
-export const POST = withOptionalAuth<Params>(
+export const POST = withAuth<Params>(
   "tasks:execute",
   async (request: NextRequest, _user, { params }) => {
     const { id } = await params;
