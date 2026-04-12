@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
   CheckCircle2,
-  ChevronRight,
   Clock4,
   FileText,
   GitBranch,
@@ -15,7 +14,6 @@ import {
   Play,
   RotateCcw,
   Search,
-  Workflow,
 } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { VisibilityBadge } from "@/components/shared/visibility-badge";
@@ -214,10 +212,6 @@ export default function WorkflowDetailPage() {
   const [versions, setVersions] = useState<VersionsResponse | null>(null);
   const [versionsLoading, setVersionsLoading] = useState(false);
   const [me, setMe] = useState<MeResponse | null>(null);
-  const [folderPath, setFolderPath] = useState<
-    { id: number; name: string; is_system: boolean }[]
-  >([]);
-
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => (r.ok ? r.json() : null))
@@ -323,44 +317,6 @@ export default function WorkflowDetailPage() {
     void fetchTasks();
   });
 
-  // Build folder breadcrumb path
-  useEffect(() => {
-    if (!workflow?.folder_id) {
-      setFolderPath([]);
-      return;
-    }
-    fetch("/api/folders")
-      .then((r) => r.json())
-      .then(
-        (j: {
-          data: {
-            id: number;
-            name: string;
-            parent_id: number | null;
-            is_system: boolean;
-          }[];
-        }) => {
-          const all = j.data ?? [];
-          const path: { id: number; name: string; is_system: boolean }[] = [];
-          let cur = all.find((f) => f.id === workflow.folder_id);
-          const visited = new Set<number>();
-          while (cur) {
-            if (visited.has(cur.id)) break;
-            visited.add(cur.id);
-            path.unshift({
-              id: cur.id,
-              name: cur.name,
-              is_system: cur.is_system,
-            });
-            if (cur.parent_id === null) break;
-            cur = all.find((f) => f.id === cur!.parent_id);
-          }
-          setFolderPath(path);
-        },
-      )
-      .catch(() => setFolderPath([]));
-  }, [workflow?.folder_id]);
-
   const evaluationContract = useMemo(() => {
     if (!workflow?.evaluation_contract) return "";
     try {
@@ -462,32 +418,9 @@ export default function WorkflowDetailPage() {
       <section className="mb-5 rounded-xl border border-[var(--border)] bg-surface-soft p-5">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2">
-              <Workflow className="h-5 w-5 text-[var(--muted-foreground)]" />
-              <Link
-                href="/workflows"
-                className="text-2xl font-bold tracking-tight text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
-              >
-                {t("workflows.title")}
-              </Link>
-              {folderPath.map((folder) => (
-                <span key={folder.id} className="flex items-center gap-1.5">
-                  <ChevronRight className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]/50" />
-                  <Link
-                    href={`/workflows?folder_id=${folder.id}`}
-                    className="text-2xl font-bold tracking-tight text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
-                  >
-                    {folder.is_system ? t("folders.myWorkspace") : folder.name}
-                  </Link>
-                </span>
-              ))}
-              <span className="flex items-center gap-1.5">
-                <ChevronRight className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]/50" />
-                <h1 className="text-2xl font-bold tracking-tight">
-                  {workflow.title}
-                </h1>
-              </span>
-            </div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {workflow.title}
+            </h1>
             <p className="mt-1 text-sm text-[var(--muted-foreground)]">
               {workflow.description || t("workflows.noDescription")}
             </p>

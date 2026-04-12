@@ -77,22 +77,67 @@ export function TopBar() {
         return;
       }
 
-      const workflowMatch = pathname.match(/^\/workflows\/(\d+)$/);
+      const workflowMatch = pathname.match(/^\/workflows\/(\d+)(\/|$)/);
       if (workflowMatch) {
         const workflowId = workflowMatch[1];
         const res = await fetch(`/api/workflows/${workflowId}`);
         if (!res.ok || cancelled) return;
         const json = await res.json();
-        const workflow = json.data as { title: string } | undefined;
-
+        const workflow = json.data as {
+          title: string;
+          folder_id?: number;
+        } | null;
         if (!workflow || cancelled) return;
 
-        setDetailState({
-          breadcrumbs: [
-            { label: t("nav.workflows"), href: "/workflows" },
-            { label: workflow.title },
-          ],
-        });
+        // Build folder path breadcrumbs
+        const folderCrumbs: BreadcrumbItem[] = [];
+        if (workflow.folder_id) {
+          const fRes = await fetch("/api/folders");
+          if (fRes.ok && !cancelled) {
+            const fJson = await fRes.json();
+            const allFolders = (fJson.data ?? []) as {
+              id: number;
+              name: string;
+              parent_id: number | null;
+              is_system: boolean;
+            }[];
+            const path: typeof allFolders = [];
+            let cur = allFolders.find((f) => f.id === workflow.folder_id);
+            const visited = new Set<number>();
+            while (cur) {
+              if (visited.has(cur.id)) break;
+              visited.add(cur.id);
+              path.unshift(cur);
+              if (cur.parent_id === null) break;
+              cur = allFolders.find((f) => f.id === cur!.parent_id);
+            }
+            for (const folder of path) {
+              folderCrumbs.push({
+                label: folder.is_system
+                  ? t("folders.myWorkspace")
+                  : folder.name,
+                href: `/workflows?folder_id=${folder.id}`,
+              });
+            }
+          }
+        }
+
+        const isEdit = pathname.endsWith("/edit");
+        const crumbs: BreadcrumbItem[] = [
+          { label: t("nav.workflows"), href: "/workflows" },
+          ...folderCrumbs,
+          isEdit
+            ? {
+                label: workflow.title,
+                href: `/workflows/${workflowId}`,
+              }
+            : { label: workflow.title },
+        ];
+        if (isEdit) {
+          crumbs.push({ label: t("common.edit") });
+        }
+
+        setDetailState({ breadcrumbs: crumbs });
         return;
       }
 
