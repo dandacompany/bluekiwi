@@ -1,8 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
-import { execute, okResponse, errorResponse } from "@/lib/db";
+import { query, execute, okResponse, errorResponse } from "@/lib/db";
 import { requireAuth } from "@/lib/with-auth";
 
 type Params = { params: Promise<{ id: string }> };
+
+// MCP get_web_response — 에이전트가 사용자의 web_response를 폴링
+export async function GET(request: NextRequest, { params }: Params) {
+  const authResult = await requireAuth(request, "tasks:read");
+  if (authResult instanceof NextResponse) return authResult;
+
+  const { id } = await params;
+
+  const rows = await query<{
+    node_id: number;
+    step_order: number;
+    web_response: string | null;
+  }>(
+    "SELECT node_id, step_order, web_response FROM task_logs WHERE task_id = $1 AND web_response IS NOT NULL ORDER BY step_order DESC LIMIT 1",
+    [Number(id)],
+  );
+
+  if (rows.length === 0) {
+    const res = okResponse({ task_id: Number(id), web_response: null });
+    return NextResponse.json(res.body, { status: res.status });
+  }
+
+  const row = rows[0];
+  let parsed: unknown = row.web_response;
+  try {
+    parsed = JSON.parse(row.web_response!);
+  } catch {}
+
+  const res = okResponse({
+    task_id: Number(id),
+    node_id: row.node_id,
+    step_order: row.step_order,
+    web_response: parsed,
+  });
+  return NextResponse.json(res.body, { status: res.status });
+}
 
 // 웹 UI에서 사용자가 gate 노드에 응답할 때 호출
 export async function POST(request: NextRequest, { params }: Params) {

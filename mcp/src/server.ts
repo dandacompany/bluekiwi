@@ -281,7 +281,7 @@ const tools: Tool[] = [
   ),
   tool(
     "set_visual_html",
-    "Submit shadcn-based selection UI HTML for a visual_selection=true gate node. The web UI will show a '선택하기' button that opens this HTML in an iframe dialog. When the user clicks an element with data-value, the selection is POSTed to /respond. Use get_web_response to poll for the result. CSS tokens: --background:#0A0A0A, --foreground:#F5F5F5, --brand-mint:#00D4AA, --border:rgba(255,255,255,0.1), --radius:8px. Each selectable element must have data-value attribute and onclick: window.parent.postMessage({selected:el.dataset.value},'*').",
+    "Submit shadcn-based selection UI HTML for a visual_selection=true gate node. The web UI will show a '선택하기' button that opens this HTML in an iframe dialog. When the user clicks an element, the selection is POSTed to /respond. Use get_web_response to poll for the result. CSS tokens: --background:#0A0A0A, --foreground:#F5F5F5, --brand-mint:#00D4AA, --border:rgba(255,255,255,0.1), --radius:8px. Each selectable element must have a data-value attribute and onclick: window.parent.postMessage({type:'bk_visual_select',value:this.dataset.value},'*'). IMPORTANT: the postMessage must include type:'bk_visual_select' — the web UI ignores messages without this type.",
     {
       task_id: { type: "number" },
       node_id: { type: "number" },
