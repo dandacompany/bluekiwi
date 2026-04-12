@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-import { requireAuth } from "@/lib/with-auth";
   query,
   queryOne,
   execute,
@@ -10,6 +9,7 @@ import { requireAuth } from "@/lib/with-auth";
   okResponse,
   errorResponse,
 } from "@/lib/db";
+import { requireAuth } from "@/lib/with-auth";
 
 type Params = { params: Promise<{ id: string }> };
 
