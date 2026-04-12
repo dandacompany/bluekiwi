@@ -60,7 +60,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   // 해당 태스크의 해당 노드 로그에 web_response 저장
   const result = await execute(
-    "UPDATE task_logs SET web_response = $1 WHERE task_id = $2 AND node_id = $3 AND status IN ('pending', 'running')",
+    "UPDATE task_logs SET web_response = $1 WHERE task_id = $2 AND node_id = $3 AND status IN ('pending', 'running', 'success')",
     [JSON.stringify(response), Number(id), Number(node_id)],
   );
 
