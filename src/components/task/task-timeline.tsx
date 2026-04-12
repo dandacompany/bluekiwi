@@ -135,7 +135,7 @@ export function TaskTimeline({
                     ) : isFailed ? (
                       <XCircle className="h-3.5 w-3.5" />
                     ) : (
-                      t("tasks.stepLabel", { step: step.stepOrder })
+                      step.stepOrder
                     )}
                   </button>
                   {!isLast && (

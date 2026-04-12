@@ -133,6 +133,7 @@
     "s7ToolCompleteTask": "Mark the task as complete when all steps are done.",
     "s7ToolRewind": "Rewind to a previous step to re-execute.",
     "s7ToolHeartbeat": "Report progress in real-time during execution.",
+    "s7ToolListTasks": "List running or completed tasks.",
     "s7FlowTitle": "Basic execution flow",
     "s7Flow1": "1. start_workflow → Create task",
     "s7Flow2": "2. advance → Receive current step instruction",

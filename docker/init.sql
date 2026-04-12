@@ -353,3 +353,31 @@ CREATE INDEX IF NOT EXISTS idx_instructions_owner  ON instructions(owner_id);
 CREATE INDEX IF NOT EXISTS idx_instructions_folder ON instructions(folder_id);
 CREATE INDEX IF NOT EXISTS idx_credentials_owner   ON credentials(owner_id);
 CREATE INDEX IF NOT EXISTS idx_credentials_folder  ON credentials(folder_id);
+
+-- ─── Migration tracking ───
+-- Mark all migrations as applied so the auto-runner skips them on fresh installs.
+
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  filename TEXT PRIMARY KEY,
+  applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO schema_migrations (filename) VALUES
+  ('001_version_contract_output.sql'),
+  ('002_rbac_apikeys.sql'),
+  ('003_rename_chains_to_workflows.sql'),
+  ('004_invites.sql'),
+  ('005_workflow_versioning.sql'),
+  ('006_target_meta_and_findings.sql'),
+  ('007_ownership_rbac.sql'),
+  ('008_restrict_node_references.sql'),
+  ('009_hitl_approval.sql'),
+  ('010_node_type_hitl.sql'),
+  ('011_feedback_version_note.sql'),
+  ('012_visual_selection.sql'),
+  ('013_remove_public_library.sql'),
+  ('014_workflow_visibility.sql'),
+  ('015_rename_share_access_levels.sql'),
+  ('016_folder_inherit_visibility.sql'),
+  ('017_agent_registry.sql')
+ON CONFLICT (filename) DO NOTHING;

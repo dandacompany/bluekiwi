@@ -143,6 +143,15 @@ const tools: Tool[] = [
     },
   ),
   tool(
+    "list_tasks",
+    "List tasks visible to the current user. Optionally filter by workflow_id, status (running/completed/failed), or search query. Returns task id, workflow_title, status, current_step, total_steps, and logs.",
+    {
+      workflow_id: { type: "number" },
+      status: { type: "string" },
+      q: { type: "string" },
+    },
+  ),
+  tool(
     "list_workflow_versions",
     "List every version in the same family as the given workflow id, including active and archived ones. Returns the active_version_id and an ordered versions array.",
     {
@@ -426,13 +435,15 @@ const tools: Tool[] = [
   ),
   tool(
     "append_node",
-    "Append a new node at the end of a workflow. node_type determines auto_advance automatically (action=auto, gate=manual). Use hitl=true for action nodes that require human approval before proceeding.",
+    "Append a new node at the end of a workflow. node_type determines auto_advance automatically (action=auto, gate/loop=manual). Use hitl=true for action nodes that require human approval. For loop nodes, set loop_back_to to the target step_order (usually self). For gate nodes, set visual_selection=true for click-based HTML selection UI.",
     {
       workflow_id: { type: "number" },
       title: { type: "string" },
       instruction: { type: "string" },
       node_type: { type: "string" },
       hitl: { type: "boolean" },
+      visual_selection: { type: "boolean" },
+      loop_back_to: { type: "number" },
       credential_id: { type: "number" },
       instruction_id: { type: "number" },
     },
@@ -440,7 +451,7 @@ const tools: Tool[] = [
   ),
   tool(
     "insert_node",
-    "Insert a new node after a specific step_order in a workflow. Nodes after the insertion point are shifted by +1.",
+    "Insert a new node after a specific step_order in a workflow. Nodes after the insertion point are shifted by +1. For loop nodes, set loop_back_to. For gate nodes, set visual_selection=true for click-based selection.",
     {
       workflow_id: { type: "number" },
       after_step: { type: "number" },
@@ -448,6 +459,8 @@ const tools: Tool[] = [
       instruction: { type: "string" },
       node_type: { type: "string" },
       hitl: { type: "boolean" },
+      visual_selection: { type: "boolean" },
+      loop_back_to: { type: "number" },
       credential_id: { type: "number" },
       instruction_id: { type: "number" },
     },
@@ -524,7 +537,7 @@ const tools: Tool[] = [
   ),
   tool(
     "share_folder",
-    "Share a folder with a user group at the given access level (viewer or editor). Owner or admin only.",
+    "Share a folder with a user group at the given access level (reader or contributor). Owner or admin only.",
     {
       folder_id: { type: "number" },
       group_id: { type: "number" },
@@ -608,6 +621,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           qs.set("folder_id", String(args.folder_id));
         const suffix = qs.toString() ? `?${qs.toString()}` : "";
         return wrap(await client.request("GET", `/api/workflows${suffix}`));
+      }
+      case "list_tasks": {
+        const qs = new URLSearchParams();
+        if (typeof args.workflow_id === "number")
+          qs.set("workflow_id", String(args.workflow_id));
+        if (typeof args.status === "string") qs.set("status", args.status);
+        if (typeof args.q === "string") qs.set("q", args.q);
+        const suffix = qs.toString() ? `?${qs.toString()}` : "";
+        return wrap(await client.request("GET", `/api/tasks${suffix}`));
       }
       case "list_workflow_versions": {
         const workflowId = requireNumberArg(args, "workflow_id");

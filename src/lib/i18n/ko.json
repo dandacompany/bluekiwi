@@ -133,6 +133,7 @@
     "s7ToolCompleteTask": "모든 단계가 끝나면 태스크를 완료합니다.",
     "s7ToolRewind": "이전 단계로 되감아 다시 실행합니다.",
     "s7ToolHeartbeat": "실행 중 진행 상황을 실시간으로 보고합니다.",
+    "s7ToolListTasks": "실행 중이거나 완료된 태스크 목록을 조회합니다.",
     "s7FlowTitle": "기본 실행 흐름",
     "s7Flow1": "1. start_workflow → 태스크 생성",
     "s7Flow2": "2. advance → 현재 단계 지침 수신",

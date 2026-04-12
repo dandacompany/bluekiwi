@@ -510,6 +510,7 @@ export default function TutorialPage() {
                       ["complete_task", t("tutorial.s7ToolCompleteTask")],
                       ["rewind", t("tutorial.s7ToolRewind")],
                       ["heartbeat", t("tutorial.s7ToolHeartbeat")],
+                      ["list_tasks", t("tutorial.s7ToolListTasks")],
                     ] as const
                   ).map(([tool, desc]) => (
                     <tr key={tool}>

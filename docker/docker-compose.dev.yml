@@ -36,6 +36,25 @@ services:
       timeout: 5s
       retries: 5
 
+  # ─── WebSocket Relay ───
+  ws-relay:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    restart: unless-stopped
+    ports:
+      - "${WS_PORT:-3001}:3001"
+    command: ["npx", "tsx", "scripts/ws-relay.ts"]
+    environment:
+      WS_PORT: "3001"
+      REDIS_URL: redis://:bluekiwi_redis_2026@redis:6379
+    volumes:
+      - ..:/app
+      - /app/node_modules
+    depends_on:
+      redis:
+        condition: service_healthy
+
   # ─── Next.js App (dev mode with hot-reload) ───
   app:
     build:
@@ -49,6 +68,7 @@ services:
     environment:
       DATABASE_URL: postgresql://bluekiwi:bluekiwi_dev_2026@db:5432/bluekiwi
       REDIS_URL: redis://:bluekiwi_redis_2026@redis:6379
+      WS_RELAY_URL: http://ws-relay:3001
       NODE_ENV: development
       NEXT_TELEMETRY_DISABLED: "1"
     volumes:
@@ -60,6 +80,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      ws-relay:
+        condition: service_started
 
 volumes:
   pgdata:

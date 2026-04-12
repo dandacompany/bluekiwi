@@ -140,12 +140,49 @@ Repeat the loop until reaching a gate step or a hitl=true action step.
 
 ### 4. When Pausing
 
-- **HITL** (execute_step returned `next_action: "wait_for_human_approval"`):
-  Call `request_approval`, then immediately show the HITL approval AskUserQuestion (inline HITL approval). Do NOT stop and tell the user to type `/bk-approve`.
-- **Gate step**: If `visual_selection: true` → call `set_visual_html`, then poll `get_web_response`. If `visual_selection: false` → wait for user response via AskUserQuestion. Present the gate question to the user via AskUserQuestion.
-- **Loop-back** (execute_step returned `next_action: "loop_back"`): Re-execute the same loop step.
+Check the `next_action` field in the `execute_step` response and handle accordingly:
 
-## 피드백 설문 (complete_task 호출 전)
+#### HITL (next_action: "wait_for_human_approval")
 
-워크플로가 완료되면 아래 피드백 설문 플로우를 실행한다.
-`save_feedback` → `complete_task` → 개선안 제안 순서를 따른다.
+Call `request_approval`, then immediately show the HITL approval AskUserQuestion (inline HITL approval). Do NOT stop and tell the user to type `/bk-approve`.
+
+#### Gate step (no next_action, node_type=gate)
+
+- If `visual_selection: true` → call `set_visual_html` with interactive HTML, then poll `get_web_response` every 3-5 seconds until a response arrives (max 120 seconds). When the response arrives, use it as the gate answer and call `advance`.
+- If `visual_selection: false` → present the gate question to the user via AskUserQuestion. Use the response as gate answer, call `execute_step` with the answer, then `advance`.
+
+#### Loop (next_action: "loop_back")
+
+<HARD-RULE>
+Loop nodes repeat until a termination condition is met. The instruction contains the termination condition.
+
+**Execution flow:**
+
+1. Read the instruction and execute one iteration (e.g., ask one clarifying question).
+2. Present the result/question to the user via AskUserQuestion.
+3. Based on user response, decide: is the termination condition met?
+   - **NOT met** → call `execute_step(loop_continue=true)` → server creates a new pending log on the same node → re-execute the loop step (go back to step 1)
+   - **Met** → call `execute_step(loop_continue=false)` → loop ends → call `advance` to move to next step
+
+**Example — "Clarifying Questions" loop (loop_back_to=self):**
+
+```
+Iteration 1: "Who is the primary user of this feature?" → user answers → purpose clear, constraints unclear → loop_continue=true
+Iteration 2: "Are there tech stack limitations?" → user answers → constraints clear, success criteria unclear → loop_continue=true
+Iteration 3: "What defines completion?" → user answers → all items clear → loop_continue=false → advance
+```
+
+**Example — "Design Section Presentation" loop:**
+
+```
+Iteration 1: Present architecture section → user "looks good" → more sections remain → loop_continue=true
+Iteration 2: Present data flow section → user "needs revision" → revise and re-present → loop_continue=true
+Iteration 3: Present final section → user approves → all sections done → loop_continue=false → advance
+```
+
+</HARD-RULE>
+
+## Feedback Survey (before calling complete_task)
+
+When the workflow finishes, run the feedback survey flow.
+Follow the sequence: `save_feedback` → `complete_task` → suggest improvements.

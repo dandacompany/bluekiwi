@@ -40,6 +40,7 @@ export const POST = withAuth<Params>(
       node_type,
       hitl,
       visual_selection,
+      loop_back_to,
       credential_id,
       instruction_id,
     } = body;
@@ -77,7 +78,7 @@ export const POST = withAuth<Params>(
         `INSERT INTO workflow_nodes
            (workflow_id, step_order, node_type, title, instruction, instruction_id,
             loop_back_to, auto_advance, credential_id, hitl, visual_selection)
-         VALUES ($1, $2, $3, $4, $5, $6, NULL, $7, $8, $9, $10)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
          RETURNING *`,
         [
           workflowId,
@@ -86,6 +87,7 @@ export const POST = withAuth<Params>(
           title.trim(),
           (instruction ?? "").trim(),
           instruction_id ?? null,
+          resolvedNodeType === "loop" ? (loop_back_to ?? null) : null,
           autoAdvance,
           credential_id ?? null,
           hitl ?? false,

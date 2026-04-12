@@ -121,20 +121,81 @@ Version: 1.0
 Type `/bk-run` to execute it now.
 ```
 
+## Node Type Reference
+
+### action — Auto-executing agent step
+
+- `auto_advance=1` (automatic). The agent executes the instruction, saves the result, and automatically proceeds to the next step.
+- Set `hitl: true` to require human approval after execution. Use only for security-sensitive or irreversible operations.
+
+### gate — User decision point
+
+- `auto_advance=0`. Must receive a user response before proceeding.
+- Set `visual_selection: true` to have the agent render an HTML UI where the user selects by clicking.
+- Used for final result review, direction choices, approval/rejection, etc.
+
+### loop — Conditional repetition
+
+- `auto_advance=0`. Repeats the same step until the termination condition is met.
+- `loop_back_to`: target step_order to loop back to. Usually points to itself (self-loop).
+- **The instruction MUST include a clear termination condition** so the agent can decide `loop_continue=true/false`.
+
+**Loop node design patterns:**
+
+```json
+{
+  "title": "Clarifying Questions",
+  "node_type": "loop",
+  "loop_back_to": 4,
+  "instruction": "Ask one question at a time. Use multiple choice when possible.\n\nGather:\n- Purpose: What problem does this feature solve?\n- Constraints: Tech stack, performance, security limitations?\n- Success criteria: What defines completion?\n\nTermination: End when purpose, scope, constraints, and success criteria are all clear."
+}
+```
+
+```json
+{
+  "title": "Design Section Presentation",
+  "node_type": "loop",
+  "loop_back_to": 7,
+  "instruction": "Present the design section by section.\nEach section scales with complexity: a few sentences if simple, 200-300 words if nuanced.\nCover: architecture, components, data flow, error handling, testing.\nAfter each section, ask the user for confirmation.\n\nTermination: End when all design sections have been approved by the user."
+}
+```
+
+**When to use loop nodes:**
+
+- Information gathering (question → answer repetition)
+- Section-by-section presentation/review (present → approve repetition)
+- Iterative refinement (result → feedback → revision repetition)
+
 ## Node Design Guidelines
 
 - 3–7 steps is ideal. Consider splitting if more than 10.
 - Use `node_type: "gate"` before the final step to let the user review results.
+- Use `node_type: "loop"` when a step needs iterative user interaction. Always include a clear termination condition in the instruction.
 - Use `hitl: true` on `action` nodes only when the step requires explicit human judgment mid-flow (e.g., security-sensitive operations, irreversible actions).
 - Use `visual_selection: true` on `gate` nodes when the selection is best expressed visually — e.g., choosing a layout, picking a chart type, selecting a UI template. The agent must call `set_visual_html` with interactive HTML before executing the step; the user's click supplies the response.
 - For nodes requiring external API calls, specify `credential_id`. Create credentials first with `/bk-credential`.
 
-## 노드 수정 전략
+## Node Modification Strategy
 
 <HARD-RULE>
-- 노드 1개 수정 → `update_node(workflow_id, node_id, ...변경할 필드만)`
-- 노드 추가 (끝에) → `append_node(workflow_id, title, instruction, node_type)`
-- 노드 삽입 (중간) → `insert_node(workflow_id, after_step=N, title, instruction, node_type)`
-- 노드 삭제 → `remove_node(workflow_id, node_id)`
-- 전체 재설계가 아닌 이상 `update_workflow(nodes=[...])` 전체 교체 호출 금지
+- Update a single node → `update_node(workflow_id, node_id, ...only changed fields)`
+- Append a node (at the end) → `append_node(workflow_id, title, instruction, node_type, loop_back_to?, visual_selection?)`
+- Insert a node (in the middle) → `insert_node(workflow_id, after_step=N, title, instruction, node_type, loop_back_to?, visual_selection?)`
+- Delete a node → `remove_node(workflow_id, node_id)`
+- Never use `update_workflow(nodes=[...])` for full replacement unless a complete redesign is intended
 </HARD-RULE>
+
+## Inline vs Template Instructions
+
+Nodes can have two types of instructions:
+
+- **Template reference**: Node has `instruction_id` set. References a shared instruction template. Use `update_instruction` to modify the template — affects all nodes that reference it.
+- **Inline instruction**: Node has no `instruction_id` and stores text directly in the `instruction` field. Use `update_node(workflow_id, node_id, instruction="new text")` to modify — affects only that node.
+
+```
+# Update inline instruction — affects only this node
+update_node(workflow_id=67, node_id=109, instruction="new instruction text")
+
+# Update instruction template — affects all referencing nodes
+update_instruction(instruction_id=5, content="new template text")
+```
