@@ -7,6 +7,7 @@ import {
   generateInviteToken,
   inviteExpiresAt,
 } from "@/lib/invites";
+import { sendInviteEmail } from "@/lib/email";
 import { verifySession } from "@/lib/session";
 
 type InviteRecord = {
@@ -55,11 +56,22 @@ export async function POST(request: NextRequest) {
   );
 
   const publicUrl = process.env.PUBLIC_URL ?? "http://localhost:3100";
+  const inviteUrl = buildInviteUrl(publicUrl, token);
+
+  // Best-effort email — invite is created regardless of email result
+  const emailResult = await sendInviteEmail({
+    to: email.trim(),
+    inviteUrl,
+    role,
+    inviterName: user.username,
+    expiresAt: new Date(rows[0].expires_at),
+  });
 
   return NextResponse.json({
     data: {
       ...rows[0],
-      url: buildInviteUrl(publicUrl, token),
+      url: inviteUrl,
+      email_sent: emailResult.sent,
     },
   });
 }

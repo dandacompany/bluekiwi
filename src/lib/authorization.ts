@@ -7,7 +7,7 @@ export interface OwnedResource {
   id: number;
   owner_id: number;
   folder_id: number;
-  visibility_override: "personal" | null;
+  visibility_override: Visibility | null;
 }
 
 export interface OwnedFolder {
@@ -34,28 +34,28 @@ export async function loadFolder(id: number): Promise<OwnedFolder | undefined> {
 }
 
 /**
- * Resolve the *root* visibility of a folder. With 2-level nesting the child
- * folder inherits from its parent unless the child is itself more restrictive.
- * This returns the effective visibility of the folder itself (used as the
- * inherited value for resources inside it).
+ * Resolve the effective visibility of a folder by walking up the parent chain.
+ * Folders with visibility = 'inherit' defer to their parent's visibility.
+ * Top-level folders always have an explicit visibility (DB constraint).
  */
 export async function resolveFolderVisibility(
   folderId: number,
 ): Promise<Visibility> {
-  const folder = await loadFolder(folderId);
-  if (!folder) return "personal";
-  if (folder.parent_id === null) return folder.visibility;
-  const parent = await loadFolder(folder.parent_id);
-  if (!parent) return folder.visibility;
-  // Child "personal" override is honored; otherwise inherit parent.
-  if (folder.visibility === "personal") return "personal";
-  return parent.visibility;
+  let current = await loadFolder(folderId);
+  // Walk up the chain until we find a non-inherit visibility (max ~10 levels)
+  for (let i = 0; i < 10 && current; i++) {
+    if (current.visibility !== "inherit") return current.visibility;
+    if (current.parent_id === null) return "personal"; // safety fallback
+    current = await loadFolder(current.parent_id);
+  }
+  return "personal";
 }
 
 export async function effectiveResourceVisibility(
   resource: OwnedResource,
 ): Promise<Visibility> {
-  if (resource.visibility_override === "personal") return "personal";
+  if (resource.visibility_override !== null)
+    return resource.visibility_override;
   return resolveFolderVisibility(resource.folder_id);
 }
 
@@ -72,10 +72,10 @@ export async function userGroupIds(userId: number): Promise<number[]> {
 export async function userFolderShareLevel(
   user: User,
   folderId: number,
-): Promise<"viewer" | "editor" | null> {
+): Promise<"reader" | "contributor" | null> {
   const groups = await userGroupIds(user.id);
   if (groups.length === 0) return null;
-  const rows = await query<{ access_level: "viewer" | "editor" }>(
+  const rows = await query<{ access_level: "reader" | "contributor" }>(
     `SELECT fs.access_level
        FROM folder_shares fs
        JOIN folders f ON f.id = $1
@@ -84,8 +84,28 @@ export async function userFolderShareLevel(
     [folderId, groups],
   );
   if (rows.length === 0) return null;
-  // editor beats viewer
-  return rows.some((r) => r.access_level === "editor") ? "editor" : "viewer";
+  // contributor beats reader
+  return rows.some((r) => r.access_level === "contributor")
+    ? "contributor"
+    : "reader";
+}
+
+/** Returns workflow_shares access level for any of the user's groups. */
+export async function userWorkflowShareLevel(
+  user: User,
+  workflowId: number,
+): Promise<"reader" | "contributor" | null> {
+  const groups = await userGroupIds(user.id);
+  if (groups.length === 0) return null;
+  const rows = await query<{ access_level: "reader" | "contributor" }>(
+    `SELECT access_level FROM workflow_shares
+       WHERE workflow_id = $1 AND group_id = ANY($2::int[])`,
+    [workflowId, groups],
+  );
+  if (rows.length === 0) return null;
+  return rows.some((r) => r.access_level === "contributor")
+    ? "contributor"
+    : "reader";
 }
 
 export async function userCredentialShareLevel(
@@ -119,6 +139,9 @@ export async function canRead(
   const vis = await effectiveResourceVisibility(resource);
   if (vis === "public") return true;
   if (vis === "group") {
+    // Check workflow-level shares first (direct override), then folder shares
+    const wfLevel = await userWorkflowShareLevel(user, resource.id);
+    if (wfLevel !== null) return true;
     return (await userFolderShareLevel(user, resource.folder_id)) !== null;
   }
   return false;
@@ -133,10 +156,21 @@ export async function canEdit(
 
   const vis = await effectiveResourceVisibility(resource);
   if (vis === "group") {
+    const wfLevel = await userWorkflowShareLevel(user, resource.id);
+    if (wfLevel === "contributor") return true;
     const lvl = await userFolderShareLevel(user, resource.folder_id);
-    return lvl === "editor";
+    return lvl === "contributor";
   }
   return false;
+}
+
+export async function canManageWorkflowShares(
+  user: User,
+  resource: OwnedResource,
+): Promise<boolean> {
+  return (
+    resource.owner_id === user.id || isPrivileged(user, ["admin", "superuser"])
+  );
 }
 
 export async function canDelete(
@@ -192,7 +226,7 @@ export async function canEditFolder(
   if (folder.owner_id === user.id) return true;
   if (user.role === "superuser") return true;
   if (folder.visibility === "group") {
-    return (await userFolderShareLevel(user, folder.id)) === "editor";
+    return (await userFolderShareLevel(user, folder.id)) === "contributor";
   }
   return false;
 }
@@ -287,7 +321,7 @@ export async function buildResourceVisibilityFilter(
   nextParamIndex: number,
 ): Promise<AuthFilter> {
   const groups = await userGroupIds(user.id);
-  if (user.role === "admin" || user.role === "superuser") {
+  if (user.role === "superuser") {
     return { sql: "TRUE", params: [] };
   }
   const params: unknown[] = [user.id];
@@ -295,30 +329,58 @@ export async function buildResourceVisibilityFilter(
   const userIdx = p;
   p += 1;
 
+  // Helper: resolve folder visibility through 'inherit' → parent chain
+  // Returns the effective visibility of the folder (f) or its parent (pf)
+  const folderIsPublic = `(
+    f.visibility = 'public'
+    OR (f.visibility = 'inherit' AND f.parent_id IS NOT NULL
+        AND EXISTS (SELECT 1 FROM folders pf WHERE pf.id = f.parent_id AND pf.visibility = 'public'))
+  )`;
+
   let groupClause = "FALSE";
+  let directWorkflowGroupClause = "FALSE";
   if (groups.length > 0) {
     params.push(groups);
+    const gIdx = p;
+    p += 1;
+
+    const folderIsGroup = `(
+      f.visibility = 'group'
+      OR (f.visibility = 'inherit' AND f.parent_id IS NOT NULL
+          AND EXISTS (SELECT 1 FROM folders pf WHERE pf.id = f.parent_id AND pf.visibility = 'group'))
+    )`;
+
     groupClause = `(
-      f.visibility = 'group' AND EXISTS (
-        SELECT 1 FROM folder_shares fs
-        WHERE fs.folder_id IN (f.id, f.parent_id)
-          AND fs.group_id = ANY($${p}::int[])
+      (
+        ${tableAlias}.visibility_override IS NULL
+        AND ${folderIsGroup}
+        AND EXISTS (
+          SELECT 1 FROM folder_shares fs
+          WHERE fs.folder_id IN (f.id, f.parent_id)
+            AND fs.group_id = ANY($${gIdx}::int[])
+        )
       )
     )`;
-    p += 1;
+    directWorkflowGroupClause = `(
+      ${tableAlias}.visibility_override = 'group'
+      AND EXISTS (
+        SELECT 1 FROM workflow_shares ws
+        WHERE ws.workflow_id = ${tableAlias}.id
+          AND ws.group_id = ANY($${gIdx}::int[])
+      )
+    )`;
   }
 
   const sql = `(
     ${tableAlias}.owner_id = $${userIdx}
+    OR (${tableAlias}.visibility_override = 'public')
+    OR ${directWorkflowGroupClause}
     OR EXISTS (
       SELECT 1 FROM folders f
       WHERE f.id = ${tableAlias}.folder_id
         AND (
-          ${tableAlias}.visibility_override IS NULL
-          AND (
-            f.visibility = 'public'
-            OR ${groupClause}
-          )
+          (${tableAlias}.visibility_override IS NULL AND ${folderIsPublic})
+          OR ${groupClause}
         )
     )
   )`;
@@ -331,7 +393,7 @@ export async function buildFolderVisibilityFilter(
   user: User,
   nextParamIndex: number,
 ): Promise<AuthFilter> {
-  if (user.role === "admin" || user.role === "superuser") {
+  if (user.role === "superuser") {
     return { sql: "TRUE", params: [] };
   }
   const groups = await userGroupIds(user.id);
@@ -340,7 +402,17 @@ export async function buildFolderVisibilityFilter(
   const userIdx = p;
   p += 1;
 
+  // For 'inherit' folders, resolve via parent's visibility
+  const inheritPublic = `(
+    ${tableAlias}.visibility = 'inherit' AND ${tableAlias}.parent_id IS NOT NULL
+    AND EXISTS (
+      SELECT 1 FROM folders pf
+      WHERE pf.id = ${tableAlias}.parent_id AND pf.visibility = 'public'
+    )
+  )`;
+
   let groupClause = "FALSE";
+  let inheritGroupClause = "FALSE";
   if (groups.length > 0) {
     params.push(groups);
     groupClause = `(
@@ -350,13 +422,27 @@ export async function buildFolderVisibilityFilter(
           AND fs.group_id = ANY($${p}::int[])
       )
     )`;
+    inheritGroupClause = `(
+      ${tableAlias}.visibility = 'inherit' AND ${tableAlias}.parent_id IS NOT NULL
+      AND EXISTS (
+        SELECT 1 FROM folders pf
+        WHERE pf.id = ${tableAlias}.parent_id AND pf.visibility = 'group'
+      )
+      AND EXISTS (
+        SELECT 1 FROM folder_shares fs
+        WHERE fs.folder_id IN (${tableAlias}.parent_id)
+          AND fs.group_id = ANY($${p}::int[])
+      )
+    )`;
     p += 1;
   }
 
   const sql = `(
     ${tableAlias}.owner_id = $${userIdx}
     OR ${tableAlias}.visibility = 'public'
+    OR ${inheritPublic}
     OR ${groupClause}
+    OR ${inheritGroupClause}
   )`;
 
   return { sql, params };

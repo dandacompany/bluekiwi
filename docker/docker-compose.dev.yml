@@ -44,6 +44,8 @@ services:
     restart: unless-stopped
     ports:
       - "${APP_PORT:-3100}:3000"
+    env_file:
+      - ../.env.local
     environment:
       DATABASE_URL: postgresql://bluekiwi:bluekiwi_dev_2026@db:5432/bluekiwi
       REDIS_URL: redis://:bluekiwi_redis_2026@redis:6379

@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS folders (
   owner_id INTEGER NOT NULL,  -- filled after users table is created
   parent_id INTEGER REFERENCES folders(id) ON DELETE CASCADE,
   visibility TEXT NOT NULL DEFAULT 'personal'
-    CHECK (visibility IN ('personal','group','public')),
+    CHECK (visibility IN ('personal','group','public','inherit')),
   is_system BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

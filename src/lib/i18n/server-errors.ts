@@ -36,7 +36,7 @@ const CODE_TO_I18N_KEY: Record<string, string> = {
   PRECONDITION_FAILED: "serverErrors.preconditionFailed",
   VALIDATION_ERROR: "validationErrors.generic",
   // System / state codes
-  PUBLIC_LIBRARY_MISSING: "serverErrors.publicLibraryMissing",
+  WORKSPACE_MISSING: "serverErrors.myWorkspaceMissing",
   MY_WORKSPACE_MISSING: "serverErrors.myWorkspaceMissing",
   VERSION_INACTIVE: "serverErrors.versionInactive",
 };

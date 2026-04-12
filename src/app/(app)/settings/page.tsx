@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileTab } from "@/components/settings/profile-tab";
 import { ApiKeysTab } from "@/components/settings/apikeys-tab";
 import { TeamTab } from "@/components/settings/team-tab";
+import { GroupsTab } from "@/components/settings/groups-tab";
 import { useTranslation } from "@/lib/i18n/context";
 
 interface SessionUser {
@@ -47,7 +48,7 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-10">
+      <main className="mx-auto max-w-3xl px-4 py-6">
         <p className="text-center text-sm text-[var(--muted-foreground)]">
           {t("common.loading")}
         </p>
@@ -57,7 +58,7 @@ export default function SettingsPage() {
 
   if (!user) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-10">
+      <main className="mx-auto max-w-3xl px-4 py-6">
         <p className="text-center text-sm text-[var(--muted-foreground)]">
           {t("settings.userLoadFailed")}
         </p>
@@ -66,7 +67,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
+    <main className="mx-auto max-w-3xl px-4 py-6">
       <div className="mb-6 flex items-center gap-2">
         <Settings className="h-5 w-5 text-[var(--muted-foreground)]" />
         <h1 className="text-2xl font-bold tracking-tight">
@@ -82,6 +83,9 @@ export default function SettingsPage() {
             <TabsTrigger value="team">
               {t("settings.teamManagement")}
             </TabsTrigger>
+          )}
+          {isAdmin && (
+            <TabsTrigger value="groups">{t("groups.tabLabel")}</TabsTrigger>
           )}
           <TabsTrigger value="notifications">
             {t("settings.notifications")}
@@ -100,6 +104,12 @@ export default function SettingsPage() {
           {isAdmin && (
             <TabsContent value="team">
               <TeamTab />
+            </TabsContent>
+          )}
+
+          {isAdmin && (
+            <TabsContent value="groups">
+              <GroupsTab />
             </TabsContent>
           )}
 

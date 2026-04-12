@@ -1,6 +1,6 @@
 {
   "name": "bluekiwi",
-  "version": "0.2.3",
+  "version": "0.2.5",
   "description": "BlueKiwi CLI — install MCP client and skills into your agent runtime",
   "license": "MIT",
   "repository": {

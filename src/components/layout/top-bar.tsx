@@ -118,6 +118,10 @@ export function TopBar() {
 
   const breadcrumbs = detailState?.breadcrumbs ?? staticBreadcrumbs;
 
+  // Hide TopBar on top-level pages — they already have their own in-page header
+  const isTopLevelPage = pathname.split("/").filter(Boolean).length <= 1;
+  if (isTopLevelPage) return null;
+
   return (
     <header className="flex h-12 items-center justify-between border-b border-[var(--border)] bg-[var(--background)] px-4">
       <nav className="flex items-center gap-1 text-sm">

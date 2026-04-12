@@ -9,4 +9,4 @@ RUN npm ci
 # Source is mounted as volume — no COPY needed
 EXPOSE 3000
 
-CMD ["npx", "next", "dev", "-H", "0.0.0.0"]
+CMD ["npx", "next", "dev", "-H", "0.0.0.0", "--webpack"]

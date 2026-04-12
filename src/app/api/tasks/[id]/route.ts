@@ -35,14 +35,19 @@ export const GET = withOptionalAuth<Params>(
       [task.id],
     );
 
-    const workflow = await queryOne<{ title: string }>(
-      "SELECT title FROM workflows WHERE id = $1",
+    const workflow = await queryOne<{ title: string; node_count: number }>(
+      `SELECT w.title, COUNT(wn.id)::int AS node_count
+       FROM workflows w
+       LEFT JOIN workflow_nodes wn ON wn.workflow_id = w.id
+       WHERE w.id = $1
+       GROUP BY w.id`,
       [task.workflow_id],
     );
 
     const res = okResponse({
       ...task,
       workflow_title: workflow?.title ?? null,
+      total_steps: workflow?.node_count ?? 0,
       logs,
     });
     return NextResponse.json(res.body, { status: res.status });

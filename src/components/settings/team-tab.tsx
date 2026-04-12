@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Copy, Plus, Users, X } from "lucide-react";
+import { Check, Copy, HelpCircle, Minus, Plus, Users, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useTranslation } from "@/lib/i18n/context";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface Member {
   id: number;
@@ -75,6 +80,7 @@ export function TeamTab() {
   const [inviteResult, setInviteResult] = useState<{
     url: string;
     expires_at: string;
+    email_sent: boolean;
   } | null>(null);
 
   const fetchMembers = useCallback(async () => {
@@ -125,12 +131,16 @@ export function TeamTab() {
         }),
       });
 
+      const json = await res.json();
       if (!res.ok) {
-        const json = await res.json();
         throw new Error(json.error ?? t("team.inviteCreateFailed"));
       }
 
-      const data = (await res.json()) as { url: string; expires_at: string };
+      const data = json.data as {
+        url: string;
+        expires_at: string;
+        email_sent: boolean;
+      };
       setInviteResult(data);
       toast.success(t("team.inviteCreated"));
       fetchInvites();
@@ -191,11 +201,11 @@ export function TeamTab() {
                 {t("team.inviteMember")}
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="overflow-hidden">
               <DialogHeader>
                 <DialogTitle>{t("team.inviteTitle")}</DialogTitle>
                 <DialogDescription>
-                  Share an invite link instead of creating the account directly.
+                  {t("team.inviteDescription")}
                 </DialogDescription>
               </DialogHeader>
               {!inviteResult ? (
@@ -216,9 +226,120 @@ export function TeamTab() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">
-                      {t("team.role")}
-                    </label>
+                    <div className="flex items-center gap-1.5">
+                      <label className="text-sm font-medium">
+                        {t("team.role")}
+                      </label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            className="flex h-4 w-4 items-center justify-center rounded-full text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                          >
+                            <HelpCircle className="h-3.5 w-3.5" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent align="start" className="w-[340px] p-3">
+                          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                            역할별 권한
+                          </p>
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="border-b border-[var(--border)]">
+                                <th className="pb-1.5 text-left font-medium text-[var(--muted-foreground)]">
+                                  기능
+                                </th>
+                                <th className="pb-1.5 text-center font-medium">
+                                  열람자
+                                </th>
+                                <th className="pb-1.5 text-center font-medium">
+                                  편집자
+                                </th>
+                                <th className="pb-1.5 text-center font-medium">
+                                  관리자
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[var(--border)]">
+                              {[
+                                {
+                                  label: "워크플로 조회",
+                                  v: true,
+                                  e: true,
+                                  a: true,
+                                },
+                                {
+                                  label: "워크플로 실행",
+                                  v: true,
+                                  e: true,
+                                  a: true,
+                                },
+                                {
+                                  label: "워크플로 생성·수정",
+                                  v: false,
+                                  e: true,
+                                  a: true,
+                                },
+                                {
+                                  label: "워크플로 삭제 (본인)",
+                                  v: false,
+                                  e: true,
+                                  a: true,
+                                },
+                                {
+                                  label: "자격증명 조회",
+                                  v: true,
+                                  e: true,
+                                  a: true,
+                                },
+                                {
+                                  label: "자격증명 생성·수정",
+                                  v: false,
+                                  e: true,
+                                  a: true,
+                                },
+                                {
+                                  label: "팀원 조회",
+                                  v: false,
+                                  e: false,
+                                  a: true,
+                                },
+                                {
+                                  label: "팀원 관리",
+                                  v: false,
+                                  e: false,
+                                  a: true,
+                                },
+                                {
+                                  label: "폴더 공유 관리",
+                                  v: false,
+                                  e: false,
+                                  a: true,
+                                },
+                              ].map(({ label, v, e, a }) => (
+                                <tr key={label}>
+                                  <td className="py-1.5 text-[var(--foreground)]">
+                                    {label}
+                                  </td>
+                                  {[v, e, a].map((ok, i) => (
+                                    <td key={i} className="py-1.5 text-center">
+                                      {ok ? (
+                                        <Check className="mx-auto h-3 w-3 text-kiwi-600" />
+                                      ) : (
+                                        <Minus className="mx-auto h-3 w-3 text-[var(--muted-foreground)]/40" />
+                                      )}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          <p className="mt-2 text-[10px] text-[var(--muted-foreground)]">
+                            * superuser는 모든 권한을 가집니다.
+                          </p>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                     <Select value={inviteRole} onValueChange={setInviteRole}>
                       <SelectTrigger className="w-full">
                         <SelectValue />
@@ -239,23 +360,38 @@ export function TeamTab() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-sm">
-                    Share this link (expires{" "}
-                    {new Date(inviteResult.expires_at).toLocaleDateString()}
-                    ):
-                  </p>
-                  <pre className="break-all rounded-xl bg-[var(--muted)] p-3 text-xs">
-                    {inviteResult.url}
-                  </pre>
-                  <Button
-                    onClick={() => {
-                      navigator.clipboard.writeText(inviteResult.url);
-                      toast.success(t("team.inviteLinkCopied"));
-                    }}
-                  >
-                    <Copy className="h-4 w-4" />
-                    Copy link
-                  </Button>
+                  {inviteResult.email_sent ? (
+                    <p className="flex items-center gap-1.5 text-sm text-kiwi-600">
+                      <Check className="h-4 w-4 shrink-0" />
+                      {inviteEmail}로 초대 이메일을 발송했습니다.
+                    </p>
+                  ) : (
+                    <p className="text-sm text-[var(--muted-foreground)]">
+                      {t("team.shareLinkExpires", {
+                        date: new Date(
+                          inviteResult.expires_at,
+                        ).toLocaleDateString(),
+                      })}
+                    </p>
+                  )}
+                  <div className="flex w-full overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--muted)]">
+                    <input
+                      readOnly
+                      value={inviteResult.url}
+                      className="min-w-0 flex-1 bg-transparent px-3 py-2 text-xs text-[var(--foreground)] outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(inviteResult.url);
+                        toast.success(t("team.inviteLinkCopied"));
+                      }}
+                      className="flex shrink-0 items-center gap-1.5 border-l border-[var(--border)] px-3 py-2 text-xs text-[var(--muted-foreground)] hover:bg-[var(--border)]/30 hover:text-[var(--foreground)]"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      {t("team.copyLink")}
+                    </button>
+                  </div>
                 </div>
               )}
               <DialogFooter>
@@ -267,7 +403,7 @@ export function TeamTab() {
                 </Button>
                 {!inviteResult ? (
                   <Button onClick={handleInvite} disabled={inviting}>
-                    {inviting ? "Creating..." : "Create invite"}
+                    {inviting ? t("team.creating") : t("team.createInvite")}
                   </Button>
                 ) : null}
               </DialogFooter>
@@ -281,7 +417,7 @@ export function TeamTab() {
           <section className="space-y-4">
             <div>
               <h3 className="text-sm font-semibold text-[var(--foreground)]">
-                Team members
+                {t("team.members")}
               </h3>
             </div>
             {loading ? (
@@ -299,7 +435,7 @@ export function TeamTab() {
                     key={member.id}
                     className="flex items-center gap-3 rounded-lg border p-3"
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--sidebar-accent)] text-sm font-medium text-[var(--sidebar-accent-foreground)]">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-blue-100 text-sm font-medium text-brand-blue-700">
                       {member.username.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -330,11 +466,8 @@ export function TeamTab() {
           <section className="space-y-4">
             <div>
               <h3 className="text-sm font-semibold text-[var(--foreground)]">
-                Invites
+                {t("team.invites")}
               </h3>
-              <p className="text-sm text-[var(--muted-foreground)]">
-                Pending and accepted team invitations.
-              </p>
             </div>
             {inviteLoading ? (
               <p className="py-6 text-center text-sm text-[var(--muted-foreground)]">
@@ -342,7 +475,7 @@ export function TeamTab() {
               </p>
             ) : invites.length === 0 ? (
               <p className="py-6 text-center text-sm text-[var(--muted-foreground)]">
-                No invites yet.
+                {t("team.noInvites")}
               </p>
             ) : (
               <div className="space-y-3">
@@ -357,14 +490,28 @@ export function TeamTab() {
                       </p>
                       <p className="text-xs text-[var(--muted-foreground)]">
                         {invite.accepted_at
-                          ? `Accepted ${new Date(invite.accepted_at).toLocaleString()}`
-                          : `Pending until ${new Date(invite.expires_at).toLocaleString()}`}
+                          ? t("team.inviteAccepted", {
+                              date: new Date(
+                                invite.accepted_at,
+                              ).toLocaleString(),
+                            })
+                          : t("team.invitePending", {
+                              date: new Date(
+                                invite.expires_at,
+                              ).toLocaleString(),
+                            })}
                       </p>
                     </div>
                     <Badge
                       variant={ROLE_BADGE_VARIANT[invite.role] ?? "outline"}
                     >
-                      {invite.role}
+                      {invite.role === "admin"
+                        ? t("team.roleAdmin")
+                        : invite.role === "editor"
+                          ? t("team.roleEditor")
+                          : invite.role === "viewer"
+                            ? t("team.roleViewer")
+                            : invite.role}
                     </Badge>
                     {!invite.accepted_at ? (
                       <div className="flex gap-2">
@@ -378,7 +525,7 @@ export function TeamTab() {
                           }
                         >
                           <Copy className="h-4 w-4" />
-                          Copy
+                          {t("team.copyInviteLink")}
                         </Button>
                         <Button
                           variant="outline"
@@ -386,7 +533,7 @@ export function TeamTab() {
                           onClick={() => handleCancelInvite(invite.id)}
                         >
                           <X className="h-4 w-4" />
-                          Cancel
+                          {t("common.cancel")}
                         </Button>
                       </div>
                     ) : null}

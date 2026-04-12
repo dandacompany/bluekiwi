@@ -44,7 +44,7 @@ export const POST = withAuth(
       return NextResponse.json(res.body, { status: res.status });
     }
 
-    // Resolve target folder: user-provided or default to Public Library
+    // Resolve target folder: user-provided or default to user's My Workspace
     let targetFolderId: number;
     if (typeof body.folder_id === "number") {
       const f = await loadFolder(body.folder_id);
@@ -62,31 +62,19 @@ export const POST = withAuth(
       }
       targetFolderId = f.id;
     } else {
-      const lib = await queryOne<{ id: number }>(
-        "SELECT id FROM folders WHERE is_system = true AND visibility = 'public' LIMIT 1",
+      const workspace = await queryOne<{ id: number }>(
+        "SELECT id FROM folders WHERE is_system = true AND visibility = 'personal' AND owner_id = $1 LIMIT 1",
+        [user.id],
       );
-      if (!lib) {
+      if (!workspace) {
         const res = errorResponse(
-          "PUBLIC_LIBRARY_MISSING",
-          "Public Library가 없습니다. 관리자에게 문의하세요",
+          "WORKSPACE_MISSING",
+          "My Workspace가 없습니다. 관리자에게 문의하세요",
           500,
         );
         return NextResponse.json(res.body, { status: res.status });
       }
-      const f = await loadFolder(lib.id);
-      if (!f) {
-        const res = errorResponse("NOT_FOUND", "folder not found", 404);
-        return NextResponse.json(res.body, { status: res.status });
-      }
-      if (!(await canEditFolder(user, f))) {
-        const res = errorResponse(
-          "OWNERSHIP_REQUIRED",
-          "폴더 편집 권한 없음",
-          403,
-        );
-        return NextResponse.json(res.body, { status: res.status });
-      }
-      targetFolderId = f.id;
+      targetFolderId = workspace.id;
     }
 
     const tagsJson = JSON.stringify(

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import {
   DndContext,
@@ -82,13 +82,23 @@ function newKey() {
 
 export default function WorkflowEditor({
   workflowId,
+  folderId: folderIdProp,
   canEdit = true,
 }: {
   workflowId: number | null;
+  folderId?: number | null;
   canEdit?: boolean;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useTranslation();
+
+  // folder_id: prop takes priority, then URL query param
+  const folderId =
+    folderIdProp ??
+    (searchParams.get("folder_id")
+      ? Number(searchParams.get("folder_id"))
+      : null);
   const readOnly = !canEdit;
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -269,6 +279,7 @@ export default function WorkflowEditor({
   const buildPayload = () => ({
     title,
     description,
+    ...(folderId ? { folder_id: folderId } : {}),
     nodes: nodes.map((n) => ({
       title: n.title,
       node_type: n.node_type,
@@ -296,7 +307,7 @@ export default function WorkflowEditor({
         return;
       }
       toast.success(t("workflows.saved"));
-      router.push("/workflows");
+      router.push(folderId ? `/workflows?folder_id=${folderId}` : "/workflows");
     } finally {
       setSaving(false);
     }

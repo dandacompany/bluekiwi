@@ -51,11 +51,20 @@ export const GET = withOptionalAuth(
           "SELECT * FROM task_logs WHERE task_id = $1 ORDER BY step_order ASC",
           [task.id],
         );
-        const workflow = await queryOne<{ title: string }>(
-          "SELECT title FROM workflows WHERE id = $1",
+        const workflow = await queryOne<{ title: string; node_count: number }>(
+          `SELECT w.title, COUNT(wn.id)::int AS node_count
+           FROM workflows w
+           LEFT JOIN workflow_nodes wn ON wn.workflow_id = w.id
+           WHERE w.id = $1
+           GROUP BY w.id`,
           [task.workflow_id],
         );
-        return { ...task, workflow_title: workflow?.title ?? null, logs };
+        return {
+          ...task,
+          workflow_title: workflow?.title ?? null,
+          total_steps: workflow?.node_count ?? 0,
+          logs,
+        };
       }),
     );
 

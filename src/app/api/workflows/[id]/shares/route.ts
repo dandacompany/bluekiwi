@@ -2,38 +2,47 @@ import { NextResponse } from "next/server";
 import {
   query,
   queryOne,
-  type FolderShare,
+  type WorkflowShare,
+  type Visibility,
   okResponse,
   listResponse,
   errorResponse,
 } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
-import {
-  canReadFolder,
-  canManageFolderShares,
-  loadFolder,
-} from "@/lib/authorization";
+import { canEdit, canManageWorkflowShares } from "@/lib/authorization";
 
 type Params = { params: Promise<{ id: string }> };
+
+async function loadWorkflow(id: number) {
+  return queryOne<{
+    id: number;
+    owner_id: number;
+    folder_id: number;
+    visibility_override: Visibility | null;
+  }>(
+    "SELECT id, owner_id, folder_id, visibility_override FROM workflows WHERE id = $1",
+    [id],
+  );
+}
 
 export const GET = withAuth<Params>(
   "workflows:read",
   async (_request, user, { params }) => {
     const { id } = await params;
-    const folder = await loadFolder(Number(id));
-    if (!folder) {
-      const res = errorResponse("NOT_FOUND", "폴더 없음", 404);
+    const workflow = await loadWorkflow(Number(id));
+    if (!workflow) {
+      const res = errorResponse("NOT_FOUND", "워크플로 없음", 404);
       return NextResponse.json(res.body, { status: res.status });
     }
-    if (!(await canReadFolder(user, folder))) {
+    if (!(await canEdit(user, workflow))) {
       const res = errorResponse("OWNERSHIP_REQUIRED", "접근 거부", 403);
       return NextResponse.json(res.body, { status: res.status });
     }
-    const rows = await query<FolderShare & { group_name: string }>(
-      `SELECT fs.*, ug.name AS group_name
-         FROM folder_shares fs
-         JOIN user_groups ug ON ug.id = fs.group_id
-         WHERE fs.folder_id = $1
+    const rows = await query<WorkflowShare & { group_name: string }>(
+      `SELECT ws.*, ug.name AS group_name
+         FROM workflow_shares ws
+         JOIN user_groups ug ON ug.id = ws.group_id
+         WHERE ws.workflow_id = $1
          ORDER BY ug.name ASC`,
       [Number(id)],
     );
@@ -59,23 +68,23 @@ export const POST = withAuth<Params>(
       );
       return NextResponse.json(res.body, { status: res.status });
     }
-    const folder = await loadFolder(Number(id));
-    if (!folder) {
-      const res = errorResponse("NOT_FOUND", "폴더 없음", 404);
+    const workflow = await loadWorkflow(Number(id));
+    if (!workflow) {
+      const res = errorResponse("NOT_FOUND", "워크플로 없음", 404);
       return NextResponse.json(res.body, { status: res.status });
     }
-    if (!(await canManageFolderShares(user, folder))) {
+    if (!(await canManageWorkflowShares(user, workflow))) {
       const res = errorResponse(
-        "FOLDER_SHARE_DENIED",
+        "OWNERSHIP_REQUIRED",
         "공유 관리 권한 없음",
         403,
       );
       return NextResponse.json(res.body, { status: res.status });
     }
-    const row = await queryOne<FolderShare>(
-      `INSERT INTO folder_shares (folder_id, group_id, access_level)
+    const row = await queryOne<WorkflowShare>(
+      `INSERT INTO workflow_shares (workflow_id, group_id, access_level)
        VALUES ($1, $2, $3)
-       ON CONFLICT (folder_id, group_id)
+       ON CONFLICT (workflow_id, group_id)
        DO UPDATE SET access_level = EXCLUDED.access_level
        RETURNING *`,
       [Number(id), group_id, access_level],

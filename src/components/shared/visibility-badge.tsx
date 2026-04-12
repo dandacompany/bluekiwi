@@ -1,6 +1,6 @@
 "use client";
 
-import { Lock, Users, Globe } from "lucide-react";
+import { Lock, Users, Globe, FolderOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -10,28 +10,30 @@ import {
 } from "@/components/ui/tooltip";
 import { useTranslation } from "@/lib/i18n/context";
 
-export type Visibility = "personal" | "group" | "public";
+export type Visibility = "personal" | "group" | "public" | "inherit";
 
 interface Props {
   visibility: Visibility;
-  inherited?: boolean;
+  iconOnly?: boolean;
 }
 
-export function VisibilityBadge({ visibility, inherited }: Props) {
+export function VisibilityBadge({ visibility, iconOnly }: Props) {
   const { t } = useTranslation();
   const map = {
     personal: { Icon: Lock, label: t("folders.visibilityPersonal") },
     group: { Icon: Users, label: t("folders.visibilityGroup") },
     public: { Icon: Globe, label: t("folders.visibilityPublic") },
+    inherit: { Icon: FolderOpen, label: t("folders.visibilityInherit") },
   } as const;
   const { Icon, label } = map[visibility];
 
-  const tooltipText =
-    visibility === "personal"
-      ? t("ownership.cantEdit")
-      : visibility === "group"
-        ? t("ownership.sharedWith")
-        : t("folders.visibilityPublic");
+  const tooltipMap = {
+    personal: t("folders.visibilityPersonalDesc"),
+    group: t("folders.visibilityGroupDesc"),
+    public: t("folders.visibilityPublicDesc"),
+    inherit: t("folders.visibilityInheritDesc"),
+  } as const;
+  const tooltipText = tooltipMap[visibility];
 
   return (
     <TooltipProvider>
@@ -39,12 +41,7 @@ export function VisibilityBadge({ visibility, inherited }: Props) {
         <TooltipTrigger asChild>
           <Badge variant="neutral" className="gap-1">
             <Icon className="h-3 w-3" />
-            {label}
-            {inherited && (
-              <span className="text-[10px] opacity-70">
-                ({t("folders.inheritedFromParent")})
-              </span>
-            )}
+            {!iconOnly && label}
           </Badge>
         </TooltipTrigger>
         <TooltipContent>{tooltipText}</TooltipContent>

@@ -48,6 +48,7 @@ interface TaskDetail {
   id: number;
   workflow_id: number;
   workflow_title: string | null;
+  total_steps: number;
   status: string;
   current_step: number;
   context: string;
@@ -255,13 +256,7 @@ export default function TaskDetailPage() {
     () => (task ? buildTimelineSteps(task.logs) : []),
     [task],
   );
-  const totalSteps = useMemo(
-    () =>
-      timelineSteps.length > 0
-        ? Math.max(...timelineSteps.map((s) => s.stepOrder))
-        : 0,
-    [timelineSteps],
-  );
+  const totalSteps = task?.total_steps || 0;
 
   // Logs for selected step
   const selectedLogs = useMemo<StepLog[]>(() => {

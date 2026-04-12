@@ -22,7 +22,6 @@ import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface TaskLog {
   id: number;
@@ -35,6 +34,7 @@ interface Task {
   id: number;
   workflow_id: number;
   workflow_title: string | null;
+  total_steps: number;
   status: string;
   current_step: number;
   context: string;
@@ -143,174 +143,208 @@ export default function TasksPage() {
   });
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10">
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <ListTodo className="h-5 w-5 text-[var(--muted-foreground)]" />
-          <h1 className="text-2xl font-bold tracking-tight">
-            {t("tasks.title")}
-          </h1>
+    <div className="flex flex-col">
+      {/* ── Page header ── */}
+      <div className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--background)]/95 backdrop-blur-sm">
+        <div className="mx-auto max-w-7xl px-6 h-14 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <ListTodo className="h-5 w-5 text-[var(--muted-foreground)]" />
+            <h1 className="text-2xl font-bold tracking-tight">
+              {t("tasks.title")}
+            </h1>
+          </div>
         </div>
-        <Link
-          href="/"
-          className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-        >
-          {t("nav.home")}
-        </Link>
       </div>
 
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <Tabs
-          value={filter || "all"}
-          onValueChange={(v) => setFilter(v === "all" ? "" : v)}
-        >
-          <TabsList>
-            <TabsTrigger value="all">{t("tasks.all")}</TabsTrigger>
-            <TabsTrigger value="running">{t("tasks.running")}</TabsTrigger>
-            <TabsTrigger value="completed">{t("tasks.completed")}</TabsTrigger>
-            <TabsTrigger value="failed">{t("tasks.failed")}</TabsTrigger>
-            <TabsTrigger value="pending">{t("tasks.pending")}</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <span className="text-xs text-[var(--muted-foreground)]">
-          {t("tasks.wsRealtime")}
-        </span>
-      </div>
+      {/* ── Body ── */}
+      <div className="mx-auto max-w-7xl w-full px-6 py-6">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div className="flex flex-wrap gap-1.5">
+            {(
+              [
+                {
+                  value: "",
+                  label: t("tasks.all"),
+                  active: "bg-[var(--foreground)] text-[var(--background)]",
+                },
+                {
+                  value: "running",
+                  label: t("tasks.running"),
+                  active: "bg-brand-blue-600 text-white",
+                },
+                {
+                  value: "completed",
+                  label: t("tasks.completed"),
+                  active: "bg-kiwi-600 text-white",
+                },
+                {
+                  value: "failed",
+                  label: t("tasks.failed"),
+                  active: "bg-[var(--destructive)] text-white",
+                },
+                {
+                  value: "pending",
+                  label: t("tasks.pending"),
+                  active: "bg-[var(--muted-foreground)] text-white",
+                },
+              ] as const
+            ).map(({ value, label, active }) => {
+              const isActive = filter === value;
+              return (
+                <button
+                  key={value || "all"}
+                  onClick={() => setFilter(value)}
+                  className={`inline-flex items-center rounded-full border px-3.5 py-1 text-sm font-medium transition-all ${
+                    isActive
+                      ? `${active} border-transparent shadow-sm`
+                      : "border-border/70 bg-transparent text-[var(--muted-foreground)] hover:border-border hover:bg-surface-soft hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+          <span className="text-xs text-[var(--muted-foreground)]">
+            {t("tasks.wsRealtime")}
+          </span>
+        </div>
 
-      {loading && tasks.length === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center text-sm text-[var(--muted-foreground)]">
-            {t("common.loading")}
-          </CardContent>
-        </Card>
-      ) : tasks.length === 0 ? (
-        <EmptyState
-          icon={ListTodo}
-          title={t("tasks.empty")}
-          description={t("tasks.emptyDesc")}
-        />
-      ) : (
-        <div className="space-y-4">
-          {tasks.map((task) => {
-            const uniqueCompleted = new Set(
-              task.logs
-                .filter((l) => l.status === "completed")
-                .map((l) => l.step_order),
-            ).size;
-            const totalSteps = Math.max(
-              ...task.logs.map((l) => l.step_order),
-              1,
-            );
+        {loading && tasks.length === 0 ? (
+          <Card>
+            <CardContent className="py-10 text-center text-sm text-[var(--muted-foreground)]">
+              {t("common.loading")}
+            </CardContent>
+          </Card>
+        ) : tasks.length === 0 ? (
+          <EmptyState
+            icon={ListTodo}
+            title={t("tasks.empty")}
+            description={t("tasks.emptyDesc")}
+          />
+        ) : (
+          <div className="space-y-4">
+            {tasks.map((task) => {
+              const uniqueCompleted = new Set(
+                task.logs
+                  .filter((l) => l.status === "completed")
+                  .map((l) => l.step_order),
+              ).size;
+              const totalSteps = task.total_steps || 1;
 
-            const fillColor =
-              task.status === "failed"
-                ? "bg-[var(--destructive)]"
-                : task.status === "pending"
-                  ? "bg-[var(--muted)]"
-                  : "bg-brand-blue-600";
+              const fillColor =
+                task.status === "failed"
+                  ? "bg-[var(--destructive)]"
+                  : task.status === "pending"
+                    ? "bg-[var(--muted)]"
+                    : "bg-brand-blue-600";
 
-            return (
-              <Card
-                key={task.id}
-                className="overflow-hidden border-border/80 transition-shadow hover:shadow-soft"
-              >
-                <div className="border-b border-border/70 bg-surface-soft/60 px-5 py-3">
-                  <div className="flex items-start justify-between gap-4">
-                    <Link href={`/tasks/${task.id}`} className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <span className="font-mono text-sm text-[var(--muted-foreground)]">
-                          #{task.id}
-                        </span>
-                        <p className="truncate text-base font-semibold text-[var(--foreground)]">
-                          {task.workflow_title ??
-                            t("tasks.workflowFallback", {
-                              id: task.workflow_id,
-                            })}
-                        </p>
-                        <StatusBadge status={task.status} t={t} />
-                      </div>
-                      {task.context && (
-                        <p className="mt-1 truncate text-sm text-[var(--muted-foreground)]">
-                          {task.context}
-                        </p>
-                      )}
-                    </Link>
-
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 text-xs text-[var(--muted-foreground)]">
-                        <Clock className="h-3.5 w-3.5" />
-                        {formatTaskRelativeTime(
-                          task.status === "completed"
-                            ? task.updated_at
-                            : task.created_at,
-                          t,
-                        )}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-[var(--destructive)] hover:bg-destructive/10"
-                        onClick={() => setDeleteTarget(task)}
-                        title={t("common.delete")}
-                        aria-label={`${t("common.delete")} #${task.id}`}
+              return (
+                <Card
+                  key={task.id}
+                  className="overflow-hidden border-border/80 transition-shadow hover:shadow-soft"
+                >
+                  <div className="border-b border-border/70 bg-kiwi-100/50 px-5 py-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <Link
+                        href={`/tasks/${task.id}`}
+                        className="min-w-0 flex-1"
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span className="font-mono text-sm text-[var(--muted-foreground)]">
+                            #{task.id}
+                          </span>
+                          <p className="truncate text-base font-semibold text-[var(--foreground)]">
+                            {task.workflow_title ??
+                              t("tasks.workflowFallback", {
+                                id: task.workflow_id,
+                              })}
+                          </p>
+                          <StatusBadge status={task.status} t={t} />
+                        </div>
+                        {task.context && (
+                          <p className="mt-1 truncate text-sm text-[var(--muted-foreground)]">
+                            {task.context}
+                          </p>
+                        )}
+                      </Link>
+
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 text-xs text-[var(--muted-foreground)]">
+                          <Clock className="h-3.5 w-3.5" />
+                          {formatTaskRelativeTime(
+                            task.status === "completed"
+                              ? task.updated_at
+                              : task.created_at,
+                            t,
+                          )}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-[var(--destructive)] hover:bg-destructive/10"
+                          onClick={() => setDeleteTarget(task)}
+                          title={t("common.delete")}
+                          aria-label={`${t("common.delete")} #${task.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <CardContent className="px-5 py-4">
-                  <Link href={`/tasks/${task.id}`} className="block">
-                    <div className="flex items-center gap-3">
-                      <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface-soft">
-                        <div
-                          className={`h-full rounded-full transition-all ${fillColor}`}
-                          style={{
-                            width:
-                              task.logs.length > 0
-                                ? `${(uniqueCompleted / totalSteps) * 100}%`
-                                : "0%",
-                          }}
-                        />
+                  <CardContent className="px-5 py-4">
+                    <Link href={`/tasks/${task.id}`} className="block">
+                      <div className="flex items-center gap-3">
+                        <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface-soft">
+                          <div
+                            className={`h-full rounded-full transition-all ${fillColor}`}
+                            style={{
+                              width:
+                                task.logs.length > 0
+                                  ? `${(uniqueCompleted / totalSteps) * 100}%`
+                                  : "0%",
+                            }}
+                          />
+                        </div>
+                        <span className="shrink-0 text-xs font-medium text-[var(--muted-foreground)]">
+                          {uniqueCompleted}/{totalSteps} {t("tasks.steps")}
+                        </span>
                       </div>
-                      <span className="shrink-0 text-xs font-medium text-[var(--muted-foreground)]">
-                        {uniqueCompleted}/{totalSteps} {t("tasks.steps")}
-                      </span>
-                    </div>
 
-                    {task.logs.length > 0 && (
-                      <div className="mt-3 rounded-xl border border-border/70 bg-surface-soft/40 px-3 py-2.5">
-                        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
-                          {t("tasks.stepLabel", {
-                            step: task.logs[task.logs.length - 1].step_order,
-                          })}
-                        </p>
-                        <p className="mt-1 line-clamp-2 text-sm text-[var(--foreground)]">
-                          {summarizeTaskOutput(
-                            task.logs[task.logs.length - 1].output,
-                            180,
-                          )}
-                        </p>
-                      </div>
-                    )}
-                  </Link>
-                </CardContent>
-              </Card>
-            );
+                      {task.logs.length > 0 && (
+                        <div className="mt-3 rounded-[var(--radius-sm)] border border-border/70 bg-surface-soft/40 px-3 py-2.5">
+                          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
+                            {t("tasks.stepLabel", {
+                              step: task.logs[task.logs.length - 1].step_order,
+                            })}
+                          </p>
+                          <p className="mt-1 line-clamp-2 text-sm text-[var(--foreground)]">
+                            {summarizeTaskOutput(
+                              task.logs[task.logs.length - 1].output,
+                              180,
+                            )}
+                          </p>
+                        </div>
+                      )}
+                    </Link>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+
+        <DeleteConfirmDialog
+          target={deleteTarget}
+          title={t("tasks.deleteTitle")}
+          description={t("tasks.deleteDescription", {
+            id: deleteTarget?.id ?? 0,
           })}
-        </div>
-      )}
-
-      <DeleteConfirmDialog
-        target={deleteTarget}
-        title={t("tasks.deleteTitle")}
-        description={t("tasks.deleteDescription", {
-          id: deleteTarget?.id ?? 0,
-        })}
-        onCancel={() => setDeleteTarget(null)}
-        onConfirm={handleDelete}
-      />
-    </main>
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={handleDelete}
+        />
+      </div>
+    </div>
   );
 }

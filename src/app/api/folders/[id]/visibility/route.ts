@@ -12,7 +12,7 @@ export const POST = withAuth<Params>(
     const body = await request.json();
     const { visibility } = body;
 
-    if (!["personal", "group", "public"].includes(visibility)) {
+    if (!["personal", "group", "public", "inherit"].includes(visibility)) {
       const res = errorResponse("VALIDATION_ERROR", "invalid visibility", 400);
       return NextResponse.json(res.body, { status: res.status });
     }
@@ -20,6 +20,15 @@ export const POST = withAuth<Params>(
     const folder = await loadFolder(Number(id));
     if (!folder) {
       const res = errorResponse("NOT_FOUND", "폴더를 찾을 수 없습니다", 404);
+      return NextResponse.json(res.body, { status: res.status });
+    }
+
+    if (visibility === "inherit" && folder.parent_id === null) {
+      const res = errorResponse(
+        "VALIDATION_ERROR",
+        "최상위 폴더는 '폴더따름'을 사용할 수 없습니다",
+        400,
+      );
       return NextResponse.json(res.body, { status: res.status });
     }
 

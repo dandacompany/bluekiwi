@@ -7,7 +7,13 @@ import {
   okResponse,
 } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
-import { canDelete, canEdit, canRead } from "@/lib/authorization";
+import {
+  canDelete,
+  canEdit,
+  canEditFolder,
+  canRead,
+  loadFolder,
+} from "@/lib/authorization";
 import { loadResourceOrFail, withResource } from "@/lib/api-helpers";
 
 type Params = { params: Promise<{ id: string }> };
@@ -227,6 +233,62 @@ export const PUT = withAuth<Params>(
     });
 
     const res = okResponse(updated);
+    return NextResponse.json(res.body, { status: res.status });
+  },
+);
+
+/** PATCH — lightweight field updates (e.g. folder_id move) */
+export const PATCH = withAuth<Params>(
+  "workflows:update",
+  async (request: NextRequest, user, { params }: Params) => {
+    const { id } = await params;
+    const body = await request.json();
+    const workflowId = Number(id);
+
+    const { response: errResp } = await loadResourceOrFail<Workflow>({
+      table: "workflows",
+      id: workflowId,
+      user,
+      check: canEdit,
+      notFoundMessage: "워크플로를 찾을 수 없습니다",
+      forbiddenMessage: "편집 권한 없음",
+    });
+    if (errResp) return errResp;
+
+    if ("folder_id" in body) {
+      const folderId = body.folder_id === null ? null : Number(body.folder_id);
+      if (folderId !== null) {
+        const targetFolder = await loadFolder(folderId);
+        if (!targetFolder) {
+          return NextResponse.json(
+            {
+              error: {
+                code: "NOT_FOUND",
+                message: "대상 폴더를 찾을 수 없습니다",
+              },
+            },
+            { status: 404 },
+          );
+        }
+        if (!(await canEditFolder(user, targetFolder))) {
+          return NextResponse.json(
+            {
+              error: {
+                code: "FORBIDDEN",
+                message: "대상 폴더에 대한 편집 권한이 없습니다",
+              },
+            },
+            { status: 403 },
+          );
+        }
+      }
+      await execute(
+        "UPDATE workflows SET folder_id = $1, updated_at = NOW() WHERE id = $2",
+        [folderId, workflowId],
+      );
+    }
+
+    const res = okResponse({ id: workflowId, updated: true });
     return NextResponse.json(res.body, { status: res.status });
   },
 );

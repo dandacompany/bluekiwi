@@ -17,14 +17,25 @@ import {
 export const GET = withAuth("workflows:read", async (request, user) => {
   const parentId = new URL(request.url).searchParams.get("parent_id");
   const filter = await buildFolderVisibilityFilter("f", user, 1);
-  let sql = `SELECT f.* FROM folders f WHERE ${filter.sql}`;
-  const params = [...filter.params];
+  // Personal system folders (e.g. "My Workspace") are always owner-only,
+  // even for admin/superuser — each user sees only their own.
+  const ownParam = filter.params.length + 1;
+  let sql = `SELECT f.*,
+      (f.owner_id = $${ownParam}) AS is_mine,
+      u.username AS owner_name
+    FROM folders f
+    JOIN users u ON u.id = f.owner_id
+    WHERE ${filter.sql}
+    AND NOT (f.is_system = true AND f.visibility = 'personal' AND f.owner_id != $${ownParam})`;
+  const params = [...filter.params, user.id];
   if (parentId !== null) {
     params.push(parentId === "null" ? null : Number(parentId));
     sql += ` AND f.parent_id ${parentId === "null" ? "IS NULL" : `= $${params.length}`}`;
   }
   sql += " ORDER BY f.name ASC";
-  const folders = await query<Folder>(sql, params);
+  const folders = await query<
+    Folder & { is_mine: boolean; owner_name: string }
+  >(sql, params);
   const res = listResponse(folders, folders.length);
   return NextResponse.json(res.body, { status: res.status });
 });
@@ -42,8 +53,17 @@ export const POST = withAuth("workflows:create", async (request, user) => {
     const res = errorResponse("VALIDATION_ERROR", "name is required", 400);
     return NextResponse.json(res.body, { status: res.status });
   }
-  if (!["personal", "group", "public"].includes(visibility)) {
+  if (!["personal", "group", "public", "inherit"].includes(visibility)) {
     const res = errorResponse("VALIDATION_ERROR", "invalid visibility", 400);
+    return NextResponse.json(res.body, { status: res.status });
+  }
+
+  if (visibility === "inherit" && parent_id === null) {
+    const res = errorResponse(
+      "VALIDATION_ERROR",
+      "최상위 폴더는 '폴더따름'을 사용할 수 없습니다",
+      400,
+    );
     return NextResponse.json(res.body, { status: res.status });
   }
 
@@ -72,11 +92,12 @@ export const POST = withAuth("workflows:create", async (request, user) => {
       );
       return NextResponse.json(res.body, { status: res.status });
     }
-    // Enforce child visibility <= parent visibility
+    // Enforce child visibility <= parent visibility (skip for 'inherit')
     const rank = { personal: 0, group: 1, public: 2 } as const;
     if (
+      visibility !== "inherit" &&
       rank[visibility as "personal" | "group" | "public"] >
-      rank[parent.visibility]
+        rank[parent.visibility as "personal" | "group" | "public"]
     ) {
       const res = errorResponse(
         "FOLDER_VISIBILITY_INVALID",

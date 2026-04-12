@@ -160,11 +160,12 @@ export async function POST(request: NextRequest, { params }: Params) {
         next_action: "loop_back",
         loop_back_to: executedNode.loop_back_to,
       }),
-    ...(!loop_continue && requiresApproval && {
-      next_action: "wait_for_human_approval",
-      agent_instruction:
-        "이 단계는 수동 승인이 필요합니다. request_approval 도구를 호출하여 승인 요청을 알린 후, 사람이 승인할 때까지 advance를 호출하지 마세요.",
-    }),
+    ...(!loop_continue &&
+      requiresApproval && {
+        next_action: "wait_for_human_approval",
+        agent_instruction:
+          "이 단계는 수동 승인이 필요합니다. request_approval 도구를 호출하여 승인 요청을 알린 후, 사람이 승인할 때까지 advance를 호출하지 마세요.",
+      }),
   });
   return NextResponse.json(res.body, { status: res.status });
 }

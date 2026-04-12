@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
+import { Copy } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -92,12 +94,21 @@ export default function InvitePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm">{t("invite.success.installHint")}</p>
-            <pre className="rounded-xl bg-[var(--muted)] p-3 text-xs">
-              {command}
-            </pre>
-            <Button onClick={() => navigator.clipboard.writeText(command)}>
-              {t("common.copy")}
-            </Button>
+            <div className="flex w-full overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--muted)]">
+              <input
+                readOnly
+                value={command}
+                className="min-w-0 flex-1 bg-transparent px-3 py-2 text-xs text-[var(--foreground)] outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => navigator.clipboard.writeText(command)}
+                className="flex shrink-0 items-center gap-1.5 border-l border-[var(--border)] px-3 py-2 text-xs text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                {t("common.copy")}
+              </button>
+            </div>
             <Button variant="outline" onClick={() => router.push("/login")}>
               {t("invite.success.goLogin")}
             </Button>

@@ -50,11 +50,10 @@ export async function POST(req: NextRequest) {
 
   const userId = rows[0].id;
 
-  // Create default folders for the superuser
+  // Create default folder for the superuser
   await execute(
     `INSERT INTO folders (name, description, owner_id, visibility, is_system)
-     VALUES ('My Workspace', 'Your personal workspace.', $1, 'personal', true),
-            ('Public Library', 'Shared library of public instructions and workflows.', $1, 'public', true)`,
+     VALUES ('My Workspace', 'Your personal workspace.', $1, 'personal', true)`,
     [userId],
   );
 

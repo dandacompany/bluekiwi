@@ -79,7 +79,7 @@ export interface Instruction {
   is_active: number;
   owner_id: number;
   folder_id: number;
-  visibility_override: "personal" | null;
+  visibility_override: Visibility | null;
   created_at: string;
   updated_at: string;
 }
@@ -95,9 +95,16 @@ export interface Workflow {
   evaluation_contract: string | null;
   owner_id: number;
   folder_id: number;
-  visibility_override: "personal" | null;
+  visibility_override: Visibility | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface WorkflowShare {
+  workflow_id: number;
+  group_id: number;
+  access_level: FolderShareLevel;
+  created_at: string;
 }
 
 export interface EvaluationContract {
@@ -259,8 +266,8 @@ export interface Credential {
   updated_at: string;
 }
 
-export type Visibility = "personal" | "group" | "public";
-export type FolderShareLevel = "viewer" | "editor";
+export type Visibility = "personal" | "group" | "public" | "inherit";
+export type FolderShareLevel = "reader" | "contributor";
 export type CredentialShareLevel = "use" | "manage";
 
 export interface Folder {

@@ -22,6 +22,7 @@ export const GET = withAuth(
     const url = new URL(request.url);
     const includeInactive = url.searchParams.get("include_inactive") === "true";
     const folderId = url.searchParams.get("folder_id");
+    const q = url.searchParams.get("q");
 
     const filter = await buildResourceVisibilityFilter("w", user, 1);
 
@@ -30,7 +31,20 @@ export const GET = withAuth(
     if (!includeInactive) clauses.push("w.is_active = TRUE");
     if (folderId) {
       params.push(Number(folderId));
-      clauses.push(`w.folder_id = $${params.length}`);
+      clauses.push(
+        `w.folder_id IN (
+          WITH RECURSIVE ftree AS (
+            SELECT id FROM folders WHERE id = $${params.length}
+            UNION ALL
+            SELECT f.id FROM folders f JOIN ftree ON f.parent_id = ftree.id
+          )
+          SELECT id FROM ftree
+        )`,
+      );
+    }
+    if (q) {
+      params.push(`%${q}%`);
+      clauses.push(`w.title ILIKE $${params.length}`);
     }
 
     const sql = `SELECT w.* FROM workflows w WHERE ${clauses.join(" AND ")} ORDER BY w.updated_at DESC`;
@@ -127,7 +141,7 @@ export const POST = withAuth(
       // inside a single INSERT (the column is NOT NULL so a two-step
       // INSERT-then-UPDATE isn't possible).
       const idRow = await client.query(
-        "SELECT nextval('workflows_id_seq') AS id",
+        "SELECT nextval(pg_get_serial_sequence('workflows', 'id')) AS id",
       );
       const workflowId = Number(idRow.rows[0].id);
       const inserted = await client.query(

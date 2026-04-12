@@ -122,12 +122,12 @@ export const PERMISSIONS = {
   "workflows:read": "viewer" as Role,
   "workflows:create": "editor" as Role,
   "workflows:update": "editor" as Role,
-  "workflows:delete": "admin" as Role,
+  "workflows:delete": "editor" as Role,
 
   // Tasks
   "tasks:read": "viewer" as Role,
   "tasks:create": "editor" as Role,
-  "tasks:execute": "editor" as Role,
+  "tasks:execute": "viewer" as Role,
 
   // Credentials
   "credentials:read": "viewer" as Role,

@@ -73,7 +73,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-5xl px-4 py-10">
+      <main className="mx-auto max-w-5xl px-4 py-6">
         <Card>
           <CardContent className="py-10 text-center text-sm text-[var(--muted-foreground)]">
             {t("common.loading")}
@@ -91,7 +91,7 @@ export default function Home() {
   };
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-10">
+    <main className="mx-auto max-w-5xl px-4 py-6">
       <section className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight">
           {t("dashboard.title")}

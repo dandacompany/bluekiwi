@@ -10,10 +10,13 @@ export const POST = withAuth<Params>(
   async (request, user, { params }) => {
     const { id } = await params;
     const { override } = await request.json();
-    if (override !== null && override !== "personal") {
+    if (
+      override !== null &&
+      !["personal", "group", "public"].includes(override)
+    ) {
       const res = errorResponse(
         "VALIDATION_ERROR",
-        "override must be 'personal' or null",
+        "override must be 'personal', 'group', 'public', or null",
         400,
       );
       return NextResponse.json(res.body, { status: res.status });
