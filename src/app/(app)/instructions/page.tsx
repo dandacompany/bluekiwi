@@ -88,19 +88,6 @@ function buildInstructionPreviewMarkdown(content: string) {
   return lines.length > 4 ? `${preview}\n\n...` : preview;
 }
 
-function formatInstructionDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
 const markdownPreviewClass =
   "prose prose-sm max-w-none text-[var(--muted-foreground)] prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-headings:my-1 prose-headings:text-sm prose-headings:font-semibold prose-strong:text-[var(--foreground)] prose-code:rounded prose-code:bg-brand-surface-soft prose-code:px-1 prose-code:py-0.5 prose-code:text-[0.85em] prose-pre:rounded-2xl prose-pre:border prose-pre:border-border prose-pre:bg-brand-surface-soft prose-pre:text-[var(--foreground)]";
 

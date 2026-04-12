@@ -26,8 +26,6 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTranslation } from "@/lib/i18n/context";
 
-type Visibility = "personal" | "group" | "public" | "inherit";
-
 export interface FolderItem {
   id: number;
   name: string;
@@ -242,7 +240,7 @@ export function FolderTree({
         toast.error(json?.error?.message ?? t("folders.createFailed"));
       }
     },
-    [fetchFolders],
+    [fetchFolders, t],
   );
 
   const handleRename = useCallback(
@@ -260,7 +258,7 @@ export function FolderTree({
         toast.error(json?.error?.message ?? t("folders.renameFailed"));
       }
     },
-    [fetchFolders],
+    [fetchFolders, t],
   );
 
   const handleDelete = useCallback(
@@ -274,7 +272,7 @@ export function FolderTree({
         toast.error(json?.error?.message ?? t("folders.deleteFailed"));
       }
     },
-    [fetchFolders, selectedId, onSelect],
+    [fetchFolders, selectedId, onSelect, t],
   );
 
   // ── 루트 폴더: My Workspace 먼저, 내 폴더 → 공유 폴더 알파벳순

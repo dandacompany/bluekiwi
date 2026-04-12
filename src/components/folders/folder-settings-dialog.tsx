@@ -89,7 +89,7 @@ export function FolderSettingsDialog({
 
   useEffect(() => {
     if (open && folder) {
-      setVisibility(folder.visibility);
+      setVisibility(folder.visibility); // eslint-disable-line react-hooks/set-state-in-effect -- sync reset on dialog open
       setAddGroupId("");
       loadShares();
       loadGroups();

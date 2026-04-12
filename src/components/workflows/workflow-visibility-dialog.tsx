@@ -96,7 +96,7 @@ export function WorkflowVisibilityDialog({
 
   useEffect(() => {
     if (open && workflowId) {
-      setPendingOverride(currentOverride);
+      setPendingOverride(currentOverride); // eslint-disable-line react-hooks/set-state-in-effect -- sync reset on dialog open
       setAddGroupId("");
       loadShares();
       loadGroups();

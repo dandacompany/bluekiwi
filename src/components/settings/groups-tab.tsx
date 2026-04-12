@@ -65,12 +65,13 @@ export function GroupsTab() {
   }, []);
 
   useEffect(() => {
-    loadGroups();
+    loadGroups(); // eslint-disable-line react-hooks/set-state-in-effect -- async fetch sets state in callback
     loadUsers();
   }, [loadGroups, loadUsers]);
 
   useEffect(() => {
-    if (selected) loadMembers(selected.id);
+    if (selected)
+      loadMembers(selected.id); // eslint-disable-line react-hooks/set-state-in-effect -- async fetch
     else setMembers([]);
   }, [selected, loadMembers]);
 

@@ -195,11 +195,6 @@ export default function WorkflowsPage() {
     selectedFolder !== null
       ? (folderList.find((f) => f.id === selectedFolder) ?? null)
       : null;
-  const selectedFolderName = selectedFolderItem
-    ? selectedFolderItem.is_system
-      ? t("folders.myWorkspace")
-      : selectedFolderItem.name
-    : null;
 
   // Build full ancestor path for the breadcrumb (root → ... → selected)
   const selectedFolderPath = useMemo<FolderItem[]>(() => {
@@ -245,7 +240,7 @@ export default function WorkflowsPage() {
       headerInputRef.current?.focus();
       headerInputRef.current?.select();
     }, 0);
-  }, [selectedFolderName]);
+  }, [selectedFolderItem]);
 
   const confirmHeaderRename = useCallback(async () => {
     if (!selectedFolder || !headerRenameValue.trim()) {
@@ -264,7 +259,7 @@ export default function WorkflowsPage() {
       const json = await res.json().catch(() => ({}));
       toast.error(json?.error?.message ?? t("folders.renameFailed"));
     }
-  }, [selectedFolder, headerRenameValue]);
+  }, [selectedFolder, headerRenameValue, t]);
 
   const handleWorkflowDrop = useCallback(
     async (workflowId: number, folderId: number) => {
@@ -278,7 +273,7 @@ export default function WorkflowsPage() {
         fetchWorkflows();
       }
     },
-    [fetchWorkflows],
+    [fetchWorkflows, t],
   );
 
   const handleDuplicate = async (wf: WorkflowItem) => {
