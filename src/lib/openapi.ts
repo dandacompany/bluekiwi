@@ -9,8 +9,11 @@ export const openApiSpec = {
   tags: [
     { name: "Instructions", description: "에이전트 지침 CRUD" },
     { name: "Workflows", description: "워크플로 관리" },
+    { name: "Workflow Nodes", description: "워크플로 노드 개별 CRUD" },
     { name: "Tasks", description: "태스크 실행 및 모니터링" },
+    { name: "Task Execution", description: "MCP 기반 태스크 실행 제어" },
     { name: "Credentials", description: "API 시크릿/인증정보 관리" },
+    { name: "Folders", description: "폴더 및 공유 관리" },
   ],
   paths: {
     "/api/instructions": {
@@ -851,6 +854,421 @@ export const openApiSpec = {
         },
       },
     },
+    // ─── Workflow Nodes (individual CRUD) ───
+    "/api/workflows/{id}/nodes": {
+      post: {
+        tags: ["Workflow Nodes"],
+        summary: "노드 추가 (끝 또는 중간 삽입)",
+        description:
+          "after 쿼리 파라미터 없으면 끝에 추가, after=N이면 step N 뒤에 삽입. loop 노드는 loop_back_to 설정 가능.",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+          {
+            name: "after",
+            in: "query",
+            schema: { type: "integer" },
+            description: "이 step_order 뒤에 삽입 (생략 시 끝에 추가)",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/NodeCreate" },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "생성된 노드",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: { $ref: "#/components/schemas/WorkflowNode" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/api/workflows/{id}/nodes/{nodeId}": {
+      patch: {
+        tags: ["Workflow Nodes"],
+        summary: "노드 부분 수정",
+        description:
+          "변경할 필드만 전송. inline instruction은 instruction 필드로 직접 수정 가능.",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+            description: "워크플로 ID",
+          },
+          {
+            name: "nodeId",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+            description: "노드 ID",
+          },
+        ],
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/NodeUpdate" },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "수정된 노드",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: { $ref: "#/components/schemas/WorkflowNode" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      delete: {
+        tags: ["Workflow Nodes"],
+        summary: "노드 삭제",
+        description: "노드 삭제 후 후속 노드의 step_order를 자동 재정렬.",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+          {
+            name: "nodeId",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "삭제 완료",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "object",
+                      properties: {
+                        id: { type: "integer" },
+                        deleted: { type: "boolean" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    // ─── Task Execution (MCP-driven) ───
+    "/api/tasks/{id}/execute": {
+      post: {
+        tags: ["Task Execution"],
+        summary: "단계 실행 결과 제출 (execute_step)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ExecuteStep" },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description:
+              "실행 결과. next_action이 있으면 후속 조치 필요 (wait_for_human_approval 또는 loop_back)",
+          },
+        },
+      },
+    },
+    "/api/tasks/{id}/advance": {
+      post: {
+        tags: ["Task Execution"],
+        summary: "다음 단계로 진행 또는 현재 단계 조회 (peek)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  peek: {
+                    type: "boolean",
+                    description: "true이면 진행하지 않고 현재 단계 정보만 반환",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "다음 단계 정보 또는 현재 단계 조회 결과",
+          },
+          "403": {
+            description: "HITL 단계 승인 필요",
+          },
+          "412": {
+            description: "현재 단계 미완료",
+          },
+        },
+      },
+    },
+    "/api/tasks/{id}/request-approval": {
+      post: {
+        tags: ["Task Execution"],
+        summary: "HITL 승인 요청",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: { "200": { description: "승인 요청 완료" } },
+      },
+    },
+    "/api/tasks/{id}/approve": {
+      post: {
+        tags: ["Task Execution"],
+        summary: "HITL 단계 승인",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: { "200": { description: "승인 완료" } },
+      },
+    },
+    "/api/tasks/{id}/rewind": {
+      post: {
+        tags: ["Task Execution"],
+        summary: "이전 단계로 되감기",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["to_step"],
+                properties: { to_step: { type: "integer" } },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "되감기 완료" } },
+      },
+    },
+    "/api/tasks/{id}/complete": {
+      post: {
+        tags: ["Task Execution"],
+        summary: "태스크 완료/실패 처리",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["status"],
+                properties: {
+                  status: {
+                    type: "string",
+                    enum: ["completed", "failed"],
+                  },
+                  summary: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "완료 처리됨" } },
+      },
+    },
+    "/api/tasks/{id}/respond": {
+      get: {
+        tags: ["Task Execution"],
+        summary: "Visual Selection 응답 폴링",
+        description: "에이전트가 사용자의 Visual Selection 응답을 폴링합니다.",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "web_response가 null이면 아직 응답 없음",
+          },
+        },
+      },
+      post: {
+        tags: ["Task Execution"],
+        summary: "Visual Selection 응답 제출",
+        description: "웹 UI에서 사용자가 선택한 값을 제출합니다.",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["node_id", "response"],
+                properties: {
+                  node_id: { type: "integer" },
+                  response: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "응답 저장 완료" } },
+      },
+    },
+    "/api/tasks/{id}/visual": {
+      post: {
+        tags: ["Task Execution"],
+        summary: "Visual HTML 제출 (set_visual_html)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["node_id", "html"],
+                properties: {
+                  node_id: { type: "integer" },
+                  html: {
+                    type: "string",
+                    description: "Visual Selection UI HTML",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "Visual HTML 저장 완료" } },
+      },
+    },
+    // ─── Folders ───
+    "/api/folders": {
+      get: {
+        tags: ["Folders"],
+        summary: "폴더 목록 조회",
+        parameters: [
+          {
+            name: "parent_id",
+            in: "query",
+            schema: { type: "integer" },
+            description: "상위 폴더 ID로 필터링",
+          },
+        ],
+        responses: { "200": { description: "폴더 목록" } },
+      },
+      post: {
+        tags: ["Folders"],
+        summary: "폴더 생성",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["name"],
+                properties: {
+                  name: { type: "string" },
+                  description: { type: "string" },
+                  parent_id: { type: "integer" },
+                  visibility: {
+                    type: "string",
+                    enum: ["personal", "group", "public", "inherit"],
+                    default: "personal",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: { "201": { description: "생성된 폴더" } },
+      },
+    },
   },
   components: {
     schemas: {
@@ -948,11 +1366,91 @@ export const openApiSpec = {
           workflow_id: { type: "integer" },
           step_order: { type: "integer", example: 1 },
           title: { type: "string", example: "PR 목록 수집" },
-          instruction: {
-            type: "string",
-            example: "현재 레포의 열린 PR 목록을 수집하세요.",
+          instruction: { type: "string" },
+          instruction_id: {
+            type: "integer",
+            nullable: true,
+            description: "참조하는 instruction template ID (null이면 inline)",
           },
+          node_type: {
+            type: "string",
+            enum: ["action", "gate", "loop"],
+            example: "action",
+          },
+          hitl: {
+            type: "boolean",
+            default: false,
+            description: "action 노드에서 사람 승인 필요 여부",
+          },
+          visual_selection: {
+            type: "boolean",
+            default: false,
+            description: "gate 노드에서 HTML 클릭 선택 UI 사용 여부",
+          },
+          loop_back_to: {
+            type: "integer",
+            nullable: true,
+            description: "loop 노드의 반복 대상 step_order",
+          },
+          auto_advance: {
+            type: "integer",
+            enum: [0, 1],
+            description: "1=자동 진행 (action), 0=수동 (gate/loop)",
+          },
+          credential_id: { type: "integer", nullable: true },
           created_at: { type: "string", format: "date-time" },
+        },
+      },
+      NodeCreate: {
+        type: "object",
+        required: ["title", "node_type"],
+        properties: {
+          title: { type: "string" },
+          instruction: { type: "string" },
+          node_type: {
+            type: "string",
+            enum: ["action", "gate", "loop"],
+          },
+          hitl: { type: "boolean" },
+          visual_selection: { type: "boolean" },
+          loop_back_to: { type: "integer" },
+          credential_id: { type: "integer" },
+          instruction_id: { type: "integer" },
+        },
+      },
+      NodeUpdate: {
+        type: "object",
+        description:
+          "변경할 필드만 전송. inline instruction은 instruction 필드로 직접 수정.",
+        properties: {
+          title: { type: "string" },
+          instruction: { type: "string" },
+          node_type: { type: "string", enum: ["action", "gate", "loop"] },
+          hitl: { type: "boolean" },
+          visual_selection: { type: "boolean" },
+          loop_back_to: { type: "integer" },
+          credential_id: { type: "integer" },
+          instruction_id: { type: "integer" },
+        },
+      },
+      ExecuteStep: {
+        type: "object",
+        required: ["node_id", "output", "status"],
+        properties: {
+          node_id: { type: "integer" },
+          output: { type: "string" },
+          status: { type: "string", enum: ["completed", "success", "failed"] },
+          visual_html: { type: "string" },
+          loop_continue: {
+            type: "boolean",
+            description: "true면 loop 반복, false면 loop 종료",
+          },
+          context_snapshot: { type: "object" },
+          structured_output: { type: "object" },
+          artifacts: { type: "array" },
+          session_id: { type: "string" },
+          user_name: { type: "string" },
+          model_id: { type: "string" },
         },
       },
       WorkflowWithNodes: {
