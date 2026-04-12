@@ -1,6 +1,6 @@
 ---
 name: bk-approve
-description: BlueKiwi approval skill. Handles pending approvals when resuming a session that was interrupted mid-HITL, or when the user explicitly wants to approve a paused step. During normal execution, HITL approval is handled inline by bk-start/bk-next. Use this skill when the user says "/bk-approve", "approve this", "approve step", or returns to a session where a HITL step is already waiting.
+description: BlueKiwi approval skill. Handles pending approvals when resuming a session that was interrupted mid-HITL, or when the user explicitly wants to approve a paused step. During normal execution, HITL approval is handled inline by bk-start. Use this skill when the user says "/bk-approve", "approve this", "approve step", or returns to a session where a HITL step is already waiting.
 user_invocable: true
 ---
 
@@ -40,7 +40,7 @@ Check `log_status` and `node_type` to determine scenario:
    - header: "Gate decision"
    - options: ["Approve (Recommended)", "Approve with edits", "Reject and revise", "Rewind to previous step"]
 4. Call `execute_step` with the decision as `output`, status `"success"`.
-5. Call `advance` to move to the next step and follow the auto-advance loop (see `/bk-next`).
+5. Call `advance` to move to the next step and follow the auto-advance loop (see bk-start auto-advance loop).
 
 ### Step 2b: HITL Step
 
@@ -61,12 +61,12 @@ Check `log_status` and `node_type` to determine scenario:
 3. **If Approved**:
    - Call `approve_step(task_id=<id>)` MCP tool.
    - Call `advance` to move to the next step.
-   - Follow the auto-advance loop (see `/bk-next`).
+   - Follow the auto-advance loop (see bk-start auto-advance loop).
 
 4. **If Rejected**:
    - Ask the user for the reason.
    - Call `rewind` to return to this step so the agent can redo it.
-   - Tell the user: "Rewound to step {N}. Type `/bk-next` to retry."
+   - Tell the user: "Rewound to step {N}. Type `/bk-start` to retry."
 
 5. **If Rewind to earlier step**:
    - Switch to `/bk-rewind` flow.

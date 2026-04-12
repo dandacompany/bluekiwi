@@ -18,10 +18,15 @@ export async function POST(request: NextRequest, { params }: Params) {
     structured_output,
     artifacts,
     session_id,
+    provider_slug,
     agent_id,
     user_name,
+    model_slug,
     model_id,
   } = body;
+
+  const resolvedProvider = provider_slug ?? agent_id ?? null;
+  const resolvedModel = model_slug ?? model_id ?? null;
 
   if (!node_id || !output || !status) {
     const res = errorResponse(
@@ -54,9 +59,9 @@ export async function POST(request: NextRequest, { params }: Params) {
          context_snapshot = COALESCE($4, context_snapshot),
          structured_output = COALESCE($5::jsonb, structured_output),
          session_id = COALESCE($6, session_id),
-         agent_id = COALESCE($7, agent_id),
+         provider_slug = COALESCE($7, provider_slug),
          user_name = COALESCE($8, user_name),
-         model_id = COALESCE($9, model_id)
+         model_slug = COALESCE($9, model_slug)
      WHERE id = $10`,
     [
       output,
@@ -65,12 +70,25 @@ export async function POST(request: NextRequest, { params }: Params) {
       context_snapshot ?? null,
       structured_output ? JSON.stringify(structured_output) : null,
       session_id ?? null,
-      agent_id ?? null,
+      resolvedProvider,
       user_name ?? null,
-      model_id ?? null,
+      resolvedModel,
       log.id,
     ],
   );
+
+  if (resolvedProvider) {
+    await execute(
+      "INSERT INTO agent_registry (kind, slug, display_name) VALUES ('provider', $1, $1) ON CONFLICT (kind, slug) DO NOTHING",
+      [resolvedProvider],
+    );
+  }
+  if (resolvedModel) {
+    await execute(
+      "INSERT INTO agent_registry (kind, slug, display_name) VALUES ('model', $1, $1) ON CONFLICT (kind, slug) DO NOTHING",
+      [resolvedModel],
+    );
+  }
 
   // Merge context_snapshot into running_context
   if (context_snapshot) {

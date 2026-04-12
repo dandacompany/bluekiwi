@@ -9,7 +9,6 @@ const SKILLS_ROOT = join(here, "skills");
 
 export const BUNDLED_SKILLS: SkillBundle[] = [
   "bk-start",
-  "bk-next",
   "bk-status",
   "bk-rewind",
   "bk-approve",

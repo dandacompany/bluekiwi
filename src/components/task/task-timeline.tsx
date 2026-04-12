@@ -22,6 +22,8 @@ export interface TimelineStep {
 interface TaskTimelineProps {
   taskTitle: string;
   taskStatus: string;
+  provider?: string | null;
+  model?: string | null;
   steps: TimelineStep[];
   currentStep: number;
   totalSteps: number;
@@ -51,6 +53,8 @@ function nodeTypeLabel(nodeType: string, translate: (key: string) => string) {
 export function TaskTimeline({
   taskTitle,
   taskStatus,
+  provider,
+  model,
   steps,
   currentStep,
   totalSteps,
@@ -77,6 +81,20 @@ export function TaskTimeline({
             {completedCount} / {totalSteps}
           </span>
         </div>
+        {(provider || model) && (
+          <div className="mt-2 flex items-center gap-2 text-xs text-[var(--muted-foreground)]">
+            {provider && (
+              <span className="rounded bg-[var(--card)] px-1.5 py-0.5 font-mono text-[10px]">
+                {provider}
+              </span>
+            )}
+            {model && (
+              <span className="rounded bg-[var(--card)] px-1.5 py-0.5 font-mono text-[10px]">
+                {model}
+              </span>
+            )}
+          </div>
+        )}
         <Progress value={progressPct} className="mt-3 h-1.5" />
       </div>
 

@@ -37,9 +37,9 @@ interface TaskLog {
   node_type: string;
   credential_service: string | null;
   session_id: string | null;
-  agent_id: string | null;
+  provider_slug: string | null;
   user_name: string | null;
-  model_id: string | null;
+  model_slug: string | null;
   started_at: string;
   completed_at: string | null;
 }
@@ -53,8 +53,11 @@ interface TaskDetail {
   current_step: number;
   context: string;
   session_meta: string;
+  provider_slug: string | null;
+  model_slug: string | null;
   summary: string;
   logs: TaskLog[];
+  registry: Record<string, string>;
   created_at: string;
   updated_at: string;
 }
@@ -278,9 +281,9 @@ export default function TaskDetailPage() {
         visual_html: l.visual_html,
         visual_selection: l.visual_selection ?? null,
         web_response: l.web_response,
-        model_id: l.model_id,
+        provider_slug: l.provider_slug,
+        model_slug: l.model_slug,
         user_name: l.user_name,
-        agent_id: l.agent_id,
         credential_service: l.credential_service,
         started_at: l.started_at,
         completed_at: l.completed_at,
@@ -334,12 +337,21 @@ export default function TaskDetailPage() {
   const taskTitle =
     task.workflow_title ?? t("tasks.taskFallback", { id: task.id });
 
+  const taskProvider = task.provider_slug
+    ? (task.registry?.[task.provider_slug] ?? task.provider_slug)
+    : null;
+  const taskModel = task.model_slug
+    ? (task.registry?.[task.model_slug] ?? task.model_slug)
+    : null;
+
   return (
     <div className="grid h-[calc(100vh-3rem)] grid-cols-[320px_minmax(0,1fr)]">
       {/* Left: Timeline */}
       <TaskTimeline
         taskTitle={taskTitle}
         taskStatus={task.status}
+        provider={taskProvider}
+        model={taskModel}
         steps={timelineSteps}
         currentStep={task.current_step}
         totalSteps={totalSteps}
@@ -353,6 +365,7 @@ export default function TaskDetailPage() {
         logs={selectedLogs}
         taskId={task.id}
         taskStatus={task.status}
+        registry={task.registry ?? {}}
         comments={comments.filter(
           (c) => c.step_order === (selectedStep ?? task.current_step),
         )}

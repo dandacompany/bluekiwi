@@ -5,23 +5,50 @@ import {
   execute,
   Task,
   TaskLog,
+  Workflow,
   okResponse,
   errorResponse,
 } from "@/lib/db";
-import { withOptionalAuth } from "@/lib/with-auth";
+import { withAuth } from "@/lib/with-auth";
+import { canRead, canExecute, canEdit } from "@/lib/authorization";
+import type { OwnedResource } from "@/lib/authorization";
 
 type Params = { params: Promise<{ id: string }> };
 
-export const GET = withOptionalAuth<Params>(
-  "tasks:read",
-  async (_request, _user, { params }: Params) => {
-    const { id } = await params;
+/** Load a task and its parent workflow, returning both or an error response */
+async function loadTaskWithWorkflow(id: string) {
+  const task = await queryOne<Task>("SELECT * FROM tasks WHERE id = $1", [
+    Number(id),
+  ]);
+  if (!task) return { error: "NOT_FOUND" as const, task: null, workflow: null };
 
-    const task = await queryOne<Task>("SELECT * FROM tasks WHERE id = $1", [
-      Number(id),
-    ]);
-    if (!task) {
+  const workflow = await queryOne<Workflow>(
+    "SELECT * FROM workflows WHERE id = $1",
+    [task.workflow_id],
+  );
+  if (!workflow)
+    return { error: "NOT_FOUND" as const, task: null, workflow: null };
+
+  return { error: null, task, workflow };
+}
+
+export const GET = withAuth<Params>(
+  "tasks:read",
+  async (_request, user, { params }) => {
+    const { id } = await params;
+    const { error, task, workflow } = await loadTaskWithWorkflow(id);
+
+    if (error || !task || !workflow) {
       const res = errorResponse("NOT_FOUND", "태스크를 찾을 수 없습니다", 404);
+      return NextResponse.json(res.body, { status: res.status });
+    }
+
+    if (!(await canRead(user, workflow as OwnedResource))) {
+      const res = errorResponse(
+        "FORBIDDEN",
+        "태스크 조회 권한이 없습니다",
+        403,
+      );
       return NextResponse.json(res.body, { status: res.status });
     }
 
@@ -35,7 +62,7 @@ export const GET = withOptionalAuth<Params>(
       [task.id],
     );
 
-    const workflow = await queryOne<{ title: string; node_count: number }>(
+    const wfInfo = await queryOne<{ title: string; node_count: number }>(
       `SELECT w.title, COUNT(wn.id)::int AS node_count
        FROM workflows w
        LEFT JOIN workflow_nodes wn ON wn.workflow_id = w.id
@@ -44,34 +71,66 @@ export const GET = withOptionalAuth<Params>(
       [task.workflow_id],
     );
 
+    // Collect all slugs used in this task
+    const slugs = new Set<string>();
+    if (task.provider_slug) slugs.add(task.provider_slug);
+    if (task.model_slug) slugs.add(task.model_slug);
+    for (const log of logs) {
+      if (log.provider_slug) slugs.add(log.provider_slug);
+      if (log.model_slug) slugs.add(log.model_slug);
+    }
+
+    // Fetch display names from registry
+    const registry: Record<string, string> = {};
+    if (slugs.size > 0) {
+      const slugArr = [...slugs];
+      const placeholders = slugArr.map((_, i) => `$${i + 1}`).join(", ");
+      const rows = await query<{ slug: string; display_name: string }>(
+        `SELECT slug, display_name FROM agent_registry WHERE slug IN (${placeholders})`,
+        slugArr,
+      );
+      for (const row of rows) {
+        registry[row.slug] = row.display_name;
+      }
+    }
+
     const res = okResponse({
       ...task,
-      workflow_title: workflow?.title ?? null,
-      total_steps: workflow?.node_count ?? 0,
+      workflow_title: wfInfo?.title ?? null,
+      total_steps: wfInfo?.node_count ?? 0,
       logs,
+      registry,
     });
     return NextResponse.json(res.body, { status: res.status });
   },
 );
 
-export const PUT = withOptionalAuth<Params>(
+export const PUT = withAuth<Params>(
   "tasks:execute",
-  async (request: NextRequest, _user, { params }: Params) => {
+  async (request: NextRequest, user, { params }) => {
     const { id } = await params;
-    const body = await request.json();
-    const { status } = body;
+    const { error, task, workflow } = await loadTaskWithWorkflow(id);
 
-    const existing = await queryOne<Task>("SELECT * FROM tasks WHERE id = $1", [
-      Number(id),
-    ]);
-    if (!existing) {
+    if (error || !task || !workflow) {
       const res = errorResponse("NOT_FOUND", "태스크를 찾을 수 없습니다", 404);
       return NextResponse.json(res.body, { status: res.status });
     }
 
+    if (!(await canExecute(user, workflow as OwnedResource))) {
+      const res = errorResponse(
+        "FORBIDDEN",
+        "태스크 실행 권한이 없습니다",
+        403,
+      );
+      return NextResponse.json(res.body, { status: res.status });
+    }
+
+    const body = await request.json();
+    const { status } = body;
+
     await execute(
       "UPDATE tasks SET status = $1, updated_at = NOW() WHERE id = $2",
-      [status ?? existing.status, Number(id)],
+      [status ?? task.status, Number(id)],
     );
 
     const updated = await queryOne<Task>("SELECT * FROM tasks WHERE id = $1", [
@@ -82,16 +141,23 @@ export const PUT = withOptionalAuth<Params>(
   },
 );
 
-export const DELETE = withOptionalAuth<Params>(
+export const DELETE = withAuth<Params>(
   "tasks:execute",
-  async (_request, _user, { params }: Params) => {
+  async (_request, user, { params }) => {
     const { id } = await params;
+    const { error, task, workflow } = await loadTaskWithWorkflow(id);
 
-    const existing = await queryOne<Task>("SELECT * FROM tasks WHERE id = $1", [
-      Number(id),
-    ]);
-    if (!existing) {
+    if (error || !task || !workflow) {
       const res = errorResponse("NOT_FOUND", "태스크를 찾을 수 없습니다", 404);
+      return NextResponse.json(res.body, { status: res.status });
+    }
+
+    if (!(await canEdit(user, workflow as OwnedResource))) {
+      const res = errorResponse(
+        "FORBIDDEN",
+        "태스크 삭제 권한이 없습니다",
+        403,
+      );
       return NextResponse.json(res.body, { status: res.status });
     }
 

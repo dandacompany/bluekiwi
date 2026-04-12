@@ -630,12 +630,29 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           ),
         );
       }
-      case "start_workflow":
+      case "start_workflow": {
+        const providerSlug = server.getClientVersion()?.name ?? "unknown";
+        let modelSlug: string | null = null;
+        try {
+          const meta = JSON.parse(
+            typeof args.session_meta === "string" ? args.session_meta : "{}",
+          );
+          modelSlug = meta.model_id ?? null;
+        } catch {}
+        args.provider_slug = providerSlug;
+        args.model_slug = modelSlug;
         return wrap(await client.request("POST", "/api/tasks/start", args));
+      }
       case "execute_step": {
         const taskId = requireNumberArg(args, "task_id");
         const body = { ...args };
         delete body.task_id;
+        // Auto-inject provider from MCP handshake
+        body.provider_slug = server.getClientVersion()?.name ?? "unknown";
+        // Map model_id → model_slug for backward compat
+        if (body.model_id && !body.model_slug) {
+          body.model_slug = body.model_id;
+        }
         return wrap(
           await client.request("POST", `/api/tasks/${taskId}/execute`, body),
         );

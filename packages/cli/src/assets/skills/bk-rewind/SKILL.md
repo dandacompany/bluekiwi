@@ -59,12 +59,12 @@ Show the result:
 Going back to Step [N]/[Total]: [{node title}] [{node_type}]
 (Previous execution logs are preserved)
 ━━━━━━━━━━━━━━━━━━━━━━━━━
-Type `/bk-next` to re-execute this step.
+Type `/bk-start` to resume from this step.
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ## Rules
 
 - Always ask the user for additional requirements before rewinding.
-- If requirements are provided, save them as a comment so `/bk-next` can reference them.
+- If requirements are provided, save them as a comment so the next execution can reference them.
 - Handle all choices via AskUserQuestion.

@@ -37,15 +37,17 @@ If an in-progress task is found, ask via AskUserQuestion:
 - "Task #{id} ({workflow name}, Step {N}/{total}) is in progress. Resume or start a new workflow?"
 - options: "Resume (Recommended)" / "Start new workflow"
 
-If resuming → call `advance(task_id, peek=true)`, read `task_context`, then switch to `/bk-next` flow.
+If resuming → call `advance(task_id, peek=true)`, read `task_context`, then continue with the auto-advance loop.
 
 ## execute_step Required Parameters
 
 <HARD-RULE>
 Always populate these parameters when calling execute_step:
 - `context_snapshot`: JSON string. Store decisions made, key findings, and hints for the next step.
-- `agent_id`: Model name in use (e.g., "claude-opus-4-6")
+- `model_id`: Current LLM model ID (e.g., "claude-opus-4-6"). Check your system prompt.
 - `user_name`: User name (omit if unknown)
+
+Note: `provider_slug` (coding tool identity) is auto-injected by the MCP server from the connection handshake. Do not send it manually.
 
 If files were created or modified, record them in the `artifacts` array:
 
@@ -73,7 +75,6 @@ Build a JSON object:
 {
   "project_dir": "/Users/dante/workspace/project",
   "user_name": "dante",
-  "agent": "claude-code",
   "model_id": "claude-opus-4-6",
   "git_remote": "git@github.com:user/repo.git",
   "git_branch": "main",
@@ -82,7 +83,7 @@ Build a JSON object:
 }
 ```
 
-- `agent`: always "claude-code" when running in Claude Code
+- Note: `agent` field is no longer needed — provider is auto-detected from MCP handshake.
 - `model_id`: current model ID (check system prompt)
 - `started_at`: current UTC time
   </HARD-RULE>
@@ -140,11 +141,11 @@ Repeat the loop until reaching a gate step or a hitl=true action step.
 ### 4. When Pausing
 
 - **HITL** (execute_step returned `next_action: "wait_for_human_approval"`):
-  Call `request_approval`, then immediately show the HITL approval AskUserQuestion (same as bk-next HITL Pause). Do NOT stop and tell the user to type `/bk-approve`.
-- **Gate step**: If `visual_selection: true` → call `set_visual_html`, then poll `get_web_response`. If `visual_selection: false` → wait for user response via AskUserQuestion. See bk-next **gate step** section for full details. Do not show `/bk-next` hint.
+  Call `request_approval`, then immediately show the HITL approval AskUserQuestion (inline HITL approval). Do NOT stop and tell the user to type `/bk-approve`.
+- **Gate step**: If `visual_selection: true` → call `set_visual_html`, then poll `get_web_response`. If `visual_selection: false` → wait for user response via AskUserQuestion. Present the gate question to the user via AskUserQuestion.
 - **Loop-back** (execute_step returned `next_action: "loop_back"`): Re-execute the same loop step.
 
 ## 피드백 설문 (complete_task 호출 전)
 
-워크플로가 완료되면 bk-next의 **피드백 설문** 섹션과 동일한 플로우를 실행한다.
+워크플로가 완료되면 아래 피드백 설문 플로우를 실행한다.
 `save_feedback` → `complete_task` → 개선안 제안 순서를 따른다.

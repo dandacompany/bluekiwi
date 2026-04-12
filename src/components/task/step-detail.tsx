@@ -49,9 +49,9 @@ export interface StepLog {
   visual_html: string | null;
   visual_selection: boolean | null;
   web_response: string | null;
-  model_id: string | null;
+  provider_slug: string | null;
+  model_slug: string | null;
   user_name: string | null;
-  agent_id: string | null;
   credential_service: string | null;
   started_at: string;
   completed_at: string | null;
@@ -77,6 +77,7 @@ interface StepDetailProps {
   logs: StepLog[];
   taskId: number;
   taskStatus: string;
+  registry: Record<string, string>;
   artifacts?: StepArtifact[];
   comments?: StepComment[];
   onAddComment?: (body: string) => void;
@@ -419,6 +420,7 @@ export function StepDetail({
   logs,
   taskId,
   taskStatus,
+  registry,
   artifacts,
   comments,
   onAddComment,
@@ -481,15 +483,17 @@ export function StepDetail({
 
           {/* Meta row */}
           <div className="mt-3 flex items-center gap-3 text-xs text-[var(--muted-foreground)] flex-wrap">
-            {primary.user_name && <span>{primary.user_name}</span>}
-            {primary.model_id && (
+            {primary.provider_slug && (
               <span className="rounded bg-[var(--card)] px-1.5 py-0.5 font-mono text-[10px]">
-                {primary.model_id}
+                {registry[primary.provider_slug] ?? primary.provider_slug}
               </span>
             )}
-            {primary.agent_id && primary.agent_id !== primary.model_id && (
-              <span className="font-mono text-[10px]">{primary.agent_id}</span>
+            {primary.model_slug && (
+              <span className="rounded bg-[var(--card)] px-1.5 py-0.5 font-mono text-[10px]">
+                {registry[primary.model_slug] ?? primary.model_slug}
+              </span>
             )}
+            {primary.user_name && <span>{primary.user_name}</span>}
             {primary.credential_service && (
               <span className="rounded bg-[var(--card)] px-1.5 py-0.5 font-mono text-[10px]">
                 {"\uD83D\uDD11"}

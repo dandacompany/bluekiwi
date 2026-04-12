@@ -175,6 +175,8 @@ export interface Task {
   context: string;
   running_context: string;
   session_meta: string;
+  provider_slug: string | null;
+  model_slug: string | null;
   target_meta: unknown | null;
   summary: string;
   feedback_data: Array<{ question: string; answer: string }> | null;
@@ -205,9 +207,9 @@ export interface TaskLog {
   context_snapshot: string | null;
   structured_output: string | null; // JSONB as string
   session_id: string | null;
-  agent_id: string | null;
+  provider_slug: string | null;
   user_name: string | null;
-  model_id: string | null;
+  model_slug: string | null;
   started_at: string;
   completed_at: string | null;
   approval_requested_at: string | null;

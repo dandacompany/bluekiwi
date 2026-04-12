@@ -168,6 +168,19 @@ CREATE INDEX IF NOT EXISTS idx_invites_token   ON invites(token);
 CREATE INDEX IF NOT EXISTS idx_invites_email   ON invites(email);
 CREATE INDEX IF NOT EXISTS idx_invites_pending ON invites(expires_at) WHERE accepted_at IS NULL;
 
+-- ─── Agent Registry ───
+
+CREATE TABLE IF NOT EXISTS agent_registry (
+  id SERIAL PRIMARY KEY,
+  kind TEXT NOT NULL CHECK (kind IN ('provider', 'model')),
+  slug TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  icon TEXT,
+  is_builtin BOOLEAN NOT NULL DEFAULT false,
+  first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (kind, slug)
+);
+
 -- ─── Tasks ───
 
 CREATE TABLE IF NOT EXISTS tasks (
@@ -179,6 +192,8 @@ CREATE TABLE IF NOT EXISTS tasks (
   context TEXT NOT NULL DEFAULT '',
   running_context TEXT NOT NULL DEFAULT '{}',
   session_meta TEXT NOT NULL DEFAULT '{}',
+  provider_slug TEXT,
+  model_slug TEXT,
   target_meta JSONB DEFAULT NULL,
   summary TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -200,9 +215,9 @@ CREATE TABLE IF NOT EXISTS task_logs (
   node_type TEXT NOT NULL DEFAULT 'action',
   context_snapshot TEXT,
   session_id TEXT,
-  agent_id TEXT,
+  provider_slug TEXT,
   user_name TEXT,
-  model_id TEXT,
+  model_slug TEXT,
   started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   completed_at TIMESTAMPTZ,
   structured_output JSONB DEFAULT NULL,

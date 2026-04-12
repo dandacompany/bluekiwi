@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   query,
   queryOne,
+  execute,
   insert,
   Workflow,
   WorkflowNode,
@@ -16,7 +17,15 @@ export const POST = withAuth(
   "tasks:execute",
   async (request: NextRequest, user) => {
     const body = await request.json();
-    const { workflow_id, version, context, session_meta, target } = body;
+    const {
+      workflow_id,
+      version,
+      context,
+      session_meta,
+      target,
+      provider_slug,
+      model_slug,
+    } = body;
 
     if (!workflow_id) {
       const res = errorResponse(
@@ -155,14 +164,30 @@ export const POST = withAuth(
 
     // Create task
     const taskId = await insert(
-      "INSERT INTO tasks (workflow_id, status, current_step, context, session_meta, target_meta) VALUES ($1, 'running', 1, $2, $3, $4) RETURNING id",
+      "INSERT INTO tasks (workflow_id, status, current_step, context, session_meta, target_meta, provider_slug, model_slug) VALUES ($1, 'running', 1, $2, $3, $4, $5, $6) RETURNING id",
       [
         workflow.id,
         context ?? "",
         session_meta ?? "{}",
         target ? JSON.stringify(target) : null,
+        provider_slug ?? null,
+        model_slug ?? null,
       ],
     );
+
+    // Auto-register provider/model in agent_registry
+    if (provider_slug) {
+      await execute(
+        "INSERT INTO agent_registry (kind, slug, display_name) VALUES ('provider', $1, $1) ON CONFLICT (kind, slug) DO NOTHING",
+        [provider_slug],
+      );
+    }
+    if (model_slug) {
+      await execute(
+        "INSERT INTO agent_registry (kind, slug, display_name) VALUES ('model', $1, $1) ON CONFLICT (kind, slug) DO NOTHING",
+        [model_slug],
+      );
+    }
 
     // Create first pending log
     await query(

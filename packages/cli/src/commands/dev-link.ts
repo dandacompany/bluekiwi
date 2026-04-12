@@ -14,7 +14,7 @@ export async function devLinkCommand(): Promise<void> {
   for (const adapter of detectInstalledAdapters()) {
     const target = adapter.getSkillsDir();
     mkdirSync(target, { recursive: true });
-    for (const skill of ["bk-start", "bk-next", "bk-status", "bk-rewind"]) {
+    for (const skill of ["bk-start", "bk-status", "bk-rewind"]) {
       const link = join(target, skill);
       if (existsSync(link)) {
         rmSync(link, { recursive: true, force: true });
