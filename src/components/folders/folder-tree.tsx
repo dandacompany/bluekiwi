@@ -239,7 +239,7 @@ export function FolderTree({
         fetchFolders();
       } else {
         const json = await res.json().catch(() => ({}));
-        toast.error(json?.error?.message ?? "폴더를 만들지 못했습니다.");
+        toast.error(json?.error?.message ?? t("folders.createFailed"));
       }
     },
     [fetchFolders],
@@ -257,7 +257,7 @@ export function FolderTree({
         fetchFolders();
       } else {
         const json = await res.json().catch(() => ({}));
-        toast.error(json?.error?.message ?? "이름을 변경하지 못했습니다.");
+        toast.error(json?.error?.message ?? t("folders.renameFailed"));
       }
     },
     [fetchFolders],
@@ -271,7 +271,7 @@ export function FolderTree({
         fetchFolders();
       } else {
         const json = await res.json().catch(() => ({}));
-        toast.error(json?.error?.message ?? "폴더를 삭제하지 못했습니다.");
+        toast.error(json?.error?.message ?? t("folders.deleteFailed"));
       }
     },
     [fetchFolders, selectedId, onSelect],
@@ -444,7 +444,7 @@ export function FolderTree({
             {isCreatingChild && (
               <li className="py-0.5">
                 <InlineInput
-                  placeholder="폴더 이름"
+                  placeholder={t("folders.namePlaceholder")}
                   onConfirm={(v) => handleCreate(v, folder.id)}
                   onCancel={() => setCreating(null)}
                 />
@@ -465,7 +465,7 @@ export function FolderTree({
           {creating?.parentId === null ? (
             <li className="py-0.5 pl-5">
               <InlineInput
-                placeholder="폴더 이름"
+                placeholder={t("folders.namePlaceholder")}
                 onConfirm={(v) => handleCreate(v, null)}
                 onCancel={() => setCreating(null)}
               />
@@ -502,7 +502,7 @@ export function FolderTree({
             }}
           >
             <FolderPlus className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-            하위 폴더 추가
+            {t("folders.addSubfolder")}
           </button>
           <button
             className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-surface-soft"
@@ -512,7 +512,7 @@ export function FolderTree({
             }}
           >
             <Pencil className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-            이름 변경
+            {t("folders.rename")}
           </button>
           <button
             className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-surface-soft"
@@ -522,7 +522,7 @@ export function FolderTree({
             }}
           >
             <Settings className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-            공개 설정
+            {t("visibility.settings")}
           </button>
           <div className="my-1 border-t border-[var(--border)]" />
           <button
@@ -533,7 +533,7 @@ export function FolderTree({
             }}
           >
             <Trash2 className="h-3.5 w-3.5" />
-            삭제
+            {t("common.delete")}
           </button>
         </div>
       )}

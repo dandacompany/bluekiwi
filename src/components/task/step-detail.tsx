@@ -578,7 +578,7 @@ export function StepDetail({
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-medium capitalize">
-                        {c.author ?? "User"}
+                        {c.author ?? t("tasks.defaultAuthor")}
                       </span>
                       <span className="text-[10px] text-[var(--muted-foreground)]">
                         {formatCommentTimestamp(c.created_at)}

@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/i18n/context";
 import type { FolderShareLevel } from "@/lib/db";
 
 interface Group {
@@ -36,26 +37,26 @@ const VISIBILITY_OPTIONS = [
   {
     value: null as null,
     Icon: FolderOpen,
-    label: "폴더 따름",
-    description: "폴더 공개 범위 상속",
+    labelKey: "visibility.followFolder",
+    descKey: "visibility.followFolderDesc",
   },
   {
     value: "personal" as const,
     Icon: Lock,
-    label: "개인",
-    description: "나만 볼 수 있음",
+    labelKey: "folders.visibilityPersonal",
+    descKey: "folders.visibilityPersonalDesc",
   },
   {
     value: "group" as const,
     Icon: Users,
-    label: "그룹",
-    description: "지정 그룹 공유",
+    labelKey: "folders.visibilityGroup",
+    descKey: "folders.visibilityGroupDesc",
   },
   {
     value: "public" as const,
     Icon: Globe,
-    label: "공개",
-    description: "모든 사용자 접근",
+    labelKey: "folders.visibilityPublic",
+    descKey: "folders.visibilityPublicDesc",
   },
 ];
 
@@ -67,6 +68,7 @@ export function WorkflowVisibilityDialog({
   onClose,
   onUpdate,
 }: Props) {
+  const { t } = useTranslation();
   // pendingOverride: 로컬 선택 상태 — 적용 버튼 누르기 전까지 API 호출 안 함
   const [pendingOverride, setPendingOverride] = useState<string | null>(null);
   const [shares, setShares] = useState<ShareRow[]>([]);
@@ -115,7 +117,7 @@ export function WorkflowVisibilityDialog({
       setApplying(false);
       if (!res.ok) {
         const json = await res.json().catch(() => ({}));
-        toast.error(json?.error?.message ?? "공개 범위 변경 실패");
+        toast.error(json?.error?.message ?? t("visibility.changeFailed"));
         return;
       }
     }
@@ -137,7 +139,7 @@ export function WorkflowVisibilityDialog({
       await loadShares();
     } else {
       const json = await res.json().catch(() => ({}));
-      toast.error(json?.error?.message ?? "그룹 추가 실패");
+      toast.error(json?.error?.message ?? t("visibility.groupAddFailed"));
     }
   };
 
@@ -149,7 +151,7 @@ export function WorkflowVisibilityDialog({
     if (res.ok) {
       await loadShares();
     } else {
-      toast.error("그룹 제거 실패");
+      toast.error(t("visibility.groupRemoveFailed"));
     }
   };
 
@@ -166,7 +168,7 @@ export function WorkflowVisibilityDialog({
           <DialogTitle className="flex items-center gap-2 text-base">
             <span className="max-w-[200px] truncate">{workflowTitle}</span>
             <span className="text-xs font-normal text-[var(--muted-foreground)]">
-              · 공개 설정
+              · {t("visibility.settings")}
             </span>
           </DialogTitle>
         </DialogHeader>
@@ -174,10 +176,10 @@ export function WorkflowVisibilityDialog({
         {/* ── Visibility selector ── */}
         <div>
           <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
-            공개 범위
+            {t("visibility.scope")}
           </p>
           <div className="grid grid-cols-4 gap-2">
-            {VISIBILITY_OPTIONS.map(({ value, Icon, label, description }) => {
+            {VISIBILITY_OPTIONS.map(({ value, Icon, labelKey, descKey }) => {
               const isActive = pendingOverride === value;
               return (
                 <button
@@ -185,7 +187,7 @@ export function WorkflowVisibilityDialog({
                   type="button"
                   disabled={applying}
                   onClick={() => setPendingOverride(value)}
-                  title={description}
+                  title={t(descKey)}
                   className={`flex flex-col items-center gap-1.5 rounded-[var(--radius-sm)] border px-2 py-2.5 text-xs transition-colors disabled:pointer-events-none disabled:opacity-50 ${
                     isActive
                       ? "border-brand-blue-400 bg-brand-blue-50 text-brand-blue-700"
@@ -193,7 +195,7 @@ export function WorkflowVisibilityDialog({
                   }`}
                 >
                   <Icon className="h-4 w-4" />
-                  <span className="font-medium">{label}</span>
+                  <span className="font-medium">{t(labelKey)}</span>
                 </button>
               );
             })}
@@ -204,12 +206,12 @@ export function WorkflowVisibilityDialog({
         {pendingOverride === "group" && (
           <div>
             <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
-              그룹 공유
+              {t("visibility.groupSharing")}
             </p>
 
             {shares.length === 0 ? (
               <p className="px-1 text-xs text-[var(--muted-foreground)]">
-                공유된 그룹이 없습니다.
+                {t("visibility.noSharedGroups")}
               </p>
             ) : (
               <ul className="mb-2 space-y-1">
@@ -229,7 +231,9 @@ export function WorkflowVisibilityDialog({
                           : "bg-[var(--border)]/40 text-[var(--muted-foreground)]"
                       }`}
                     >
-                      {s.access_level === "contributor" ? "편집자" : "열람자"}
+                      {s.access_level === "contributor"
+                        ? t("folders.accessLevelEditor")
+                        : t("folders.accessLevelViewer")}
                     </span>
                     <button
                       type="button"
@@ -245,11 +249,11 @@ export function WorkflowVisibilityDialog({
 
             {groups.length === 0 ? (
               <p className="text-[11px] text-[var(--muted-foreground)]">
-                생성된 그룹이 없습니다. 설정 &gt; 그룹에서 먼저 만들어 주세요.
+                {t("visibility.noGroupsHint")}
               </p>
             ) : availableGroups.length === 0 ? (
               <p className="text-[11px] text-[var(--muted-foreground)]">
-                모든 그룹이 이미 공유되어 있습니다.
+                {t("visibility.allGroupsShared")}
               </p>
             ) : (
               <div className="flex gap-1.5">
@@ -258,7 +262,7 @@ export function WorkflowVisibilityDialog({
                   onChange={(e) => setAddGroupId(Number(e.target.value) || "")}
                   className="h-7 min-w-0 flex-1 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--background)] px-2 text-xs outline-none focus:border-brand-blue-400"
                 >
-                  <option value="">그룹 선택</option>
+                  <option value="">{t("visibility.selectGroup")}</option>
                   {availableGroups.map((g) => (
                     <option key={g.id} value={g.id}>
                       {g.name}
@@ -272,8 +276,12 @@ export function WorkflowVisibilityDialog({
                   }
                   className="h-7 w-20 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--background)] px-2 text-xs outline-none focus:border-brand-blue-400"
                 >
-                  <option value="reader">열람자</option>
-                  <option value="contributor">편집자</option>
+                  <option value="reader">
+                    {t("folders.accessLevelViewer")}
+                  </option>
+                  <option value="contributor">
+                    {t("folders.accessLevelEditor")}
+                  </option>
                 </select>
                 <button
                   type="button"
@@ -291,7 +299,7 @@ export function WorkflowVisibilityDialog({
         {/* ── Footer buttons ── */}
         <div className="flex justify-end gap-2 pt-1">
           <Button variant="outline" size="sm" onClick={onClose}>
-            취소
+            {t("common.cancel")}
           </Button>
           <Button
             size="sm"
@@ -299,7 +307,7 @@ export function WorkflowVisibilityDialog({
             onClick={handleApply}
             className={isDirty ? "" : "opacity-60"}
           >
-            {applying ? "적용 중…" : "적용"}
+            {applying ? t("visibility.applying") : t("visibility.apply")}
           </Button>
         </div>
       </DialogContent>

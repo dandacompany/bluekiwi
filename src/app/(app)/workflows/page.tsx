@@ -262,7 +262,7 @@ export default function WorkflowsPage() {
       setFolderRefreshKey((k) => k + 1);
     } else {
       const json = await res.json().catch(() => ({}));
-      toast.error(json?.error?.message ?? "폴더 이름을 변경하지 못했습니다.");
+      toast.error(json?.error?.message ?? t("folders.renameFailed"));
     }
   }, [selectedFolder, headerRenameValue]);
 
@@ -274,7 +274,7 @@ export default function WorkflowsPage() {
         body: JSON.stringify({ folder_id: folderId }),
       });
       if (res.ok) {
-        toast.success("워크플로를 폴더로 이동했습니다.");
+        toast.success(t("workflows.movedToFolder"));
         fetchWorkflows();
       }
     },
@@ -367,7 +367,7 @@ export default function WorkflowsPage() {
                       }`}
                       title={
                         isLast && !folder.is_system
-                          ? "더블클릭으로 이름 변경"
+                          ? t("folders.doubleClickToRename")
                           : undefined
                       }
                       onClick={
@@ -604,7 +604,7 @@ export default function WorkflowsPage() {
                                     });
                                   }}
                                   className="rounded opacity-60 hover:opacity-100"
-                                  title="공개 설정"
+                                  title={t("visibility.settings")}
                                 >
                                   <VisibilityBadge
                                     visibility={
@@ -712,7 +712,7 @@ export default function WorkflowsPage() {
                                       });
                                     }}
                                     className="rounded opacity-60 hover:opacity-100"
-                                    title="공개 설정"
+                                    title={t("visibility.settings")}
                                   >
                                     <VisibilityBadge
                                       visibility={
