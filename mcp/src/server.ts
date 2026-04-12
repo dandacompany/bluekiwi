@@ -653,14 +653,31 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         );
       }
       case "start_workflow": {
-        const providerSlug = server.getClientVersion()?.name ?? "unknown";
+        // Slugs that look like model names (e.g. "claude-sonnet-4-6", "gpt-5.2")
+        // Claude Code sends its model name as clientInfo.name, not the CLI tool name.
+        const MODEL_NAME_RE =
+          /^(claude|gpt|gemini|o\d|llama|mistral|qwen|deepseek)[-/.]/i;
+        const clientName = server.getClientVersion()?.name ?? null;
+        let providerSlug: string | null = null;
         let modelSlug: string | null = null;
         try {
           const meta = JSON.parse(
             typeof args.session_meta === "string" ? args.session_meta : "{}",
           );
-          modelSlug = meta.model_id ?? null;
+          // session_meta.agent (process-detected tool) takes priority
+          providerSlug = (meta.agent as string | undefined) ?? null;
+          modelSlug = (meta.model_id as string | undefined) ?? null;
         } catch {}
+        // Fallback: classify clientName as provider or model
+        if (clientName) {
+          if (MODEL_NAME_RE.test(clientName)) {
+            // clientName is a model slug → use as model fallback
+            if (!modelSlug) modelSlug = clientName;
+          } else if (!providerSlug) {
+            // clientName looks like a tool name → use as provider fallback
+            providerSlug = clientName;
+          }
+        }
         args.provider_slug = providerSlug;
         args.model_slug = modelSlug;
         return wrap(await client.request("POST", "/api/tasks/start", args));
@@ -669,8 +686,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const taskId = requireNumberArg(args, "task_id");
         const body = { ...args };
         delete body.task_id;
-        // Auto-inject provider from MCP handshake
-        body.provider_slug = server.getClientVersion()?.name ?? "unknown";
+        // Do NOT auto-inject provider_slug here — execute/route.ts inherits
+        // it from the task row so all steps in a task share the same provider.
         // Map model_id → model_slug for backward compat
         if (body.model_id && !body.model_slug) {
           body.model_slug = body.model_id;

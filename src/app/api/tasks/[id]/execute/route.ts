@@ -29,7 +29,6 @@ export async function POST(request: NextRequest, { params }: Params) {
     model_id,
   } = body;
 
-  const resolvedProvider = provider_slug ?? agent_id ?? null;
   const resolvedModel = model_slug ?? model_id ?? null;
 
   if (!node_id || !output || !status) {
@@ -39,6 +38,17 @@ export async function POST(request: NextRequest, { params }: Params) {
       400,
     );
     return NextResponse.json(res.body, { status: res.status });
+  }
+
+  // Resolve provider: body value first, then inherit from task
+  const bodyProvider = provider_slug ?? agent_id ?? null;
+  let resolvedProvider = bodyProvider;
+  if (!resolvedProvider) {
+    const taskRow = await queryOne<{ provider_slug: string | null }>(
+      "SELECT provider_slug FROM tasks WHERE id = $1",
+      [taskId],
+    );
+    resolvedProvider = taskRow?.provider_slug ?? null;
   }
 
   // Find pending/running log

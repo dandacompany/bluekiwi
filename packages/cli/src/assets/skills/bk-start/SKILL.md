@@ -67,12 +67,29 @@ echo "GIT_REMOTE: $(git remote get-url origin 2>/dev/null || echo 'none')"
 echo "GIT_BRANCH: $(git branch --show-current 2>/dev/null || echo 'unknown')"
 echo "USER: $(whoami 2>/dev/null || echo 'unknown')"
 echo "OS: $(uname -s 2>/dev/null || echo 'unknown') $(uname -m 2>/dev/null)"
+# Detect CLI tool by walking up the process tree (up to 4 levels)
+_AGENT=unknown; _PID=$PPID
+for _L in 1 2 3 4; do
+  _C=$(ps -o comm= -p $_PID 2>/dev/null | tr '[:upper:]' '[:lower:]')
+  case "$_C" in
+    *claude*)   _AGENT=claude-code; break ;;
+    *gemini*)   _AGENT=gemini-cli;  break ;;
+    *codex*)    _AGENT=codex-cli;   break ;;
+    *cursor*)   _AGENT=cursor;      break ;;
+    *windsurf*) _AGENT=windsurf;    break ;;
+    *opencode*) _AGENT=opencode;    break ;;
+  esac
+  _PID=$(ps -o ppid= -p $_PID 2>/dev/null | tr -d ' ')
+  [ -z "$_PID" ] || [ "$_PID" = "0" ] || [ "$_PID" = "1" ] && break
+done
+echo "AGENT: $_AGENT"
 ```
 
 Build a JSON object:
 
 ```json
 {
+  "agent": "claude-code",
   "project_dir": "/Users/dante/workspace/project",
   "user_name": "dante",
   "model_id": "claude-opus-4-6",
@@ -83,7 +100,7 @@ Build a JSON object:
 }
 ```
 
-- Note: `agent` field is no longer needed — provider is auto-detected from MCP handshake.
+- `agent`: detected CLI tool name (from AGENT output above)
 - `model_id`: current model ID (check system prompt)
 - `started_at`: current UTC time
   </HARD-RULE>
