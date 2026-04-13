@@ -292,18 +292,46 @@ After bk-design creates the workflow:
 
 ---
 
-## 7. OpenAPI Spec
+## 7. OpenAPI Spec (Swagger)
 
-Add to `src/lib/openapi.ts`:
+Update `src/lib/openapi.ts`:
 
-- New tag: `Node Attachments`
-- Paths: 4 endpoints (list, upload, download, delete)
-- Schema: `NodeAttachment` (id, filename, mime_type, size_bytes, created_at)
-- Schema: `NodeAttachmentContent` (extends NodeAttachment + content field)
+- New tag: `{ name: "Node Attachments", description: "워크플로 노드 첨부 파일 관리" }`
+- 4 path entries matching the API endpoints in Section 2
+- New schemas:
+  - `NodeAttachment`: `{ id, filename, mime_type, size_bytes, created_at }`
+  - `NodeAttachmentContent`: extends NodeAttachment + `content` field (text files only)
+- Update `WorkflowNode` schema: add `attachments` array field (metadata only, returned by advance)
 
 ---
 
-## 8. Future Extensions
+## 8. Tutorial Page
+
+Update `src/app/(app)/tutorial/page.tsx` and i18n files (`ko.json`, `en.json`):
+
+### MCP Tools Table
+
+Add to the tools table in section 7:
+
+| Tool | Description (ko) | Description (en) |
+|------|-------------------|-------------------|
+| `list_attachments` | 노드에 첨부된 파일 목록을 조회합니다. | List files attached to a workflow node. |
+| `get_attachment` | 첨부 파일의 내용을 다운로드합니다. | Download attachment content. |
+| `upload_attachment` | 노드에 파일을 첨부합니다. | Upload a file to a workflow node. |
+
+i18n keys: `s7ToolListAttachments`, `s7ToolGetAttachment`, `s7ToolUploadAttachment`
+
+### Workflow Section
+
+Add a brief mention in the workflow design section (s1 area) about node attachments:
+- Nodes can have attached files (scripts, reference docs) that agents download during execution
+- Manage attachments in the workflow editor node card
+
+i18n keys: `s1AttachmentsTitle`, `s1AttachmentsDesc`
+
+---
+
+## 9. Future Extensions
 
 - **File/S3 backend:** When `storage_type != 'db'`, read from `storage_path` instead of `content`/`content_binary`. Add `StorageBackend` interface at that point.
 - **Size limit configuration:** Add `max_attachment_size_bytes` to a settings table or env var.
