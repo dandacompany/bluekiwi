@@ -237,8 +237,8 @@ function buildInviteHtml(params: {
               <p style="margin:0 0 10px;font-size:12px;color:#6b7280;line-height:1.5;">
                 ${s.cliDesc}
               </p>
-              <div style="background:#1f2937;border-radius:6px;padding:12px;">
-                <code style="font-family:monospace;font-size:12px;color:#f9fafb;word-break:break-all;">npm i -g bluekiwi && ${cliCommand}</code>
+              <div style="background:#e5e7eb;border-radius:6px;padding:12px;">
+                <code style="font-family:monospace;font-size:12px;color:#1f2937;word-break:break-all;">npm i -g bluekiwi && ${cliCommand}</code>
               </div>
             </td></tr>
           </table>
