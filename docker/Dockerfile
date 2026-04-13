@@ -12,7 +12,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+# Inject version from package.json into Next.js build (NEXT_PUBLIC_* is inlined at build time)
+RUN export NEXT_PUBLIC_APP_VERSION=$(node -p "require('./package.json').version") && npm run build
 
 # ─── MCP Builder ───
 FROM base AS mcp-builder
