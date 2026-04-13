@@ -27,6 +27,9 @@ export async function deleteUser(opts: DeleteUserOptions): Promise<void> {
       await deleteResources(client, userId);
     }
 
+    // Reset accepted invites so the same email can be re-invited
+    await client.query("DELETE FROM invites WHERE accepted_by = $1", [userId]);
+
     // Delete the user — api_keys and user_group_members cascade automatically
     await client.query("DELETE FROM users WHERE id = $1", [userId]);
   });
