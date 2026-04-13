@@ -195,6 +195,25 @@ helper.js renders a 2x2 grid; items are draggable to set x,y coordinates (0-1).
 
 **Theme injection:** VisualSelector reads current theme from `document.documentElement` and sets `data-theme` attribute on the iframe's `<html>`.
 
+**Locale injection:** VisualSelector reads current locale and sets `data-lang` attribute on the iframe's `<html>`. The frame template uses `data-lang` to localize UI strings:
+
+```html
+<html data-theme="light" data-lang="ko">
+```
+
+helper.js contains a minimal i18n map for frame UI text:
+
+```javascript
+const UI_TEXT = {
+  ko: { submit: '확인', submitted: '✓ 제출됨', status: '{n}개 선택됨' },
+  en: { submit: 'Submit', submitted: '✓ Submitted', status: '{n} selected' },
+};
+const lang = document.documentElement.dataset.lang || 'en';
+const t = UI_TEXT[lang] || UI_TEXT.en;
+```
+
+Agent-authored content (titles, descriptions, option labels) is NOT localized by the frame — the agent must write it in the user's language. This is enforced via skill guides.
+
 **Build pipeline:** `scripts/build-vs-frame.ts` reads the 3 source files and generates `src/lib/vs-frame.ts`:
 ```typescript
 export const VS_FRAME_TEMPLATE = `...`;
@@ -418,12 +437,26 @@ Parameters: task_id (required), node_id (optional)
 
 ## 9. Skill Updates
 
+### Cross-cutting: VS Content Language Rule
+
+All skills that guide VS fragment authoring must include this rule:
+
+```
+<HARD-RULE>
+Write all VS content text (titles, descriptions, option labels, button text)
+in the user's language. The frame UI (Submit button, status) is auto-localized,
+but agent-authored content must match the user's locale.
+</HARD-RULE>
+```
+
 ### bk-start
 - VS gate section: compose fragment with bk-* classes, open deep link, poll get_web_response, parse JSON response object
 - Loop + VS pattern: in a loop with VS gate, use `get_web_response(task_id, node_id)` to access previous iteration responses and adapt the next VS screen accordingly
+- VS content language: write all VS text in the user's language
 
 ### bk-design
 - Node Design Guidelines: plan which bk-* components the agent should use, document in node instruction
+- Remind that VS content language should match the user — add note in the VS node design section
 
 ### bk-improve
 - VS node review: check legacy inline vs bk-* components, suggest migration, verify instruction specifies components, check downstream response format compatibility

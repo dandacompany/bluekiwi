@@ -1,0 +1,863 @@
+/* VS Design System — components.css
+ * 12 built-in bk-* components using BlueKiwi design tokens.
+ * Light theme by default; dark via [data-theme="dark"].
+ * Auto-generated frames include this file inline. Do not import externally.
+ */
+
+/* ─── Design Tokens ─── */
+
+:root,
+[data-theme="light"] {
+  --bk-bg: #f8fbff;
+  --bk-surface: #ffffff;
+  --bk-surface-soft: #f3f7fb;
+  --bk-surface-strong: #edf3fb;
+  --bk-text: #1e2a44;
+  --bk-text-muted: #6d7690;
+  --bk-border: #dce4ef;
+  --bk-primary: #4169e1;
+  --bk-primary-light: #eaf0ff;
+  --bk-primary-dark: #3557be;
+  --bk-accent: #b7cf57;
+  --bk-accent-light: #f4f8dd;
+  --bk-success: #2f8f6b;
+  --bk-warning: #b78226;
+  --bk-danger: #c94d5d;
+  --bk-radius: 1rem;
+  --bk-radius-sm: 0.75rem;
+  --bk-radius-lg: 1.5rem;
+  --bk-shadow: 0 10px 24px rgba(30, 42, 68, 0.08);
+  --bk-font: "Inter", system-ui, -apple-system, sans-serif;
+  --bk-font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+[data-theme="dark"] {
+  --bk-bg: #0f1728;
+  --bk-surface: #162033;
+  --bk-surface-soft: #1d2a40;
+  --bk-surface-strong: #243249;
+  --bk-text: #eef4ff;
+  --bk-text-muted: #94a5bf;
+  --bk-border: #2f3a50;
+  --bk-primary: #6d8ef0;
+  --bk-primary-light: rgba(109, 142, 240, 0.18);
+  --bk-primary-dark: #4169e1;
+  --bk-accent: #b7cf57;
+  --bk-accent-light: rgba(183, 207, 87, 0.18);
+  --bk-success: #4aba8a;
+  --bk-warning: #d4a04a;
+  --bk-danger: #de6a78;
+  --bk-shadow: 0 10px 26px rgba(2, 6, 23, 0.3);
+}
+
+/* ─── Base Reset ─── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--bk-font);
+  color: var(--bk-text);
+  background: var(--bk-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Layout Utilities ─── */
+
+h2 {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.25rem;
+}
+
+.bk-subtitle {
+  font-size: 0.9rem;
+  color: var(--bk-text-muted);
+  margin-bottom: 1.25rem;
+}
+
+.bk-section {
+  border-top: 1px solid var(--bk-border);
+  margin: 1.5rem 0;
+  padding-top: 1.5rem;
+}
+
+.bk-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bk-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+/* ─── VS Container ─── */
+
+.bk-vs-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+}
+
+.bk-vs-content {
+  flex: 1;
+}
+
+.bk-vs-footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 0 0;
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--bk-border);
+  background: var(--bk-bg);
+}
+
+.bk-vs-status {
+  font-size: 0.8rem;
+  color: var(--bk-text-muted);
+}
+
+.bk-vs-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.5rem;
+  padding: 0 1.5rem;
+  border: none;
+  border-radius: 9999px;
+  background: var(--bk-primary);
+  color: #ffffff;
+  font-family: var(--bk-font);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    opacity 0.15s,
+    transform 0.1s;
+  box-shadow: 0 10px 18px rgba(53, 87, 190, 0.18);
+}
+
+.bk-vs-submit:hover:not(:disabled) {
+  background: var(--bk-primary-dark);
+}
+
+.bk-vs-submit:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.bk-vs-submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.bk-vs-submit.submitted {
+  background: var(--bk-success);
+  pointer-events: none;
+}
+
+/* ─── 1. bk-options (A/B/C single select) ─── */
+
+.bk-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bk-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: var(--bk-surface);
+  border: 1.5px solid var(--bk-border);
+  border-radius: var(--bk-radius-lg);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    box-shadow 0.15s;
+  box-shadow: var(--bk-shadow);
+  position: relative;
+}
+
+.bk-option:hover {
+  background: var(--bk-primary-light);
+  border-color: var(--bk-primary);
+}
+
+.bk-option.selected {
+  border-color: var(--bk-primary);
+  background: var(--bk-primary-light);
+  box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.2);
+}
+
+.bk-option-letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: var(--bk-surface-strong);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--bk-text-muted);
+  flex-shrink: 0;
+}
+
+.bk-option.selected .bk-option-letter {
+  background: var(--bk-primary);
+  color: #ffffff;
+}
+
+.bk-option-body h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+
+.bk-option-body p {
+  font-size: 0.85rem;
+  color: var(--bk-text-muted);
+  line-height: 1.5;
+}
+
+.bk-option[data-recommended]::after {
+  content: "Recommended";
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bk-accent);
+  background: var(--bk-accent-light);
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+}
+
+/* ─── 2. bk-cards (visual cards with image preview) ─── */
+
+.bk-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.bk-card {
+  background: var(--bk-surface);
+  border: 1.5px solid var(--bk-border);
+  border-radius: var(--bk-radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+  box-shadow: var(--bk-shadow);
+}
+
+.bk-card:hover {
+  border-color: var(--bk-primary);
+}
+
+.bk-card.selected {
+  border-color: var(--bk-primary);
+  box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.2);
+}
+
+.bk-card-image {
+  width: 100%;
+  aspect-ratio: 16/10;
+  background: var(--bk-surface-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-bottom: 1px solid var(--bk-border);
+}
+
+.bk-card-image svg {
+  max-width: 80%;
+  max-height: 80%;
+}
+
+.bk-card-body {
+  padding: 1rem;
+}
+
+.bk-card-body h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+
+.bk-card-body p {
+  font-size: 0.8rem;
+  color: var(--bk-text-muted);
+}
+
+/* ─── 3. bk-checklist (multi-select) ─── */
+
+.bk-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bk-check-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--bk-surface);
+  border: 1.5px solid var(--bk-border);
+  border-radius: var(--bk-radius);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.bk-check-item::before {
+  content: "";
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--bk-border);
+  border-radius: 0.35rem;
+  flex-shrink: 0;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.bk-check-item:hover {
+  background: var(--bk-primary-light);
+  border-color: var(--bk-primary);
+}
+
+.bk-check-item.checked {
+  border-color: var(--bk-primary);
+  background: var(--bk-primary-light);
+}
+
+.bk-check-item.checked::before {
+  background: var(--bk-primary);
+  border-color: var(--bk-primary);
+  /* Checkmark via box-shadow trick */
+  box-shadow:
+    inset 0 0 0 2px var(--bk-primary),
+    inset 0.15rem -0.15rem 0 0 #fff;
+}
+
+/* ─── 4. bk-code-compare (side-by-side code selection) ─── */
+
+.bk-code-compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.bk-code-option {
+  background: var(--bk-surface);
+  border: 1.5px solid var(--bk-border);
+  border-radius: var(--bk-radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.bk-code-option:hover {
+  border-color: var(--bk-primary);
+}
+
+.bk-code-option.selected {
+  border-color: var(--bk-primary);
+  box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.2);
+}
+
+.bk-code-label {
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--bk-text-muted);
+  border-bottom: 1px solid var(--bk-border);
+  background: var(--bk-surface-soft);
+}
+
+pre.bk-code {
+  margin: 0;
+  padding: 1rem;
+  font-family: var(--bk-font-mono);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  color: var(--bk-text);
+  background: transparent;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ─── 5. bk-slider (numeric input) ─── */
+
+.bk-slider {
+  padding: 1rem 1.25rem;
+  background: var(--bk-surface);
+  border: 1.5px solid var(--bk-border);
+  border-radius: var(--bk-radius-lg);
+  margin-bottom: 0.75rem;
+}
+
+.bk-slider label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.bk-slider-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.bk-slider-controls input[type="range"] {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--bk-surface-strong);
+  border-radius: 3px;
+  outline: none;
+}
+
+.bk-slider-controls input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--bk-primary);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(65, 105, 225, 0.3);
+}
+
+.bk-slider-controls input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: var(--bk-primary);
+  cursor: pointer;
+}
+
+.bk-slider-value {
+  min-width: 3.5rem;
+  text-align: right;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--bk-primary);
+}
+
+/* ─── 6. bk-ranking (drag-to-reorder) ─── */
+
+.bk-ranking {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bk-rank-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--bk-surface);
+  border: 1.5px solid var(--bk-border);
+  border-radius: var(--bk-radius);
+  cursor: grab;
+  font-size: 0.9rem;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    transform 0.1s;
+  user-select: none;
+}
+
+.bk-rank-item:active {
+  cursor: grabbing;
+}
+
+.bk-rank-item.dragging {
+  opacity: 0.5;
+  border-color: var(--bk-primary);
+}
+
+.bk-rank-item.drag-over {
+  border-color: var(--bk-primary);
+  box-shadow: 0 0 0 2px rgba(65, 105, 225, 0.15);
+}
+
+.bk-rank-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--bk-surface-strong);
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: var(--bk-text-muted);
+  flex-shrink: 0;
+}
+
+.bk-rank-grip {
+  color: var(--bk-text-muted);
+  font-size: 1rem;
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+/* ─── 7. bk-matrix (2x2 matrix placement) ─── */
+
+.bk-matrix {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 500px;
+  margin: 0 auto;
+  background: var(--bk-surface);
+  border: 1.5px solid var(--bk-border);
+  border-radius: var(--bk-radius-lg);
+  overflow: hidden;
+}
+
+.bk-matrix-grid {
+  position: absolute;
+  inset: 2.5rem;
+}
+
+.bk-matrix-grid::before,
+.bk-matrix-grid::after {
+  content: "";
+  position: absolute;
+  background: var(--bk-border);
+}
+
+/* Vertical center line */
+.bk-matrix-grid::before {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  transform: translateX(-0.5px);
+}
+
+/* Horizontal center line */
+.bk-matrix-grid::after {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  transform: translateY(-0.5px);
+}
+
+.bk-matrix-x-label,
+.bk-matrix-y-label {
+  position: absolute;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bk-text-muted);
+}
+
+.bk-matrix-x-label {
+  bottom: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.bk-matrix-y-label {
+  top: 50%;
+  left: 0.5rem;
+  transform: translateY(-50%) rotate(-90deg);
+  transform-origin: center;
+}
+
+.bk-matrix-item {
+  position: absolute;
+  padding: 0.4rem 0.75rem;
+  background: var(--bk-primary);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  cursor: grab;
+  user-select: none;
+  white-space: nowrap;
+  z-index: 1;
+  transition: box-shadow 0.1s;
+  box-shadow: 0 2px 8px rgba(65, 105, 225, 0.25);
+}
+
+.bk-matrix-item:active {
+  cursor: grabbing;
+}
+
+.bk-matrix-item.dragging {
+  box-shadow: 0 4px 16px rgba(65, 105, 225, 0.4);
+  z-index: 10;
+}
+
+/* ─── 8. bk-split (side-by-side comparison) ─── */
+
+.bk-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.bk-split-panel {
+  padding: 1.25rem;
+  background: var(--bk-surface);
+  border: 1.5px solid var(--bk-border);
+  border-radius: var(--bk-radius-lg);
+  box-shadow: var(--bk-shadow);
+}
+
+.bk-split-panel h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--bk-text);
+}
+
+.bk-split-panel p,
+.bk-split-panel ul,
+.bk-split-panel ol {
+  font-size: 0.85rem;
+  color: var(--bk-text-muted);
+  line-height: 1.6;
+}
+
+/* ─── 9. bk-pros-cons ─── */
+
+.bk-pros-cons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.bk-pros,
+.bk-cons {
+  padding: 1.25rem;
+  border-radius: var(--bk-radius-lg);
+}
+
+.bk-pros {
+  background: rgba(47, 143, 107, 0.08);
+  border: 1.5px solid rgba(47, 143, 107, 0.2);
+}
+
+.bk-cons {
+  background: rgba(201, 77, 93, 0.08);
+  border: 1.5px solid rgba(201, 77, 93, 0.2);
+}
+
+.bk-pros h4 {
+  color: var(--bk-success);
+}
+.bk-cons h4 {
+  color: var(--bk-danger);
+}
+
+.bk-pros h4,
+.bk-cons h4 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+}
+
+.bk-pros ul,
+.bk-cons ul {
+  list-style: none;
+  padding: 0;
+}
+
+.bk-pros li,
+.bk-cons li {
+  font-size: 0.85rem;
+  color: var(--bk-text);
+  padding: 0.25rem 0;
+  line-height: 1.5;
+}
+
+.bk-pros li::before {
+  content: "+ ";
+  color: var(--bk-success);
+  font-weight: 600;
+}
+.bk-cons li::before {
+  content: "- ";
+  color: var(--bk-danger);
+  font-weight: 600;
+}
+
+/* ─── 10. bk-mockup (wireframe container) ─── */
+
+.bk-mockup {
+  background: var(--bk-surface);
+  border: 1.5px solid var(--bk-border);
+  border-radius: var(--bk-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--bk-shadow);
+}
+
+.bk-mockup-header {
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--bk-text-muted);
+  background: var(--bk-surface-soft);
+  border-bottom: 1px solid var(--bk-border);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bk-mockup-header::before {
+  content: "";
+  display: flex;
+  gap: 0.25rem;
+  width: 3rem;
+  height: 0.5rem;
+  background:
+    radial-gradient(
+      circle at 0.25rem 0.25rem,
+      var(--bk-danger) 3.5px,
+      transparent 4px
+    ),
+    radial-gradient(
+      circle at 1rem 0.25rem,
+      var(--bk-warning) 3.5px,
+      transparent 4px
+    ),
+    radial-gradient(
+      circle at 1.75rem 0.25rem,
+      var(--bk-success) 3.5px,
+      transparent 4px
+    );
+}
+
+.bk-mockup-body {
+  padding: 1rem;
+  min-height: 200px;
+}
+
+.bk-mock-nav {
+  padding: 0.5rem 0.75rem;
+  background: var(--bk-surface-soft);
+  border-radius: var(--bk-radius-sm);
+  font-size: 0.75rem;
+  color: var(--bk-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.bk-mock-content {
+  padding: 0.75rem;
+  background: var(--bk-surface-strong);
+  border-radius: var(--bk-radius-sm);
+  font-size: 0.8rem;
+  color: var(--bk-text-muted);
+  min-height: 120px;
+}
+
+/* ─── 11. bk-timeline ─── */
+
+.bk-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.bk-timeline::before {
+  content: "";
+  position: absolute;
+  left: 0.5rem;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 2px;
+  background: var(--bk-border);
+}
+
+.bk-timeline-item {
+  position: relative;
+  padding: 0.75rem 0 0.75rem 1.25rem;
+  font-size: 0.9rem;
+}
+
+.bk-timeline-item::before {
+  content: "";
+  position: absolute;
+  left: -1.25rem;
+  top: 1rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  border: 2px solid var(--bk-border);
+  background: var(--bk-surface);
+}
+
+.bk-timeline-item[data-status="done"]::before {
+  background: var(--bk-success);
+  border-color: var(--bk-success);
+}
+
+.bk-timeline-item[data-status="current"]::before {
+  background: var(--bk-primary);
+  border-color: var(--bk-primary);
+  box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.2);
+}
+
+.bk-timeline-item[data-status="pending"]::before {
+  background: var(--bk-surface);
+  border-color: var(--bk-border);
+}
+
+.bk-timeline-item[data-status="done"] {
+  color: var(--bk-text-muted);
+}
+
+.bk-timeline-item[data-status="current"] {
+  font-weight: 600;
+  color: var(--bk-primary);
+}
+
+.bk-timeline-item[data-status="pending"] {
+  color: var(--bk-text-muted);
+  opacity: 0.7;
+}
