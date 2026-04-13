@@ -39,6 +39,19 @@ export async function GET(_request: NextRequest, { params }: Params) {
   }
 
   if (invite.accepted_at) {
+    // Already accepted via web — still return invite info for CLI re-linking
+    const existingUser = await queryOne<{ id: number }>(
+      `SELECT id FROM users WHERE email = $1`,
+      [invite.email],
+    );
+    if (existingUser) {
+      return NextResponse.json({
+        email: invite.email,
+        role: invite.role,
+        inviter: invite.created_by_name,
+        already_accepted: true,
+      });
+    }
     return NextResponse.json({ error: "already_accepted" }, { status: 410 });
   }
 
