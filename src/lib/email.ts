@@ -158,8 +158,12 @@ function buildInviteHtml(params: {
   roleLabel: string;
   inviteUrl: string;
   expires: string;
+  serverUrl: string;
+  token: string;
 }): string {
-  const { inviterName, roleLabel, inviteUrl, expires } = params;
+  const { inviterName, roleLabel, inviteUrl, expires, serverUrl, token } =
+    params;
+  const cliCommand = `bluekiwi accept ${token} --server ${serverUrl}`;
   return `<!DOCTYPE html>
 <html lang="ko">
 <head><meta charset="UTF-8" /></head>
@@ -174,11 +178,27 @@ function buildInviteHtml(params: {
           <h1 style="margin:0 0 8px;font-size:18px;font-weight:600;color:#111827;">팀원으로 초대되었습니다</h1>
           <p style="margin:0 0 24px;font-size:14px;color:#6b7280;line-height:1.6;">
             <strong>${inviterName}</strong>님이 BlueKiwi에 <strong>${roleLabel}</strong> 역할로 초대했습니다.<br/>
-            아래 버튼을 클릭해 계정을 생성하세요.
+            아래 버튼을 클릭해 계정을 생성하거나, CLI로 바로 연결할 수 있습니다.
           </p>
           <a href="${inviteUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 24px;border-radius:8px;">
             초대 수락하기
           </a>
+
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 0;">
+            <tr><td style="background:#f3f4f6;border-radius:8px;padding:16px;">
+              <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#374151;">AI 코딩 에이전트에서 바로 연결하기</p>
+              <p style="margin:0 0 10px;font-size:12px;color:#6b7280;line-height:1.5;">
+                BlueKiwi CLI가 설치되어 있다면 아래 명령어 하나로 계정 생성부터 MCP 연결까지 완료됩니다.
+              </p>
+              <div style="background:#1f2937;border-radius:6px;padding:12px;">
+                <code style="font-family:monospace;font-size:12px;color:#f9fafb;word-break:break-all;">${cliCommand}</code>
+              </div>
+              <p style="margin:8px 0 0;font-size:11px;color:#9ca3af;">
+                CLI 미설치 시: <code style="font-family:monospace;">npm install -g bluekiwi</code>
+              </p>
+            </td></tr>
+          </table>
+
           <p style="margin:24px 0 0;font-size:12px;color:#9ca3af;">
             이 링크는 <strong>${expires}</strong>까지 유효합니다.<br/>
             버튼이 동작하지 않으면 아래 주소를 브라우저에 붙여넣으세요:<br/>
@@ -219,7 +239,17 @@ export async function sendInviteEmail({
   const roleLabel =
     role === "admin" ? "관리자" : role === "editor" ? "편집자" : "열람자";
   const expires = expiresAt.toLocaleDateString("ko-KR");
-  const html = buildInviteHtml({ inviterName, roleLabel, inviteUrl, expires });
+  const parsedUrl = new URL(inviteUrl);
+  const serverUrl = parsedUrl.origin;
+  const token = parsedUrl.pathname.split("/invite/")[1] ?? "";
+  const html = buildInviteHtml({
+    inviterName,
+    roleLabel,
+    inviteUrl,
+    expires,
+    serverUrl,
+    token,
+  });
   const subject = `${inviterName}님이 BlueKiwi에 초대했습니다`;
 
   if (cfg.provider === "smtp") {
