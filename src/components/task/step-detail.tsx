@@ -335,12 +335,16 @@ function VisualSelector({
     if (!canSelect) return;
 
     function handleMessage(event: MessageEvent) {
-      if (event.source !== iframeRef.current?.contentWindow) return;
+      // Filter by bk_* message type only — sandbox="allow-scripts" without allow-same-origin
+      // makes WindowProxy comparison unreliable across browsers.
       const msg = event.data as {
         type?: string;
         value?: string;
         data?: object;
       };
+
+      // Accept bk_* messages only (ignore react-devtools and other extensions)
+      if (!msg?.type?.startsWith?.("bk_")) return;
 
       // New protocol: bk_visual_submit (structured JSON)
       if (msg?.type === "bk_visual_submit") {

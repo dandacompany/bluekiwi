@@ -387,6 +387,8 @@
     "responseSubmitted": "응답이 제출되었습니다",
     "typeResponse": "응답을 입력하세요...",
     "viewVisual": "비주얼 보기",
+    "selectVisual": "비주얼 선택",
+    "visualSelectHint": "아래 옵션을 선택한 후 확인 버튼을 눌러주세요.",
     "visualViewer": "비주얼 뷰어",
     "closeVisualViewer": "닫기",
     "input": "입력",

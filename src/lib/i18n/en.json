@@ -387,6 +387,8 @@
     "responseSubmitted": "Response submitted",
     "typeResponse": "Type your response...",
     "viewVisual": "View Visual",
+    "selectVisual": "Select Visual",
+    "visualSelectHint": "Select an option below, then click Confirm.",
     "visualViewer": "Visual Viewer",
     "closeVisualViewer": "Close",
     "input": "Input",

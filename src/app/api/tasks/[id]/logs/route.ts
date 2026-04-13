@@ -19,7 +19,11 @@ export async function GET(request: NextRequest, { params }: Params) {
   const { id } = await params;
 
   const logs = await query<TaskLog>(
-    "SELECT * FROM task_logs WHERE task_id = $1 ORDER BY step_order ASC",
+    `SELECT tl.*, wn.visual_selection
+     FROM task_logs tl
+     LEFT JOIN workflow_nodes wn ON wn.id = tl.node_id
+     WHERE tl.task_id = $1
+     ORDER BY tl.step_order ASC`,
     [Number(id)],
   );
 
