@@ -412,9 +412,17 @@ CREATE INDEX IF NOT EXISTS idx_invites_email                ON invites(email);
 CREATE INDEX IF NOT EXISTS idx_invites_pending              ON invites(expires_at) WHERE accepted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_node_attachments_node        ON node_attachments(node_id);
 
+-- ─── System Settings ──────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS system_settings (
+  key        TEXT PRIMARY KEY,
+  value      TEXT NOT NULL DEFAULT '',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ─── Migration tracking ───────────────────────────────────────
--- Pre-mark 001_initial_schema.sql as applied so the migration
--- runner skips it on fresh Docker installs.
+-- Pre-mark applied migrations so the runner skips them on fresh
+-- Docker installs.
 
 CREATE TABLE IF NOT EXISTS schema_migrations (
   filename   TEXT PRIMARY KEY,
@@ -422,5 +430,6 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 );
 
 INSERT INTO schema_migrations (filename) VALUES
-  ('001_initial_schema.sql')
+  ('001_initial_schema.sql'),
+  ('002_system_settings.sql')
 ON CONFLICT (filename) DO NOTHING;

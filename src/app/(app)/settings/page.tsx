@@ -26,6 +26,7 @@ import { ProfileTab } from "@/components/settings/profile-tab";
 import { ApiKeysTab } from "@/components/settings/apikeys-tab";
 import { TeamTab } from "@/components/settings/team-tab";
 import { GroupsTab } from "@/components/settings/groups-tab";
+import { EmailTab } from "@/components/settings/email-tab";
 import { useTranslation } from "@/lib/i18n/context";
 
 interface SessionUser {
@@ -143,6 +144,7 @@ export default function SettingsPage() {
           <TabsTrigger value="notifications">
             {t("settings.notifications")}
           </TabsTrigger>
+          {isSuperuser && <TabsTrigger value="email">Email</TabsTrigger>}
           {isSuperuser && <TabsTrigger value="storage">Storage</TabsTrigger>}
         </TabsList>
 
@@ -185,6 +187,12 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {isSuperuser && (
+            <TabsContent value="email">
+              <EmailTab />
+            </TabsContent>
+          )}
 
           {isSuperuser && (
             <TabsContent value="storage">
