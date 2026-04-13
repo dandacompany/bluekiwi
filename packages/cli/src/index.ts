@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { createRequire } from "node:module";
 
 import { acceptCommand } from "./commands/accept.js";
 import { initCommand } from "./commands/init.js";
@@ -8,6 +9,9 @@ import { upgradeCommand } from "./commands/upgrade.js";
 import { logoutCommand } from "./commands/logout.js";
 import { runtimesCommand } from "./commands/runtimes.js";
 import { devLinkCommand } from "./commands/dev-link.js";
+
+const require = createRequire(import.meta.url);
+const pkg = require("../package.json") as { version: string };
 
 function splitCommaSeparatedList(value: string): string[] {
   return value
@@ -25,7 +29,7 @@ const program = new Command();
 program
   .name("bluekiwi")
   .description("BlueKiwi CLI — connect your agent runtime to a BlueKiwi server")
-  .version("0.0.0");
+  .version(pkg.version);
 
 program
   .command("accept <token>")
