@@ -190,9 +190,18 @@ function buildInviteHtml(params: {
               <p style="margin:0 0 10px;font-size:12px;color:#6b7280;line-height:1.5;">
                 BlueKiwi CLI가 설치되어 있다면 아래 명령어 하나로 계정 생성부터 MCP 연결까지 완료됩니다.
               </p>
-              <div style="background:#1f2937;border-radius:6px;padding:12px;">
-                <code style="font-family:monospace;font-size:12px;color:#f9fafb;word-break:break-all;">${cliCommand}</code>
-              </div>
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#1f2937;border-radius:6px;">
+                <tr>
+                  <td style="padding:12px;">
+                    <code style="font-family:monospace;font-size:12px;color:#f9fafb;word-break:break-all;">${cliCommand}</code>
+                  </td>
+                  <td width="36" style="padding:8px 10px 8px 0;vertical-align:top;">
+                    <a href="${inviteUrl}#cli" title="명령어 복사" style="display:inline-block;width:28px;height:28px;background:#374151;border-radius:6px;text-align:center;line-height:28px;text-decoration:none;">
+                      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='9' width='13' height='13' rx='2'/%3E%3Cpath d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'/%3E%3C/svg%3E" width="14" height="14" alt="copy" style="vertical-align:middle;" />
+                    </a>
+                  </td>
+                </tr>
+              </table>
               <p style="margin:8px 0 0;font-size:11px;color:#9ca3af;">
                 CLI 미설치 시: <code style="font-family:monospace;">npm install -g bluekiwi</code>
               </p>
