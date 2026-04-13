@@ -16,6 +16,10 @@ export const openApiSpec = {
     { name: "Credentials", description: "API 시크릿/인증정보 관리" },
     { name: "Settings", description: "설정 및 관리 작업" },
     { name: "Folders", description: "폴더 및 공유 관리" },
+    { name: "Auth", description: "인증 및 사용자 세션 관리" },
+    { name: "Users", description: "사용자 관리 (admin 전용)" },
+    { name: "API Keys", description: "API 키 발급 및 관리" },
+    { name: "Invites", description: "팀 초대 관리" },
   ],
   paths: {
     "/api/instructions": {
@@ -429,7 +433,7 @@ export const openApiSpec = {
             in: "query",
             schema: {
               type: "string",
-              enum: ["pending", "running", "completed", "failed"],
+              enum: ["pending", "running", "completed", "failed", "timed_out"],
             },
             description: "상태로 필터링",
           },
@@ -556,7 +560,13 @@ export const openApiSpec = {
                 properties: {
                   status: {
                     type: "string",
-                    enum: ["pending", "running", "completed", "failed"],
+                    enum: [
+                      "pending",
+                      "running",
+                      "completed",
+                      "failed",
+                      "timed_out",
+                    ],
                   },
                 },
               },
@@ -575,6 +585,22 @@ export const openApiSpec = {
               },
             },
           },
+        },
+      },
+      delete: {
+        tags: ["Tasks"],
+        summary: "태스크 삭제",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": { description: "삭제 완료" },
+          "404": { description: "태스크를 찾을 수 없음" },
         },
       },
     },
@@ -1617,6 +1643,1477 @@ export const openApiSpec = {
         responses: { "201": { description: "생성된 폴더" } },
       },
     },
+    // ─── Folders: {id} CRUD + shares + visibility + transfer ───
+    "/api/folders/{id}": {
+      get: {
+        tags: ["Folders"],
+        summary: "폴더 단건 조회",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": { description: "폴더 상세" },
+          "404": { description: "폴더 없음" },
+        },
+      },
+      put: {
+        tags: ["Folders"],
+        summary: "폴더 수정",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  description: { type: "string" },
+                  visibility: {
+                    type: "string",
+                    enum: ["personal", "group", "public", "inherit"],
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "수정된 폴더" } },
+      },
+      delete: {
+        tags: ["Folders"],
+        summary: "폴더 삭제",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: { "200": { description: "삭제 완료" } },
+      },
+    },
+    "/api/folders/{id}/shares": {
+      get: {
+        tags: ["Folders"],
+        summary: "폴더 공유 목록",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: { "200": { description: "공유 목록" } },
+      },
+      post: {
+        tags: ["Folders"],
+        summary: "폴더 그룹 공유",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["group_id", "access_level"],
+                properties: {
+                  group_id: { type: "integer" },
+                  access_level: {
+                    type: "string",
+                    enum: ["reader", "contributor"],
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: { "201": { description: "공유 생성" } },
+      },
+    },
+    "/api/folders/{id}/shares/{groupId}": {
+      delete: {
+        tags: ["Folders"],
+        summary: "폴더 그룹 공유 해제",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+          {
+            name: "groupId",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: { "200": { description: "해제 완료" } },
+      },
+    },
+    "/api/folders/{id}/visibility": {
+      post: {
+        tags: ["Folders"],
+        summary: "폴더 visibility 변경",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["visibility"],
+                properties: {
+                  visibility: {
+                    type: "string",
+                    enum: ["personal", "group", "public"],
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "업데이트된 폴더" } },
+      },
+    },
+    "/api/folders/{id}/transfer": {
+      post: {
+        tags: ["Folders"],
+        summary: "폴더 소유권 이전",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["new_owner_id"],
+                properties: { new_owner_id: { type: "integer" } },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "이전 완료" } },
+      },
+    },
+    // ─── Instructions: visibility + transfer ───
+    "/api/instructions/{id}/visibility": {
+      post: {
+        tags: ["Instructions"],
+        summary: "지침 visibility override 설정",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  override: {
+                    type: "string",
+                    enum: ["personal", "group", "public"],
+                    nullable: true,
+                    description: "null이면 폴더 visibility 상속",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "업데이트된 지침" } },
+      },
+    },
+    "/api/instructions/{id}/transfer": {
+      post: {
+        tags: ["Instructions"],
+        summary: "지침 소유권 이전",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["new_owner_id"],
+                properties: { new_owner_id: { type: "integer" } },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "이전 완료" } },
+      },
+    },
+    // ─── Workflows: versions, activate, deactivate, shares, visibility, transfer ───
+    "/api/workflows/{id}/versions": {
+      get: {
+        tags: ["Workflows"],
+        summary: "워크플로 버전 목록",
+        description: "동일 family_root_id를 가진 모든 버전을 반환합니다.",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "버전 목록",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "object",
+                      properties: {
+                        family_root_id: { type: "integer" },
+                        active_version_id: {
+                          type: "integer",
+                          nullable: true,
+                        },
+                        versions: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              id: { type: "integer" },
+                              title: { type: "string" },
+                              version: { type: "string" },
+                              is_active: { type: "boolean" },
+                              parent_workflow_id: {
+                                type: "integer",
+                                nullable: true,
+                              },
+                              created_at: {
+                                type: "string",
+                                format: "date-time",
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "404": { description: "워크플로 없음" },
+        },
+      },
+    },
+    "/api/workflows/{id}/activate": {
+      post: {
+        tags: ["Workflows"],
+        summary: "워크플로 버전 활성화",
+        description:
+          "같은 family 내 기존 활성 버전을 비활성화하고 지정 버전을 활성화합니다.",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": { description: "활성화 결과 (already_active 포함)" },
+          "403": { description: "권한 없음" },
+          "404": { description: "워크플로 없음" },
+        },
+      },
+    },
+    "/api/workflows/{id}/deactivate": {
+      post: {
+        tags: ["Workflows"],
+        summary: "워크플로 버전 비활성화",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": { description: "비활성화 완료" },
+          "404": { description: "워크플로 없음" },
+        },
+      },
+    },
+    "/api/workflows/{id}/shares": {
+      get: {
+        tags: ["Workflows"],
+        summary: "워크플로 공유 목록",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: { "200": { description: "공유 목록 (group_name 포함)" } },
+      },
+      post: {
+        tags: ["Workflows"],
+        summary: "워크플로 그룹 공유 (upsert)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["group_id", "access_level"],
+                properties: {
+                  group_id: { type: "integer" },
+                  access_level: {
+                    type: "string",
+                    enum: ["reader", "contributor"],
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: { "201": { description: "공유 생성/업데이트" } },
+      },
+    },
+    "/api/workflows/{id}/shares/{groupId}": {
+      delete: {
+        tags: ["Workflows"],
+        summary: "워크플로 그룹 공유 해제",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+          {
+            name: "groupId",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: { "200": { description: "해제 완료" } },
+      },
+    },
+    "/api/workflows/{id}/visibility": {
+      post: {
+        tags: ["Workflows"],
+        summary: "워크플로 visibility override 설정",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  override: {
+                    type: "string",
+                    enum: ["personal", "group", "public"],
+                    nullable: true,
+                    description: "null이면 폴더 visibility 상속",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "업데이트된 워크플로" } },
+      },
+    },
+    "/api/workflows/{id}/transfer": {
+      post: {
+        tags: ["Workflows"],
+        summary: "워크플로 소유권 이전",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["new_owner_id"],
+                properties: { new_owner_id: { type: "integer" } },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "이전 완료" } },
+      },
+    },
+    // ─── Tasks: start, timeout-stale (new endpoints) ───
+    "/api/tasks/start": {
+      post: {
+        tags: ["Tasks"],
+        summary: "워크플로 태스크 시작 (start_workflow)",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/TaskStart" },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "생성된 태스크",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: { $ref: "#/components/schemas/TaskWithLogs" },
+                  },
+                },
+              },
+            },
+          },
+          "400": { description: "유효성 검증 실패" },
+          "404": { description: "워크플로 없음" },
+        },
+      },
+    },
+    "/api/tasks/timeout-stale": {
+      get: {
+        tags: ["Tasks"],
+        summary: "비활성 태스크 조회 (dry-run)",
+        description:
+          "timeout_minutes 이상 비활성 상태인 running/timed_out 태스크 목록을 반환합니다. 실제 상태 변경은 없습니다.",
+        parameters: [
+          {
+            name: "timeout_minutes",
+            in: "query",
+            schema: { type: "integer", default: 120 },
+            description: "비활성 기준 시간(분)",
+          },
+        ],
+        responses: { "200": { description: "비활성 태스크 목록" } },
+      },
+      post: {
+        tags: ["Tasks"],
+        summary: "비활성 태스크 일괄 timed_out 전환",
+        description:
+          "timeout_minutes 이상 비활성 상태인 running 태스크를 timed_out으로 전환합니다. bk-start 스킬이 워크플로 실행 전 호출합니다.",
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  timeout_minutes: { type: "integer", default: 120 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "전환 결과",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "object",
+                      properties: {
+                        timed_out_count: { type: "integer" },
+                        task_ids: {
+                          type: "array",
+                          items: { type: "integer" },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/api/tasks/{id}/heartbeat": {
+      post: {
+        tags: ["Task Execution"],
+        summary: "단계 진행 상황 핑 (heartbeat)",
+        description:
+          "진행 중인 단계 로그에 진행 메시지를 추가하여 태스크 활성 상태를 유지합니다.",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["node_id", "progress"],
+                properties: {
+                  node_id: { type: "integer" },
+                  progress: {
+                    type: "string",
+                    description: "진행 상황 메시지 (로그에 append됨)",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "핑 완료" } },
+      },
+    },
+    "/api/tasks/{id}/comments": {
+      get: {
+        tags: ["Tasks"],
+        summary: "태스크 댓글 목록",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "댓글 목록",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/TaskComment" },
+                    },
+                    total: { type: "integer" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      post: {
+        tags: ["Tasks"],
+        summary: "태스크 댓글 추가",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["step_order", "comment"],
+                properties: {
+                  step_order: { type: "integer" },
+                  comment: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "생성된 댓글",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: { $ref: "#/components/schemas/TaskComment" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/api/tasks/{id}/findings": {
+      get: {
+        tags: ["Tasks"],
+        summary: "컴플라이언스 소견 목록 (list_findings)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "소견 목록",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "object",
+                      properties: {
+                        findings: {
+                          type: "array",
+                          items: {
+                            $ref: "#/components/schemas/ComplianceFinding",
+                          },
+                        },
+                        total: { type: "integer" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      post: {
+        tags: ["Tasks"],
+        summary: "컴플라이언스 소견 저장 (save_findings)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["findings"],
+                properties: {
+                  findings: {
+                    type: "array",
+                    items: {
+                      $ref: "#/components/schemas/ComplianceFindingInput",
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "저장된 소견 수",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "object",
+                      properties: {
+                        inserted: { type: "integer" },
+                        ids: { type: "array", items: { type: "integer" } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/api/tasks/{id}/feedback": {
+      post: {
+        tags: ["Tasks"],
+        summary: "피드백 저장 (save_feedback)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["feedback"],
+                properties: {
+                  feedback: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      required: ["question", "answer"],
+                      properties: {
+                        question: { type: "string" },
+                        answer: { type: "string" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "피드백 저장 완료" } },
+      },
+    },
+    // ─── Credentials: reveal, shares, transfer (existing /api/credentials and /api/credentials/{id} defined above) ───
+    "/api/credentials/{id}/reveal": {
+      get: {
+        tags: ["Credentials"],
+        summary: "인증정보 원본 secrets 조회",
+        description: "editor 이상 권한의 소유자/공유 수신자만 호출 가능합니다.",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "복호화된 secrets (평문)",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "object",
+                      additionalProperties: { type: "string" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "403": { description: "권한 없음" },
+        },
+      },
+    },
+    "/api/credentials/{id}/shares": {
+      get: {
+        tags: ["Credentials"],
+        summary: "인증정보 공유 목록",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: { "200": { description: "공유 목록" } },
+      },
+      post: {
+        tags: ["Credentials"],
+        summary: "인증정보 그룹 공유",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["group_id", "access_level"],
+                properties: {
+                  group_id: { type: "integer" },
+                  access_level: {
+                    type: "string",
+                    enum: ["use", "manage"],
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: { "201": { description: "공유 생성" } },
+      },
+    },
+    "/api/credentials/{id}/shares/{groupId}": {
+      delete: {
+        tags: ["Credentials"],
+        summary: "인증정보 그룹 공유 해제",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+          {
+            name: "groupId",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: { "200": { description: "해제 완료" } },
+      },
+    },
+    "/api/credentials/{id}/transfer": {
+      post: {
+        tags: ["Credentials"],
+        summary: "인증정보 소유권 이전",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["new_owner_id"],
+                properties: { new_owner_id: { type: "integer" } },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "이전 완료" } },
+      },
+    },
+    // ─── Auth ───
+    "/api/auth/setup": {
+      post: {
+        tags: ["Auth"],
+        summary: "초기 슈퍼유저 생성",
+        description:
+          "첫 번째 계정 생성 전에만 사용 가능합니다 (/setup 페이지에서 호출).",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["username", "password"],
+                properties: {
+                  username: { type: "string" },
+                  password: { type: "string" },
+                  email: { type: "string", format: "email" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "201": { description: "슈퍼유저 생성 완료" },
+          "409": { description: "이미 사용자가 존재함" },
+        },
+      },
+    },
+    "/api/auth/login": {
+      post: {
+        tags: ["Auth"],
+        summary: "로그인",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["username", "password"],
+                properties: {
+                  username: { type: "string" },
+                  password: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": { description: "로그인 성공 (JWT 쿠키 발급)" },
+          "401": { description: "인증 실패" },
+        },
+      },
+    },
+    "/api/auth/logout": {
+      post: {
+        tags: ["Auth"],
+        summary: "로그아웃",
+        responses: { "200": { description: "로그아웃 완료" } },
+      },
+    },
+    "/api/auth/me": {
+      get: {
+        tags: ["Auth"],
+        summary: "현재 사용자 정보",
+        responses: {
+          "200": { description: "사용자 프로필 및 API 키 목록" },
+          "401": { description: "미인증" },
+        },
+      },
+      put: {
+        tags: ["Auth"],
+        summary: "프로필 수정 (이메일 등)",
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  email: { type: "string", format: "email" },
+                },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "업데이트된 프로필" } },
+      },
+    },
+    "/api/auth/me/groups": {
+      get: {
+        tags: ["Auth"],
+        summary: "현재 사용자가 속한 그룹 목록",
+        responses: { "200": { description: "그룹 목록" } },
+      },
+    },
+    "/api/auth/change-password": {
+      post: {
+        tags: ["Auth"],
+        summary: "비밀번호 변경",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["current_password", "new_password"],
+                properties: {
+                  current_password: { type: "string" },
+                  new_password: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": { description: "변경 완료" },
+          "401": { description: "현재 비밀번호 불일치" },
+        },
+      },
+    },
+    "/api/auth/dashboard": {
+      get: {
+        tags: ["Auth"],
+        summary: "대시보드 통계",
+        description: "워크플로, 태스크, 최근 활동 요약을 반환합니다.",
+        responses: { "200": { description: "대시보드 데이터" } },
+      },
+    },
+    // ─── API Keys ───
+    "/api/apikeys": {
+      get: {
+        tags: ["API Keys"],
+        summary: "내 API 키 목록",
+        responses: { "200": { description: "API 키 목록 (key_hash 제외)" } },
+      },
+      post: {
+        tags: ["API Keys"],
+        summary: "API 키 발급",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  expires_at: {
+                    type: "string",
+                    format: "date-time",
+                    nullable: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "발급된 API 키 (key는 이 응답에서만 평문 제공됨)",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "object",
+                      properties: {
+                        id: { type: "integer" },
+                        key: {
+                          type: "string",
+                          description: "bk_ 접두사 포함 원본 키 (1회만 노출)",
+                        },
+                        prefix: { type: "string" },
+                        name: { type: "string" },
+                        expires_at: {
+                          type: "string",
+                          format: "date-time",
+                          nullable: true,
+                        },
+                        created_at: { type: "string", format: "date-time" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/api/apikeys/{id}": {
+      delete: {
+        tags: ["API Keys"],
+        summary: "API 키 폐기",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": { description: "폐기 완료" },
+          "404": { description: "없음" },
+        },
+      },
+    },
+    // ─── Users (admin) ───
+    "/api/users": {
+      get: {
+        tags: ["Users"],
+        summary: "사용자 목록 (admin 전용)",
+        responses: {
+          "200": { description: "사용자 목록" },
+          "403": { description: "권한 없음" },
+        },
+      },
+      post: {
+        tags: ["Users"],
+        summary: "사용자 생성 (admin 전용)",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["username", "password"],
+                properties: {
+                  username: { type: "string" },
+                  password: { type: "string" },
+                  email: { type: "string", format: "email" },
+                  role: {
+                    type: "string",
+                    enum: ["admin", "editor", "viewer"],
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: { "201": { description: "생성된 사용자" } },
+      },
+    },
+    "/api/users/{id}": {
+      get: {
+        tags: ["Users"],
+        summary: "사용자 단건 조회",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: {
+          "200": { description: "사용자 정보" },
+          "404": { description: "없음" },
+        },
+      },
+      put: {
+        tags: ["Users"],
+        summary: "사용자 수정 (admin 전용)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  email: { type: "string" },
+                  role: {
+                    type: "string",
+                    enum: ["admin", "editor", "viewer"],
+                  },
+                  is_active: { type: "boolean" },
+                },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "수정된 사용자" } },
+      },
+      delete: {
+        tags: ["Users"],
+        summary: "사용자 삭제 (superuser 전용)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: { "200": { description: "삭제 완료" } },
+      },
+    },
+    // ─── Invites ───
+    "/api/invites": {
+      get: {
+        tags: ["Invites"],
+        summary: "초대 목록 (admin 전용)",
+        responses: { "200": { description: "초대 목록" } },
+      },
+      post: {
+        tags: ["Invites"],
+        summary: "초대 생성 (admin 전용)",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["email", "role"],
+                properties: {
+                  email: { type: "string", format: "email" },
+                  role: {
+                    type: "string",
+                    enum: ["admin", "editor", "viewer"],
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: { "201": { description: "초대 토큰 포함 응답" } },
+      },
+    },
+    "/api/invites/{id}": {
+      delete: {
+        tags: ["Invites"],
+        summary: "초대 취소 (admin 전용)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: { "200": { description: "취소 완료" } },
+      },
+    },
+    "/api/invites/accept/{token}": {
+      post: {
+        tags: ["Invites"],
+        summary: "초대 수락 (계정 생성)",
+        description:
+          "초대 토큰으로 계정을 생성합니다. `bluekiwi accept` CLI 명령어가 이 엔드포인트를 호출합니다.",
+        parameters: [
+          {
+            name: "token",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["username", "password"],
+                properties: {
+                  username: { type: "string" },
+                  password: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "201": { description: "계정 생성 및 API 키 발급 완료" },
+          "400": { description: "만료 또는 사용된 토큰" },
+        },
+      },
+    },
+    // ─── Settings: Groups ───
+    "/api/settings/groups": {
+      get: {
+        tags: ["Settings"],
+        summary: "사용자 그룹 목록",
+        responses: { "200": { description: "그룹 목록" } },
+      },
+      post: {
+        tags: ["Settings"],
+        summary: "그룹 생성 (admin 전용)",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["name"],
+                properties: {
+                  name: { type: "string" },
+                  description: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+        responses: { "201": { description: "생성된 그룹" } },
+      },
+    },
+    "/api/settings/groups/{id}": {
+      get: {
+        tags: ["Settings"],
+        summary: "그룹 단건 조회 (멤버 포함)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: { "200": { description: "그룹 상세" } },
+      },
+      put: {
+        tags: ["Settings"],
+        summary: "그룹 수정 (admin 전용)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  description: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "수정된 그룹" } },
+      },
+      delete: {
+        tags: ["Settings"],
+        summary: "그룹 삭제 (admin 전용)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: { "200": { description: "삭제 완료" } },
+      },
+    },
+    "/api/settings/groups/{id}/members": {
+      get: {
+        tags: ["Settings"],
+        summary: "그룹 멤버 목록",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        responses: { "200": { description: "멤버 목록" } },
+      },
+      post: {
+        tags: ["Settings"],
+        summary: "그룹 멤버 추가 (admin 전용)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["user_id"],
+                properties: { user_id: { type: "integer" } },
+              },
+            },
+          },
+        },
+        responses: { "201": { description: "멤버 추가 완료" } },
+      },
+      delete: {
+        tags: ["Settings"],
+        summary: "그룹 멤버 제거 (admin 전용)",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["user_id"],
+                properties: { user_id: { type: "integer" } },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "멤버 제거 완료" } },
+      },
+    },
   },
   components: {
     schemas: {
@@ -1867,7 +3364,7 @@ export const openApiSpec = {
           workflow_id: { type: "integer" },
           status: {
             type: "string",
-            enum: ["pending", "running", "completed", "failed"],
+            enum: ["pending", "running", "completed", "failed", "timed_out"],
           },
           current_step: { type: "integer" },
           created_at: { type: "string", format: "date-time" },
@@ -1881,7 +3378,10 @@ export const openApiSpec = {
           task_id: { type: "integer" },
           node_id: { type: "integer" },
           step_order: { type: "integer" },
-          status: { type: "string", enum: ["running", "completed", "failed"] },
+          status: {
+            type: "string",
+            enum: ["pending", "running", "completed", "failed", "skipped"],
+          },
           output: { type: "string" },
           started_at: { type: "string", format: "date-time" },
           completed_at: { type: "string", format: "date-time", nullable: true },
@@ -1926,6 +3426,111 @@ export const openApiSpec = {
           },
           created_at: { type: "string", format: "date-time" },
           updated_at: { type: "string", format: "date-time" },
+        },
+      },
+      CredentialCreate: {
+        type: "object",
+        required: ["service_name"],
+        properties: {
+          service_name: { type: "string", example: "github" },
+          description: { type: "string" },
+          secrets: {
+            type: "object",
+            additionalProperties: { type: "string" },
+            example: { ACCESS_TOKEN: "ghp_..." },
+          },
+          folder_id: { type: "integer", nullable: true },
+        },
+      },
+      CredentialUpdate: {
+        type: "object",
+        properties: {
+          service_name: { type: "string" },
+          description: { type: "string" },
+          secrets: {
+            type: "object",
+            additionalProperties: { type: "string" },
+          },
+          folder_id: { type: "integer", nullable: true },
+        },
+      },
+      TaskStart: {
+        type: "object",
+        required: ["workflow_id"],
+        properties: {
+          workflow_id: { type: "integer" },
+          context: {
+            type: "string",
+            description: "태스크 초기 컨텍스트 (사용자 목표 등)",
+          },
+          session_meta: {
+            type: "object",
+            description: "에이전트 세션 메타데이터",
+          },
+          provider_slug: {
+            type: "string",
+            example: "claude-code",
+            description: "에이전트 런타임 슬러그",
+          },
+          model_slug: {
+            type: "string",
+            example: "claude-sonnet-4-6",
+            description: "사용 모델 슬러그",
+          },
+        },
+      },
+      TaskComment: {
+        type: "object",
+        properties: {
+          id: { type: "integer" },
+          task_id: { type: "integer" },
+          step_order: { type: "integer" },
+          rule_id: { type: "string", nullable: true },
+          severity: { type: "string", nullable: true },
+          comment: { type: "string" },
+          created_at: { type: "string", format: "date-time" },
+        },
+      },
+      ComplianceFinding: {
+        type: "object",
+        properties: {
+          id: { type: "integer" },
+          task_id: { type: "integer" },
+          step_order: { type: "integer", nullable: true },
+          rule_id: { type: "string" },
+          severity: {
+            type: "string",
+            enum: ["BLOCK", "REVIEW", "WARN", "INFO"],
+          },
+          summary: { type: "string" },
+          detail: { type: "string", nullable: true },
+          fix: { type: "string", nullable: true },
+          authority: { type: "string", nullable: true },
+          file_path: { type: "string", nullable: true },
+          line_number: { type: "integer", nullable: true },
+          source: { type: "string", nullable: true },
+          metadata: { type: "object", nullable: true },
+          created_at: { type: "string", format: "date-time" },
+        },
+      },
+      ComplianceFindingInput: {
+        type: "object",
+        required: ["rule_id", "severity", "summary"],
+        properties: {
+          rule_id: { type: "string" },
+          severity: {
+            type: "string",
+            enum: ["BLOCK", "REVIEW", "WARN", "INFO"],
+          },
+          summary: { type: "string" },
+          detail: { type: "string" },
+          fix: { type: "string" },
+          authority: { type: "string" },
+          file_path: { type: "string" },
+          line_number: { type: "integer" },
+          source: { type: "string" },
+          step_order: { type: "integer" },
+          metadata: { type: "object" },
         },
       },
     },
