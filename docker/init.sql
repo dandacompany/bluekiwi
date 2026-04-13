@@ -226,6 +226,20 @@ CREATE TABLE IF NOT EXISTS task_logs (
   approved_by INTEGER REFERENCES users(id) ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS node_attachments (
+  id SERIAL PRIMARY KEY,
+  node_id INTEGER NOT NULL REFERENCES workflow_nodes(id) ON DELETE CASCADE,
+  filename TEXT NOT NULL,
+  mime_type TEXT NOT NULL DEFAULT 'text/plain',
+  size_bytes INTEGER NOT NULL DEFAULT 0,
+  content TEXT,
+  content_binary BYTEA,
+  storage_type TEXT NOT NULL DEFAULT 'db'
+    CHECK (storage_type IN ('db', 'file', 's3')),
+  storage_path TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS workflow_evaluations (
   id SERIAL PRIMARY KEY,
   task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
@@ -353,6 +367,7 @@ CREATE INDEX IF NOT EXISTS idx_instructions_owner  ON instructions(owner_id);
 CREATE INDEX IF NOT EXISTS idx_instructions_folder ON instructions(folder_id);
 CREATE INDEX IF NOT EXISTS idx_credentials_owner   ON credentials(owner_id);
 CREATE INDEX IF NOT EXISTS idx_credentials_folder  ON credentials(folder_id);
+CREATE INDEX IF NOT EXISTS idx_node_attachments_node ON node_attachments(node_id);
 
 -- ─── Migration tracking ───
 -- Mark all migrations as applied so the auto-runner skips them on fresh installs.
@@ -379,5 +394,6 @@ INSERT INTO schema_migrations (filename) VALUES
   ('014_workflow_visibility.sql'),
   ('015_rename_share_access_levels.sql'),
   ('016_folder_inherit_visibility.sql'),
-  ('017_agent_registry.sql')
+  ('017_agent_registry.sql'),
+  ('018_node_attachments.sql')
 ON CONFLICT (filename) DO NOTHING;
