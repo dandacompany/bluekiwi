@@ -63,27 +63,65 @@ Review each node against the improvement direction:
 - Missing validation → add it
 - Unnecessary steps → remove them
 
-### Step 4: Design Improved Nodes
+### Step 4: Propose Changes
 
-Design the full improved node set.
-
-Show a diff of the changes:
+Design the improvements and show a diff:
 
 ```
-Improvements:
+Proposed improvements:
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 ✏️  Step 1: "Collect keywords" → "Collect top 10 keywords (by search volume)"
+✏️  Step 3: instruction refined (add termination criteria)
 ➕  Step 4 added: "Quantitative validation (retry if below threshold)"
+🗑️  Step 6 removed: redundant summary
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
+
+### Step 5: Choose Modification Strategy
 
 Ask via AskUserQuestion:
 
-- header: "Confirm"
-- "Create a new version (v<x.y>) with these improvements?"
-- options: ["Create new version", "Adjust more", "Cancel"]
+- header: "How to apply?"
+- options: ["Edit in place (patch current version)", "Create new version (v<x.y>)", "Adjust more", "Cancel"]
 
-### Step 5: Create New Version
+**Edit in place** — for minor tweaks (instruction wording, adding/removing 1-2 nodes). Modifies the current active version directly.
+
+**Create new version** — for substantial restructuring (reordering steps, changing node types, major logic changes). Creates a new version in the same family; old version is archived.
+
+### Step 5a: Edit in Place (update_node)
+
+Apply changes one by one using granular MCP tools:
+
+```
+# Update inline instruction for a single node
+update_node(workflow_id=67, node_id=109, instruction="new instruction text")
+
+# Update node title
+update_node(workflow_id=67, node_id=110, title="New Title")
+
+# Change node type or add loop
+update_node(workflow_id=67, node_id=112, node_type="loop", loop_back_to=7)
+
+# Add a new node after step 3
+insert_node(workflow_id=67, after_step=3, title="Validation", instruction="...", node_type="action")
+
+# Remove a node
+remove_node(workflow_id=67, node_id=115)
+```
+
+<HARD-RULE>
+When editing in place, apply each change as a separate `update_node`, `insert_node`, `append_node`, or `remove_node` call. Never use `update_workflow(nodes=[...])` for in-place edits — it replaces ALL nodes and loses node IDs.
+</HARD-RULE>
+
+After all changes, report:
+
+```
+✅ Workflow updated in place
+Workflow: <title> v<version>
+Changes: <n> nodes modified, <n> added, <n> removed
+```
+
+### Step 5b: Create New Version
 
 Call `update_workflow` with `create_new_version: true`:
 
@@ -92,8 +130,17 @@ Call `update_workflow` with `create_new_version: true`:
   "workflow_id": <existing id>,
   "create_new_version": true,
   "version": "<new version>",
-  "nodes": [<improved node array>]
+  "nodes": [<full improved node array>]
 }
+```
+
+Report:
+
+```
+✅ New version created
+Workflow: <title>
+Previous: v<old>  →  New: v<new>
+Changed steps: <n>
 ```
 
 ### Step 6: Offer Immediate Execution
@@ -101,19 +148,10 @@ Call `update_workflow` with `create_new_version: true`:
 Ask via AskUserQuestion:
 
 - header: "Run now?"
-- "New version v<x.y> created. Run it now to check results?"
+- "Run the updated workflow now to verify changes?"
 - options: ["Run now", "Run later"]
 
-If "Run now" → switch to `/bk-run` flow and start a task with the new version.
-
-### Step 7: Report Result
-
-```
-✅ New version created
-Workflow: <title>
-Previous: v<old>  →  New: v<new>
-Improved steps: <n>
-```
+If "Run now" → switch to `/bk-run` flow.
 
 ## Node Modification Strategy
 
