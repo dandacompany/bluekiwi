@@ -342,9 +342,11 @@ function handleMessage(event: MessageEvent) {
 
 ---
 
-## 8. MCP Tool Description
+## 8. MCP Tool Updates
 
-Replace the current `set_visual_html` description with a component-reference guide listing all 12 `bk-*` components, their markup patterns, and the response format. See Section 4 of the brainstorming notes for the full text.
+### `set_visual_html` — Description Rewrite
+
+Replace the current inline-style guide with a component-reference guide listing all 12 `bk-*` components, their markup patterns, and the response format. See Section 4 of the brainstorming notes for the full text.
 
 Key changes:
 - "Write content fragments, NOT full HTML"
@@ -352,12 +354,57 @@ Key changes:
 - Response format: `{selections, values, ranking, matrix}`
 - Example fragment using bk-options
 
+### `get_web_response` — History Mode
+
+Extend to support full VS response history per node (parity with Visual Companion's event stream).
+
+**Current behavior:**
+```
+get_web_response(task_id) → latest web_response only (1 row)
+```
+
+**Extended behavior:**
+```
+get_web_response(task_id)                → latest (unchanged, backward compatible)
+get_web_response(task_id, node_id)       → all responses for that node (history mode)
+```
+
+When `node_id` is provided, return all `task_logs` rows for that node that have `web_response IS NOT NULL`, ordered by id:
+
+```json
+{
+  "task_id": 19,
+  "node_id": 109,
+  "history": [
+    { "log_id": 45, "step_order": 4, "iteration": 1, "web_response": {"selections":["a"]}, "created_at": "..." },
+    { "log_id": 48, "step_order": 4, "iteration": 2, "web_response": {"selections":["b"],"values":{"confidence":80}}, "created_at": "..." },
+    { "log_id": 51, "step_order": 4, "iteration": 3, "web_response": {"selections":["b"],"values":{"confidence":95}}, "created_at": "..." }
+  ]
+}
+```
+
+**MCP tool definition update:**
+```
+"get_web_response"
+"Fetch VS response for a task. Without node_id: returns the latest response.
+With node_id: returns the full response history for that node across all
+loop iterations — useful for tracking how user preferences evolved."
+Parameters: task_id (required), node_id (optional)
+```
+
+**API change:** `GET /api/tasks/{id}/respond?node_id=109`
+- Without `node_id` query param: existing behavior (latest 1 row)
+- With `node_id`: return history array
+
+**Iteration numbering:** Derived from row order within the same `(task_id, node_id)` group. Not a stored column — computed as `ROW_NUMBER() OVER (PARTITION BY task_id, node_id ORDER BY id)`.
+
 ---
 
 ## 9. Skill Updates
 
 ### bk-start
 - VS gate section: compose fragment with bk-* classes, open deep link, poll get_web_response, parse JSON response object
+- Loop + VS pattern: in a loop with VS gate, use `get_web_response(task_id, node_id)` to access previous iteration responses and adapt the next VS screen accordingly
 
 ### bk-design
 - Node Design Guidelines: plan which bk-* components the agent should use, document in node instruction
@@ -379,9 +426,9 @@ Key changes:
 
 ## 10. OpenAPI / Swagger
 
-Update `set_visual_html` endpoint description to mention fragment-based content and the new response format.
-
-Update `/api/tasks/{id}/respond` POST description to document the JSON response structure.
+- Update `set_visual_html` endpoint description to mention fragment-based content and the new response format.
+- Update `/api/tasks/{id}/respond` POST description to document the JSON response structure.
+- Update `/api/tasks/{id}/respond` GET description: add optional `node_id` query parameter for history mode. Document the `history` array response format.
 
 ---
 
