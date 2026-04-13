@@ -41,6 +41,7 @@ interface ApiKey {
   prefix: string;
   name: string;
   user_id: number;
+  owner_name?: string;
   last_used_at: string | null;
   expires_at: string | null;
   is_revoked: boolean;
@@ -246,6 +247,11 @@ export function ApiKeysTab() {
                   <th className="pb-2 pr-4 font-medium">
                     {t("apiKeys.keyName")}
                   </th>
+                  {keys.some((k) => k.owner_name) && (
+                    <th className="pb-2 pr-4 font-medium">
+                      {t("apiKeys.owner")}
+                    </th>
+                  )}
                   <th className="pb-2 pr-4 font-medium">
                     {t("apiKeys.keyPrefix")}
                   </th>
@@ -264,6 +270,9 @@ export function ApiKeysTab() {
                     <td className="py-3 pr-4 font-medium">
                       {key.name || t("apiKeys.noName")}
                     </td>
+                    {keys.some((k) => k.owner_name) && (
+                      <td className="py-3 pr-4">{key.owner_name}</td>
+                    )}
                     <td className="py-3 pr-4">
                       <code className="rounded bg-[var(--muted)] px-1.5 py-0.5 text-xs">
                         {key.prefix}...
