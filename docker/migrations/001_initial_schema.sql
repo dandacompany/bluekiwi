@@ -55,9 +55,12 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Deferred FK: folders.owner_id → users.id (tables now both exist)
-ALTER TABLE folders
-  ADD CONSTRAINT IF NOT EXISTS folders_owner_id_fkey
-  FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE RESTRICT;
+DO $$ BEGIN
+  ALTER TABLE folders
+    ADD CONSTRAINT folders_owner_id_fkey
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE RESTRICT;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS user_groups (
   id          SERIAL PRIMARY KEY,
