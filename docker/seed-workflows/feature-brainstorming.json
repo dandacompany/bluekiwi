@@ -1,0 +1,151 @@
+{
+  "title": "기능 브레인스토밍",
+  "description": "brainstorming 스킬의 전체 흐름을 체인으로 구현. 컨텍스트 탐색 → 비주얼 컴패니언 → 명확화 질문 → 접근 방식 → 설계 → 검토 → 구현 전환 → 실제 구현(codex exec) → Advisor 리뷰 → 단순화 → 커밋",
+  "version": "1.0",
+  "nodes": [
+    {
+      "step_order": 1,
+      "node_type": "action",
+      "title": "프로젝트 컨텍스트 탐색",
+      "instruction": "현재 프로젝트의 디렉토리 구조, package.json, README, 최근 git 커밋 10개를 분석한다.\n\n확인할 것:\n- 사용 중인 프레임워크와 라이브러리\n- 프로젝트 구조 패턴\n- 기존 코딩 컨벤션\n- 최근 작업 방향\n\n결과를 간결하게 요약한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 2,
+      "node_type": "gate",
+      "title": "비주얼 컴패니언 제안",
+      "instruction": "이후 질문 중 시각적 자료(목업, 다이어그램, 레이아웃 비교)가 필요한 내용이 있을 수 있다.\n\n사용자에게 물어본다:\n'시각적 자료가 필요한 질문이 있을 수 있습니다. 웹 브라우저에서 목업이나 다이어그램을 볼까요?'\n\n이 질문만 단독으로 전달한다. 다른 질문과 합치지 않는다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 3,
+      "node_type": "gate",
+      "title": "범위 확인",
+      "instruction": "요청이 여러 독립적인 서브시스템을 포함하는지 평가한다.\n\n단일 프로젝트 범위이면 그대로 진행한다.\n분해가 필요하면 서브 프로젝트로 나누고, 첫 번째 서브 프로젝트부터 진행할 것을 제안한다.\n\n사용자에게 범위가 적절한지 확인을 요청한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 4,
+      "node_type": "loop",
+      "title": "명확화 질문",
+      "instruction": "한 번에 하나의 질문만 한다. 가능하면 객관식으로 제시한다.\n\n파악해야 할 것:\n- 목적: 이 기능이 해결하는 문제는?\n- 제약조건: 기술 스택, 성능, 보안 제한사항?\n- 성공 기준: 완성의 기준은?\n\n종료 조건: 목적, 범위, 제약조건, 성공 기준이 모두 명확해졌을 때 종료한다.",
+      "loop_back_to": 4,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 5,
+      "node_type": "action",
+      "title": "접근 방식 제안",
+      "instruction": "주어진 목표에 대해 2-3가지 접근 방식을 제안한다.\n\n각 방식마다:\n- 핵심 아이디어 (1-2문장)\n- 장점\n- 단점/리스크\n- 예상 복잡도 (낮음/중간/높음)\n\n마지막에 추천 방식과 그 이유를 명시한다. 추천 방식을 첫 번째로 배치한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 6,
+      "node_type": "gate",
+      "title": "접근 방식 선택",
+      "instruction": "제안한 접근 방식들을 사용자에게 보여주고 선택을 요청한다.\n\n추천 방식을 첫 번째로 제시하고 이유를 설명한다.\n수정을 원하면 반영한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": true
+    },
+    {
+      "step_order": 7,
+      "node_type": "loop",
+      "title": "설계 섹션 발표",
+      "instruction": "설계를 섹션별로 나누어 발표한다.\n\n각 섹션은 복잡도에 비례: 단순하면 몇 문장, 복잡하면 200-300 단어.\n\n다룰 영역: 아키텍처, 컴포넌트, 데이터 흐름, 에러 처리, 테스트.\n\n각 섹션 발표 후 사용자에게 괜찮은지 확인한다.\n모든 섹션이 승인되면 종료한다.\n\n종료 조건: 모든 설계 섹션이 사용자에게 승인되었을 때.",
+      "loop_back_to": 7,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 8,
+      "node_type": "action",
+      "title": "설계 문서 작성",
+      "instruction": "합의된 접근 방식을 바탕으로 설계 문서를 작성한다.\n\n포함할 섹션:\n1. 개요 — 무엇을, 왜 만드는가\n2. 아키텍처 — 주요 컴포넌트와 데이터 흐름\n3. API/인터페이스 — 외부에 노출되는 인터페이스\n4. 에러 처리 — 실패 시나리오와 대응\n5. 테스트 전략 — 무엇을 어떻게 검증할 것인가\n\n각 섹션은 복잡도에 비례하여 간결하게 작성한다.\n`docs/bluekiwi/specs/` 디렉토리에 `YYYY-MM-DD-{topic}-design.md`로 저장한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 9,
+      "node_type": "action",
+      "title": "스펙 자체 검토",
+      "instruction": "작성된 설계 문서를 새로운 눈으로 검토한다.\n\n1. Placeholder 스캔: TBD, TODO, 미완성 섹션, 모호한 요구사항이 있는지 확인\n2. 내부 일관성: 섹션 간 모순이 없는지, 아키텍처가 기능 설명과 일치하는지 확인\n3. 범위 체크: 단일 구현 계획으로 충분한 범위인지, 분해가 필요한지 확인\n4. 모호성 체크: 두 가지로 해석될 수 있는 요구사항이 있으면 하나를 선택하고 명시\n\n발견된 문제를 인라인으로 수정한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 10,
+      "node_type": "gate",
+      "title": "사용자 스펙 검토",
+      "instruction": "작성된 스펙 문서의 경로를 안내하고 사용자에게 검토를 요청한다.\n\n'스펙이 작성되어 [경로]에 저장되었습니다. 검토 후 수정할 부분이 있으면 말씀해주세요. 괜찮다면 구현 계획으로 넘어가겠습니다.'\n\n수정 요청 시 반영 후 다시 검토를 요청한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 11,
+      "node_type": "action",
+      "title": "구현 계획 작성",
+      "instruction": "설계 문서를 바탕으로 단계별 구현 계획을 작성한다.\n\n## 구현 계획 작성 원칙\n\n### 의존성 역순 배치\n- 가장 독립적인 단위(데이터 모델, 유틸 함수)부터 시작\n- 상위 레이어(API, UI)는 하위 레이어가 완성된 후 배치\n- 각 단계는 단독으로 실행 가능해야 함\n\n### 각 단계 필수 항목\n- **작업 내용**: 구체적으로 무엇을 만드는가 (추상적 표현 금지)\n- **관련 파일**: 생성·수정 대상 파일 경로\n- **의존성**: 이 단계 전에 완료되어야 할 선행 단계\n- **검증 방법**: 이 단계가 올바르게 완료됐음을 어떻게 확인하는가 (테스트 명령, 직접 확인 방법 등)\n\n### MVP 범위 명시\n- 첫 릴리스에 반드시 포함할 Phase를 명확히 구분\n- 이후 Phase는 \"Coming Soon\" 또는 별도 릴리스로 표시\n- MVP = 핵심 가치를 전달하는 최소 단위\n\n### 병렬 가능 단계 표시\n- 상호 의존성 없는 단계는 병렬 실행 가능으로 표시\n- 의존 관계를 다이어그램(텍스트 아스키)으로 요약\n\n`docs/bluekiwi/specs/` 디렉토리에 `YYYY-MM-DD-{topic}-implementation-plan.md`로 저장한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 12,
+      "node_type": "action",
+      "title": "구현 실행",
+      "instruction": "구현 계획(이전 단계 산출물)을 바탕으로 실제 코드를 작성합니다.\n\n## 구현 방식 선택\n\n### 옵션 A — 메인 Claude 직접 구현 (기본)\n- 단계별로 파일을 생성·수정하며 구현 진행\n- 각 Phase 완료 후 검증 방법(테스트·실행)으로 동작 확인\n- 의존성 순서대로 진행 (계획에 명시된 순서 준수)\n\n### 옵션 B — codex exec 위임 (복잡하거나 대량 수정 시)\n- 독립적인 대량 탐색·수정이 필요할 때 사용\n- 기본 모델: `gpt-5.2` + `xhigh reasoning`\n- 분석·탐색만: `read-only` / 파일 수정 포함: `workspace-write`\n- 이어가기: `codex exec resume --last`\n\n## 공통 원칙\n- 구현 중 막히거나 방향이 흔들릴 때 → `/advisor-opus:advise` 호출\n- 각 단계 완료 후 계획에 명시된 검증 방법으로 동작 확인\n- 완전히 동작하지 않는 절반짜리 구현은 커밋하지 않음",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 13,
+      "node_type": "gate",
+      "title": "구현 결과 검토",
+      "instruction": "구현 완료된 결과를 사용자에게 보고하고 검토를 요청한다.\n\n제시 형식:\n- 완료된 Phase 목록\n- 생성/수정된 주요 파일 목록\n- 각 Phase 검증 결과 요약\n\n'구현이 완료되었습니다. [경로] 파일들을 검토 후 수정할 부분이 있으면 말씀해주세요. 괜찮다면 Advisor 코드 리뷰로 넘어가겠습니다.'\n\n수정 요청 시: 해당 부분 수정 → artifacts 업데이트 → 다시 검토 요청.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 14,
+      "node_type": "action",
+      "title": "Advisor 코드 리뷰",
+      "instruction": "완성된 코드를 advisor-opus:review 관점에서 구조·보안·엣지케이스를 점검한다.\n\n## 점검 항목\n1. **아키텍처 일관성**: 설계 문서(docs/specs/*-design.md)와 구현이 일치하는가?\n2. **보안**: OWASP Top 10 취약점 여부 (SQL Injection, XSS, 인증 누락 등)\n3. **엣지케이스**: 설계 문서의 에러 처리 시나리오가 실제 구현되었는가?\n4. **코드 품질**: 타입 안전성, 에러 핸들링, 불필요한 복잡성\n5. **테스트**: 구현 계획의 검증 방법이 코드에 반영되었는가?\n\n## 처리 방식\n- **AUTO-FIX**: 명확한 버그·취약점·null 참조 → 즉시 수정\n- **WARN**: 판단 필요 항목 (레이스 컨디션, API 계약 변경 등) → 목록화하여 사용자에게 제시\n- **PASS**: 검토 통과 항목\n\n## 결과 형식\n```\nAUTO-FIXED: N개\nWARN: M개 (목록)\nPASS: K개\n```\n\nartifacts에 수정된 파일 기록.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 15,
+      "node_type": "action",
+      "title": "코드 단순화",
+      "instruction": "구현된 코드를 diff 기반으로 검토하여 중복·비효율·불필요한 복잡성을 정리한다. (simplify 원칙)\n\n## 단순화 원칙\n- **기능 변경 금지**: 동작을 바꾸지 않고 코드만 개선\n- **YAGNI**: 지금 필요하지 않은 추상화 제거\n- **최근 수정 코드 집중**: `git diff`로 변경된 파일만 대상\n- **명확성 우선**: 변수명·함수명 불명확 시 개선\n\n## 확인 항목\n- 불필요한 import 제거\n- 3회 이상 반복되는 코드 → 자연스러운 경우에만 추출\n- dead code 삭제 (주석 처리된 코드, 사용하지 않는 함수)\n- 주석 정확성 확인 (코드와 불일치하는 주석 수정)\n- 과도한 중간 변수 제거\n\n## 금지 사항\n- 동작 변경\n- 섣부른 추상화 (유사하지만 다른 로직의 강제 통합)\n- 전체 파일 리팩토링 (최근 변경 부분만)\n\nartifacts에 정리된 파일 기록.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 16,
+      "node_type": "gate",
+      "title": "커밋 확인",
+      "instruction": "최종 구현 결과를 사용자에게 보고하고 Git 커밋 여부를 확인한다.\n\n## 보고 형식\n- 완료된 Phase 목록\n- 생성/수정 파일 수\n- Advisor 리뷰: AUTO-FIXED N개, WARN M개\n- 단순화: 정리된 파일 K개\n\nAskUserQuestion으로 확인:\n- '구현·리뷰·단순화가 완료되었습니다. Git 커밋을 진행할까요?'\n- 옵션: '커밋 실행 (Recommended)' / '나중에 커밋'\n\n## 커밋 실행 시\n관련 파일만 staging하고 커밋 메시지 작성:\n```bash\ngit add <관련 파일들>\ngit commit -m \"$(cat <<'EOF'\nfeat: {기능명} 구현\n\n- {주요 변경사항 1}\n- {주요 변경사항 2}\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n)\"\n```\n\n## 나중에 커밋 선택 시\n구현 계획 파일 경로와 변경 파일 목록을 context_snapshot에 저장하고 안내한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    }
+  ]
+}

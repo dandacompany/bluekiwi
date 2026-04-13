@@ -60,6 +60,9 @@ COPY --from=mcp-builder /app/mcp/node_modules ./mcp/node_modules
 # Migration files (runner is already bundled above as scripts/migrate.js)
 COPY docker/migrations ./docker/migrations
 
+# Built-in workflow seeds (loaded on first setup)
+COPY docker/seed-workflows ./docker/seed-workflows
+
 USER nextjs
 
 EXPOSE 3000 3001

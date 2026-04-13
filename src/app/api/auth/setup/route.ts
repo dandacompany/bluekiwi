@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { query, queryOne, execute } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { createSession } from "@/lib/session";
+import { seedBuiltinWorkflows } from "@/lib/seed-workflows";
 
 // GET: Check if setup is needed (no users exist)
 export async function GET() {
@@ -51,11 +52,18 @@ export async function POST(req: NextRequest) {
   const userId = rows[0].id;
 
   // Create default folder for the superuser
-  await execute(
+  const folderRows = await query<{ id: number }>(
     `INSERT INTO folders (name, description, owner_id, visibility, is_system)
-     VALUES ('My Workspace', 'Your personal workspace.', $1, 'personal', true)`,
+     VALUES ('My Workspace', 'Your personal workspace.', $1, 'personal', true)
+     RETURNING id`,
     [userId],
   );
+  const folderId = folderRows[0].id;
+
+  // Seed built-in workflows
+  await seedBuiltinWorkflows(userId, folderId).catch(() => {
+    /* non-fatal — setup succeeds even if seeding fails */
+  });
 
   const token = await createSession({
     userId,
