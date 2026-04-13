@@ -36,6 +36,17 @@ Check `log_status` and `node_type` to determine scenario:
 
 1. Show the gate question from `instruction`.
 2. Check `get_web_response` for a pre-submitted web response. If found, show it and ask to confirm.
+   If the web response is a JSON object from bk-* components, display a readable summary instead of raw JSON:
+
+   ```text
+   VS Response:
+   - Selected: [option names from selections array]
+   - Values: budget = 70%, confidence = 85%
+   - Ranking: 1. Security, 2. Performance, 3. UX
+   - Matrix: auth -> high urgency / high importance
+   ```
+
+   Map `selections` values back to the option labels shown in the VS screen. Present `values` with their units, `ranking` as a numbered list, and `matrix` positions as quadrant descriptions using high/low language for each axis.
 3. Collect decision via AskUserQuestion:
    - header: "Gate decision"
    - options: ["Approve (Recommended)", "Approve with edits", "Reject and revise", "Rewind to previous step"]

@@ -177,14 +177,53 @@ Call `request_approval`, then immediately show the HITL approval AskUserQuestion
 
 #### Gate step (no next_action, node_type=gate)
 
+<HARD-RULE>
+Write all VS content text (titles, descriptions, option labels, button text)
+in the user's language. The frame UI (Submit button, status) is auto-localized,
+but agent-authored content must match the user's locale.
+</HARD-RULE>
+
 - If `visual_selection: true`:
-  1. Call `set_visual_html` with interactive HTML
-  2. Open the VS deep link in the browser so the user can see and click the selection UI:
+  1. Compose a VS content **fragment** using `bk-*` component classes. Write **only the inner HTML** - do not include `<html>`, `<head>`, or `<body>` tags. The frame (CSS, JS, submit button) is injected automatically by the web UI.
+
+     **Component quick reference:**
+     - Selection: `bk-options` (A/B/C cards, single), `bk-cards` (visual cards, single), `bk-checklist` (multi-select), `bk-code-compare` (code blocks, single)
+     - Input: `bk-slider` (numeric range), `bk-ranking` (drag reorder), `bk-matrix` (2x2 drag placement)
+     - Display: `bk-split`, `bk-pros-cons`, `bk-mockup`, `bk-timeline`
+     - Layout: `h2`, `.bk-subtitle`, `.bk-section`, `.bk-label`
+
+     Every selection/input element needs a `data-value` attribute. Example fragment:
+     ```html
+     <h2>Choose an approach</h2>
+     <p class="bk-subtitle">Select the architecture that best fits your needs</p>
+     <div class="bk-options">
+       <div class="bk-option" data-value="monolith" data-recommended>
+         <div class="bk-option-letter">A</div>
+         <div class="bk-option-body"><h3>Monolith</h3><p>Simple deployment</p></div>
+       </div>
+       <div class="bk-option" data-value="microservices">
+         <div class="bk-option-letter">B</div>
+         <div class="bk-option-body"><h3>Microservices</h3><p>Independent scaling</p></div>
+       </div>
+     </div>
+     ```
+
+  2. Call `set_visual_html(task_id, node_id, html)` with the fragment.
+  3. Open the VS deep link so the user sees the selection UI immediately:
      ```bash
      open "${BLUEKIWI_URL:-http://localhost:3100}/tasks/${TASK_ID}?step=${STEP_ORDER}&vs=true"
      ```
-  3. Poll `get_web_response` every 3-5 seconds until a response arrives (max 120 seconds)
-  4. When the response arrives, use it as the gate answer and call `advance`
+  4. Poll `get_web_response(task_id)` every 3-5 seconds until a response arrives (max 120 seconds).
+  5. The response is a **JSON object** (not a plain string). Parse it to read the user's choices:
+     ```json
+     {"selections": ["monolith"], "values": {"budget": 70}, "ranking": ["security", "ux"]}
+     ```
+     - `selections`: chosen option values (from bk-options, bk-cards, bk-checklist, bk-code-compare)
+     - `values`: numeric inputs (from bk-slider, keyed by data-name)
+     - `ranking`: ordered list (from bk-ranking)
+     - `matrix`: placement coordinates (from bk-matrix)
+     Only populated fields appear.
+  6. Use the parsed response to form the gate answer and call `advance`.
 - If `visual_selection: false` → present the gate question to the user via AskUserQuestion. Use the response as gate answer, call `execute_step` with the answer, then `advance`.
 
 #### Attachments
@@ -227,6 +266,23 @@ Iteration 3: Present final section → user approves → all sections done → l
 ```
 
 </HARD-RULE>
+
+#### Loop + VS History Pattern
+
+When a loop node uses `visual_selection: true`, each iteration presents a VS screen and collects a response. Use `get_web_response(task_id, node_id)` to access all previous iteration responses for that node:
+
+```json
+{
+  "task_id": 19,
+  "node_id": 109,
+  "history": [
+    {"iteration": 1, "web_response": {"selections": ["a"]}, "created_at": "..."},
+    {"iteration": 2, "web_response": {"selections": ["b"], "values": {"confidence": 80}}, "created_at": "..."}
+  ]
+}
+```
+
+Use the history to adapt subsequent VS screens - for example, pre-selecting the user's previous choice, adjusting slider defaults based on past values, or skipping already-confirmed items.
 
 ## Feedback Survey (before calling complete_task)
 

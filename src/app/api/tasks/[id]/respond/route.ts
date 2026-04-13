@@ -10,6 +10,42 @@ export async function GET(request: NextRequest, { params }: Params) {
   if (authResult instanceof NextResponse) return authResult;
 
   const { id } = await params;
+  const taskId = Number(id);
+  const nodeIdParam = request.nextUrl.searchParams.get("node_id");
+
+  if (nodeIdParam) {
+    const nodeId = Number(nodeIdParam);
+    const rows = await query<{
+      iteration: number;
+      web_response: string | null;
+      created_at: string;
+    }>(
+      `SELECT
+         ROW_NUMBER() OVER (PARTITION BY task_id, node_id ORDER BY id) AS iteration,
+         web_response,
+         created_at
+       FROM task_logs
+       WHERE task_id = $1 AND node_id = $2 AND web_response IS NOT NULL
+       ORDER BY id ASC`,
+      [taskId, nodeId],
+    );
+
+    const history = rows.map((row) => {
+      let parsed: unknown = row.web_response;
+      try {
+        parsed = JSON.parse(row.web_response!);
+      } catch {}
+
+      return {
+        iteration: row.iteration,
+        web_response: parsed,
+        created_at: row.created_at,
+      };
+    });
+
+    const res = okResponse({ task_id: taskId, node_id: nodeId, history });
+    return NextResponse.json(res.body, { status: res.status });
+  }
 
   const rows = await query<{
     node_id: number;
@@ -17,11 +53,11 @@ export async function GET(request: NextRequest, { params }: Params) {
     web_response: string | null;
   }>(
     "SELECT node_id, step_order, web_response FROM task_logs WHERE task_id = $1 AND web_response IS NOT NULL ORDER BY step_order DESC LIMIT 1",
-    [Number(id)],
+    [taskId],
   );
 
   if (rows.length === 0) {
-    const res = okResponse({ task_id: Number(id), web_response: null });
+    const res = okResponse({ task_id: taskId, web_response: null });
     return NextResponse.json(res.body, { status: res.status });
   }
 
@@ -32,7 +68,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   } catch {}
 
   const res = okResponse({
-    task_id: Number(id),
+    task_id: taskId,
     node_id: row.node_id,
     step_order: row.step_order,
     web_response: parsed,

@@ -272,9 +272,10 @@ const tools: Tool[] = [
   ),
   tool(
     "get_web_response",
-    "Fetch the pending web response payload for a task",
+    "Fetch VS response for a task. Without node_id: returns the latest response. With node_id: returns the response history for that node across all loop iterations (web_response only, no visual_html). Useful for tracking how user preferences evolved across iterations.",
     {
       task_id: { type: "number" },
+      node_id: { type: "number" },
     },
     ["task_id"],
   ),
@@ -290,7 +291,31 @@ const tools: Tool[] = [
   ),
   tool(
     "set_visual_html",
-    "Submit shadcn-based selection UI HTML for a visual_selection=true gate node. The web UI will show a '선택하기' button that opens this HTML in an iframe dialog. When the user clicks an element, the selection is POSTed to /respond. Use get_web_response to poll for the result. CSS tokens: --background:#0A0A0A, --foreground:#F5F5F5, --brand-mint:#00D4AA, --border:rgba(255,255,255,0.1), --radius:8px. Each selectable element must have a data-value attribute and onclick: window.parent.postMessage({type:'bk_visual_select',value:this.dataset.value},'*'). IMPORTANT: the postMessage must include type:'bk_visual_select' — the web UI ignores messages without this type.",
+    `Submit a VS content fragment for a visual_selection=true gate node. Write HTML fragments using bk-* component classes — the frame (CSS, JS, submit button) is added automatically. Do NOT include <html>, <head>, or <body> tags.
+
+Built-in components (use class names directly):
+SELECTION (collect choices):
+- bk-options: A/B/C cards. Wrap in .bk-options, each .bk-option with data-value. Optional data-recommended badge. Contains .bk-option-letter + .bk-option-body with h3+p.
+- bk-cards: Visual cards. Wrap in .bk-cards, each .bk-card with data-value. Contains .bk-card-image + .bk-card-body.
+- bk-checklist: Multi-select. Wrap in .bk-checklist, each .bk-check-item with data-value. Optional data-checked for defaults.
+- bk-code-compare: Code selection. Wrap in .bk-code-compare, each .bk-code-option with data-value. Contains .bk-code-label + pre.bk-code.
+
+INPUT (collect values):
+- bk-slider: Numeric. data-name, data-min, data-max, data-value, data-unit on .bk-slider. Contains label.
+- bk-ranking: Drag reorder. Wrap in .bk-ranking, each .bk-rank-item with data-value.
+- bk-matrix: 2x2 placement. .bk-matrix with data-x-label, data-y-label. Each .bk-matrix-item with data-value.
+
+DISPLAY (no values):
+- bk-split: Side-by-side. Two .bk-split-panel inside .bk-split.
+- bk-pros-cons: .bk-pros + .bk-cons inside .bk-pros-cons.
+- bk-mockup: .bk-mockup-header + .bk-mockup-body inside .bk-mockup.
+- bk-timeline: .bk-timeline-item with data-status="done|current|pending".
+
+Layout: h2 for title, .bk-subtitle, .bk-section for breaks, .bk-label for category.
+
+Response format (JSON via get_web_response):
+{selections: ["a"], values: {budget: 70}, ranking: ["security","ux"], matrix: {auth: {x:0.8,y:0.9}}}
+Only populated fields are included.`,
     {
       task_id: { type: "number" },
       node_id: { type: "number" },
@@ -789,9 +814,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
       case "get_web_response": {
         const taskId = requireNumberArg(args, "task_id");
-        return wrap(
-          await client.request("GET", `/api/tasks/${taskId}/respond`),
-        );
+        const nodeId = typeof args.node_id === "number" ? args.node_id : null;
+        const url = nodeId
+          ? `/api/tasks/${taskId}/respond?node_id=${nodeId}`
+          : `/api/tasks/${taskId}/respond`;
+        return wrap(await client.request("GET", url));
       }
       case "submit_visual": {
         const taskId = requireNumberArg(args, "task_id");

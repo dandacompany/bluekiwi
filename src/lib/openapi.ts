@@ -14,6 +14,7 @@ export const openApiSpec = {
     { name: "Tasks", description: "태스크 실행 및 모니터링" },
     { name: "Task Execution", description: "MCP 기반 태스크 실행 제어" },
     { name: "Credentials", description: "API 시크릿/인증정보 관리" },
+    { name: "Settings", description: "설정 및 관리 작업" },
     { name: "Folders", description: "폴더 및 공유 관리" },
   ],
   paths: {
@@ -1386,7 +1387,8 @@ export const openApiSpec = {
       get: {
         tags: ["Task Execution"],
         summary: "Visual Selection 응답 폴링",
-        description: "에이전트가 사용자의 Visual Selection 응답을 폴링합니다.",
+        description:
+          "에이전트가 사용자의 Visual Selection 응답을 폴링합니다. node_id를 지정하면 해당 노드의 응답 이력을 순서대로 반환합니다.",
         parameters: [
           {
             name: "id",
@@ -1394,10 +1396,77 @@ export const openApiSpec = {
             required: true,
             schema: { type: "integer" },
           },
+          {
+            name: "node_id",
+            in: "query",
+            required: false,
+            schema: { type: "integer" },
+            description:
+              "특정 노드 ID. 지정하면 최신 응답 대신 해당 노드의 history 배열을 반환합니다.",
+          },
         ],
         responses: {
           "200": {
             description: "web_response가 null이면 아직 응답 없음",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      oneOf: [
+                        {
+                          type: "object",
+                          properties: {
+                            task_id: { type: "integer" },
+                            node_id: { type: "integer" },
+                            step_order: { type: "integer" },
+                            web_response: {
+                              description: "가장 최근의 응답",
+                            },
+                          },
+                        },
+                        {
+                          type: "object",
+                          properties: {
+                            task_id: { type: "integer" },
+                            node_id: { type: "integer" },
+                            history: {
+                              type: "array",
+                              description:
+                                "해당 node_id에 대해 저장된 응답 이력 (오래된 순)",
+                              items: {
+                                type: "object",
+                                properties: {
+                                  iteration: { type: "integer" },
+                                  web_response: {
+                                    description: "파싱된 응답 payload",
+                                  },
+                                  created_at: {
+                                    type: "string",
+                                    format: "date-time",
+                                  },
+                                },
+                              },
+                            },
+                          },
+                        },
+                        {
+                          type: "object",
+                          properties: {
+                            task_id: { type: "integer" },
+                            web_response: {
+                              nullable: true,
+                              description: "응답이 아직 없으면 null",
+                            },
+                          },
+                        },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -1435,6 +1504,8 @@ export const openApiSpec = {
       post: {
         tags: ["Task Execution"],
         summary: "Visual HTML 제출 (set_visual_html)",
+        description:
+          "Visual Selector UI를 저장합니다. 전체 HTML 문서뿐 아니라 프레임에 삽입되는 fragment 기반 콘텐츠도 지원하며, fragment는 bk-* 컴포넌트 클래스를 사용해 작성할 수 있습니다.",
         parameters: [
           {
             name: "id",
@@ -1454,7 +1525,8 @@ export const openApiSpec = {
                   node_id: { type: "integer" },
                   html: {
                     type: "string",
-                    description: "Visual Selection UI HTML",
+                    description:
+                      "Visual Selection UI HTML. 전체 문서 또는 bk-* 컴포넌트를 사용하는 fragment 기반 콘텐츠를 전달할 수 있습니다.",
                   },
                 },
               },
@@ -1462,6 +1534,45 @@ export const openApiSpec = {
           },
         },
         responses: { "200": { description: "Visual HTML 저장 완료" } },
+      },
+    },
+    "/api/settings/cleanup-visual-html": {
+      post: {
+        tags: ["Settings"],
+        summary: "완료된 태스크의 visual_html 정리",
+        description:
+          "superuser 전용 엔드포인트입니다. 완료된 태스크 로그에 남아 있는 visual_html 값을 정리하고 삭제된 개수를 반환합니다.",
+        responses: {
+          "200": {
+            description: "정리 완료",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "object",
+                      properties: {
+                        cleared: {
+                          type: "integer",
+                          description: "null 처리된 visual_html 레코드 수",
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "403": {
+            description: "superuser 권한 필요",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
       },
     },
     // ─── Folders ───

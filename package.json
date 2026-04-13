@@ -21,6 +21,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
+    "build:vs": "npx tsx scripts/build-vs-frame.ts",
     "test": "npx vitest run --dir tests"
   },
   "dependencies": {

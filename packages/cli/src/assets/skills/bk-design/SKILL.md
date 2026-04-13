@@ -182,6 +182,46 @@ Type `/bk-run` to execute it now.
 - Use `visual_selection: true` on `gate` nodes when the selection is best expressed visually — e.g., choosing a layout, picking a chart type, selecting a UI template. The agent must call `set_visual_html` with interactive HTML before executing the step; the user's click supplies the response.
 - For nodes requiring external API calls, specify `credential_id`. Create credentials first with `/bk-credential`.
 
+#### VS Component Selection Guide
+
+When designing a `visual_selection: true` gate node, specify which `bk-*` components the agent should use in the node instruction. This keeps VS screens consistent and prevents vague "make a selection UI" instructions.
+
+<HARD-RULE>
+- VS content shown to the user must be written in the user's language.
+- Labels, option descriptions, helper text, slider units, ranking item names, and matrix axis labels must all follow the user's language.
+- Keep component class names and JSON keys in their canonical English forms (`bk-options`, `selections`, `values`, `ranking`, `matrix`).
+</HARD-RULE>
+
+**Component → Use Case mapping:**
+
+| Component | Best for |
+|-----------|----------|
+| `bk-options` | Mutually exclusive choices with descriptions (A/B/C decisions) |
+| `bk-cards` | Visual previews (layout, chart type, UI template selection) |
+| `bk-checklist` | Feature toggles, multi-select from a list |
+| `bk-code-compare` | Comparing code approaches side by side |
+| `bk-slider` | Budget allocation, confidence levels, thresholds |
+| `bk-ranking` | Priority ordering (requirements, features) |
+| `bk-matrix` | Urgency/importance mapping, risk assessment |
+
+**Instruction template patterns:**
+
+```text
+Present the alternatives using bk-options with data-recommended on the suggested choice.
+```
+
+```text
+Show the layout candidates using bk-cards, then add a bk-slider named "confidence" (0-100, unit "%").
+```
+
+```text
+Collect optional capabilities with bk-checklist and ask the user to rank the top three priorities using bk-ranking.
+```
+
+```text
+Compare the two implementation approaches using bk-code-compare, then capture risk posture in a bk-matrix.
+```
+
 ### Attachments
 
 - Use node attachments for scripts, reference docs, prompts, and config files that the agent should load during execution.

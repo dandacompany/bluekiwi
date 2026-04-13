@@ -93,6 +93,27 @@ Based on the goal and agent type, write a draft using this format:
 
 Show the draft and ask if the user wants to modify it.
 
+#### VS Component Directives
+
+When writing instructions for `visual_selection: true` gate nodes, include a VS directive block that tells the execution agent which components to render:
+
+```text
+## VS Components
+Use bk-options for the main selection. Add data-recommended to the suggested choice.
+Include a bk-slider named "confidence" (0-100, default 75, unit "%").
+Add a bk-section break before the slider.
+```
+
+The execution agent reads this directive and composes the corresponding bk-* HTML fragment. Available components: `bk-options`, `bk-cards`, `bk-checklist`, `bk-code-compare`, `bk-slider`, `bk-ranking`, `bk-matrix`, `bk-split`, `bk-pros-cons`, `bk-mockup`, `bk-timeline`.
+
+Write the directive in concrete terms. Specify:
+
+- which component(s) to use
+- which option should be marked `data-recommended`, if any
+- names, ranges, defaults, and units for sliders
+- which items must appear in rankings, checklists, or matrix plots
+- the user's language for all visible text
+
 **Credential linking (natural language)**:
 
 Ask: "Does this instruction use an external service?" via AskUserQuestion:
