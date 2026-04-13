@@ -1,9 +1,11 @@
 "use client";
 
-import "@blocknote/react/style.css";
+import "@blocknote/core/fonts/inter.css";
+import "@blocknote/mantine/style.css";
 
 import { useEffect, useRef } from "react";
-import { BlockNoteViewRaw, useCreateBlockNote } from "@blocknote/react";
+import { BlockNoteView } from "@blocknote/mantine";
+import { useCreateBlockNote } from "@blocknote/react";
 
 interface Props {
   initialContent: string; // markdown string
@@ -32,16 +34,12 @@ export default function BlocknoteEditor({ initialContent, onChange }: Props) {
 
   return (
     <div className="blocknote-wrapper min-h-[22rem] overflow-hidden rounded-[1.25rem] border border-border bg-background">
-      <BlockNoteViewRaw
+      <BlockNoteView
         editor={editor}
         onChange={handleChange}
         theme="light"
-        sideMenu={false}
-        formattingToolbar={false}
-        slashMenu={false}
-        linkToolbar={false}
-        filePanel={false}
-        tableHandles={false}
+        formattingToolbar={true}
+        slashMenu={true}
       />
     </div>
   );
