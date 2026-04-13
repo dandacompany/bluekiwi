@@ -3,14 +3,17 @@ import { Toaster } from "@/components/ui/sonner";
 import { I18nProvider } from "@/lib/i18n/context";
 import "./globals.css";
 
+const SITE_TITLE = "BlueKiwi — AI Agent Workflow Engine";
+const SITE_DESC =
+  "Design reusable workflows, run them from any AI coding agent, and watch every step in real time.";
+
 export const metadata: Metadata = {
   title: {
     default: "BlueKiwi",
     template: "%s | BlueKiwi",
   },
-  description:
-    "AI Agent Workflow Engine — Design, execute, and manage agent workflows step by step.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_URL || "http://localhost:3100"),
+  description: SITE_DESC,
+  metadataBase: new URL(process.env.PUBLIC_URL || "http://localhost:3100"),
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "32x32" },
@@ -23,19 +26,23 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "BlueKiwi",
-    title: "BlueKiwi — Agent Workflow Engine",
-    description:
-      "AI Agent Workflow Engine — Design, execute, and manage agent workflows step by step.",
+    title: SITE_TITLE,
+    description: SITE_DESC,
+    locale: "ko_KR",
     images: [
-      { url: "/icon-512.png", width: 512, height: 512, alt: "BlueKiwi" },
+      {
+        url: "/og-cover.png",
+        width: 1200,
+        height: 630,
+        alt: "BlueKiwi — AI Agent Workflow Engine",
+      },
     ],
   },
   twitter: {
-    card: "summary",
-    title: "BlueKiwi — Agent Workflow Engine",
-    description:
-      "AI Agent Workflow Engine — Design, execute, and manage agent workflows step by step.",
-    images: ["/icon-512.png"],
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESC,
+    images: ["/og-cover.png"],
   },
 };
 
