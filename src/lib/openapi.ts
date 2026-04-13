@@ -10,6 +10,7 @@ export const openApiSpec = {
     { name: "Instructions", description: "에이전트 지침 CRUD" },
     { name: "Workflows", description: "워크플로 관리" },
     { name: "Workflow Nodes", description: "워크플로 노드 개별 CRUD" },
+    { name: "Node Attachments", description: "워크플로 노드 첨부 파일 관리" },
     { name: "Tasks", description: "태스크 실행 및 모니터링" },
     { name: "Task Execution", description: "MCP 기반 태스크 실행 제어" },
     { name: "Credentials", description: "API 시크릿/인증정보 관리" },
@@ -986,6 +987,242 @@ export const openApiSpec = {
         },
       },
     },
+    "/api/workflows/{id}/nodes/{nodeId}/attachments": {
+      get: {
+        tags: ["Node Attachments"],
+        summary: "노드 첨부 파일 목록 조회",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+            description: "워크플로 ID",
+          },
+          {
+            name: "nodeId",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+            description: "노드 ID",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "첨부 파일 목록",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/NodeAttachment" },
+                    },
+                    total: { type: "integer" },
+                  },
+                },
+              },
+            },
+          },
+          "404": {
+            description: "워크플로 또는 노드를 찾을 수 없음",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+      post: {
+        tags: ["Node Attachments"],
+        summary: "노드 첨부 파일 업로드",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+            description: "워크플로 ID",
+          },
+          {
+            name: "nodeId",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+            description: "노드 ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "multipart/form-data": {
+              schema: {
+                type: "object",
+                required: ["file"],
+                properties: {
+                  file: {
+                    type: "string",
+                    format: "binary",
+                    description: "업로드할 첨부 파일",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "201": {
+            description: "업로드된 첨부 파일",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: { $ref: "#/components/schemas/NodeAttachment" },
+                  },
+                },
+              },
+            },
+          },
+          "400": {
+            description: "유효성 검증 실패",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          "404": {
+            description: "워크플로 또는 노드를 찾을 수 없음",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/api/workflows/{id}/nodes/{nodeId}/attachments/{attachId}": {
+      get: {
+        tags: ["Node Attachments"],
+        summary: "노드 첨부 파일 다운로드",
+        description:
+          "텍스트 파일은 JSON으로 내용을 반환하고, 바이너리 파일은 원본 바이트를 다운로드합니다.",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+            description: "워크플로 ID",
+          },
+          {
+            name: "nodeId",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+            description: "노드 ID",
+          },
+          {
+            name: "attachId",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+            description: "첨부 파일 ID",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "첨부 파일 내용",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      $ref: "#/components/schemas/NodeAttachmentContent",
+                    },
+                  },
+                },
+              },
+              "application/octet-stream": {
+                schema: {
+                  type: "string",
+                  format: "binary",
+                },
+              },
+            },
+          },
+          "404": {
+            description: "첨부 파일을 찾을 수 없음",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+      delete: {
+        tags: ["Node Attachments"],
+        summary: "노드 첨부 파일 삭제",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+            description: "워크플로 ID",
+          },
+          {
+            name: "nodeId",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+            description: "노드 ID",
+          },
+          {
+            name: "attachId",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+            description: "첨부 파일 ID",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "삭제 완료",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "object",
+                      properties: {
+                        id: { type: "integer" },
+                        deleted: { type: "boolean" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "404": {
+            description: "첨부 파일을 찾을 수 없음",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
     // ─── Task Execution (MCP-driven) ───
     "/api/tasks/{id}/execute": {
       post: {
@@ -1432,6 +1669,30 @@ export const openApiSpec = {
           credential_id: { type: "integer" },
           instruction_id: { type: "integer" },
         },
+      },
+      NodeAttachment: {
+        type: "object",
+        properties: {
+          id: { type: "integer" },
+          filename: { type: "string" },
+          mime_type: { type: "string" },
+          size_bytes: { type: "integer" },
+          created_at: { type: "string", format: "date-time" },
+        },
+      },
+      NodeAttachmentContent: {
+        allOf: [
+          { $ref: "#/components/schemas/NodeAttachment" },
+          {
+            type: "object",
+            properties: {
+              content: {
+                type: "string",
+                description: "Text file content (text files only)",
+              },
+            },
+          },
+        ],
       },
       ExecuteStep: {
         type: "object",

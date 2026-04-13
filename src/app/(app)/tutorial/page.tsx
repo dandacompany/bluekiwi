@@ -314,6 +314,11 @@ export default function TutorialPage() {
                 <li>{t("tutorial.s3Rec4")}</li>
               </ol>
             </div>
+
+            <h3 className={S.subheading}>{t("tutorial.s1AttachmentsTitle")}</h3>
+            <p className="text-sm text-muted-foreground">
+              {t("tutorial.s1AttachmentsDesc")}
+            </p>
           </Section>
 
           {/* Section 4: Execute */}
@@ -506,6 +511,9 @@ export default function TutorialPage() {
                       ["start_workflow", t("tutorial.s7ToolStartWorkflow")],
                       ["advance", t("tutorial.s7ToolAdvance")],
                       ["execute_step", t("tutorial.s7ToolExecuteStep")],
+                      ["list_attachments", t("tutorial.s7ToolListAttachments")],
+                      ["get_attachment", t("tutorial.s7ToolGetAttachment")],
+                      ["upload_attachment", t("tutorial.s7ToolUploadAttachment")],
                       ["request_approval", t("tutorial.s7ToolRequestApproval")],
                       ["complete_task", t("tutorial.s7ToolCompleteTask")],
                       ["rewind", t("tutorial.s7ToolRewind")],

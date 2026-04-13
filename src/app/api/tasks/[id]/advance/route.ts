@@ -47,6 +47,16 @@ async function resolveNodeResponse(node: WorkflowNode, user: User) {
     }
   }
 
+  const attachments = await query<{
+    id: number;
+    filename: string;
+    mime_type: string;
+    size_bytes: number;
+  }>(
+    "SELECT id, filename, mime_type, size_bytes FROM node_attachments WHERE node_id = $1 ORDER BY created_at",
+    [node.id],
+  );
+
   return {
     node_id: node.id,
     step_order: node.step_order,
@@ -56,6 +66,7 @@ async function resolveNodeResponse(node: WorkflowNode, user: User) {
     hitl: node.hitl,
     loop_back_to: node.loop_back_to,
     credentials,
+    attachments: attachments.length > 0 ? attachments : undefined,
   };
 }
 

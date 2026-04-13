@@ -62,6 +62,9 @@ Review each node against the improvement direction:
 - Oversized steps → split them
 - Missing validation → add it
 - Unnecessary steps → remove them
+- Missing attachments → add the required script, reference doc, or config file
+- Stale attachments → remove outdated files and replace them with the current version
+- Unclear attachment usage → update the instruction so it references the attachment by filename and explains when to use it
 
 ### Step 4: Propose Changes
 
@@ -152,6 +155,13 @@ Ask via AskUserQuestion:
 - options: ["Run now", "Run later"]
 
 If "Run now" → switch to `/bk-run` flow.
+
+## Attachment Management
+
+- Add new text attachments with `upload_attachment(workflow_id, node_id, filename, content)` when a node needs reusable execution context.
+- Remove obsolete files with `delete_attachment(workflow_id, node_id, attachment_id)` instead of leaving stale materials attached.
+- When improving a node, keep its attachments aligned with the revised instruction. If the instruction changes, verify the referenced filenames and file contents still match.
+- Prefer replacing outdated text attachments with a freshly uploaded version rather than keeping multiple conflicting variants on the same node.
 
 ## Node Modification Strategy
 

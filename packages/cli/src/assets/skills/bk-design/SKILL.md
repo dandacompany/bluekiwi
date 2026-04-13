@@ -175,6 +175,15 @@ Type `/bk-run` to execute it now.
 - Use `visual_selection: true` on `gate` nodes when the selection is best expressed visually — e.g., choosing a layout, picking a chart type, selecting a UI template. The agent must call `set_visual_html` with interactive HTML before executing the step; the user's click supplies the response.
 - For nodes requiring external API calls, specify `credential_id`. Create credentials first with `/bk-credential`.
 
+### Attachments
+
+- Use node attachments for scripts, reference docs, prompts, and config files that the agent should load during execution.
+- Add attachments only after the workflow and target node exist, using `upload_attachment(workflow_id, node_id, filename, content)`.
+- Prefer text-based files so the execution skill can download and use their contents directly.
+- Mention the attachment by filename in the node instruction when the agent is expected to read it.
+- Keep attachments node-specific. Shared reusable logic belongs in an instruction template or a separate workflow step, not duplicated across many nodes.
+- Use binary attachments only when necessary. Execution agents may only inspect their metadata unless the task explicitly requires the binary asset.
+
 ## Node Modification Strategy
 
 <HARD-RULE>

@@ -37,6 +37,8 @@
     "s1WorkflowsDesc": "실행 순서를 설계합니다.",
     "s1TasksDesc": "실행 결과와 상태를 확인합니다.",
     "s1CredentialsDesc": "외부 서비스 접근 정보를 관리합니다.",
+    "s1AttachmentsTitle": "노드 첨부 파일",
+    "s1AttachmentsDesc": "워크플로 노드에 스크립트, 레퍼런스 문서, 설정 파일 등을 첨부할 수 있습니다. 에이전트는 실행 중 필요한 첨부 파일을 자동으로 다운로드합니다.",
     "s1Order": "권장 사용 순서",
     "s1Order1": "1. 지침에서 작업 단위를 먼저 정의합니다.",
     "s1Order2": "2. 워크플로에서 실행 순서를 조립합니다.",
@@ -134,6 +136,9 @@
     "s7ToolRewind": "이전 단계로 되감아 다시 실행합니다.",
     "s7ToolHeartbeat": "실행 중 진행 상황을 실시간으로 보고합니다.",
     "s7ToolListTasks": "실행 중이거나 완료된 태스크 목록을 조회합니다.",
+    "s7ToolListAttachments": "노드에 첨부된 파일 목록을 조회합니다.",
+    "s7ToolGetAttachment": "첨부 파일의 내용을 다운로드합니다.",
+    "s7ToolUploadAttachment": "노드에 파일을 첨부합니다.",
     "s7FlowTitle": "기본 실행 흐름",
     "s7Flow1": "1. start_workflow → 태스크 생성",
     "s7Flow2": "2. advance → 현재 단계 지침 수신",
@@ -568,7 +573,9 @@
     "pickerDesc": "추가할 노드 타입 또는 지침 템플릿을 선택하세요",
     "searchPlaceholder": "검색...",
     "credentialTitle": "크리덴셜",
-    "autoAdvanceTitle": "자동 진행"
+    "autoAdvanceTitle": "자동 진행",
+    "attachments": "첨부 파일",
+    "uploadFile": "파일 업로드"
   },
   "credentials": {
     "title": "크리덴셜",

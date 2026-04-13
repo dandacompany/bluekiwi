@@ -37,6 +37,8 @@
     "s1WorkflowsDesc": "Design execution sequences.",
     "s1TasksDesc": "Check execution results and status.",
     "s1CredentialsDesc": "Manage external service credentials.",
+    "s1AttachmentsTitle": "Node Attachments",
+    "s1AttachmentsDesc": "Attach scripts, reference docs, and config files to workflow nodes. Agents automatically download needed attachments during execution.",
     "s1Order": "Recommended order",
     "s1Order1": "1. Define work units in Instructions first.",
     "s1Order2": "2. Assemble the execution order in Workflows.",
@@ -134,6 +136,9 @@
     "s7ToolRewind": "Rewind to a previous step to re-execute.",
     "s7ToolHeartbeat": "Report progress in real-time during execution.",
     "s7ToolListTasks": "List running or completed tasks.",
+    "s7ToolListAttachments": "List files attached to a workflow node.",
+    "s7ToolGetAttachment": "Download attachment content.",
+    "s7ToolUploadAttachment": "Upload a file to a workflow node.",
     "s7FlowTitle": "Basic execution flow",
     "s7Flow1": "1. start_workflow → Create task",
     "s7Flow2": "2. advance → Receive current step instruction",
@@ -568,7 +573,9 @@
     "pickerDesc": "Select a node type or instruction template to add",
     "searchPlaceholder": "Search...",
     "credentialTitle": "Credential",
-    "autoAdvanceTitle": "Auto advance"
+    "autoAdvanceTitle": "Auto advance",
+    "attachments": "Attachments",
+    "uploadFile": "Upload file"
   },
   "credentials": {
     "title": "Credentials",

@@ -168,6 +168,16 @@ Call `request_approval`, then immediately show the HITL approval AskUserQuestion
 - If `visual_selection: true` → call `set_visual_html` with interactive HTML, then poll `get_web_response` every 3-5 seconds until a response arrives (max 120 seconds). When the response arrives, use it as the gate answer and call `advance`.
 - If `visual_selection: false` → present the gate question to the user via AskUserQuestion. Use the response as gate answer, call `execute_step` with the answer, then `advance`.
 
+#### Attachments
+
+<HARD-RULE>
+When `advance` returns `node.attachments`:
+1. Review the list (filename, mime_type, size_bytes)
+2. Call `get_attachment(workflow_id, node_id, attachment_id)` for each text file the instruction references
+3. Use downloaded content as context when executing the instruction
+4. For binary files, note their existence but do not download unless explicitly required
+</HARD-RULE>
+
 #### Loop (next_action: "loop_back")
 
 <HARD-RULE>
