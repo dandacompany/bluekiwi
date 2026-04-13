@@ -1,15 +1,21 @@
 -- ============================================================
--- BlueKiwi PostgreSQL Schema — Docker Fresh Install
+-- BlueKiwi — Initial Schema (Flattened)
 -- ============================================================
--- Loaded automatically by docker-entrypoint-initdb.d on first
--- container start. Creates the complete schema and pre-marks
--- 001_initial_schema.sql as applied so the migration runner
--- does not re-run it.
+-- This is the single source-of-truth for the full database
+-- schema. It replaces the previous 001–018 incremental files.
 --
--- ⚠️  KEEP IN SYNC WITH docker/migrations/001_initial_schema.sql
---     Any schema change must be reflected in BOTH files plus a
---     new incremental migration file (002_*.sql, etc.).
+-- Usage (non-Docker fresh install):
+--   npx tsx scripts/migrate.ts
+--
+-- The migration runner applies this file once and tracks it in
+-- schema_migrations. Subsequent schema changes add new numbered
+-- files (002_*.sql, etc.).
+--
+-- Docker users: docker/init.sql runs this schema automatically
+-- and pre-marks it as applied so this file is never re-run.
 -- ============================================================
+
+BEGIN;
 
 -- ─── Folders (created first; self-referential) ───────────────
 
@@ -50,7 +56,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Deferred FK: folders.owner_id → users.id (tables now both exist)
 ALTER TABLE folders
-  ADD CONSTRAINT folders_owner_id_fkey
+  ADD CONSTRAINT IF NOT EXISTS folders_owner_id_fkey
   FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE RESTRICT;
 
 CREATE TABLE IF NOT EXISTS user_groups (
@@ -192,29 +198,29 @@ CREATE TABLE IF NOT EXISTS invites (
 -- ─── Agent Registry ───────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS agent_registry (
-  id            SERIAL PRIMARY KEY,
-  kind          TEXT NOT NULL CHECK (kind IN ('provider','model')),
-  slug          TEXT NOT NULL,
-  display_name  TEXT NOT NULL,
-  icon          TEXT,
-  is_builtin    BOOLEAN NOT NULL DEFAULT false,
+  id           SERIAL PRIMARY KEY,
+  kind         TEXT NOT NULL CHECK (kind IN ('provider','model')),
+  slug         TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  icon         TEXT,
+  is_builtin   BOOLEAN NOT NULL DEFAULT false,
   first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (kind, slug)
 );
 
 INSERT INTO agent_registry (kind, slug, display_name, is_builtin) VALUES
-  ('provider', 'claude-code',      'Claude Code',      true),
-  ('provider', 'codex-cli',        'Codex CLI',         true),
-  ('provider', 'gemini-cli',       'Gemini CLI',        true),
-  ('provider', 'cursor',           'Cursor',            true),
-  ('provider', 'windsurf',         'Windsurf',          true),
-  ('provider', 'antigravity',      'Antigravity',       true),
-  ('provider', 'opencode',         'OpenCode',          true),
-  ('model',    'claude-opus-4-6',  'Claude Opus 4.6',   true),
-  ('model',    'claude-sonnet-4-6','Claude Sonnet 4.6', true),
-  ('model',    'claude-haiku-4-5', 'Claude Haiku 4.5',  true),
-  ('model',    'gpt-5.2',          'GPT-5.2',           true),
-  ('model',    'gemini-2.5-pro',   'Gemini 2.5 Pro',    true)
+  ('provider', 'claude-code',     'Claude Code',     true),
+  ('provider', 'codex-cli',       'Codex CLI',        true),
+  ('provider', 'gemini-cli',      'Gemini CLI',       true),
+  ('provider', 'cursor',          'Cursor',           true),
+  ('provider', 'windsurf',        'Windsurf',         true),
+  ('provider', 'antigravity',     'Antigravity',      true),
+  ('provider', 'opencode',        'OpenCode',         true),
+  ('model',    'claude-opus-4-6', 'Claude Opus 4.6',  true),
+  ('model',    'claude-sonnet-4-6','Claude Sonnet 4.6',true),
+  ('model',    'claude-haiku-4-5','Claude Haiku 4.5', true),
+  ('model',    'gpt-5.2',         'GPT-5.2',          true),
+  ('model',    'gemini-2.5-pro',  'Gemini 2.5 Pro',   true)
 ON CONFLICT (kind, slug) DO NOTHING;
 
 -- ─── Tasks ────────────────────────────────────────────────────
@@ -264,17 +270,17 @@ CREATE TABLE IF NOT EXISTS task_logs (
 );
 
 CREATE TABLE IF NOT EXISTS node_attachments (
-  id             SERIAL PRIMARY KEY,
-  node_id        INTEGER NOT NULL REFERENCES workflow_nodes(id) ON DELETE CASCADE,
-  filename       TEXT NOT NULL,
-  mime_type      TEXT NOT NULL DEFAULT 'text/plain',
-  size_bytes     INTEGER NOT NULL DEFAULT 0,
-  content        TEXT,
+  id            SERIAL PRIMARY KEY,
+  node_id       INTEGER NOT NULL REFERENCES workflow_nodes(id) ON DELETE CASCADE,
+  filename      TEXT NOT NULL,
+  mime_type     TEXT NOT NULL DEFAULT 'text/plain',
+  size_bytes    INTEGER NOT NULL DEFAULT 0,
+  content       TEXT,
   content_binary BYTEA,
-  storage_type   TEXT NOT NULL DEFAULT 'db'
+  storage_type  TEXT NOT NULL DEFAULT 'db'
     CHECK (storage_type IN ('db','file','s3')),
-  storage_path   TEXT,
-  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  storage_path  TEXT,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS workflow_evaluations (
@@ -412,15 +418,4 @@ CREATE INDEX IF NOT EXISTS idx_invites_email                ON invites(email);
 CREATE INDEX IF NOT EXISTS idx_invites_pending              ON invites(expires_at) WHERE accepted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_node_attachments_node        ON node_attachments(node_id);
 
--- ─── Migration tracking ───────────────────────────────────────
--- Pre-mark 001_initial_schema.sql as applied so the migration
--- runner skips it on fresh Docker installs.
-
-CREATE TABLE IF NOT EXISTS schema_migrations (
-  filename   TEXT PRIMARY KEY,
-  applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-INSERT INTO schema_migrations (filename) VALUES
-  ('001_initial_schema.sql')
-ON CONFLICT (filename) DO NOTHING;
+COMMIT;
