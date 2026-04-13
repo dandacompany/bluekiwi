@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
   transpilePackages: [
     "@blocknote/react",
     "@blocknote/core",
+    "@blocknote/mantine",
     "@tiptap/core",
     "@tiptap/react",
     "@tiptap/pm",
