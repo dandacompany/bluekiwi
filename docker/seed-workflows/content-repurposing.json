@@ -1,0 +1,70 @@
+{
+  "title": "Content Repurposing (kostja94 Marketing Skills)",
+  "description": "Extract → Adapt → Distribute. kostja94/marketing-skills의 플랫폼별 스킬(X, LinkedIn, Threads, Newsletter)을 파이프라인으로 연결. 1개 원본 콘텐츠를 5개 이상 플랫폼에 최적화된 형태로 변환하고 발행한다.",
+  "version": "1.0",
+  "nodes": [
+    {
+      "step_order": 1,
+      "node_type": "gate",
+      "title": "원본 콘텐츠 입력",
+      "instruction": "## Source Content — 무엇을 리퍼포징할 것인가?\n\n사용자에게 원본 콘텐츠를 제공받는다.\n\n### 입력 형식\n- **URL**: 블로그 포스트, YouTube 영상, 팟캐스트 에피소드 링크\n- **텍스트**: 직접 붙여넣은 원고, 강연 스크립트, 뉴스레터\n- **파일**: 마크다운, PDF, 슬라이드\n\n### 확인 질문\n1. 어떤 콘텐츠를 리퍼포징하시겠습니까? (URL 또는 텍스트 입력)\n2. 배포 대상 플랫폼은? (복수 선택)\n   - X/Twitter\n   - LinkedIn\n   - Threads/Instagram\n   - 뉴스레터\n   - Medium/블로그\n   - Reddit\n3. 톤앤매너: 원본과 동일 / 플랫폼별 최적화 / 특정 톤 지정\n\n원본 콘텐츠를 읽고 길이, 주제, 핵심 메시지를 요약하여 확인을 요청한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": true
+    },
+    {
+      "step_order": 2,
+      "node_type": "action",
+      "title": "핵심 메시지 추출",
+      "instruction": "## Core Message Extraction — 리퍼포징의 원재료\n\n원본 콘텐츠에서 플랫폼 변환에 필요한 핵심 요소를 추출한다.\n\n### 추출 항목\n\n1. **핵심 주장 (1-3개)**\n   - 원본의 메인 테제를 한 문장으로\n   - 독자가 기억해야 할 핵심 메시지\n\n2. **데이터 포인트 (3-5개)**\n   - 인용 가능한 통계, 숫자, 결과\n   - 출처 포함\n\n3. **인용구 (3-5개)**\n   - 바이럴 가능성이 높은 문장\n   - Eric Siu 기준: contrarian signals (\"~는 틀렸다\", \"~의 비밀\"), specificity signals ($금액, N%, Nx)\n\n4. **스토리 요소**\n   - Before → After 전환점\n   - 구체적 사례/일화\n   - 반직관적 발견\n\n5. **CTA 후보**\n   - 원본으로의 유도 (\"전체 글 읽기\")\n   - 구독/팔로우 유도\n   - 제품/서비스 연결\n\n### 산출물 형식\n```\n📋 Repurposing Source Map\n━━━━━━━━━━━━━━━━━━━━━━━━━\nTitle: {원본 제목}\nCore Message: {핵심 주장}\nData Points: {N}개\nQuotables: {N}개\nStory Hooks: {N}개\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 3,
+      "node_type": "action",
+      "title": "X/Twitter 변환",
+      "instruction": "## X/Twitter Adapter — kostja94 twitter-x-posts 기반\n\n### 포맷 A: 단일 포스트\n- 280자 이내\n- 핵심 인사이트 1개 + 데이터 포인트 1개\n- 마지막에 원본 링크 (단, 외부 링크는 도달률 ~50% 감소 → 댓글에 링크 배치 권장)\n\n### 포맷 B: 스레드 (3-7 posts)\n```\n1/ [Hook — 반직관적 주장 또는 놀라운 데이터]\n\n2/ [배경 설명 — 왜 이것이 중요한가]\n\n3/ [핵심 인사이트 #1 + 데이터]\n\n4/ [핵심 인사이트 #2 + 사례]\n\n5/ [실행 가능한 조언 — 독자가 즉시 할 수 있는 것]\n\n6/ [요약 + CTA]\n🔗 전체 글: {URL}\n\nRepost if useful. 🔄\n```\n\n### X 알고리즘 최적화\n- 답글이 가장 높은 신호 (~54-75x likes 대비)\n- 저자 답글 체인: ~75x 가시성 증가\n- 이미지 포함 시 사이즈: 1200×675 (16:9)\n- 동영상: 2-4x 노출, 8-30초 최적\n- 콘텐츠 비율: 가치 70% / 인터랙션 20% / 프로모 10%\n\n### 산출물\n- 단일 포스트 2개 (A/B 버전)\n- 스레드 1개 (5-7 posts)\n- 이미지 캡션/alt 텍스트",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 4,
+      "node_type": "action",
+      "title": "LinkedIn 변환",
+      "instruction": "## LinkedIn Adapter — kostja94 linkedin-posts 기반\n\n### 포스트 구조\n```\n[Hook — 첫 줄 210자 이내, \"더 보기\" 전에 보이는 부분]\n\n[빈 줄로 가독성 확보]\n\n[본문 — 1300-1600자 sweet spot]\n- 짧은 문단 (2-3문장)\n- 숫자와 구체적 사례 포함\n- 개인 경험/교훈 형태로 재구성\n\n[CTA — 질문으로 끝내기]\n\"여러분은 어떻게 생각하시나요?\"\n\n#해시태그 #3개이상 #5개이하\n```\n\n### LinkedIn 알고리즘 최적화\n- 88% 모바일 브라우징 → 짧은 문단 필수\n- 2,000자 초과 시 ~35% 참여도 감소\n- 캐러셀: 최대 20장, 세로형 선호\n- 외부 링크: 댓글에 배치 (피드 도달률 보호)\n- 첫 1시간 참여도가 전체 도달률 결정\n\n### 톤 조정\n- 원본이 기술적이면 → \"배운 점\" 형식으로 재구성\n- 원본이 데이터 중심이면 → \"왜 이 숫자가 중요한가\" 형식\n- 원본이 사례 중심이면 → Before → After 스토리텔링\n\n### 산출물\n- 메인 포스트 1개 (1300-1600자)\n- 짧은 포스트 1개 (500자 이내, 핵심만)\n- 댓글용 링크 텍스트",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 5,
+      "node_type": "action",
+      "title": "Threads & 뉴스레터 변환",
+      "instruction": "## Threads + Newsletter Adapter\n\n### Threads/Instagram 텍스트 포스트\n```\n[Hook — 짧고 강렬한 첫 문장]\n\n[본문 — 500자 이내]\n- 불릿 포인트로 핵심 정리\n- 이모지 적절히 활용 (과하지 않게)\n- 대화체, 친근한 톤\n\n[CTA — 팔로우 또는 의견 요청]\n```\n\n### Threads 최적화\n- 500자 제한\n- 이미지 1장 + 텍스트 조합이 최적\n- 해시태그: 3-5개 (Instagram보다 적게)\n- 캐러셀: 최대 10장, 1080×1350 (4:5)\n\n### 뉴스레터 변환\n```\nSubject Line: {55자 이내, 호기심 유발}\nPreview Text: {90자 이내, 보완 정보}\n\n━━━━━━━━━━━━━━━━━━━━━━━\n\nHi {name},\n\n[도입 — 왜 이 주제가 지금 중요한가 (2-3문장)]\n\n## 핵심 인사이트\n[원본의 핵심을 3개 불릿으로 요약]\n\n## 실행 포인트\n[독자가 즉시 할 수 있는 것 1가지]\n\n[CTA 버튼: 전체 글 읽기]\n\n━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n### 뉴스레터 최적화\n- 제목라인: 숫자, 질문, 긴급성 중 하나 활용\n- 본문: 스크롤 3회 이내로 핵심 전달\n- CTA: 1개만 (명확하게)\n- ROI 평균 $36 per $1 spent\n\n### 산출물\n- Threads 포스트 2개 (A/B)\n- 뉴스레터 이메일 1개 (제목라인 3개 후보 포함)",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 6,
+      "node_type": "action",
+      "title": "비주얼 가이드 생성",
+      "instruction": "## Visual Content Guide — kostja94 visual-content 기반\n\n각 플랫폼에 맞는 이미지/비주얼 사양을 정리한다.\n\n### 플랫폼별 이미지 사이즈\n\n| 플랫폼 | 용도 | 사이즈 | 비율 |\n|--------|------|--------|------|\n| X/Twitter | 단일 이미지 | 1200×675 | 16:9 |\n| X/Twitter | 스레드 이미지 | 1200×675 | 16:9 |\n| LinkedIn | 피드 이미지 | 1200×627 | 1.91:1 |\n| LinkedIn | 캐러셀 | 1080×1350 | 4:5 |\n| Threads | 정사각형 | 1080×1080 | 1:1 |\n| Threads | 세로형 | 1080×1350 | 4:5 |\n| 뉴스레터 | 헤더 | 600×300 | 2:1 |\n| Pinterest | 핀 | 1000×1500 | 2:3 |\n\n### 비주얼 콘텐츠 유형별 가이드\n1. **인포그래픽**: 핵심 데이터 포인트를 시각화. 캐러셀에 최적\n2. **인용 카드**: 바이럴 인용구를 이미지로. 브랜드 컬러 + 깔끔한 타이포\n3. **Before/After**: 변환 스토리를 시각화\n4. **데이터 차트**: 통계를 간단한 차트로\n\n### 리퍼포징 매트릭스\n하나의 핵심 비주얼에서 플랫폼별 크롭:\n```\n원본 (1200×675)\n  → X 그대로 사용\n  → LinkedIn 하단 살짝 크롭 (1200×627)\n  → Threads 중앙 크롭 (1080×1080)\n  → 뉴스레터 리사이즈 (600×300)\n```\n\n### 산출물\n- 플랫폼별 이미지 사양 표\n- 비주얼 콘텐츠 타입 추천 (원본 내용 기반)\n- 이미지 alt 텍스트 (접근성 + SEO)",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 7,
+      "node_type": "gate",
+      "title": "전체 리뷰 & 발행 스케줄링",
+      "instruction": "## Review & Schedule — 최종 검토 후 발행 계획\n\n### 전체 산출물 요약\n```\n📋 Repurposing Package\n━━━━━━━━━━━━━━━━━━━━━━━━━\nSource: {원본 제목}\n\n🐦 X/Twitter\n  - 단일 포스트 ×2 (A/B)\n  - 스레드 ×1 (N posts)\n\n💼 LinkedIn\n  - 메인 포스트 ×1 (N자)\n  - 짧은 포스트 ×1\n\n🧵 Threads\n  - 텍스트 포스트 ×2 (A/B)\n\n📧 Newsletter\n  - 이메일 ×1 (제목라인 ×3)\n\n🎨 Visual Guide\n  - 이미지 사양 ×N 플랫폼\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n### 발행 스케줄 추천\n```\nDay 1: LinkedIn (화-목 오전 9-11시 최적)\nDay 1: X/Twitter 단일 포스트 (원본 공유)\nDay 2: X/Twitter 스레드 (딥다이브)\nDay 2: Threads\nDay 3: Newsletter (화-목 발송 최적)\nDay 5: X/Twitter 두 번째 포스트 (다른 앵글)\n```\n\n### 선택지\n1. 전체 승인 — 모든 플랫폼 콘텐츠 확정\n2. 특정 플랫폼 수정 — 해당 어댑터 단계로 복귀\n3. 추가 플랫폼 — Medium/Reddit/Pinterest 추가\n4. 취소",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": true
+    }
+  ]
+}

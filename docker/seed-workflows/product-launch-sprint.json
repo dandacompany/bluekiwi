@@ -1,0 +1,88 @@
+{
+  "title": "Product Launch Sprint (kostja94 Marketing Skills)",
+  "description": "Define → GTM → Assets → Seed → Outreach → Launch → Monitor → Retro. kostja94/marketing-skills의 런칭 전략(cold-start, gtm, product-launch)과 채널 스킬(community, PR, influencer)을 파이프라인으로 연결한 제품 런칭 캠페인 워크플로.",
+  "version": "1.0",
+  "nodes": [
+    {
+      "step_order": 1,
+      "node_type": "gate",
+      "title": "제품/기능 정의",
+      "instruction": "## Product Definition — 무엇을 런칭하는가?\n\n사용자에게 런칭 대상을 파악한다.\n\n### 질문 (하나씩)\n1. **무엇을**: 제품명, 한 줄 설명 (140자 이내)\n2. **누구에게**: 타겟 사용자 (구체적 페르소나)\n3. **왜 지금**: 타이밍의 이유 (시장 변화, 경쟁 상황, 기술 성숙도)\n4. **차별점**: 기존 대안 대비 독보적 가치 1가지\n5. **성공 기준**: 런칭 후 7일/30일 기준 수치 목표\n   - 가입 수, 트래픽, 매출, ProductHunt 순위 등\n6. **런칭 규모**: 소프트(제한적) / 퍼블릭(전면) / 하드(PR 포함)\n\n### 런칭 타입 분류\n- **Feature Launch**: 기존 제품의 새 기능\n- **Product Launch**: 완전히 새로운 제품\n- **Rebrand/Pivot**: 방향 전환 발표\n\n타입에 따라 이후 단계의 채널 믹스가 달라진다.\n\n사용자에게 요약을 보여주고 확인을 요청한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": true
+    },
+    {
+      "step_order": 2,
+      "node_type": "action",
+      "title": "GTM 전략 수립",
+      "instruction": "## Go-To-Market Strategy — kostja94 gtm + cold-start 기반\n\n### PESO 채널 매핑\n런칭 타입과 규모에 따라 채널 믹스를 설계한다.\n\n**Paid (유료)**\n- 런칭 주간 부스트용 광고 (필요 시)\n- 채널: Google Ads, Meta Ads, LinkedIn Ads, Reddit Ads\n- 예산 배분 추천\n\n**Earned (획득)**\n- 프레스 커버리지 (TechCrunch, 업종 미디어)\n- 인플루언서/크리에이터 리뷰\n- 커뮤니티 바이럴\n\n**Shared (공유)**\n- X/Twitter 런칭 스레드\n- LinkedIn 공지\n- Reddit/HN 포스팅\n- ProductHunt 리스팅\n\n**Owned (소유)**\n- 런칭 이메일 (기존 리스트)\n- 블로그 포스트\n- 랜딩 페이지\n\n### 타임라인 설계\n```\nD-14: 런칭 자산 준비 시작\nD-7:  티저 콘텐츠 배포 (소셜)\nD-3:  인플루언서에게 얼리 액세스 제공\nD-1:  ProductHunt 예약, 이메일 예약\nD-Day: 전 채널 동시 발행\nD+1:  커뮤니티 반응 모니터링\nD+7:  런칭 성과 리뷰\n```\n\n### 산출물\nGTM 전략 문서를 정리하여 보고한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 3,
+      "node_type": "action",
+      "title": "런칭 자산 생성",
+      "instruction": "## Launch Assets — 모든 채널의 콘텐츠 일괄 생성\n\n### 1. 랜딩 페이지 카피\n- Hero 헤드라인: 가치 제안 1문장 (10단어 이내)\n- Sub-headline: 핵심 기능 설명 (20단어 이내)\n- Feature 섹션: 3-5개 핵심 기능 (아이콘 + 제목 + 설명)\n- Social Proof: 베타 유저 인용, 숫자 실적\n- CTA: Primary (시작하기) + Secondary (데모 보기)\n\n### 2. ProductHunt 리스팅\n- Tagline: 60자 이내\n- Description: 260자 이내 (첫 문장이 핵심)\n- First Comment: Maker 소개 + 배경 스토리 + 피드백 요청\n- Gallery: 5장 스크린샷 가이드 (Hero, Feature×3, Social Proof)\n\n### 3. 프레스 릴리즈 초안\n```\n[Headline — 뉴스 가치 중심]\n[Sub-headline — 핵심 차별점]\n\n[도시, 날짜] — [회사명]이 오늘 [제품명]을 발표했다.\n[제품 설명 2-3문장]\n[시장 배경 / 해결하는 문제]\n[주요 기능 3개]\n[창업자/대표 인용문]\n[가격/가용성 정보]\n[회사 소개 보일러플레이트]\n```\n\n### 4. 소셜 미디어 포스트\n- X/Twitter 런칭 스레드 (5-7 posts)\n- LinkedIn 공지 포스트\n- Reddit/HN 포스트 (커뮤니티 톤에 맞게)\n\n### 5. 런칭 이메일\n- 제목라인 3개 후보\n- 본문: 발표 + 핵심 기능 + CTA\n- P.S. 라인: ProductHunt 투표 요청 (해당 시)\n\n모든 자산을 heartbeat로 보고한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 4,
+      "node_type": "gate",
+      "title": "런칭 자산 승인",
+      "instruction": "## Asset Review — 런칭 자산 최종 검토\n\n### 체크리스트\n```\n📋 Launch Assets Ready\n━━━━━━━━━━━━━━━━━━━━━━━━━\n✅ 랜딩 페이지 카피 (Hero + Features + CTA)\n✅ ProductHunt 리스팅 (Tagline + Description + First Comment)\n✅ 프레스 릴리즈 초안\n✅ X/Twitter 런칭 스레드\n✅ LinkedIn 공지 포스트\n✅ Reddit/HN 포스트\n✅ 런칭 이메일\n━━━━━━━━━━━━━━━━━━━━━━━━━\n타겟 런칭일: {D-Day 날짜}\n```\n\n### 선택지\n1. 전체 승인 — 커뮤니티 시딩 진행\n2. 특정 자산 수정 — 수정 후 재검토\n3. GTM 전략 변경 — GTM 단계로 복귀",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": true
+    },
+    {
+      "step_order": 5,
+      "node_type": "loop",
+      "title": "커뮤니티 사전 시딩",
+      "instruction": "## Community Seeding — 런칭 전 자연스러운 존재감 확보\n\nkostja94 community-forum + reddit-posts 기반.\n\n### 시딩 원칙\n- 90/10 규칙: 가치 제공 90%, 홍보 10%\n- 각 커뮤니티의 문화와 톤을 준수\n- 직접적 홍보 금지 — 문제 해결 맥락에서 자연스럽게 언급\n\n### 플랫폼별 시딩 전략\n\n**Reddit**\n- 관련 서브레딧 3-5개 식별\n- 각 서브레딧의 규칙/문화 확인\n- 가치 제공형 포스트 1개씩 (팁, 경험 공유, 질문 답변)\n- 계정 karma 100+ 필요 (새 계정 금지)\n\n**Hacker News**\n- Show HN 포스트 준비 (런칭일에 사용)\n- 관련 토론에 의미 있는 댓글 참여\n\n**업종 포럼/슬랙/디스코드**\n- 타겟 커뮤니티 2-3개\n- 전문가로서 가치 있는 답변 제공\n\n### 각 포스트 작성 시\n- 플랫폼 톤에 맞게 작성\n- 사용자에게 리뷰 후 승인받고 다음 플랫폼 진행\n\n종료 조건: 선택된 플랫폼 모두에 시딩 포스트 작성 완료.",
+      "loop_back_to": 5,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 6,
+      "node_type": "action",
+      "title": "인플루언서 아웃리치",
+      "instruction": "## Influencer Outreach — kostja94 influencer-marketing 기반\n\n### 타겟 식별\n1. **Tier 1 (핵심)**: 업계 오피니언 리더 3-5명\n   - 직접 접촉 가능한 관계가 있는 사람 우선\n   - 팔로워 수보다 참여도(engagement rate) 중심\n\n2. **Tier 2 (확장)**: 관련 크리에이터/블로거 5-10명\n   - 제품 카테고리를 자주 다루는 사람\n   - 최근 3개월 내 관련 콘텐츠 게시 이력\n\n### 아웃리치 이메일/DM 템플릿\n```\nSubject: {그들의 최근 콘텐츠} 관련 — {제품명} 얼리 액세스\n\nHi {name},\n\n{그들의 최근 콘텐츠 1개를 구체적으로 언급하며 가치를 인정}\n\n{제품명}을 만들고 있는데, {그들이 다루는 주제}와 직접 관련이 있어서 연락드립니다.\n\n{한 문장으로 제품 설명}\n\n혹시 관심 있으시면 얼리 액세스를 드리겠습니다. 피드백이 큰 도움이 될 것 같습니다.\n\n{name} 드림\n{서명}\n```\n\n### 규칙\n- 대량 발송 금지 — 각 메시지를 개인화\n- 첫 메시지에서 리뷰/포스팅 요청 금지\n- 가치를 먼저 제공 (얼리 액세스, 독점 데이터)\n\n### 산출물\n- 타겟 리스트 (이름, 채널, 팔로워, 접근 방법)\n- 개인화된 아웃리치 메시지 각 1개씩",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 7,
+      "node_type": "gate",
+      "title": "런칭 D-Day 체크리스트",
+      "instruction": "## Launch Day Checklist — 모든 채널 동시 발행 확인\n\n### D-Day 실행 순서\n```\n⏰ Launch Day Timeline\n━━━━━━━━━━━━━━━━━━━━━━━━━\n06:00  ProductHunt 리스팅 게시 (PST 기준)\n07:00  런칭 이메일 발송\n08:00  X/Twitter 런칭 스레드 게시\n08:30  LinkedIn 공지 포스트\n09:00  Reddit Show HN / 서브레딧 포스트\n09:00  Threads 포스트\n10:00  인플루언서에게 런칭 알림 DM\n종일   댓글 모니터링 & 응답\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n### 최종 체크리스트\n- [ ] 랜딩 페이지 라이브 확인\n- [ ] ProductHunt 리스팅 활성화\n- [ ] 이메일 예약 확인\n- [ ] 소셜 포스트 준비 완료\n- [ ] 모니터링 대시보드 세팅\n- [ ] 팀 Slack/Discord 런칭 채널 준비\n\n### 선택지\n1. 런칭 실행 — 전 채널 발행 시작\n2. 연기 — 준비 부족한 항목 보완\n3. 소프트 런칭 — 일부 채널만 먼저",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": true
+    },
+    {
+      "step_order": 8,
+      "node_type": "action",
+      "title": "런칭 후 모니터링",
+      "instruction": "## Post-Launch Monitoring — 반응 수집 & 대응\n\n### 모니터링 항목 (런칭 후 24-72시간)\n\n1. **트래픽**\n   - 랜딩 페이지 방문자 수 / 소스별 분류\n   - 가입 전환율\n\n2. **소셜 반응**\n   - 각 플랫폼별 참여도 (좋아요, 댓글, 공유)\n   - 감성 분석 (긍정/부정/질문)\n   - ProductHunt 순위 변화\n\n3. **댓글 대응**\n   - 모든 댓글에 빠르게 응답 (특히 첫 6시간)\n   - 질문 → 상세 답변\n   - 비판 → 감사 + 개선 약속\n   - 칭찬 → 감사 + 추가 가치 제공\n\n4. **기술 모니터링**\n   - 서버 상태 / 에러율\n   - 가입 프로세스 정상 동작\n   - 결제 (해당 시) 정상 작동\n\n### 실시간 보고\n```\n📊 Launch Status (T+{N}h)\n━━━━━━━━━━━━━━━━━━━━━━━━━\nTraffic: {N} visitors ({주요 소스})\nSignups: {N} ({전환율}%)\nPH Rank: #{N}\nSocial: {총 참여} across {N} platforms\nSentiment: {긍정}% positive\nIssues: {있으면 목록}\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 9,
+      "node_type": "gate",
+      "title": "런칭 회고",
+      "instruction": "## Launch Retrospective — 무엇이 통했는가\n\n### 성과 대비 목표\n```\n📊 Launch Results vs Goals\n━━━━━━━━━━━━━━━━━━━━━━━━━\n              Goal      Actual    Status\nTraffic:      {N}       {N}       ✅/❌\nSignups:      {N}       {N}       ✅/❌\nPH Rank:      Top {N}   #{N}      ✅/❌\nPress:        {N} hits  {N}       ✅/❌\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n### 채널별 성과 분석\n| 채널 | 트래픽 | 전환 | ROI | 판정 |\n|------|--------|------|-----|------|\n| ProductHunt | {N} | {N} | ... | ⭐/✅/❌ |\n| X/Twitter | {N} | {N} | ... | ... |\n| LinkedIn | {N} | {N} | ... | ... |\n| Email | {N} | {N} | ... | ... |\n| Reddit/HN | {N} | {N} | ... | ... |\n\n### 회고 질문\n1. **Best Channel**: 가장 효과적이었던 채널과 이유\n2. **Surprise**: 예상 밖의 결과 (좋은/나쁜)\n3. **Skip Next Time**: 다음에는 하지 않을 것\n4. **Double Down**: 다음에 2배로 투자할 것\n5. **Missing**: 이번에 못했지만 다음에 할 것\n\n### 학습 기록\n`docs/launches/YYYY-MM-DD-{product}-launch-retro.md`에 저장.\n\n사용자에게 회고 결과를 보여주고 런칭 스프린트를 마감한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": true
+    }
+  ]
+}
