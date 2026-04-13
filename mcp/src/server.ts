@@ -629,6 +629,24 @@ Only populated fields are included.`,
     ["folder_id", "group_id"],
   ),
   tool(
+    "update_folder",
+    "Rename or change the description of a folder. Cannot rename system folders. Only the owner or an admin can edit.",
+    {
+      folder_id: { type: "number" },
+      name: { type: "string" },
+      description: { type: "string" },
+    },
+    ["folder_id"],
+  ),
+  tool(
+    "delete_folder",
+    "Delete an empty folder. Returns an error if the folder contains any workflows, instructions, credentials, or child folders.",
+    {
+      folder_id: { type: "number" },
+    },
+    ["folder_id"],
+  ),
+  tool(
     "move_workflow",
     "Move a workflow into a different folder. Caller must have edit permission on the destination folder.",
     {
@@ -1129,6 +1147,20 @@ tools must stay thin proxies — do not replicate this pattern elsewhere.
             `/api/folders/${folderId}/shares/${groupId}`,
           ),
         );
+      }
+      case "update_folder": {
+        const folderId = requireNumberArg(args, "folder_id");
+        const body: Record<string, unknown> = {};
+        if (typeof args.name === "string") body.name = args.name;
+        if (typeof args.description === "string")
+          body.description = args.description;
+        return wrap(
+          await client.request("PUT", `/api/folders/${folderId}`, body),
+        );
+      }
+      case "delete_folder": {
+        const folderId = requireNumberArg(args, "folder_id");
+        return wrap(await client.request("DELETE", `/api/folders/${folderId}`));
       }
       case "move_workflow": {
         const workflowId = requireNumberArg(args, "workflow_id");

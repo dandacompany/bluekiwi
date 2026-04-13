@@ -6,7 +6,7 @@ user_invocable: true
 
 # BlueKiwi Share
 
-Share a folder with a user group at a specified access level (viewer or editor).
+Share a folder with a user group at a specified access level (reader or contributor).
 
 ## Argument Handling
 
@@ -16,7 +16,7 @@ Share a folder with a user group at a specified access level (viewer or editor).
 ## Core Principles
 
 - Sharing is applied at the **folder level**. Workflows and instructions inside the folder inherit the visibility.
-- Access levels: `viewer` (read-only) or `editor` (can modify contents).
+- Access levels: `reader` (read-only) or `contributor` (can create/edit contents).
 - Only the folder owner or an admin can share.
 
 ## Execution Steps
@@ -46,7 +46,7 @@ Ask via AskUserQuestion:
 Ask via AskUserQuestion:
 
 - header: "Access level"
-- options: ["Viewer (read-only)", "Editor (can modify)"]
+- options: ["Reader (read-only)", "Contributor (can create/edit)"]
 
 ### Step 4: Confirm and Apply
 
@@ -57,7 +57,7 @@ Share settings:
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 Folder: {folder name}
 Group:  {group name}
-Access: {viewer | editor}
+Access: {reader | contributor}
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -72,7 +72,7 @@ Call `share_folder`:
 {
   "folder_id": <id>,
   "group_id": <id>,
-  "access_level": "viewer" | "editor"
+  "access_level": "reader" | "contributor"
 }
 ```
 

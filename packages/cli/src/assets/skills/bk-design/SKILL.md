@@ -286,3 +286,48 @@ update_node(workflow_id=67, node_id=109, instruction="new instruction text")
 # Update instruction template — affects all referencing nodes
 update_instruction(instruction_id=5, content="new template text")
 ```
+
+## Folder & Workflow Organization
+
+Triggered when the user says "move workflow", "change folder", "organize", or "create folder".
+
+### Move an Existing Workflow to a Different Folder
+
+1. Call `list_workflows` to identify the target workflow (or use the name the user mentioned).
+2. Call `list_folders` to get the folder list.
+3. Ask via AskUserQuestion:
+   - header: "Move to"
+   - "Which folder should '{workflow title}' be moved to?"
+   - options: folder name list + "My Workspace (default)"
+4. Call `move_workflow`:
+   ```json
+   { "workflow_id": <id>, "folder_id": <destination folder id> }
+   ```
+5. Report: `✅ Moved '{workflow title}' → '{folder name}'`
+
+### Create a Standalone Folder
+
+1. Ask for name and optional visibility (`personal` / `group` / `public`).
+2. Call `create_folder`:
+   ```json
+   { "name": "<name>", "description": "<desc>", "visibility": "personal" }
+   ```
+3. Report: `✅ Folder '{name}' created.`
+
+### Rename a Folder
+
+Call `update_folder`:
+
+```json
+{ "folder_id": <id>, "name": "<new name>" }
+```
+
+### Delete an Empty Folder
+
+Call `delete_folder`:
+
+```json
+{ "folder_id": <id> }
+```
+
+> Note: `delete_folder` fails with `FOLDER_NOT_EMPTY` if the folder contains any workflows, instructions, credentials, or sub-folders. Empty the folder first.
