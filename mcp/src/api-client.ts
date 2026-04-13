@@ -64,6 +64,59 @@ export class BlueKiwiClient {
     }
     throw new BlueKiwiNetworkError("Unreachable", lastError);
   }
+
+  async requestFormData<T>(
+    method: string,
+    path: string,
+    formData: FormData,
+  ): Promise<T> {
+    const url = `${this.baseUrl.replace(/\/$/, "")}${path}`;
+    const init: RequestInit = {
+      method,
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      body: formData,
+    };
+
+    let lastError: unknown;
+    for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+      try {
+        const res = await fetch(url, init);
+        if (res.status === 401) {
+          throw new BlueKiwiAuthError();
+        }
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          if (res.status >= 500 && attempt < RETRY_DELAYS_MS.length) {
+            lastError = new BlueKiwiApiError(res.status, text);
+            await sleep(RETRY_DELAYS_MS[attempt]);
+            continue;
+          }
+          throw new BlueKiwiApiError(res.status, text);
+        }
+        const text = await res.text();
+        return (text ? JSON.parse(text) : null) as T;
+      } catch (err) {
+        if (
+          err instanceof BlueKiwiAuthError ||
+          err instanceof BlueKiwiApiError
+        ) {
+          throw err;
+        }
+        lastError = err;
+        if (attempt < RETRY_DELAYS_MS.length) {
+          await sleep(RETRY_DELAYS_MS[attempt]);
+          continue;
+        }
+        throw new BlueKiwiNetworkError(
+          `Failed to reach ${url} after ${RETRY_DELAYS_MS.length + 1} attempts`,
+          err,
+        );
+      }
+    }
+    throw new BlueKiwiNetworkError("Unreachable", lastError);
+  }
 }
 
 function sleep(ms: number): Promise<void> {

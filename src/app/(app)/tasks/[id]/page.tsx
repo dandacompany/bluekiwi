@@ -364,6 +364,7 @@ export default function TaskDetailPage() {
       <StepDetail
         logs={selectedLogs}
         taskId={task.id}
+        workflowId={task.workflow_id}
         taskStatus={task.status}
         registry={task.registry ?? {}}
         comments={comments.filter(

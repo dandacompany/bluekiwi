@@ -10,6 +10,7 @@ import {
   Loader2,
   FileText,
   MessageSquare,
+  Paperclip,
   Zap,
   Repeat,
   Send,
@@ -72,10 +73,19 @@ export interface StepArtifact {
   size: number;
 }
 
+interface NodeAttachment {
+  id: number;
+  filename: string;
+  mime_type: string;
+  size_bytes: number;
+  created_at: string;
+}
+
 interface StepDetailProps {
   /** All logs for this step (multiple if loop iterations) */
   logs: StepLog[];
   taskId: number;
+  workflowId: number;
   taskStatus: string;
   registry: Record<string, string>;
   artifacts?: StepArtifact[];
@@ -126,6 +136,18 @@ function formatCommentTimestamp(date: string): string {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(date));
+}
+
+function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 1024) return `${bytes || 0} B`;
+  const units = ["KB", "MB", "GB"];
+  let value = bytes;
+  let unitIndex = -1;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  return `${value >= 10 || unitIndex === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`;
 }
 
 function StatusIcon({ status }: { status: string }) {
@@ -419,6 +441,7 @@ function WebResponseForm({
 export function StepDetail({
   logs,
   taskId,
+  workflowId,
   taskStatus,
   registry,
   artifacts,
@@ -428,6 +451,42 @@ export function StepDetail({
 }: StepDetailProps) {
   const { t } = useTranslation();
   const [commentInput, setCommentInput] = useState("");
+  const [attachments, setAttachments] = useState<NodeAttachment[]>([]);
+
+  // Use the last log as the "primary" (latest iteration for loops)
+  const primary = logs[logs.length - 1];
+  const hasMultiple = logs.length > 1;
+
+  useEffect(() => {
+    if (!workflowId || !primary?.node_id) {
+      setAttachments([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function fetchAttachments() {
+      try {
+        const res = await fetch(
+          `/api/workflows/${workflowId}/nodes/${primary.node_id}/attachments`,
+        );
+        if (!res.ok) throw new Error("Failed to fetch attachments");
+        const json = (await res.json()) as { data?: NodeAttachment[] };
+        if (!cancelled) {
+          setAttachments(Array.isArray(json.data) ? json.data : []);
+        }
+      } catch {
+        if (!cancelled) {
+          setAttachments([]);
+        }
+      }
+    }
+
+    void fetchAttachments();
+    return () => {
+      cancelled = true;
+    };
+  }, [workflowId, primary?.node_id]);
 
   if (logs.length === 0) {
     return (
@@ -436,10 +495,6 @@ export function StepDetail({
       </div>
     );
   }
-
-  // Use the last log as the "primary" (latest iteration for loops)
-  const primary = logs[logs.length - 1];
-  const hasMultiple = logs.length > 1;
 
   const handleAddComment = () => {
     if (!commentInput.trim() || !onAddComment) return;
@@ -533,6 +588,30 @@ export function StepDetail({
             thinkingOpen={primary.status === "running"}
             onRefresh={onRefresh}
           />
+        )}
+
+        {attachments.length > 0 && (
+          <div className="mt-6 rounded-[1.25rem] border border-border/80 bg-[var(--card)] p-4">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+              <Paperclip className="h-4 w-4" />
+              Attachments
+            </h3>
+            <div className="space-y-2">
+              {attachments.map((attachment) => (
+                <div
+                  key={attachment.id}
+                  className="flex items-center justify-between gap-3 rounded-[0.875rem] border border-border/80 bg-surface-soft/35 px-3 py-2 text-sm"
+                >
+                  <span className="truncate font-medium">
+                    {attachment.filename}
+                  </span>
+                  <span className="shrink-0 text-xs text-[var(--muted-foreground)]">
+                    {formatBytes(attachment.size_bytes)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Artifacts */}

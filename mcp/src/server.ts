@@ -492,6 +492,47 @@ const tools: Tool[] = [
     ["workflow_id", "node_id"],
   ),
   tool(
+    "list_attachments",
+    "List file attachments for a workflow node. Returns metadata only (id, filename, mime_type, size_bytes).",
+    {
+      workflow_id: { type: "number" },
+      node_id: { type: "number" },
+    },
+    ["workflow_id", "node_id"],
+  ),
+  tool(
+    "get_attachment",
+    "Download attachment content. Returns text content directly for text files. For binary files, returns metadata with binary=true.",
+    {
+      workflow_id: { type: "number" },
+      node_id: { type: "number" },
+      attachment_id: { type: "number" },
+    },
+    ["workflow_id", "node_id", "attachment_id"],
+  ),
+  tool(
+    "upload_attachment",
+    "Upload a text file as an attachment to a workflow node. Text-only — binary uploads must use the web UI. Use this after creating a workflow to attach scripts, reference docs, or config files that agents can download during execution.",
+    {
+      workflow_id: { type: "number" },
+      node_id: { type: "number" },
+      filename: { type: "string" },
+      content: { type: "string" },
+      mime_type: { type: "string" },
+    },
+    ["workflow_id", "node_id", "filename", "content"],
+  ),
+  tool(
+    "delete_attachment",
+    "Delete an attachment from a workflow node.",
+    {
+      workflow_id: { type: "number" },
+      node_id: { type: "number" },
+      attachment_id: { type: "number" },
+    },
+    ["workflow_id", "node_id", "attachment_id"],
+  ),
+  tool(
     "save_feedback",
     "Save post-workflow feedback for a completed task. Call this after collecting user survey responses and before calling complete_task. feedback is an array of {question, answer} objects.",
     {
@@ -901,6 +942,98 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           ),
         );
       }
+      case "list_attachments": {
+        const workflowId = requireNumberArg(args, "workflow_id");
+        const nodeId = requireNumberArg(args, "node_id");
+        return wrap(
+          await client.request(
+            "GET",
+            `/api/workflows/${workflowId}/nodes/${nodeId}/attachments`,
+          ),
+        );
+      }
+      case "get_attachment": {
+        const workflowId = requireNumberArg(args, "workflow_id");
+        const nodeId = requireNumberArg(args, "node_id");
+        const attachmentId = requireNumberArg(args, "attachment_id");
+        const url =
+          `${apiUrl.replace(/\/$/, "")}` +
+          `/api/workflows/${workflowId}/nodes/${nodeId}/attachments/${attachmentId}`;
+        const res = await fetch(url, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+        });
+        if (res.status === 401) {
+          throw new BlueKiwiAuthError();
+        }
+        if (!res.ok) {
+          throw new BlueKiwiApiError(res.status, await res.text().catch(() => ""));
+        }
+
+        const contentType = res.headers.get("content-type") ?? "";
+        if (contentType.includes("application/json")) {
+          const text = await res.text();
+          return wrap(text ? JSON.parse(text) : null);
+        }
+
+        const disposition = res.headers.get("content-disposition") ?? "";
+        const filenameMatch =
+          /filename\*=UTF-8''([^;]+)|filename=\"?([^\";]+)\"?/i.exec(disposition);
+        const filename = decodeURIComponent(
+          filenameMatch?.[1] ?? filenameMatch?.[2] ?? "",
+        );
+        const sizeHeader = res.headers.get("content-length");
+        const sizeBytes =
+          typeof sizeHeader === "string" ? Number(sizeHeader) : undefined;
+
+        return wrap({
+          data: {
+            id: attachmentId,
+            filename: filename || undefined,
+            mime_type: contentType || undefined,
+            size_bytes:
+              typeof sizeBytes === "number" && Number.isFinite(sizeBytes)
+                ? sizeBytes
+                : undefined,
+            binary: true,
+          },
+        });
+      }
+      case "upload_attachment": {
+        const workflowId = requireNumberArg(args, "workflow_id");
+        const nodeId = requireNumberArg(args, "node_id");
+        const filename = requireStringArg(args, "filename");
+        const content = requireStringArg(args, "content");
+        const mimeType =
+          typeof args.mime_type === "string" && args.mime_type.length > 0
+            ? args.mime_type
+            : "text/plain";
+
+        const blob = new Blob([content], { type: mimeType });
+        const formData = new FormData();
+        formData.append("file", blob, filename);
+
+        return wrap(
+          await client.requestFormData(
+            "POST",
+            `/api/workflows/${workflowId}/nodes/${nodeId}/attachments`,
+            formData,
+          ),
+        );
+      }
+      case "delete_attachment": {
+        const workflowId = requireNumberArg(args, "workflow_id");
+        const nodeId = requireNumberArg(args, "node_id");
+        const attachmentId = requireNumberArg(args, "attachment_id");
+        return wrap(
+          await client.request(
+            "DELETE",
+            `/api/workflows/${workflowId}/nodes/${nodeId}/attachments/${attachmentId}`,
+          ),
+        );
+      }
       case "save_feedback": {
         const taskId = requireNumberArg(args, "task_id");
         return wrap(
@@ -1058,6 +1191,16 @@ function requireNumberArg(args: Record<string, unknown>, key: string): number {
 
   if (typeof value !== "number" || Number.isNaN(value)) {
     throw new Error(`${key} must be a number`);
+  }
+
+  return value;
+}
+
+function requireStringArg(args: Record<string, unknown>, key: string): string {
+  const value = args[key];
+
+  if (typeof value !== "string") {
+    throw new Error(`${key} must be a string`);
   }
 
   return value;
