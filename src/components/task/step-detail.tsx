@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -260,6 +260,15 @@ function StructuredOutputView({
   );
 }
 
+function isFragment(html: string): boolean {
+  const trimmed = html.trim();
+  return (
+    !trimmed.startsWith("<!DOCTYPE") &&
+    !trimmed.startsWith("<!doctype") &&
+    !trimmed.startsWith("<html")
+  );
+}
+
 function VisualSelector({
   html,
   taskId,
@@ -290,6 +299,30 @@ function VisualSelector({
     (logStatus === "pending" || logStatus === "running") &&
     !submitted;
 
+  // Build srcDoc: wrap fragments with VS frame, pass full HTML as-is
+  const srcDoc = useMemo(() => {
+    if (!isFragment(html)) return html;
+    // Lazy import to avoid bundling 30KB constant when not needed
+    try {
+      const { VS_FRAME_TEMPLATE } = require("@/lib/vs-frame");
+      const theme =
+        typeof document !== "undefined" &&
+        document.documentElement.classList.contains("dark")
+          ? "dark"
+          : "light";
+      const locale =
+        typeof document !== "undefined"
+          ? document.documentElement.lang || "ko"
+          : "ko";
+      return (VS_FRAME_TEMPLATE as string)
+        .replace("{{AGENT_CONTENT}}", html)
+        .replace('data-theme="light"', `data-theme="${theme}"`)
+        .replace('data-lang="ko"', `data-lang="${locale}"`);
+    } catch {
+      return html; // fallback if vs-frame not built
+    }
+  }, [html]);
+
   // Deep link: auto-open dialog
   useEffect(() => {
     if (autoOpen && !open) {
@@ -303,26 +336,50 @@ function VisualSelector({
 
     function handleMessage(event: MessageEvent) {
       if (event.source !== iframeRef.current?.contentWindow) return;
-      const data = event.data as { type?: string; value?: string };
-      if (data?.type !== "bk_visual_select") return;
+      const msg = event.data as {
+        type?: string;
+        value?: string;
+        data?: object;
+      };
 
-      setSubmitting(true);
-      fetch(`/api/tasks/${taskId}/respond`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          node_id: nodeId,
-          response: data.value ?? "",
-        }),
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error("respond failed");
-          setSubmitted(true);
-          onSelected?.();
+      // New protocol: bk_visual_submit (structured JSON)
+      if (msg?.type === "bk_visual_submit") {
+        setSubmitting(true);
+        fetch(`/api/tasks/${taskId}/respond`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            node_id: nodeId,
+            response: JSON.stringify(msg.data),
+          }),
         })
-        .catch(() => {
-          setSubmitting(false);
-        });
+          .then((res) => {
+            if (!res.ok) throw new Error("respond failed");
+            setSubmitted(true);
+            onSelected?.();
+          })
+          .catch(() => setSubmitting(false));
+        return;
+      }
+
+      // Legacy protocol: bk_visual_select (single string value)
+      if (msg?.type === "bk_visual_select") {
+        setSubmitting(true);
+        fetch(`/api/tasks/${taskId}/respond`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            node_id: nodeId,
+            response: JSON.stringify({ selections: [msg.value ?? ""] }),
+          }),
+        })
+          .then((res) => {
+            if (!res.ok) throw new Error("respond failed");
+            setSubmitted(true);
+            onSelected?.();
+          })
+          .catch(() => setSubmitting(false));
+      }
     }
 
     window.addEventListener("message", handleMessage);
@@ -364,11 +421,11 @@ function VisualSelector({
         )}
         <ScrollArea className="max-h-[75vh]">
           <div className="p-5">
-            <div className="overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-white">
+            <div className="overflow-hidden rounded-[var(--radius)] border border-[var(--border)]">
               <iframe
                 ref={iframeRef}
-                srcDoc={html}
-                className="w-full min-h-[600px] bg-white"
+                srcDoc={srcDoc}
+                className="w-full min-h-[600px]"
                 sandbox="allow-scripts"
               />
             </div>

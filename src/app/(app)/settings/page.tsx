@@ -1,8 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Settings } from "lucide-react";
+import { Bell, HardDrive, Settings } from "lucide-react";
+import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -28,6 +39,10 @@ export default function SettingsPage() {
   const { t } = useTranslation();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
+  const [cleanupCounting, setCleanupCounting] = useState(false);
+  const [cleanupSubmitting, setCleanupSubmitting] = useState(false);
+  const [cleanupCount, setCleanupCount] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -45,6 +60,44 @@ export default function SettingsPage() {
   }, []);
 
   const isAdmin = user?.role === "admin" || user?.role === "superuser";
+  const isSuperuser = user?.role === "superuser";
+
+  async function handleOpenCleanupDialog() {
+    setCleanupCounting(true);
+    setCleanupCount(null);
+    try {
+      const res = await fetch("/api/settings/cleanup-visual-html");
+      if (!res.ok) throw new Error();
+      const json = (await res.json()) as { affected?: number };
+      setCleanupCount(json.affected ?? 0);
+      setCleanupDialogOpen(true);
+    } catch {
+      toast.error("Failed to load VS render cache count.");
+    } finally {
+      setCleanupCounting(false);
+    }
+  }
+
+  async function handleCleanupVisualHtml() {
+    setCleanupSubmitting(true);
+    try {
+      const res = await fetch("/api/settings/cleanup-visual-html", {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error();
+      const json = (await res.json()) as { cleared?: number };
+      const cleared = json.cleared ?? 0;
+      setCleanupDialogOpen(false);
+      setCleanupCount(cleared);
+      toast.success(
+        `Cleared ${cleared} VS render cache entr${cleared === 1 ? "y" : "ies"}.`,
+      );
+    } catch {
+      toast.error("Failed to clear VS render cache.");
+    } finally {
+      setCleanupSubmitting(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -90,6 +143,7 @@ export default function SettingsPage() {
           <TabsTrigger value="notifications">
             {t("settings.notifications")}
           </TabsTrigger>
+          {isSuperuser && <TabsTrigger value="storage">Storage</TabsTrigger>}
         </TabsList>
 
         <div className="mt-4">
@@ -131,8 +185,75 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {isSuperuser && (
+            <TabsContent value="storage">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <HardDrive className="h-5 w-5 text-[var(--muted-foreground)]" />
+                    <CardTitle>Storage</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Manage VS render cache for completed and failed tasks.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between gap-4 rounded-xl border border-[var(--border)] p-4">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">VS Render Cache</p>
+                      <p className="text-xs text-[var(--muted-foreground)]">
+                        Clears stored `visual_html` for completed/failed tasks
+                        while preserving `web_response`.
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleOpenCleanupDialog}
+                      disabled={cleanupCounting || cleanupSubmitting}
+                    >
+                      {cleanupCounting
+                        ? "Checking..."
+                        : "Clear VS render cache"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </div>
       </Tabs>
+
+      <AlertDialog
+        open={cleanupDialogOpen}
+        onOpenChange={(open) => {
+          if (!cleanupSubmitting) setCleanupDialogOpen(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear VS render cache?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {cleanupCount === null
+                ? "Loading affected entry count..."
+                : `${cleanupCount} cached VS render entr${cleanupCount === 1 ? "y is" : "ies are"} stored on completed/failed tasks. This clears visual_html only and preserves web_response data.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cleanupSubmitting}>
+              {t("common.cancel")}
+            </AlertDialogCancel>
+            <Button
+              variant="destructive"
+              onClick={handleCleanupVisualHtml}
+              disabled={cleanupSubmitting || cleanupCount === null}
+            >
+              {cleanupSubmitting ? "Clearing..." : "Clear cache"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }
