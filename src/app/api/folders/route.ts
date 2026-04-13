@@ -25,20 +25,7 @@ export const GET = withAuth("workflows:read", async (request, user) => {
       u.username AS owner_name
     FROM folders f
     JOIN users u ON u.id = f.owner_id
-    WHERE ${filter.sql}
-    AND NOT (f.is_system = true AND f.visibility = 'personal' AND f.owner_id != $${ownParam})
-    AND NOT EXISTS (
-      WITH RECURSIVE ancestors(id, parent_id, is_system, visibility, owner_id) AS (
-        SELECT p.id, p.parent_id, p.is_system, p.visibility, p.owner_id
-          FROM folders p WHERE p.id = f.parent_id
-        UNION ALL
-        SELECT p.id, p.parent_id, p.is_system, p.visibility, p.owner_id
-          FROM folders p
-          JOIN ancestors a ON a.parent_id = p.id
-      )
-      SELECT 1 FROM ancestors a
-       WHERE a.is_system = true AND a.visibility = 'personal' AND a.owner_id != $${ownParam}
-    )`;
+    WHERE ${filter.sql}`;
   const params = [...filter.params, user.id];
   if (parentId !== null) {
     params.push(parentId === "null" ? null : Number(parentId));

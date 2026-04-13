@@ -320,10 +320,8 @@ export async function buildResourceVisibilityFilter(
   user: User,
   nextParamIndex: number,
 ): Promise<AuthFilter> {
+  // Even superusers respect personal visibility in listings.
   const groups = await userGroupIds(user.id);
-  if (user.role === "superuser") {
-    return { sql: "TRUE", params: [] };
-  }
   const params: unknown[] = [user.id];
   let p = nextParamIndex;
   const userIdx = p;
@@ -393,9 +391,8 @@ export async function buildFolderVisibilityFilter(
   user: User,
   nextParamIndex: number,
 ): Promise<AuthFilter> {
-  if (user.role === "superuser") {
-    return { sql: "TRUE", params: [] };
-  }
+  // Even superusers respect personal visibility —
+  // their folder tree shows only own + public + group-shared folders.
   const groups = await userGroupIds(user.id);
   const params: unknown[] = [user.id];
   let p = nextParamIndex;
@@ -453,9 +450,7 @@ export async function buildCredentialVisibilityFilter(
   user: User,
   nextParamIndex: number,
 ): Promise<AuthFilter> {
-  if (user.role === "superuser") {
-    return { sql: "TRUE", params: [] };
-  }
+  // Even superusers respect personal visibility in listings.
   const groups = await userGroupIds(user.id);
   const params: unknown[] = [user.id];
   let p = nextParamIndex;
