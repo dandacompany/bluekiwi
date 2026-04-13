@@ -84,7 +84,7 @@ export default function InvitePage() {
   }
 
   if (result) {
-    const command = `npx bluekiwi accept ${token} --server ${result.server_url}`;
+    const command = `npm i -g bluekiwi && bluekiwi accept ${token} --server ${result.server_url}`;
 
     return (
       <main className="mx-auto max-w-md px-4 py-20">
