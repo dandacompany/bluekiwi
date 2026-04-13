@@ -14,7 +14,7 @@ Design reusable workflows, run them from any AI coding agent, and watch every st
 
 [Quick Setup](#quick-setup) · [Skills](#skills) · [MCP Tools](#mcp-tools) · [CLI](#cli) · [Self-Hosting](#self-hosting) · [Contributing](#contributing)
 
-🌐 [한국어](README.ko.md)
+🌐 [한국어](README.ko.md) · 📊 [Presentation Slides](https://canva.link/5f62nmx6wk7x4ka)
 
 </div>
 

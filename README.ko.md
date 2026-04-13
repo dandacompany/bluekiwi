@@ -14,7 +14,7 @@
 
 [빠른 시작](#빠른-시작) · [스킬](#스킬) · [MCP 도구](#mcp-도구) · [CLI](#cli) · [셀프호스팅](#셀프호스팅) · [기여하기](#기여하기)
 
-🌐 [English](README.md)
+🌐 [English](README.md) · 📊 [프레젠테이션 슬라이드](https://canva.link/5f62nmx6wk7x4ka)
 
 </div>
 
