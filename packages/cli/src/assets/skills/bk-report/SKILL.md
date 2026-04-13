@@ -61,8 +61,11 @@ Build the report from the collected data:
 ## VS Responses
 
 {for each step with web_response data}
+
 ### Step {N}: {title}
+
 {format the JSON response as readable text}
+
 - **Selected**: {selections joined with ", "}
 - **Values**: {key = value for each entry in values}
 - **Priority ranking**: {ranking as numbered list}

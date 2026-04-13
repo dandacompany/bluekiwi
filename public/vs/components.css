@@ -794,6 +794,63 @@ pre.bk-code {
   min-height: 120px;
 }
 
+/* ─── 10b. bk-mockup-gallery (selectable mockup cards) ─── */
+
+.bk-mockup-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.bk-mockup-item {
+  background: var(--bk-surface);
+  border: 1.5px solid var(--bk-border);
+  border-radius: var(--bk-radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+  box-shadow: var(--bk-shadow);
+}
+
+.bk-mockup-item:hover {
+  border-color: var(--bk-primary);
+}
+
+.bk-mockup-item.selected {
+  border-color: var(--bk-primary);
+  box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.2);
+}
+
+.bk-mockup-preview {
+  padding: 0.75rem;
+  background: var(--bk-surface-soft);
+  border-bottom: 1px solid var(--bk-border);
+}
+
+.bk-mockup-frame {
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: var(--bk-surface);
+  border-radius: var(--bk-radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--bk-border);
+}
+
+.bk-mockup-label {
+  padding: 0.625rem 0.875rem 0.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--bk-text);
+}
+
+.bk-mockup-desc {
+  padding: 0 0.875rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--bk-text-muted);
+}
+
 /* ─── 11. bk-timeline ─── */
 
 .bk-timeline {

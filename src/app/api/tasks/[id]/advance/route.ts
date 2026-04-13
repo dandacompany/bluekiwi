@@ -88,6 +88,16 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json(res.body, { status: res.status });
   }
 
+  // timed_out 태스크를 재개(peek)할 때 상태를 running으로 복구
+  if (peek && task.status === "timed_out") {
+    await execute(
+      "UPDATE tasks SET status = 'running', updated_at = NOW() WHERE id = $1",
+      [taskId],
+    );
+    task.status = "running";
+    void notifyTaskUpdate(taskId, "task_resumed");
+  }
+
   const totalRows = await queryOne<{ count: string }>(
     "SELECT COUNT(*) as count FROM workflow_nodes WHERE workflow_id = $1",
     [task.workflow_id],

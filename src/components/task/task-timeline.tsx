@@ -112,49 +112,43 @@ export function TaskTimeline({
             const nt = nodeTypeLabel(step.nodeType, t);
 
             return (
-              <div key={step.stepOrder} className="flex gap-3">
-                {/* Node + line */}
-                <div className="flex flex-col items-center">
-                  <button
-                    onClick={() => onSelectStep(step.stepOrder)}
-                    className={cn(
-                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-medium transition-all",
-                      isCompleted && "bg-brand-blue-600 text-white",
-                      isCurrent &&
-                        "bg-kiwi-600 text-white ring-[3px] ring-kiwi-600/30",
-                      isFailed && "bg-[var(--destructive)] text-white",
-                      isPending &&
-                        "bg-[var(--muted)] border border-[var(--border)] text-[var(--muted-foreground)] opacity-60",
-                      isSelected && "ring-2 ring-brand-blue-700",
-                    )}
-                  >
-                    {isCompleted ? (
-                      <Check className="h-3.5 w-3.5" />
-                    ) : isCurrent ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : isFailed ? (
-                      <XCircle className="h-3.5 w-3.5" />
-                    ) : (
-                      step.stepOrder
-                    )}
-                  </button>
-                  {!isLast && (
-                    <div
-                      className={cn(
-                        "w-0.5 flex-1 min-h-6",
-                        isCompleted
-                          ? "bg-brand-blue-600"
-                          : "bg-[var(--border)]",
-                      )}
-                    />
-                  )}
-                </div>
-
-                {/* Label */}
+              /* Grid layout: circle and card are in the same row → items-center
+                 aligns the circle vertically to the center of the card.
+                 The connector line occupies a separate row below. */
+              <div
+                key={step.stepOrder}
+                className="grid grid-cols-[28px_1fr] items-center gap-x-3"
+              >
+                {/* Row 1, Col 1: Circle */}
                 <button
                   onClick={() => onSelectStep(step.stepOrder)}
                   className={cn(
-                    "flex-1 rounded-2xl border px-3 py-2.5 pb-3 text-left transition-colors",
+                    "justify-self-center flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-medium transition-all",
+                    isCompleted && "bg-brand-blue-600 text-white",
+                    isCurrent &&
+                      "bg-kiwi-600 text-white ring-[3px] ring-kiwi-600/30",
+                    isFailed && "bg-[var(--destructive)] text-white",
+                    isPending &&
+                      "bg-[var(--muted)] border border-[var(--border)] text-[var(--muted-foreground)] opacity-60",
+                    isSelected && "ring-2 ring-brand-blue-700",
+                  )}
+                >
+                  {isCompleted ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : isCurrent ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : isFailed ? (
+                    <XCircle className="h-3.5 w-3.5" />
+                  ) : (
+                    step.stepOrder
+                  )}
+                </button>
+
+                {/* Row 1, Col 2: Card */}
+                <button
+                  onClick={() => onSelectStep(step.stepOrder)}
+                  className={cn(
+                    "rounded-2xl border px-3 py-2.5 pb-3 text-left transition-colors",
                     isSelected &&
                       "border-brand-blue-200 bg-[var(--card)] shadow-[var(--shadow-soft)]",
                     !isSelected &&
@@ -193,6 +187,16 @@ export function TaskTimeline({
                     )}
                   </div>
                 </button>
+
+                {/* Row 2, Col 1: Connector line (between steps) */}
+                {!isLast && (
+                  <div
+                    className={cn(
+                      "h-5 w-0.5 justify-self-center",
+                      isCompleted ? "bg-brand-blue-600" : "bg-[var(--border)]",
+                    )}
+                  />
+                )}
               </div>
             );
           })}
@@ -236,6 +240,8 @@ function StatusBadge({ status }: { status: string }) {
     completed: "border-brand-blue-600/20 bg-transparent text-brand-blue-700",
     failed:
       "border-[color:var(--destructive)] bg-destructive/10 text-[var(--destructive)]",
+    timed_out:
+      "border-amber-400/40 bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400",
     pending:
       "border-[var(--border)] bg-transparent text-[var(--muted-foreground)]",
   };
@@ -247,6 +253,8 @@ function StatusBadge({ status }: { status: string }) {
         ? t("tasks.failed")
         : status === "running"
           ? t("tasks.running")
-          : t("tasks.pending");
+          : status === "timed_out"
+            ? t("tasks.timedOut")
+            : t("tasks.pending");
   return <Badge className={map[status] || map.pending}>{label}</Badge>;
 }

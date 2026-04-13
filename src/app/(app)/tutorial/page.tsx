@@ -91,6 +91,55 @@ function BulletList({ items }: { items: string[] }) {
   );
 }
 
+function buildVsFrame(content: string): string {
+  return `<!doctype html>
+<html data-theme="light" data-lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/vs/components.css">
+<style>body{margin:0;padding:0;} .bk-vs-container{min-height:unset;}</style>
+</head>
+<body>
+<div class="bk-vs-container">
+  <div class="bk-vs-content">${content}</div>
+  <div class="bk-vs-footer">
+    <div class="bk-vs-status"></div>
+    <button class="bk-vs-submit" disabled>Submit</button>
+  </div>
+</div>
+<script src="/vs/helper.js"><\/script>
+</body>
+</html>`;
+}
+
+const VS_DEMO_OPTIONS = buildVsFrame(
+  `<div class="bk-options">
+  <div class="bk-option" data-value="a"><span class="bk-option-letter">A</span><div class="bk-option-body"><h3>Plan A</h3><p>Keep current UI — color improvements only</p></div></div>
+  <div class="bk-option" data-value="b" data-recommended><span class="bk-option-letter">B</span><div class="bk-option-body"><h3>Plan B</h3><p>Full layout redesign (recommended)</p></div></div>
+  <div class="bk-option" data-value="c"><span class="bk-option-letter">C</span><div class="bk-option-body"><h3>Plan C</h3><p>Incremental 3-phase approach</p></div></div>
+</div>`,
+);
+
+const VS_DEMO_CHECKLIST = buildVsFrame(
+  `<div class="bk-checklist">
+  <div class="bk-check-item" data-value="a11y">Accessibility improvements</div>
+  <div class="bk-check-item" data-value="perf">Loading speed optimization</div>
+  <div class="bk-check-item" data-value="mobile">Mobile responsiveness</div>
+  <div class="bk-check-item" data-value="dark">Dark mode support</div>
+</div>`,
+);
+
+const VS_DEMO_SLIDER = buildVsFrame(
+  `<div class="bk-slider" data-value="5">
+  <label>Priority score (1–10)</label>
+  <div class="bk-slider-controls">
+    <input type="range" min="1" max="10" value="5" step="1">
+    <span class="bk-slider-value">5</span>
+  </div>
+</div>`,
+);
+
 export default function TutorialPage() {
   const { t } = useTranslation();
 
@@ -98,6 +147,8 @@ export default function TutorialPage() {
     { id: "start", label: t("tutorial.navStart") },
     { id: "instructions", label: t("tutorial.navInstructions") },
     { id: "workflows", label: t("tutorial.navWorkflows") },
+    { id: "vs", label: t("tutorial.navVS") },
+    { id: "skills", label: t("tutorial.navSkills") },
     { id: "execute", label: t("tutorial.navExecute") },
     { id: "monitor", label: t("tutorial.navMonitor") },
     { id: "example", label: t("tutorial.navExample") },
@@ -194,22 +245,10 @@ export default function TutorialPage() {
             <div className="mb-3 grid gap-2 md:grid-cols-2">
               {(
                 [
-                  {
-                    Icon: Lock,
-                    text: t("tutorial.s1VisPersonal"),
-                  },
-                  {
-                    Icon: Users,
-                    text: t("tutorial.s1VisGroup"),
-                  },
-                  {
-                    Icon: Shield,
-                    text: t("tutorial.s1VisPublic"),
-                  },
-                  {
-                    Icon: FolderOpen,
-                    text: t("tutorial.s1VisInherit"),
-                  },
+                  { Icon: Lock, text: t("tutorial.s1VisPersonal") },
+                  { Icon: Users, text: t("tutorial.s1VisGroup") },
+                  { Icon: Shield, text: t("tutorial.s1VisPublic") },
+                  { Icon: FolderOpen, text: t("tutorial.s1VisInherit") },
                 ] as const
               ).map((item) => (
                 <div
@@ -321,8 +360,163 @@ export default function TutorialPage() {
             </p>
           </Section>
 
-          {/* Section 4: Execute */}
-          <Section id="execute" num={4} title={t("tutorial.navExecute")}>
+          {/* Section 4: Visual Selection */}
+          <Section id="vs" num={4} title={t("tutorial.navVS")}>
+            <p className="mb-4 leading-relaxed text-muted-foreground">
+              {t("tutorial.sVsIntro")}
+            </p>
+
+            <h3 className={S.subheading}>{t("tutorial.sVsHowTitle")}</h3>
+            <div className={`${S.panel} mb-6`}>
+              <ol className="space-y-2 text-sm">
+                <li className="flex items-start gap-3">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-blue-600 text-xs font-bold text-white">
+                    1
+                  </span>
+                  <span className="text-muted-foreground">
+                    {t("tutorial.sVsHow1")}
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-blue-600 text-xs font-bold text-white">
+                    2
+                  </span>
+                  <span className="text-muted-foreground">
+                    {t("tutorial.sVsHow2")}
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-blue-600 text-xs font-bold text-white">
+                    3
+                  </span>
+                  <span className="text-muted-foreground">
+                    {t("tutorial.sVsHow3")}
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-blue-600 text-xs font-bold text-white">
+                    4
+                  </span>
+                  <span className="text-muted-foreground">
+                    {t("tutorial.sVsHow4")}
+                  </span>
+                </li>
+              </ol>
+            </div>
+
+            <h3 className={S.subheading}>{t("tutorial.sVsCompTitle")}</h3>
+            <div className="grid gap-6 md:grid-cols-3">
+              <div className="flex flex-col gap-2">
+                <p className="text-xs font-semibold text-muted-foreground">
+                  {t("tutorial.sVsDemoOptionsLabel")}
+                </p>
+                <iframe
+                  srcDoc={VS_DEMO_OPTIONS}
+                  className="h-72 w-full rounded-2xl border border-border/80 bg-background"
+                  sandbox="allow-scripts allow-same-origin"
+                  title="bk-options demo"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <p className="text-xs font-semibold text-muted-foreground">
+                  {t("tutorial.sVsDemoChecklistLabel")}
+                </p>
+                <iframe
+                  srcDoc={VS_DEMO_CHECKLIST}
+                  className="h-72 w-full rounded-2xl border border-border/80 bg-background"
+                  sandbox="allow-scripts allow-same-origin"
+                  title="bk-checklist demo"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <p className="text-xs font-semibold text-muted-foreground">
+                  {t("tutorial.sVsDemoSliderLabel")}
+                </p>
+                <iframe
+                  srcDoc={VS_DEMO_SLIDER}
+                  className="h-72 w-full rounded-2xl border border-border/80 bg-background"
+                  sandbox="allow-scripts allow-same-origin"
+                  title="bk-slider demo"
+                />
+              </div>
+            </div>
+
+            <h3 className={S.subheading}>{t("tutorial.sVsMoreTitle")}</h3>
+            <BulletList
+              items={[
+                t("tutorial.sVsMore1"),
+                t("tutorial.sVsMore2"),
+                t("tutorial.sVsMore3"),
+                t("tutorial.sVsMore4"),
+                t("tutorial.sVsMore5"),
+              ]}
+            />
+
+            <div className="mt-5 rounded-2xl border border-kiwi-200 bg-kiwi-50/60 p-4">
+              <p className="text-sm text-muted-foreground">
+                💡 {t("tutorial.sVsTip")}
+              </p>
+            </div>
+          </Section>
+
+          {/* Section 5: Skill Commands */}
+          <Section id="skills" num={5} title={t("tutorial.navSkills")}>
+            <p className="mb-4 leading-relaxed text-muted-foreground">
+              {t("tutorial.sSkIntro")}
+            </p>
+
+            <h3 className={S.subheading}>{t("tutorial.sSkTableTitle")}</h3>
+            <div className="mb-6 overflow-x-auto">
+              <table className={S.table}>
+                <thead>
+                  <tr>
+                    <th className={S.th}>Skill</th>
+                    <th className={S.th}>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(
+                    [
+                      ["/bk-start", t("tutorial.sSkBkStart")],
+                      ["/bk-design", t("tutorial.sSkBkDesign")],
+                      ["/bk-approve", t("tutorial.sSkBkApprove")],
+                      ["/bk-improve", t("tutorial.sSkBkImprove")],
+                      ["/bk-report", t("tutorial.sSkBkReport")],
+                      ["/bk-instruction", t("tutorial.sSkBkInstruction")],
+                    ] as const
+                  ).map(([skill, desc]) => (
+                    <tr key={skill}>
+                      <td className={S.td}>
+                        <code className={S.code}>{skill}</code>
+                      </td>
+                      <td className={`${S.td} ${S.muted}`}>{desc}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <h3 className={S.subheading}>{t("tutorial.sSkSessionTitle")}</h3>
+            <BulletList
+              items={[
+                t("tutorial.sSkSession1"),
+                t("tutorial.sSkSession2"),
+                t("tutorial.sSkSession3"),
+              ]}
+            />
+
+            <h3 className={S.subheading}>{t("tutorial.sSkInterruptTitle")}</h3>
+            <BulletList
+              items={[
+                t("tutorial.sSkInterrupt1"),
+                t("tutorial.sSkInterrupt2"),
+                t("tutorial.sSkInterrupt3"),
+              ]}
+            />
+          </Section>
+
+          {/* Section 6: Execute */}
+          <Section id="execute" num={6} title={t("tutorial.navExecute")}>
             <p className="mb-4 leading-relaxed text-muted-foreground">
               {t("tutorial.s4Intro")}
             </p>
@@ -349,11 +543,12 @@ export default function TutorialPage() {
             />
 
             <h3 className={S.subheading}>{t("tutorial.s4StatusTitle")}</h3>
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
               {[
                 [t("tutorial.s4Running"), t("tutorial.s4RunningDesc")],
                 [t("tutorial.s4Waiting"), t("tutorial.s4WaitingDesc")],
                 [t("tutorial.s4Failed"), t("tutorial.s4FailedDesc")],
+                [t("tutorial.s4TimedOut"), t("tutorial.s4TimedOutDesc")],
               ].map(([title, desc]) => (
                 <div key={title} className={S.panel}>
                   <p className="text-sm font-semibold">{title}</p>
@@ -361,10 +556,15 @@ export default function TutorialPage() {
                 </div>
               ))}
             </div>
+
+            <h3 className={S.subheading}>{t("tutorial.s4FeedbackTitle")}</h3>
+            <p className="text-sm text-muted-foreground">
+              {t("tutorial.s4FeedbackDesc")}
+            </p>
           </Section>
 
-          {/* Section 5: Check Tasks */}
-          <Section id="monitor" num={5} title={t("tutorial.navMonitor")}>
+          {/* Section 7: Check Tasks */}
+          <Section id="monitor" num={7} title={t("tutorial.navMonitor")}>
             <p className="mb-4 leading-relaxed text-muted-foreground">
               {t("tutorial.s5Intro")}
             </p>
@@ -386,10 +586,25 @@ export default function TutorialPage() {
                 t("tutorial.s5Detail3"),
               ]}
             />
+
+            <h3 className={S.subheading}>{t("tutorial.s5RewindTitle")}</h3>
+            <p className="text-sm text-muted-foreground">
+              {t("tutorial.s5RewindDesc")}
+            </p>
+
+            <h3 className={S.subheading}>{t("tutorial.s5CommentTitle")}</h3>
+            <p className="text-sm text-muted-foreground">
+              {t("tutorial.s5CommentDesc")}
+            </p>
+
+            <h3 className={S.subheading}>{t("tutorial.s5TimedOutTitle")}</h3>
+            <p className="text-sm text-muted-foreground">
+              {t("tutorial.s5TimedOutDesc")}
+            </p>
           </Section>
 
-          {/* Section 6: Practical Example */}
-          <Section id="example" num={6} title={t("tutorial.navExample")}>
+          {/* Section 8: Practical Example */}
+          <Section id="example" num={8} title={t("tutorial.navExample")}>
             <p className="mb-4 leading-relaxed text-muted-foreground">
               {t("tutorial.s6Intro")}
             </p>
@@ -451,8 +666,8 @@ export default function TutorialPage() {
             </div>
           </Section>
 
-          {/* Section 7: MCP Integration */}
-          <Section id="mcp-loop" num={7} title={t("tutorial.s7Title")}>
+          {/* Section 9: MCP Integration */}
+          <Section id="mcp-loop" num={9} title={t("tutorial.s7Title")}>
             <p className="mb-4 leading-relaxed text-muted-foreground">
               {t("tutorial.s7Intro")}
             </p>
@@ -511,17 +726,22 @@ export default function TutorialPage() {
                       ["start_workflow", t("tutorial.s7ToolStartWorkflow")],
                       ["advance", t("tutorial.s7ToolAdvance")],
                       ["execute_step", t("tutorial.s7ToolExecuteStep")],
+                      ["request_approval", t("tutorial.s7ToolRequestApproval")],
+                      ["complete_task", t("tutorial.s7ToolCompleteTask")],
+                      ["rewind", t("tutorial.s7ToolRewind")],
+                      ["heartbeat", t("tutorial.s7ToolHeartbeat")],
+                      ["list_tasks", t("tutorial.s7ToolListTasks")],
+                      ["list_workflows", t("tutorial.s7ToolListWorkflows")],
+                      ["list_my_groups", t("tutorial.s7ToolListMyGroups")],
+                      ["set_visual_html", t("tutorial.s7ToolSetVisualHtml")],
+                      ["get_web_response", t("tutorial.s7ToolGetWebResponse")],
+                      ["save_feedback", t("tutorial.s7ToolSaveFeedback")],
                       ["list_attachments", t("tutorial.s7ToolListAttachments")],
                       ["get_attachment", t("tutorial.s7ToolGetAttachment")],
                       [
                         "upload_attachment",
                         t("tutorial.s7ToolUploadAttachment"),
                       ],
-                      ["request_approval", t("tutorial.s7ToolRequestApproval")],
-                      ["complete_task", t("tutorial.s7ToolCompleteTask")],
-                      ["rewind", t("tutorial.s7ToolRewind")],
-                      ["heartbeat", t("tutorial.s7ToolHeartbeat")],
-                      ["list_tasks", t("tutorial.s7ToolListTasks")],
                     ] as const
                   ).map(([tool, desc]) => (
                     <tr key={tool}>
@@ -534,6 +754,11 @@ export default function TutorialPage() {
                 </tbody>
               </table>
             </div>
+
+            <h3 className={S.subheading}>{t("tutorial.s7FeedbackTitle")}</h3>
+            <p className="mb-4 text-sm text-muted-foreground">
+              {t("tutorial.s7FeedbackDesc")}
+            </p>
 
             <h3 className={S.subheading}>{t("tutorial.s7FlowTitle")}</h3>
             <div className={S.panel}>
@@ -559,8 +784,8 @@ export default function TutorialPage() {
             />
           </Section>
 
-          {/* Section 8: Tips */}
-          <Section id="tips" num={8} title={t("tutorial.navTips")}>
+          {/* Section 10: Tips */}
+          <Section id="tips" num={10} title={t("tutorial.navTips")}>
             <div className="grid gap-4 md:grid-cols-2">
               <div className={S.panel}>
                 <p className="text-sm font-semibold">

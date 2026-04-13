@@ -27,17 +27,73 @@ Select a registered workflow, create a task, and immediately execute the first s
 - `header` must be 12 characters or fewer.
 - `multiSelect` must be `false`.
 
-## Session Restore (Resume In-Progress Task)
+## Session Restore (Resume In-Progress or Timed-Out Task)
 
-Before starting, check for running tasks using `advance(task_id, peek=true)` if a task ID is known, or prompt the user.
+<HARD-RULE>
+Follow all steps in order before proceeding to workflow selection.
 
-If an in-progress task is found, ask via AskUserQuestion:
+### Step A — Mark zombie tasks
 
-- header: "Resume?"
-- "Task #{id} ({workflow name}, Step {N}/{total}) is in progress. Resume or start a new workflow?"
-- options: "Resume (Recommended)" / "Start new workflow"
+Call `POST /api/tasks/timeout-stale` with `{"timeout_minutes": 120}`.
+This converts any `running` tasks idle for over 2 hours to `timed_out`.
 
-If resuming → call `advance(task_id, peek=true)`, read `task_context`, then continue with the auto-advance loop.
+### Step B — Fetch existing tasks
+
+Call `list_tasks` with `status=running` and again with `status=timed_out`.
+Collect all results into a combined candidate list sorted by `updated_at` descending (most recent first).
+
+If the list is empty → skip to workflow selection.
+
+### Step C — Build the task summary
+
+For each candidate, compute age from `updated_at` to now.
+Format: `"Task #{id} — {workflow_name} (Step {current_step}/{total_steps}, {age}전)"`
+
+Example output:
+
+```
+미완료 태스크 2건이 있습니다:
+① Task #31 — 코드 리뷰 워크플로 (Step 3/6, 3시간 전) [timed_out]
+② Task #28 — 보안 점검 (Step 1/4, 30분 전) [running]
+```
+
+### Step D — Ask what to do
+
+**Case 1: exactly 1 candidate**
+
+Ask via AskUserQuestion:
+
+- header: "미완료 태스크"
+- preview: `"Task #{id} — {workflow_name}\nStep {N}/{total} · {age}전 중단"`
+- options (pick the most appropriate 3–4):
+  - `"이어서 진행"` — resume this task
+  - `"종료하고 새로 시작"` — close this task then start fresh
+  - `"닫지 않고 새로 시작"` — leave as-is, open a new task
+  - _(only if status=running)_ `"계속 실행 중"` — another agent is handling it, do nothing
+
+**Case 2: 2 or more candidates**
+
+Ask via AskUserQuestion:
+
+- header: "미완료 태스크"
+- preview: the task summary list built above
+- options:
+  - `"가장 최근 태스크 이어서"` — resume the most recent one
+  - `"모두 종료하고 새로 시작"` — close all candidates, then start fresh
+  - `"새 태스크 시작 (기존 유지)"` — leave existing as-is, open a new task
+
+### Step E — Execute the choice
+
+**"이어서 진행" / "가장 최근 태스크 이어서"**:
+Call `advance(task_id, peek=true)`, read `task_context`, then continue with the auto-advance loop.
+
+**"종료하고 새로 시작" / "모두 종료하고 새로 시작"**:
+For each task to close, call `complete_task(task_id, summary="사용자 요청으로 종료됨")`.
+Confirm: "기존 태스크를 종료했습니다. 새 워크플로를 선택하세요." → proceed to workflow selection.
+
+**"닫지 않고 새로 시작" / "새 태스크 시작 (기존 유지)"**:
+Proceed to workflow selection without touching existing tasks.
+</HARD-RULE>
 
 ## execute_step Required Parameters
 
@@ -122,11 +178,21 @@ Record only results (URL, status code, response summary).
 
 Call `list_workflows` to retrieve the list.
 
+**No workflows exist**: Ask via AskUserQuestion:
+
+- header: "No workflows"
+- "No workflows found. Would you like to create one now?"
+- options: "Create new workflow" / "Cancel"
+
+If "Create new workflow" → immediately invoke the `bk-design` skill. Pass the user's original argument (if any) as the goal so `bk-design` can pre-fill the design step. After `bk-design` completes and the workflow is registered, return here and proceed with Step 2 using the newly created workflow.
+
 **Single workflow**: Skip the selection UI, just confirm:
 
 - "Start the '{title}' workflow?" (AskUserQuestion: "Start" / "Cancel")
 
 **Multiple workflows**: Show selection via AskUserQuestion.
+
+If the user selects "Create new workflow" from the selection UI → invoke `bk-design`, then continue as above.
 
 ### 2. Create Task + Open Monitoring Page
 
@@ -193,17 +259,26 @@ but agent-authored content must match the user's locale.
      - Layout: `h2`, `.bk-subtitle`, `.bk-section`, `.bk-label`
 
      Every selection/input element needs a `data-value` attribute. Example fragment:
+
      ```html
      <h2>Choose an approach</h2>
-     <p class="bk-subtitle">Select the architecture that best fits your needs</p>
+     <p class="bk-subtitle">
+       Select the architecture that best fits your needs
+     </p>
      <div class="bk-options">
        <div class="bk-option" data-value="monolith" data-recommended>
          <div class="bk-option-letter">A</div>
-         <div class="bk-option-body"><h3>Monolith</h3><p>Simple deployment</p></div>
+         <div class="bk-option-body">
+           <h3>Monolith</h3>
+           <p>Simple deployment</p>
+         </div>
        </div>
        <div class="bk-option" data-value="microservices">
          <div class="bk-option-letter">B</div>
-         <div class="bk-option-body"><h3>Microservices</h3><p>Independent scaling</p></div>
+         <div class="bk-option-body">
+           <h3>Microservices</h3>
+           <p>Independent scaling</p>
+         </div>
        </div>
      </div>
      ```
@@ -215,15 +290,23 @@ but agent-authored content must match the user's locale.
      ```
   4. Poll `get_web_response(task_id)` every 3-5 seconds until a response arrives (max 120 seconds).
   5. The response is a **JSON object** (not a plain string). Parse it to read the user's choices:
+
      ```json
-     {"selections": ["monolith"], "values": {"budget": 70}, "ranking": ["security", "ux"]}
+     {
+       "selections": ["monolith"],
+       "values": { "budget": 70 },
+       "ranking": ["security", "ux"]
+     }
      ```
+
      - `selections`: chosen option values (from bk-options, bk-cards, bk-checklist, bk-code-compare)
      - `values`: numeric inputs (from bk-slider, keyed by data-name)
      - `ranking`: ordered list (from bk-ranking)
      - `matrix`: placement coordinates (from bk-matrix)
-     Only populated fields appear.
+       Only populated fields appear.
+
   6. Use the parsed response to form the gate answer and call `advance`.
+
 - If `visual_selection: false` → present the gate question to the user via AskUserQuestion. Use the response as gate answer, call `execute_step` with the answer, then `advance`.
 
 #### Attachments
@@ -276,13 +359,48 @@ When a loop node uses `visual_selection: true`, each iteration presents a VS scr
   "task_id": 19,
   "node_id": 109,
   "history": [
-    {"iteration": 1, "web_response": {"selections": ["a"]}, "created_at": "..."},
-    {"iteration": 2, "web_response": {"selections": ["b"], "values": {"confidence": 80}}, "created_at": "..."}
+    {
+      "iteration": 1,
+      "web_response": { "selections": ["a"] },
+      "created_at": "..."
+    },
+    {
+      "iteration": 2,
+      "web_response": { "selections": ["b"], "values": { "confidence": 80 } },
+      "created_at": "..."
+    }
   ]
 }
 ```
 
 Use the history to adapt subsequent VS screens - for example, pre-selecting the user's previous choice, adjusting slider defaults based on past values, or skipping already-confirmed items.
+
+## Graceful Interruption (중단 처리)
+
+<HARD-RULE>
+Whenever the user requests a stop mid-workflow — phrases like "stop", "pause", "cancel", "잠깐", "중단", "그만", "멈춰", or presses Ctrl+C — you MUST ask before exiting:
+
+Ask via AskUserQuestion:
+
+- header: "작업 중단"
+- "현재 Step {N}에서 중단합니다. 어떻게 처리할까요?"
+- options:
+  - "일시 중지 (나중에 이어서)" — leave task as `running`; it will auto-timeout after 2 hours of inactivity, and can be resumed next session
+  - "태스크 종료 (완전히 닫기)" — call `complete_task(task_id, summary="사용자 요청으로 중단됨")` to mark the task finished
+  - "계속 진행" — dismiss and continue the current step
+
+If "일시 중지":
+
+- Save the current progress to `context_snapshot` via `execute_step` (mark output as "작업이 일시 중지되었습니다. 다음 세션에서 이어서 진행 가능합니다.")
+- Remind the user: "Task #{id}은 Step {N}에서 일시 중지되었습니다. 다음에 `/bk-start`를 실행하면 이어서 진행할 수 있습니다."
+
+If "태스크 종료":
+
+- Call `complete_task(task_id, summary="사용자 요청으로 중단됨. 마지막 완료 스텝: {N}")`.
+- Remind the user: "태스크가 종료되었습니다. 처음부터 다시 시작하려면 `/bk-start`를 실행하세요."
+
+**When not to prompt**: If ALL steps are already completed and `complete_task` is about to be called, skip this dialog — the workflow is naturally finishing.
+</HARD-RULE>
 
 ## Feedback Survey (before calling complete_task)
 

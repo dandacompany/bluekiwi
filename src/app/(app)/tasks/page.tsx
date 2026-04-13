@@ -14,6 +14,7 @@ import {
   ListTodo,
   Pause,
   Play,
+  Timer,
   Trash2,
   XCircle,
 } from "lucide-react";
@@ -67,7 +68,7 @@ function summarizeTaskOutput(output: string, maxLength = 140): string {
   return `${normalized.slice(0, maxLength).trimEnd()}...`;
 }
 
-type TaskStatus = "pending" | "running" | "completed" | "failed";
+type TaskStatus = "pending" | "running" | "completed" | "failed" | "timed_out";
 
 function StatusBadge({
   status,
@@ -83,6 +84,7 @@ function StatusBadge({
     running: t("tasks.running"),
     completed: t("tasks.completed"),
     failed: t("tasks.failed"),
+    timed_out: t("tasks.timedOut"),
   };
 
   const Icon =
@@ -92,7 +94,9 @@ function StatusBadge({
         ? XCircle
         : s === "running"
           ? Play
-          : Pause;
+          : s === "timed_out"
+            ? Timer
+            : Pause;
 
   const className =
     s === "running"
@@ -101,7 +105,9 @@ function StatusBadge({
         ? "border-brand-blue-600/20 bg-transparent text-brand-blue-700"
         : s === "failed"
           ? "border-[color:var(--destructive)] bg-destructive/10 text-[var(--destructive)]"
-          : "border-[var(--border)] bg-transparent text-[var(--muted-foreground)]";
+          : s === "timed_out"
+            ? "border-amber-400/40 bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
+            : "border-[var(--border)] bg-transparent text-[var(--muted-foreground)]";
 
   return (
     <Badge className={className}>
@@ -183,6 +189,11 @@ export default function TasksPage() {
                   active: "bg-[var(--destructive)] text-white",
                 },
                 {
+                  value: "timed_out",
+                  label: t("tasks.timedOut"),
+                  active: "bg-amber-500 text-white",
+                },
+                {
                   value: "pending",
                   label: t("tasks.pending"),
                   active: "bg-[var(--muted-foreground)] text-white",
@@ -235,9 +246,11 @@ export default function TasksPage() {
               const fillColor =
                 task.status === "failed"
                   ? "bg-[var(--destructive)]"
-                  : task.status === "pending"
-                    ? "bg-[var(--muted)]"
-                    : "bg-brand-blue-600";
+                  : task.status === "timed_out"
+                    ? "bg-amber-400"
+                    : task.status === "pending"
+                      ? "bg-[var(--muted)]"
+                      : "bg-brand-blue-600";
 
               return (
                 <Card

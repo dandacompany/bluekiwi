@@ -26,6 +26,8 @@
     bindSelectables(".bk-options", ".bk-option");
     bindSelectables(".bk-cards", ".bk-card");
     bindSelectables(".bk-code-compare", ".bk-code-option");
+    bindSelectables(".bk-mockup-gallery", ".bk-mockup-item");
+    bindOrphanMockupItems();
     bindChecklist();
     bindSliders();
     bindRanking();
@@ -59,6 +61,26 @@
     if (!wasSelected) item.classList.add("selected");
     hasInteracted = true;
     updateSubmitState();
+  }
+
+  /* ── bk-mockup-item without .bk-mockup-gallery wrapper ── */
+  function bindOrphanMockupItems() {
+    var orphans = [];
+    document.querySelectorAll(".bk-mockup-item").forEach(function (item) {
+      if (!item.closest(".bk-mockup-gallery")) orphans.push(item);
+    });
+    if (orphans.length === 0) return;
+    orphans.forEach(function (item) {
+      item.addEventListener("click", function () {
+        var wasSelected = item.classList.contains("selected");
+        orphans.forEach(function (el) {
+          el.classList.remove("selected");
+        });
+        if (!wasSelected) item.classList.add("selected");
+        hasInteracted = true;
+        updateSubmitState();
+      });
+    });
   }
 
   /* ── Multi-select checklist ── */
@@ -283,7 +305,7 @@
     var selections = [];
     document
       .querySelectorAll(
-        ".bk-option.selected, .bk-card.selected, .bk-code-option.selected",
+        ".bk-option.selected, .bk-card.selected, .bk-code-option.selected, .bk-mockup-item.selected",
       )
       .forEach(function (el) {
         if (el.dataset.value) selections.push(el.dataset.value);
@@ -350,7 +372,7 @@
     if (!btn || btn.classList.contains("submitted")) return;
     /* Enable if user has interacted with any interactable component */
     var hasInteractable = document.querySelector(
-      ".bk-options, .bk-cards, .bk-checklist, .bk-code-compare, .bk-slider, .bk-ranking, .bk-matrix",
+      ".bk-options, .bk-cards, .bk-checklist, .bk-code-compare, .bk-slider, .bk-ranking, .bk-matrix, .bk-mockup-gallery, .bk-mockup-item",
     );
     btn.disabled = !(hasInteractable && hasInteracted);
   }

@@ -104,7 +104,7 @@ Include a bk-slider named "confidence" (0-100, default 75, unit "%").
 Add a bk-section break before the slider.
 ```
 
-The execution agent reads this directive and composes the corresponding bk-* HTML fragment. Available components: `bk-options`, `bk-cards`, `bk-checklist`, `bk-code-compare`, `bk-slider`, `bk-ranking`, `bk-matrix`, `bk-split`, `bk-pros-cons`, `bk-mockup`, `bk-timeline`.
+The execution agent reads this directive and composes the corresponding bk-\* HTML fragment. Available components: `bk-options`, `bk-cards`, `bk-checklist`, `bk-code-compare`, `bk-slider`, `bk-ranking`, `bk-matrix`, `bk-split`, `bk-pros-cons`, `bk-mockup`, `bk-timeline`.
 
 Write the directive in concrete terms. Specify:
 

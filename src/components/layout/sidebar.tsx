@@ -16,7 +16,17 @@ import {
   LogOut,
   ChevronsLeft,
   ChevronsRight,
+  GitBranch,
+  Coffee,
+  Scale,
+  Tag,
 } from "lucide-react";
+
+const APP_VERSION = "0.2.5";
+const GITHUB_URL = "https://github.com/dandacompany/bluekiwi";
+const LICENSE_URL =
+  "https://github.com/dandacompany/bluekiwi/blob/main/LICENSE.md";
+const SUPPORT_URL = "https://buymeacoffee.com/dante.labs";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
@@ -155,7 +165,7 @@ export function Sidebar({ user }: SidebarProps) {
               <DropdownMenuContent
                 side={collapsed ? "right" : "top"}
                 align="start"
-                className="w-48"
+                className="w-52"
               >
                 <DropdownMenuItem onClick={() => router.push("/settings")}>
                   <Settings className="mr-2 h-3.5 w-3.5" />
@@ -166,6 +176,43 @@ export function Sidebar({ user }: SidebarProps) {
                 >
                   <Globe className="mr-2 h-3.5 w-3.5" />
                   {locale === "ko" ? "English" : "한국어"}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <a
+                    href={GITHUB_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center"
+                  >
+                    <GitBranch className="mr-2 h-3.5 w-3.5" />
+                    {t("nav.github")}
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a
+                    href={LICENSE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center"
+                  >
+                    <Scale className="mr-2 h-3.5 w-3.5" />
+                    {t("nav.license")}
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a
+                    href={SUPPORT_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center"
+                  >
+                    <Coffee className="mr-2 h-3.5 w-3.5" />
+                    {t("nav.support")}
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled className="opacity-50">
+                  <Tag className="mr-2 h-3.5 w-3.5" />v{APP_VERSION}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
