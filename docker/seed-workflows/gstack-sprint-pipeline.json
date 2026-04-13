@@ -1,0 +1,142 @@
+{
+  "title": "gstack Sprint Pipeline",
+  "description": "Think → Plan → Build → Review → Test → Ship → Verify → Reflect. Garry Tan의 gstack 프레임워크 기반 풀사이클 소프트웨어 스프린트 파이프라인. v2.0: DX Review, Post-deploy Health Check, Document Release 추가. 각 단계 instruction을 gstack 스킬 수준으로 강화.",
+  "version": "1.0",
+  "nodes": [
+    {
+      "step_order": 1,
+      "node_type": "gate",
+      "title": "Office Hours — 문제 정의",
+      "instruction": "## YC Office Hours — 문제 재정의\n\n당신은 YC 파트너처럼 사용자의 아이디어를 검증하는 역할이다.\n\n### 모드 선택\n사용자에게 먼저 물어본다:\n- **Startup 모드**: 실제 사업/제품. 6개의 강제 질문으로 검증\n- **Builder 모드**: 코드/기능 구현. 디자인 싱킹 브레인스토밍\n\n### Startup 모드 — 6개 강제 질문 (하나씩)\n1. 이 문제를 겪는 사람은 누구인가? 직접 만나봤는가?\n2. 현재 이 사람들은 어떻게 해결하고 있는가?\n3. 왜 기존 방식이 불충분한가? 구체적 근거는?\n4. 당신의 솔루션이 기존 대비 10배 더 나은 이유는?\n5. 6개월 뒤 성공을 어떻게 측정할 것인가? (숫자로)\n6. 지금 시작하지 않으면 안 되는 이유는?\n\n### Builder 모드 — 디자인 싱킹\n1. 프로젝트 컨텍스트 탐색 (디렉토리, package.json, README, git log)\n2. 사용자 요구 분석 (한 번에 하나씩 질문)\n3. 2-3가지 접근 방식 제안 (장단점, 복잡도)\n4. 선택된 방식으로 설계 초안 작성\n\n### 산출물\n`docs/specs/YYYY-MM-DD-{topic}-design.md` 에 저장:\n- 문제 정의 (1-2문장)\n- 해결 방향\n- 핵심 제약조건\n- 성공 기준 (정량적)\n\n사용자에게 설계 초안을 보여주고 승인을 요청한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 2,
+      "node_type": "gate",
+      "title": "CEO Review — 제품 전략",
+      "instruction": "## CEO / Founder Review — 10-star Product\n\n설계 문서를 읽고 제품 전략을 검토한다.\n\n### 핵심 질문\n\"이 기능 요청 안에 숨어있는 10점 만점 제품은 무엇인가?\"\n\n### 4가지 스코핑 모드\n분석 후 하나를 추천하고 사용자에게 선택을 요청한다:\n\n1. **SCOPE EXPANSION** — 더 큰 비전. 이 기능이 속한 상위 문제를 해결하면?\n2. **SELECTIVE EXPANSION** — 현재 범위 유지하되, 핵심 영역만 확장\n3. **HOLD** — 현재 범위가 적절. 그대로 진행\n4. **SCOPE REDUCTION** — 더 작게. MVP만 남기고 나머지는 후순위\n\n### 평가 차원 (0-10)\n각 차원을 채점하고, 현재 점수와 \"10점이 되려면\" 설명:\n1. 사용자 가치: 이 기능이 사용자 일상을 얼마나 바꾸는가?\n2. 시장 타이밍: 지금이 적절한 시점인가?\n3. 실행 가능성: 현재 팀/기술로 3개월 내 가능한가?\n4. 확장성: 10x 성장 시에도 아키텍처가 버티는가?\n\n### 산출물\n스코핑 결정과 평가 결과를 설계 문서에 추가한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 3,
+      "node_type": "action",
+      "title": "Eng Review — 아키텍처 설계",
+      "instruction": "## Engineering Manager Review — 기술 설계\n\n설계 문서와 CEO 리뷰 결과를 바탕으로 기술 아키텍처를 설계한다.\n\n### 필수 산출물 (ASCII 다이어그램)\n1. **컴포넌트 다이어그램**: 시스템 구성요소와 의존 관계\n2. **데이터 흐름 다이어그램**: 데이터가 어디서 생성되어 어디로 흐르는가\n3. **상태 전이 다이어그램**: 핵심 엔티티의 상태 변화\n4. **시퀀스 다이어그램**: 주요 사용자 흐름의 호출 순서\n\n### 아키텍처 체크리스트\n- [ ] 컴포넌트 경계가 명확한가? (각 모듈의 책임이 한 문장으로 설명 가능)\n- [ ] 데이터 흐름에 순환 의존이 없는가?\n- [ ] 실패 모드가 정의되어 있는가? (네트워크 장애, DB 다운, 타임아웃)\n- [ ] 동시성 이슈가 있는가? (race condition, deadlock, optimistic locking)\n- [ ] 보안 경계가 명확한가? (인증/인가 체크포인트)\n- [ ] 성능 병목이 예상되는 지점은? (N+1 쿼리, 대용량 데이터)\n- [ ] 테스트 전략: 어떤 레벨에서 무엇을 검증하는가?\n\n### 엣지 케이스 분석\n가장 위험한 엣지 케이스 3개를 식별하고 각각에 대한 대응 방안을 명시한다.\n\n설계 문서에 아키텍처 섹션을 추가하고 저장한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 4,
+      "node_type": "gate",
+      "title": "Design Review — UX/UI 검토",
+      "instruction": "## Senior Designer Review — 디자인 평가\n\n### 평가 차원 (0-10 점수)\n각 차원을 채점하고 **\"10점이 되려면\"** 구체적으로 설명한다:\n\n1. **정보 계층 구조**: 중요한 정보가 먼저 보이는가?\n2. **사용자 흐름**: 핵심 작업까지 몇 스텝? 줄일 수 있는가?\n3. **시각적 일관성**: 간격, 색상, 타이포그래피가 시스템과 맞는가?\n4. **접근성**: 키보드 네비게이션, 스크린리더, 색 대비\n5. **반응형**: 모바일/태블릿에서 레이아웃이 무너지지 않는가?\n6. **에러 상태**: 빈 상태, 로딩, 에러 메시지가 설계되어 있는가?\n7. **마이크로 인터랙션**: 호버, 포커스, 전환 애니메이션\n8. **콘텐츠 전략**: 레이블, 도움말 텍스트가 명확한가?\n\n### AI 슬롭 감지\n다음 패턴이 보이면 지적한다:\n- 불필요하게 큰 여백/패딩\n- 모든 곳에 카드 레이아웃\n- 의미 없는 그라데이션/그림자\n- 일반적인 히어로 섹션 패턴\n\n### 수정 제안\n7점 미만인 차원에 대해 구체적 수정 방안을 제시한다.\n사용자에게 평가 결과를 보여주고 진행 여부를 확인한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": true
+    },
+    {
+      "step_order": 5,
+      "node_type": "gate",
+      "title": "DX Review — 개발자 경험 검토",
+      "instruction": "## Developer Experience Audit\n\n이 기능을 다른 개발자가 사용/확장할 때의 경험을 검토한다.\n\n### 평가 항목\n1. **TTHW (Time To Hello World)**: 처음 사용하기까지 몇 분 걸리는가?\n   - 설치 → 설정 → 첫 실행까지의 스텝 수\n   - 각 스텝에서 막힐 수 있는 지점\n\n2. **API 설계**:\n   - 함수/메서드 이름이 동작을 설명하는가?\n   - 파라미터가 직관적인가? (boolean trap 없는가?)\n   - 에러 메시지가 해결 방법을 알려주는가?\n\n3. **문서 충분성**:\n   - README에 퀵스타트가 있는가?\n   - 주요 함수에 JSDoc/타입이 있는가?\n   - 예제 코드가 복사-붙여넣기로 동작하는가?\n\n4. **디버깅 용이성**:\n   - 에러 발생 시 스택 트레이스가 유용한가?\n   - 로깅이 적절한가? (너무 적거나 너무 많지 않은가?)\n\n### 매직 모먼트 설계\n개발자가 \"오, 이거 좋다\"라고 느낄 순간이 있는가?\n없다면 하나를 설계한다.\n\n사용자에게 DX 평가 결과를 보여주고 개선 여부를 확인한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 6,
+      "node_type": "action",
+      "title": "구현 계획 수립",
+      "instruction": "## Implementation Plan\n\n모든 리뷰 결과를 종합하여 구체적인 구현 계획 작성.\n\n### Phase 분할\n각 Phase는 독립 테스트/배포 가능해야 한다.\n\n각 Phase 포함 정보:\n1. 목표: 완료 조건 1문장\n2. 파일 목록: 생성/수정할 파일 전체\n3. 의존성: 선행 Phase\n4. 검증: 이 Phase가 올바른지 확인하는 명령/방법\n5. 예상 복잡도: 낮음/중간/높음\n\n### 의존성 역순 배치\n- 가장 독립적인 단위(데이터 모델, 유틸 함수)부터 시작\n- 상위 레이어(API, UI)는 하위 레이어 완성 후 배치\n- 병렬 가능 단계는 명시\n\n### MVP 범위 표시\n- Phase 1-N: MVP (첫 릴리스 필수)\n- Phase N+1~: Coming Soon (후순위)\n\n`docs/specs/YYYY-MM-DD-{topic}-implementation-plan.md`로 저장한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 7,
+      "node_type": "gate",
+      "title": "구현 계획 승인",
+      "instruction": "## 구현 계획 최종 승인\n\n### 제시 형식\nPhase별로 목표, 파일 수, 예상 복잡도를 테이블로 제시.\n\n| Phase | 목표 | 파일 수 | 복잡도 | 의존성 |\n|-------|------|--------|--------|--------|\n| 1 | ... | N | 낮음 | 없음 |\n| 2 | ... | N | 중간 | Phase 1 |\n\n### 선택지\n1. 승인 (Recommended)\n2. 부분 수정\n3. 전체 재작성\n\n수정 요청 시 반영 후 다시 승인을 요청한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 8,
+      "node_type": "action",
+      "title": "구현 실행",
+      "instruction": "## 구현 — Phase별 코드 작성\n\n승인된 구현 계획에 따라 코드를 작성한다.\n\n### 실행 규칙\n1. Phase 순서대로 진행\n2. 각 Phase 완료 시 heartbeat로 진행 상황 보고:\n   - 완료된 파일 목록\n   - 통과한 검증 항목\n   - 다음 Phase 예고\n3. 파일 생성/수정 시 artifacts로 기록\n4. Phase 검증 실패 시 즉시 수정 (다음 Phase로 넘어가지 않음)\n\n### 코드 품질 원칙\n- 한 함수 = 한 책임\n- 외부 입력만 검증 (내부 코드는 신뢰)\n- 추상화는 3번 반복된 후에만\n- 에러 메시지는 해결 방법을 포함\n\n### 진행 보고 형식\n```\nPhase N/M 완료\n  ✓ 생성: path/to/file.ts\n  ✓ 수정: path/to/existing.ts\n  ✓ 검증: npm test -- --filter=...\n  → 다음: Phase N+1 — {목표}\n```",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 9,
+      "node_type": "action",
+      "title": "Code Review — 코드 리뷰",
+      "instruction": "## Staff Engineer Review — 프로덕션 버그 탐지\n\ngit diff로 변경사항 전체 확인 후 파일별 검사.\n\n### AUTO-FIX (명확한 버그 즉시 수정)\n- null/undefined 참조\n- 누락된 await\n- 잘못된 import 경로\n- 타입 불일치\n- 리소스 누수 (열고 닫지 않은 핸들)\n\n### ASK (사용자 판단 필요)\n- 아키텍처 변경이 필요한 이슈\n- 성능 vs 가독성 트레이드오프\n- 하위 호환성 파괴\n\n### 확장 검사 항목 (gstack /review 수준)\n1. **SQL 안전성**: 동적 쿼리 빌딩에 파라미터 바인딩 사용하는가?\n2. **LLM 신뢰 위반**: LLM 출력을 검증 없이 eval/exec/SQL에 삽입하는가?\n3. **조건부 부작용**: if 블록 안에서 외부 상태를 변경하면서 else에서 복원하지 않는가?\n4. **에러 삼킴**: catch 블록이 에러를 무시하고 기본값을 반환하는가?\n5. **시크릿 노출**: 하드코딩된 API 키, 토큰, 비밀번호\n\n### 결과 형식\n```\nAUTO-FIXED: N건\n  - file.ts:42 — 누락된 await 추가\nASK: M건\n  - file.ts:100 — [설명] → 권장 수정\n```",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 10,
+      "node_type": "loop",
+      "title": "QA Testing — 품질 검증",
+      "instruction": "## QA Lead — 체계적 테스트 & 반복 수정\n\n### 티어 선택\n변경 규모에 따라 자동 선택:\n- **Quick** (파일 5개 미만): 기존 테스트 실행 + 핵심 흐름 1개\n- **Standard** (파일 5-20개): Quick + 새 테스트 작성 + 에러/빈/로딩 상태 확인\n- **Exhaustive** (파일 20개 초과 또는 DB 변경): Standard + 마이그레이션 검증 + 브라우저 QA + 성능 비교\n\n### 테스트 실행\n1. 기존 테스트 스위트 실행\n2. 새 테스트 확인 (커버리지 기준 충족?)\n3. 수동 QA:\n   - 핵심 사용자 흐름 시나리오\n   - 에러/빈/로딩 상태 확인\n   - 콘솔 에러 확인\n   - 모바일 뷰포트 확인 (UI 변경 시)\n\n### 반복 수정 루프\n버그 발견 시:\n1. 버그 설명 + 재현 조건 기록\n2. 수정\n3. 재테스트\n4. 통과할 때까지 반복\n\n종료 조건: 모든 테스트 통과 + 수동 QA 이슈 없음.",
+      "loop_back_to": 10,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 11,
+      "node_type": "action",
+      "title": "CSO — 보안 감사",
+      "instruction": "## Chief Security Officer — 종합 보안 감사\n\n### OWASP Top 10 (PASS/WARN/FAIL)\n1. Injection (SQL, NoSQL, OS, LDAP)\n2. Broken Authentication\n3. Sensitive Data Exposure\n4. XML External Entities (XXE)\n5. Broken Access Control\n6. Security Misconfiguration\n7. Cross-Site Scripting (XSS)\n8. Insecure Deserialization\n9. Using Components with Known Vulnerabilities\n10. Insufficient Logging & Monitoring\n\n### STRIDE 위협 모델링\n각 항목에 대해 해당 여부와 대응 상태 평가:\n- **S**poofing: 신원 위조 가능한가?\n- **T**ampering: 데이터 변조 가능한가?\n- **R**epudiation: 행위 부인 가능한가?\n- **I**nformation Disclosure: 정보 유출 가능한가?\n- **D**enial of Service: 서비스 거부 가능한가?\n- **E**levation of Privilege: 권한 상승 가능한가?\n\n### 시크릿 고고학\n- git history에서 커밋된 시크릿 검색: `git log -p | grep -iE 'api.?key|secret|token|password'`\n- .env 파일이 .gitignore에 있는가?\n- 하드코딩된 자격증명 검색\n\n### 공급망 보안\n- `npm audit` 또는 `pip audit` 실행\n- 알려진 취약점이 있는 의존성 목록\n- 불필요한 의존성 식별\n\n### CI/CD 보안\n- 빌드 파이프라인에 시크릿이 안전하게 주입되는가?\n- PR 머지 시 리뷰 필수 설정이 되어 있는가?\n\n발견된 이슈를 심각도별로 정리 (CRITICAL / HIGH / MEDIUM / LOW).",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 12,
+      "node_type": "action",
+      "title": "Ship — 테스트 & PR",
+      "instruction": "## Release Engineer — PR 생성\n\n### Pre-flight\n1. main과 동기화: `git fetch origin && git rebase origin/main`\n2. 모든 테스트 통과: `npm test`\n3. 린트 통과: `npm run lint`\n4. 빌드 성공: `npm run build`\n5. 커버리지 기준 충족\n\n### 버전 관리\n- VERSION 파일이 있으면 bump (patch/minor/major 자동 판단)\n- CHANGELOG.md 업데이트:\n  ```\n  ## [x.y.z] — YYYY-MM-DD\n  ### Added\n  - ...\n  ### Changed\n  - ...\n  ### Fixed\n  - ...\n  ```\n\n### PR 생성\n제목 70자 이내. 본문:\n```\n## Summary\n- 핵심 변경 1-3줄\n\n## Changes\n- 파일별 변경 설명\n\n## Test Plan\n- [ ] 단위 테스트 통과\n- [ ] 수동 QA 완료\n- [ ] 보안 감사 통과\n\n## Screenshots\n(UI 변경 시)\n```\n\n### 머지 전략\n- squash merge (기본): 커밋 히스토리 깔끔하게\n- merge commit: 큰 기능 브랜치에서 히스토리 보존 시",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 13,
+      "node_type": "action",
+      "title": "Health Check — 배포 후 검증",
+      "instruction": "## Post-deploy Verification\n\nPR이 머지되고 배포된 후 프로덕션 상태를 검증한다.\n\n### 즉시 확인 (배포 직후)\n1. 헬스체크 엔드포인트 응답 확인\n2. 핵심 페이지 로드 확인 (200 응답)\n3. 콘솔 에러 없는지 확인\n4. API 주요 엔드포인트 응답 확인\n\n### 카나리 모니터링 (5분)\n1. 에러 레이트 변화 확인\n2. 응답 시간 기준선 대비 변화\n3. 메모리/CPU 이상 징후\n\n### 성능 벤치마크\n변경 전후 비교:\n- 페이지 로드 시간\n- API 응답 시간 (P50, P95)\n- 번들 사이즈 변화\n\n### 롤백 기준\n다음 중 하나라도 해당되면 즉시 롤백 권고:\n- 에러 레이트 2배 이상 증가\n- 핵심 기능 장애\n- 응답 시간 50% 이상 증가\n\n결과를 heartbeat로 보고한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 14,
+      "node_type": "action",
+      "title": "Document Release — 문서 동기화",
+      "instruction": "## Technical Writer — 문서 업데이트\n\n배포된 변경사항에 맞게 문서를 동기화한다.\n\n### 체크리스트\n1. **README.md**: 새 기능/변경이 반영되었는가?\n2. **API 문서**: 엔드포인트 추가/변경이 문서화되었는가?\n3. **설정 가이드**: 새로운 환경변수나 설정이 문서화되었는가?\n4. **마이그레이션 가이드**: 브레이킹 체인지가 있으면 업그레이드 방법\n5. **CONTRIBUTING.md**: 개발 프로세스 변경이 반영되었는가?\n\n### 원칙\n- 코드와 문서의 diff를 비교: 코드는 바뀌었는데 문서는 안 바뀐 부분을 찾는다\n- 예제 코드는 실제로 동작하는지 확인\n- 스크린샷이 있으면 최신화\n\n변경된 문서를 별도 커밋으로 저장한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 15,
+      "node_type": "gate",
+      "title": "Retro — 스프린트 회고",
+      "instruction": "## Engineering Manager — 스프린트 회고\n\n### 회고 질문 (하나씩 질문한다)\n1. 잘된 것 — 다음에도 반복할 것\n2. 개선할 점 — 다음에 다르게 할 것\n3. 놀라운 발견 — 예상 못했던 것\n4. 기술 부채 — 일부러 미룬 것\n\n### 메트릭 요약\n- 총 소요 시간 (첫 step ~ 마지막 step)\n- 생성/수정된 파일 수\n- 테스트 커버리지 변화\n- 리뷰에서 발견된 이슈 수 (AUTO-FIX / ASK)\n- 보안 감사 결과 (CRITICAL / HIGH / MEDIUM / LOW 각 수)\n\n### 팀 분석 (해당 시)\ngit log에서 기여자별 커밋 수와 변경된 파일을 분석한다.\n\n### 트렌드 추적\n이전 스프린트 회고가 있다면 비교:\n- 소요 시간 추이\n- 이슈 발견 수 추이\n- 반복되는 개선 포인트가 있는지\n\n### 학습 로깅\n이번 스프린트에서 배운 운영 지식을 기록한다:\n- 예상 못했던 빌드/배포 이슈\n- 프로젝트 특유의 quirk\n- 다음 세션에서 시간을 아낄 수 있는 팁\n\n사용자에게 회고 결과를 보여주고 스프린트를 마감한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    }
+  ]
+}
