@@ -1,0 +1,76 @@
+{
+  "title": "ML Engineering Pipeline (CRISP-DM × MLOps)",
+  "description": "Problem → Data → Features → Model → Evaluate → Deploy → Monitor. CRISP-DM의 산업 표준 프로세스와 MLOps 베스트 프랙티스를 결합한 엔드투엔드 ML 파이프라인. 문제 정의부터 모델 배포, 모니터링까지 전 과정을 구조화한다.",
+  "version": "1.0",
+  "nodes": [
+    {
+      "step_order": 1,
+      "node_type": "gate",
+      "title": "ML 문제 정의 & 타당성 검증",
+      "instruction": "## ML Problem Definition — ML이 정말 필요한가?\n\n### 첫 번째 질문: ML이 최선인가?\n사용자에게 순차적으로 질문한다:\n\n1. **비즈니스 문제**: 해결하려는 문제는? (구체적 시나리오)\n2. **현재 방법**: 지금은 어떻게 해결하는가? (규칙 기반 / 수동 / 없음)\n3. **ML 타당성 체크**:\n   - 데이터가 있는가? (충분한 양과 품질)\n   - 패턴이 존재하는가? (규칙으로 표현 불가능한 복잡성)\n   - 예측 오류의 비용은 감당 가능한가?\n   - 더 간단한 방법(규칙, 통계)으로 해결 가능하지 않은가?\n\n### ML 문제 유형 분류\n- **분류**: 카테고리 예측 (이탈/잔존, 스팸/정상, 감성)\n- **회귀**: 연속값 예측 (가격, 수요, 점수)\n- **클러스터링**: 자연 그룹 발견 (고객 세그먼트)\n- **랭킹**: 순위 매기기 (추천, 검색)\n- **이상 탐지**: 비정상 식별 (사기, 장애)\n- **생성**: 콘텐츠 생성 (텍스트, 이미지)\n\n### 성공 기준 정의\n```\n📋 ML Problem Card\n━━━━━━━━━━━━━━━━━━━━━━━━━\nType: {분류/회귀/...}\nTarget: {예측 대상 변수}\nMetric: {평가 지표} (예: F1 > 0.8, RMSE < 10)\nBaseline: {현재 성능 또는 랜덤 기준선}\nConstraints: {추론 시간, 모델 크기, 해석 가능성}\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n사용자 확인 후 진행.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": true
+    },
+    {
+      "step_order": 2,
+      "node_type": "action",
+      "title": "데이터 파이프라인 구축",
+      "instruction": "## Data Pipeline — 재현 가능한 데이터 수집·정제\n\n### 데이터 수집\n```python\n# 1. 소스 연결 (DB, API, 파일)\n# 2. 쿼리 또는 다운로드\n# 3. data/raw/ 에 원본 저장 (변형 금지)\n# 4. 데이터 카탈로그 작성\n```\n\n### 데이터 정제 파이프라인\n재현 가능한 정제 스크립트 작성:\n\n```python\ndef clean_data(df: pd.DataFrame) -> pd.DataFrame:\n    \"\"\"모든 정제 로직을 하나의 함수로.\"\"\"\n    # 1. 타입 교정\n    # 2. 결측값 처리 (전략별로 분리)\n    # 3. 이상치 처리\n    # 4. 중복 제거\n    # 5. 일관성 검증\n    return df_clean\n```\n\n### 데이터 분할\n```python\n# 시간 기반 분할 (시계열인 경우)\n# 또는 stratified split (분류인 경우)\nfrom sklearn.model_selection import train_test_split\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, random_state=42, stratify=y\n)\n# 검증 세트도 분리 (하이퍼파라미터 튜닝용)\nX_train, X_val, y_train, y_val = train_test_split(\n    X_train, y_train, test_size=0.25, random_state=42\n)\n```\n\n### 데이터 검증\n- train/test 분포 비교 (PSI 또는 KS test)\n- 레이블 분포 확인 (불균형 정도)\n- 데이터 누수 체크 (미래 정보가 feature에 들어갔는지)\n\n```\n📦 Dataset Summary\n━━━━━━━━━━━━━━━━━━━━━━━━━\nTrain: {N} rows ({ratio}%)\nVal:   {N} rows ({ratio}%)\nTest:  {N} rows ({ratio}%)\nFeatures: {N}개\nTarget: {변수명} (balance: {분포})\nLeakage Check: PASS\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 3,
+      "node_type": "action",
+      "title": "특성 공학 — Feature Engineering",
+      "instruction": "## Feature Engineering — 모델 성능의 80%는 여기서\n\n### 특성 생성 전략\n\n**1. 도메인 지식 기반**\n- 비즈니스에서 중요한 비율/차이를 계산\n- 시간 관련: 경과 시간, 주기성 (sin/cos 인코딩)\n- 집계: 그룹별 평균/합계/카운트\n\n**2. 통계 기반**\n- 이동 평균 / 이동 표준편차\n- Lag features (시계열)\n- 다항식 특성 (비선형 관계 포착)\n\n**3. 인코딩**\n- 범주형:\n  - 낮은 카디널리티: One-hot\n  - 높은 카디널리티: Target encoding, Frequency encoding\n  - 순서형: Ordinal encoding\n- 텍스트: TF-IDF, 임베딩\n\n**4. 변환**\n- 로그 변환 (왜도 감소)\n- 표준화 / 정규화\n- Binning (연속 → 범주)\n\n### 특성 선택\n```python\n# 방법 1: 상관관계 기반 제거 (|r| > 0.95)\n# 방법 2: Feature importance (RandomForest)\n# 방법 3: Recursive Feature Elimination\n# 방법 4: L1 정규화 (Lasso)\n```\n\n### 특성 문서화\n```\n📋 Feature Registry\n━━━━━━━━━━━━━━━━━━━━━━━━━\n| Feature | Type | Source | Logic | Importance |\n|---------|------|--------|-------|------------|\n| ... | numeric | raw.col_a / raw.col_b | 비율 계산 | TBD |\n━━━━━━━━━━━━━━━━━━━━━━━━━\nTotal: {N}개 (원본 {M}개 → 생성 {K}개)\n```\n\nheartbeat로 특성 목록 보고.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 4,
+      "node_type": "loop",
+      "title": "모델 학습 & 실험 — 반복 개선",
+      "instruction": "## Model Training — Iterate Until Good Enough\n\n### 실험 관리\n각 실험을 체계적으로 기록한다:\n```python\n# 실험 로그\nexperiment = {\n    'id': 'exp_001',\n    'model': 'LogisticRegression',\n    'features': [...],\n    'hyperparams': {...},\n    'metrics': {'f1': 0.XX, 'auc': 0.XX},\n    'notes': '...'\n}\n```\n\n### 모델 학습 순서 (단순 → 복잡)\n\n**Phase 1: 베이스라인**\n- 가장 단순한 모델 (LogReg, 평균값 등)\n- 이것이 \"이기지 못하면\" 더 복잡한 모델 불필요\n\n**Phase 2: 클래식 ML**\n- Random Forest / Gradient Boosting (XGBoost, LightGBM)\n- 하이퍼파라미터 튜닝 (GridSearch 또는 Optuna)\n```python\nimport optuna\ndef objective(trial):\n    params = {\n        'n_estimators': trial.suggest_int('n_estimators', 100, 1000),\n        'max_depth': trial.suggest_int('max_depth', 3, 10),\n        'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3),\n    }\n    model = XGBClassifier(**params)\n    score = cross_val_score(model, X_train, y_train, cv=5, scoring='f1').mean()\n    return score\n```\n\n**Phase 3: 딥러닝** (필요 시)\n- 데이터 1만+ 행, 비정형(텍스트/이미지) 시 고려\n- 사전학습 모델 Fine-tuning 우선\n\n### 각 실험 후 체크\n- validation 메트릭 vs baseline 비교\n- train vs validation 격차 (과적합 확인)\n- 학습 곡선 시각화\n\n### 실험 요약 테이블\n```\n📊 Experiment Log\n| # | Model | Key Param | Val Score | Train Score | Gap | Notes |\n|---|-------|-----------|-----------|-------------|-----|-------|\n| 1 | LogReg | C=1.0 | 0.72 | 0.73 | 1% | baseline |\n| 2 | XGB | depth=5 | 0.85 | 0.92 | 7% | 약간 과적합 |\n```\n\n종료 조건: 성공 기준(Step 1에서 정의한 메트릭 목표) 달성 또는 3회 연속 개선 없음.",
+      "loop_back_to": 4,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 5,
+      "node_type": "action",
+      "title": "모델 평가 & 해석",
+      "instruction": "## Model Evaluation & Interpretability\n\n### Test Set 최종 평가\n학습 과정에서 한 번도 사용하지 않은 test set으로 최종 성능 측정.\n\n**분류 모델**\n```python\nfrom sklearn.metrics import classification_report, confusion_matrix, roc_auc_score\n# Confusion Matrix\n# Precision, Recall, F1 (클래스별)\n# ROC-AUC\n# PR-AUC (불균형 데이터에서 더 적절)\n# Calibration curve (확률 신뢰도)\n```\n\n**회귀 모델**\n```python\n# RMSE, MAE, MAPE\n# R² score\n# Residual plot (잔차 패턴)\n# Prediction vs Actual scatter\n```\n\n### 모델 해석\n\n**전역 해석 (Global)**\n- Feature Importance (permutation 또는 SHAP)\n- Partial Dependence Plot (PDP)\n- SHAP summary plot\n\n**로컬 해석 (Local)**\n- SHAP waterfall plot (개별 예측 설명)\n- LIME (선형 근사)\n- Counterfactual (\"이것만 바뀌었으면 다른 결과\")\n\n### 공정성 & 편향 검사\n- 민감 속성(성별, 연령)별 성능 차이 확인\n- 동등한 기회(Equal Opportunity) 검증\n\n### 최종 모델 카드\n```\n📋 Model Card\n━━━━━━━━━━━━━━━━━━━━━━━━━\nModel: {알고리즘}\nVersion: {버전}\nMetrics:\n  - {primary}: {test 값} (baseline: {값})\n  - {secondary}: {값}\nTop Features: {1}, {2}, {3}\nTraining Data: {기간/크기}\nLimitations: {알려진 한계}\nFairness: {검사 결과}\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 6,
+      "node_type": "gate",
+      "title": "모델 리뷰 & 배포 결정",
+      "instruction": "## Model Review — 배포 여부 결정\n\n### 리뷰 체크리스트\n```\n✅ Model Review Checklist\n━━━━━━━━━━━━━━━━━━━━━━━━━\nPerformance:\n  [ ] Test 메트릭이 성공 기준 충족\n  [ ] 과적합 없음 (train-test gap < 5%)\n  [ ] 모든 중요 세그먼트에서 성능 안정\n\nReliability:\n  [ ] Cross-validation 결과 안정 (낮은 분산)\n  [ ] Edge case 테스트 통과\n  [ ] 데이터 드리프트에 대한 민감도 파악\n\nInterpretability:\n  [ ] 주요 feature가 도메인 지식과 일치\n  [ ] 반직관적 패턴에 대한 설명 가능\n  [ ] 모델 카드 작성 완료\n\nProduction Readiness:\n  [ ] 추론 속도 요구사항 충족\n  [ ] 모델 사이즈 요구사항 충족\n  [ ] 입력 데이터 스키마 정의\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n### 선택지\n1. **배포 진행** — 서빙 인프라 구축\n2. **모델 개선** — 더 나은 성능 추구 (실험 단계로)\n3. **규칙 기반으로 전환** — ML 불필요, 간단한 로직으로\n4. **보류** — 데이터 더 수집 후 재시도",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": true
+    },
+    {
+      "step_order": 7,
+      "node_type": "action",
+      "title": "모델 배포 & 서빙",
+      "instruction": "## Model Deployment — 프로덕션 서빙\n\n### 모델 저장\n```python\nimport joblib\n# 모델 + 전처리기 함께 저장\npipeline = Pipeline([\n    ('preprocessor', preprocessor),\n    ('model', best_model)\n])\njoblib.dump(pipeline, 'models/model_v1.joblib')\n```\n\n### 서빙 방식 선택\n\n**A. 배치 추론**\n- 스케줄링된 파이프라인 (cron, Airflow)\n- 대량 데이터 한 번에 처리\n- 결과를 DB/파일에 저장\n\n**B. 실시간 API**\n```python\n# FastAPI 예시\n@app.post('/predict')\ndef predict(request: PredictRequest):\n    features = preprocess(request.data)\n    prediction = model.predict(features)\n    return {'prediction': prediction, 'confidence': float(proba)}\n```\n\n**C. 임베디드**\n- 클라이언트 사이드 추론 (ONNX, TFLite)\n- Edge 디바이스 배포\n\n### 배포 체크리스트\n- [ ] 입력 검증 (스키마, 범위, 필수 필드)\n- [ ] 에러 핸들링 (잘못된 입력, 모델 로드 실패)\n- [ ] 로깅 (입력, 출력, 응답 시간)\n- [ ] 헬스체크 엔드포인트\n- [ ] 롤백 계획 (이전 모델로 전환)\n- [ ] A/B 테스트 설정 (해당 시)\n\n### 문서화\n- API 스펙 (입력/출력 형식)\n- 모델 버전과 학습 데이터 기간\n- 모니터링 대시보드 링크",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 8,
+      "node_type": "action",
+      "title": "모니터링 & 드리프트 감지",
+      "instruction": "## Model Monitoring — MLOps 핵심\n\n### 모니터링 항목\n\n**1. 성능 모니터링**\n- 예측 정확도 추적 (ground truth 확보 시)\n- 예측 분포 변화 (prediction drift)\n- 비즈니스 KPI 변화 (모델 기여분)\n\n**2. 데이터 드리프트**\n```python\n# PSI (Population Stability Index)\n# PSI < 0.1: 안정\n# 0.1 ≤ PSI < 0.25: 주의\n# PSI ≥ 0.25: 재학습 필요\n\n# 각 feature의 분포 변화 모니터링\n# KS test 또는 Wasserstein distance\n```\n\n**3. 시스템 모니터링**\n- 추론 지연 시간 (P50, P95, P99)\n- 에러율\n- 처리량 (requests/sec)\n- 리소스 사용률 (CPU, Memory, GPU)\n\n### 알림 기준\n| 지표 | 경고 | 긴급 |\n|------|------|------|\n| PSI | > 0.1 | > 0.25 |\n| 에러율 | > 1% | > 5% |\n| P95 지연 | > 200ms | > 1s |\n| 정확도 하락 | > 3% | > 10% |\n\n### 재학습 트리거\n- 데이터 드리프트 감지 (PSI > 0.25)\n- 성능 하락 (설정된 임계치 이하)\n- 정기 재학습 (월간/분기간)\n- 새 데이터 소스 추가 시\n\n### 모니터링 대시보드\n```\n📊 Model Health Dashboard\n━━━━━━━━━━━━━━━━━━━━━━━━━\nModel: {name} v{version}\nDeployed: {date}\nLast Retrain: {date}\n\nPerformance: {metric} = {value} ({trend})\nData Drift (PSI): {value} ({status})\nLatency P95: {ms}ms\nError Rate: {percent}%\n\nStatus: 🟢 HEALTHY / 🟡 WARNING / 🔴 CRITICAL\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n모니터링 설정을 문서화하고 보고한다."
+    }
+  ]
+}

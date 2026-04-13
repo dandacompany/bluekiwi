@@ -1,0 +1,85 @@
+{
+  "title": "Data Analysis Sprint (CRISP-DM × OSEMN)",
+  "description": "Question → Obtain → Scrub → Explore → Model → Interpret → Report. CRISP-DM의 비즈니스 맥락과 OSEMN의 실무 단순함을 결합한 데이터 분석 스프린트. 비즈니스 질문에서 시작하여 데이터 수집, 정제, 탐색, 모델링, 해석, 보고서까지 전 과정을 구조화한다.",
+  "version": "1.0",
+  "nodes": [
+    {
+      "step_order": 1,
+      "node_type": "loop",
+      "title": "비즈니스 질문 정의 — CRISP-DM Business Understanding",
+      "instruction": "## Business Question Definition\n\nCRISP-DM의 핵심: 데이터를 보기 전에 비즈니스 맥락을 완전히 이해한다.\n\n### 질문 프레임워크 (한 번에 하나씩)\n\n**1단계: 문제 식별**\n- 무엇을 알고 싶은가? (구체적 질문 형태로)\n- 이 분석의 결과가 어떤 의사결정에 사용되는가?\n- 누가 이 분석의 최종 소비자인가? (경영진 / 엔지니어 / 마케터)\n\n**2단계: 성공 기준**\n- 어떤 결과가 나오면 \"분석 성공\"인가?\n- 정확도/신뢰도 요구 수준은? (탐색적 인사이트 vs 통계적 유의성)\n- 결과물 형태는? (대시보드 / 보고서 / 예측 모델 / 일회성 분석)\n\n**3단계: 제약조건**\n- 사용 가능한 데이터 소스는?\n- 데이터 접근 권한/보안 제약은?\n- 분석 기간 제약은? (오늘 / 이번 주 / 이번 달)\n- 기술 스택 제약은? (Python, R, SQL, 특정 BI 도구)\n\n**4단계: 분석 질문 구조화**\n수집된 정보를 바탕으로 분석 질문을 MECE로 분해한다:\n```\n메인 질문: {1문장}\n  ├── 서브 질문 1: {구체적}\n  ├── 서브 질문 2: {구체적}\n  └── 서브 질문 3: {구체적}\n```\n\n### 가설 수립\n각 서브 질문에 대한 초기 가설을 세운다:\n- 가설: \"[X]이면 [Y]일 것이다\"\n- 검증 방법: \"[데이터]로 [방법]을 통해 확인\"\n\n종료 조건: 메인 질문, 서브 질문, 가설, 성공 기준이 모두 명확해졌을 때.",
+      "loop_back_to": 1,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 2,
+      "node_type": "action",
+      "title": "데이터 획득 — OSEMN Obtain",
+      "instruction": "## Data Acquisition — Obtain\n\n### 데이터 소스 식별\n분석 질문에 필요한 데이터를 식별하고 수집한다.\n\n**내부 데이터**\n- 데이터베이스 (SQL 쿼리)\n- API 엔드포인트\n- CSV/Excel 파일\n- 로그 파일\n\n**외부 데이터**\n- 공공 데이터 API (data.go.kr 등)\n- 웹 스크래핑 (robots.txt 준수)\n- 서드파티 API\n\n### 데이터 수집 실행\n```python\n# 수집 스크립트 작성\n# 1. 각 소스에서 데이터 로드\n# 2. 원본 데이터를 data/raw/ 에 저장\n# 3. 데이터 카탈로그 작성\n```\n\n### 데이터 카탈로그\n수집된 각 데이터셋을 기록한다:\n```\n📦 Data Catalog\n━━━━━━━━━━━━━━━━━━━━━━━━━\n| Dataset | Source | Rows | Cols | Period | Size |\n|---------|--------|------|------|--------|------|\n| ... | ... | ... | ... | ... | ... |\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n### 데이터 품질 초기 평가\n- 각 컬럼의 타입, 결측율, 유니크 수\n- 시간 범위가 분석 기간과 일치하는지\n- 조인 키가 존재하고 매칭되는지\n\n수집 결과를 heartbeat로 보고한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 3,
+      "node_type": "action",
+      "title": "데이터 정제 — OSEMN Scrub",
+      "instruction": "## Data Cleaning — Scrub\n\nHilary Mason: \"데이터 정제는 분석에서 가장 섹시하지 않지만, 가장 큰 이익을 주는 단계.\"\n\n### 정제 체크리스트\n\n**1. 결측값 처리**\n```python\n# 결측 패턴 분석\ndf.isnull().sum() / len(df) * 100\n# MCAR vs MAR vs MNAR 판단\n# 처리 전략: 삭제 / 대체(평균, 중앙값, 모드, 보간) / 플래그\n```\n\n**2. 이상치 탐지**\n```python\n# IQR 방법\nQ1 = df[col].quantile(0.25)\nQ3 = df[col].quantile(0.75)\nIQR = Q3 - Q1\noutliers = df[(df[col] < Q1 - 1.5*IQR) | (df[col] > Q3 + 1.5*IQR)]\n# Z-score 방법\n# 도메인 지식 기반 판단 (이상치 vs 정상 극단값)\n```\n\n**3. 데이터 타입 교정**\n- 날짜 문자열 → datetime\n- 숫자 문자열 → numeric\n- 범주형 인코딩 일관성\n\n**4. 중복 제거**\n- 완전 중복 행 제거\n- 키 기반 중복 확인 (같은 사용자의 중복 이벤트 등)\n\n**5. 일관성 검증**\n- 범주형 값의 표기 통일 (대소문자, 공백, 약어)\n- 단위 통일 (원 vs 천원, % vs 비율)\n- 크로스 필드 검증 (시작일 ≤ 종료일)\n\n### 정제 보고\n```\n🧹 Data Cleaning Report\n━━━━━━━━━━━━━━━━━━━━━━━━━\nRows: {before} → {after} ({removed} removed)\nMissing: {before}% → {after}%\nOutliers: {N} detected, {M} treated\nDuplicates: {N} removed\nType fixes: {N} columns\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n정제된 데이터를 `data/processed/`에 저장한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 4,
+      "node_type": "action",
+      "title": "탐색적 분석 — OSEMN Explore",
+      "instruction": "## Exploratory Data Analysis — Explore\n\n### 단변량 분석\n각 주요 변수에 대해:\n\n**수치형 변수**\n- 기술통계: mean, median, std, min, max, skewness, kurtosis\n- 분포 시각화: 히스토그램 + KDE\n- 정규성 검정 (필요 시)\n\n**범주형 변수**\n- 빈도표 + 비율\n- 바 차트\n- 카디널리티 확인 (유니크 값 수)\n\n### 이변량 분석\n분석 질문의 가설에 관련된 변수 쌍을 중심으로:\n\n**수치 × 수치**: 산점도 + 상관계수\n**수치 × 범주**: 박스플롯 + 그룹별 평균 비교\n**범주 × 범주**: 교차표 + 히트맵\n\n### 상관관계 매트릭스\n```python\ncorr = df.select_dtypes(include='number').corr()\n# 히트맵 시각화\n# |r| > 0.7 인 쌍을 별도 목록으로\n```\n\n### 시계열 패턴 (해당 시)\n- 트렌드: 장기 추세\n- 계절성: 주기적 패턴\n- 이벤트 효과: 특정 시점 전후 변화\n\n### 인사이트 메모\n탐색 과정에서 발견한 패턴을 즉시 기록:\n```\n💡 EDA Insights\n1. [발견] — [의미] — [후속 분석 필요 여부]\n2. [발견] — [의미] — [후속 분석 필요 여부]\n...\n```\n\n시각화 파일을 `output/figures/`에 저장한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 5,
+      "node_type": "gate",
+      "title": "인사이트 중간 리뷰 — CRISP-DM 반복 루프",
+      "instruction": "## Mid-Analysis Review — CRISP-DM Iterative Check\n\nCRISP-DM의 핵심 장점: 분석 중간에 비즈니스 질문으로 돌아가 방향을 검증한다.\n\n### 중간 보고\n```\n📊 EDA Summary\n━━━━━━━━━━━━━━━━━━━━━━━━━\nDatasets: {N}개, {총 행 수} rows\nVariables Explored: {N}개\nKey Findings: {N}개\n\n🔍 Top Insights\n1. {인사이트 — 비즈니스 의미}\n2. {인사이트 — 비즈니스 의미}\n3. {인사이트 — 비즈니스 의미}\n\n❓ Open Questions\n- {EDA에서 답하지 못한 질문}\n- {추가 데이터가 필요한 부분}\n\n🎯 Hypothesis Status\n- 가설 1: {지지됨 / 반박됨 / 불확실}\n- 가설 2: {지지됨 / 반박됨 / 불확실}\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n### 방향 결정\n1. **심층 분석 진행** — 현재 방향이 맞음, 모델링/통계 분석으로\n2. **질문 수정** — EDA 결과로 원래 질문이 잘못됐음을 발견\n3. **추가 데이터 수집** — 답하려면 더 많은 데이터 필요\n4. **여기서 종료** — EDA 인사이트만으로 충분, 보고서 작성으로",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": true
+    },
+    {
+      "step_order": 6,
+      "node_type": "action",
+      "title": "심층 분석 & 모델링 — OSEMN Model",
+      "instruction": "## Deep Analysis & Modeling — Model\n\n분석 질문의 성격에 따라 적절한 분석 기법을 적용한다.\n\n### 분석 유형별 접근\n\n**A. 기술 분석 (Descriptive)**\n- 세그멘테이션: K-means, RFM 분석\n- 코호트 분석: 시간별 사용자 그룹 비교\n- 퍼널 분석: 전환율 단계별 분해\n\n**B. 인과 분석 (Causal)**\n- A/B 테스트 결과 분석: t-test, chi-square\n- 회귀 분석: 변수 간 관계 정량화\n- 차이-차이 분석 (DiD): 정책/이벤트 효과 측정\n\n**C. 예측 분석 (Predictive)**\n- 분류: Logistic Regression → Random Forest → XGBoost\n- 회귀: Linear → Gradient Boosting\n- 시계열: ARIMA, Prophet\n- 평가: train/test split, cross-validation, 적절한 메트릭\n\n**D. 탐색 분석 (Exploratory)**\n- 차원 축소: PCA, t-SNE\n- 클러스터링: K-means, DBSCAN\n- 연관 규칙: Apriori\n\n### 모델링 체크리스트\n- [ ] 특성 공학 (feature engineering) 완료\n- [ ] train/test 분리 (또는 교차 검증)\n- [ ] 베이스라인 모델 먼저 (단순 → 복잡)\n- [ ] 과적합 확인 (train vs test 성능 차이)\n- [ ] 특성 중요도 분석\n\n### 결과 기록\n```\n📈 Analysis Results\n━━━━━━━━━━━━━━━━━━━━━━━━━\nMethod: {사용한 기법}\nKey Metric: {평가 지표} = {값}\nTop Features: {상위 3-5개 변수}\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 7,
+      "node_type": "action",
+      "title": "해석 & 시각화 — OSEMN iNterpret",
+      "instruction": "## Interpretation & Visualization — iNterpret\n\n분석 결과를 비즈니스 언어로 번역하고 설득력 있는 시각화를 만든다.\n\n### 해석 원칙\n1. **So What?**: 모든 발견에 \"그래서 뭘 해야 하는가?\"를 붙인다\n2. **상관 ≠ 인과**: 상관관계를 인과관계로 표현하지 않는다\n3. **불확실성 표현**: 신뢰구간, p-value, 한계점을 명시한다\n4. **비교 기준**: 절대 수치보다 변화율, 업계 평균 대비를 사용한다\n\n### 시각화 가이드\n\n**차트 선택 매트릭스**\n| 질문 유형 | 추천 차트 |\n|-----------|----------|\n| 추이 변화 | 라인 차트 |\n| 비교 | 바 차트 (가로/세로) |\n| 비율/구성 | 파이 차트 (5개 이하), 누적 바 |\n| 분포 | 히스토그램, 박스플롯 |\n| 관계 | 산점도, 버블 차트 |\n| 지리 | 맵 |\n\n**시각화 규칙**\n- 제목: 발견(insight)을 제목으로 (\"매출 추이\"❌ → \"Q3에 매출 23% 급증\"✅)\n- 색상: 핵심 포인트만 강조색, 나머지는 회색\n- 주석: 이벤트/변곡점에 텍스트 주석\n- 축: 0부터 시작 (오해 방지), 단위 명시\n\n### 인사이트 → 액션 매핑\n각 인사이트를 실행 가능한 제안으로:\n```\nInsight: {발견}\n  → Implication: {비즈니스 의미}\n  → Action: {구체적 제안}\n  → Expected Impact: {예상 효과}\n```",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 8,
+      "node_type": "gate",
+      "title": "분석 결과 리뷰",
+      "instruction": "## Analysis Review — 최종 검토\n\n### 결과 요약\n```\n📊 Analysis Complete\n━━━━━━━━━━━━━━━━━━━━━━━━━\nQuestion: {원래 비즈니스 질문}\nAnswer: {1-2문장 답변}\nConfidence: {높음/중간/낮음}\n\n🔍 Key Findings ({N}개)\n1. {인사이트} → {액션}\n2. {인사이트} → {액션}\n3. {인사이트} → {액션}\n\n⚠️ Limitations\n- {분석의 한계점}\n- {데이터의 한계점}\n\n📈 Visualizations: {N}개 차트 생성\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n### 선택지\n1. 보고서 생성 — 최종 보고서 작성 진행\n2. 추가 분석 — 특정 인사이트 심화 분석\n3. 방향 전환 — 다른 질문으로 피봇\n4. 분석 종료 — 여기서 마감",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": true
+    },
+    {
+      "step_order": 9,
+      "node_type": "action",
+      "title": "보고서 생성 — CRISP-DM Deployment",
+      "instruction": "## Report Generation — Deployment\n\nCRISP-DM의 Deployment를 분석 보고서로 구현한다.\n\n### 보고서 구조 (피라미드 원칙)\n\n```markdown\n# {분석 제목}\n\n## Executive Summary (1페이지)\n- 핵심 발견 3개 (bullet point)\n- 추천 액션 (가장 임팩트 큰 것 먼저)\n- 예상 효과\n\n## Background\n- 분석 배경과 목적\n- 분석 기간과 범위\n\n## Methodology\n- 데이터 소스 (간략)\n- 분석 기법 (비전문가도 이해 가능하게)\n\n## Findings\n### Finding 1: {인사이트 제목}\n- [차트/시각화]\n- 해석\n- 액션 아이템\n\n### Finding 2: {인사이트 제목}\n...\n\n## Recommendations\n| 우선순위 | 액션 | 예상 효과 | 난이도 | 담당 |\n|----------|------|----------|--------|------|\n| 1 | ... | ... | ... | ... |\n\n## Appendix\n- 상세 데이터 테이블\n- 추가 시각화\n- 기술적 세부사항\n```\n\n### 산출물\n- `reports/YYYY-MM-DD-{topic}-analysis.md` — 전체 보고서\n- `output/figures/` — 시각화 파일\n- `notebooks/` — 재현 가능한 분석 노트북 (해당 시)\n\n### 재현성 보장\n- 분석에 사용된 코드/쿼리를 보고서에 첨부 또는 링크\n- 데이터 스냅샷 경로 명시\n- 환경 정보 (Python 버전, 주요 패키지 버전) 기록"
+    }
+  ]
+}
