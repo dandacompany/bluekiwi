@@ -1,0 +1,85 @@
+{
+  "title": "Growth Sprint (Eric Siu)",
+  "description": "Audit → Hypothesize → Design → Execute → Measure → Decide. Eric Siu의 Growth Engine 프레임워크 기반 성장 실험 스프린트. ICE 스코어링으로 가설 우선순위를 정하고, 실험을 실행하며, 데이터 기반으로 Keep/Kill/Iterate 판단을 내린다.",
+  "version": "1.0",
+  "nodes": [
+    {
+      "step_order": 1,
+      "node_type": "action",
+      "title": "Growth Audit — 현재 지표 베이스라인",
+      "instruction": "## Growth Audit — 현재 상태 진단\n\n성장 실험 전에 현재 핵심 지표를 파악한다.\n\n### AARRR 퍼널 점검\n사용자에게 현재 가용한 데이터를 요청하고, 각 단계를 진단한다:\n\n1. **Acquisition (획득)**: 어떤 채널에서 유입되는가?\n   - 채널별 트래픽 비중\n   - CAC (고객 획득 비용)\n   - 가장 성장률이 높은 채널\n\n2. **Activation (활성화)**: 첫 가치 체험까지의 경로\n   - 가입→첫 핵심 행동까지의 전환율\n   - 온보딩 완료율\n   - Time to Value (가치 체험까지 시간)\n\n3. **Retention (유지)**: 사용자가 돌아오는가?\n   - D1/D7/D30 리텐션\n   - 주간 활성 사용자 추이\n   - 이탈 지점 (어디서 떠나는가?)\n\n4. **Revenue (수익)**: 매출 구조\n   - ARPU / LTV\n   - 유료 전환율\n   - 결제 실패율\n\n5. **Referral (추천)**: 바이럴 계수\n   - 추천 비율\n   - NPS 또는 만족도\n\n### 베이스라인 테이블\n```\n📊 Growth Baseline\n━━━━━━━━━━━━━━━━━━━━━━━━━\nAcquisition:  {월간 방문자} / {주요 채널}\nActivation:   {전환율}%\nRetention:    D7 {N}% / D30 {N}%\nRevenue:      ARPU ${N} / LTV ${N}\nReferral:     {추천율}%\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n데이터가 없는 항목은 \"측정 필요\"로 표시하고, 이 자체가 첫 실험 후보가 된다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 2,
+      "node_type": "gate",
+      "title": "병목 지점 선정",
+      "instruction": "## Bottleneck Identification — 어디를 개선할 것인가?\n\nAAARR 퍼널에서 가장 임팩트가 큰 병목을 식별한다.\n\n### 병목 후보 분석\n각 퍼널 단계의 전환율을 비교하여 가장 낮은 지점을 찾는다.\n\n### 제시 형식\n```\n🔍 Bottleneck Analysis\n━━━━━━━━━━━━━━━━━━━━━━━━━\n1. [가장 큰 병목] Activation: 가입→첫 사용 전환율 12%\n   → 업계 평균 25-30%, 개선 여지 큼\n   → 예상 임팩트: 전환율 2배 = 매출 2배\n\n2. [두 번째] Retention: D7 리텐션 35%\n   → 온보딩 후 2일차에 이탈 급증\n\n3. [세 번째] Acquisition: SEO 트래픽 정체\n   → 3개월째 성장 없음\n━━━━━━━━━━━━━━━━━━━━━━━━━\n추천: #1 Activation에 집중 (Recommended)\n```\n\n사용자에게 어떤 병목에 집중할지 선택을 요청한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": true
+    },
+    {
+      "step_order": 3,
+      "node_type": "loop",
+      "title": "가설 생성 & ICE 스코어링",
+      "instruction": "## Hypothesis Generation — ICE Framework\n\n선정된 병목에 대해 실험 가설을 생성하고 우선순위를 매긴다.\n\n### 가설 형식\n\"만약 {변경}을 하면, {지표}가 {목표만큼} 개선될 것이다. 왜냐하면 {근거}.\"\n\n### 가설 브레인스토밍 (한 번에 하나씩)\n사용자와 함께 가설을 생성한다:\n- 경쟁사에서 배운 것\n- 사용자 피드백/불만에서 나온 아이디어\n- 데이터에서 발견한 패턴\n- 직관/경험 기반 아이디어\n\n### ICE 스코어링\n각 가설을 채점한다 (1-10):\n- **I**mpact: 성공 시 비즈니스 임팩트\n- **C**onfidence: 성공 확률에 대한 확신\n- **E**ase: 구현 용이성\n- **ICE Score** = (I + C + E) / 3\n\n### 우선순위 테이블\n```\n| # | 가설 | I | C | E | ICE |\n|---|------|---|---|---|-----|\n| 1 | ...  | 8 | 7 | 9 | 8.0 |\n| 2 | ...  | 9 | 5 | 4 | 6.0 |\n```\n\n종료 조건: 3-5개 가설이 ICE 스코어링 완료되었을 때. 사용자에게 상위 1-2개 실험 선택을 요청한다.",
+      "loop_back_to": 3,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 4,
+      "node_type": "action",
+      "title": "실험 설계",
+      "instruction": "## Experiment Design — 실험 설계서\n\n선택된 가설을 실행 가능한 실험으로 설계한다.\n\n### 실험 설계서 템플릿\n\n```markdown\n# Experiment: {실험명}\n\n## Hypothesis\n\"만약 {변경}을 하면, {지표}가 {목표}만큼 개선될 것이다.\"\n\n## Metrics\n- Primary Metric: {핵심 측정 지표} (현재: {N}, 목표: {M})\n- Secondary Metrics: {부수 지표들}\n- Guardrail Metrics: {이것이 나빠지면 실험 중단}\n\n## Design\n- Type: A/B Test / Before-After / Cohort / Feature Flag\n- Sample Size: {필요 샘플 수}\n- Duration: {실험 기간}\n- Traffic Split: {비율} (A/B 시)\n\n## Implementation\n- Changes Required: {구체적 변경 목록}\n- Files to Modify: {파일 경로}\n- Tracking Events: {추가할 이벤트}\n\n## Success Criteria\n- Minimum Detectable Effect: {최소 유의미 차이}\n- Statistical Significance: p < 0.05\n- Practical Significance: {비즈니스 관점에서 의미 있는 변화}\n\n## Rollback Plan\n- 중단 조건: {guardrail 위반 시}\n- 롤백 방법: {구체적 절차}\n```\n\n실험 설계서를 heartbeat로 보고한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 5,
+      "node_type": "gate",
+      "title": "실험 설계 승인",
+      "instruction": "## Experiment Review — 실험 승인\n\n설계된 실험을 요약하여 사용자에게 승인을 요청한다.\n\n```\n🧪 Experiment Summary\n━━━━━━━━━━━━━━━━━━━━━━━━━\nName: {실험명}\nHypothesis: {1문장}\nPrimary Metric: {지표} ({현재} → {목표})\nType: {실험 유형}\nDuration: {기간}\nRisk: {낮음/중간/높음}\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n### 선택지\n1. 승인 — 구현 진행\n2. 설계 수정 — 지표/기간/방법 조정\n3. 다른 가설 선택 — 가설 생성 단계로 복귀\n4. 중단",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": true
+    },
+    {
+      "step_order": 6,
+      "node_type": "action",
+      "title": "실험 구현",
+      "instruction": "## Experiment Implementation — 실험 코드 작성\n\n실험 설계서에 따라 변경사항을 구현한다.\n\n### 구현 체크리스트\n\n1. **트래킹 코드**\n   - 실험 시작/종료 이벤트\n   - 전환 이벤트 (primary metric)\n   - 부수 지표 이벤트\n   - guardrail 지표 이벤트\n\n2. **기능 변경**\n   - Feature flag 설정 (A/B 시)\n   - UI 변경 사항\n   - 백엔드 로직 변경\n\n3. **QA**\n   - 실험군/대조군 모두 정상 동작 확인\n   - 트래킹 이벤트 발화 확인\n   - 롤백 절차 테스트\n\n### 실험 시작 기록\n```\n🚀 Experiment Launched\n━━━━━━━━━━━━━━━━━━━━━━━━━\nStart: {날짜/시간}\nExpected End: {날짜/시간}\nTraffic: {비율}\nTracking: {이벤트 목록}\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n구현 결과를 heartbeat로 보고한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 7,
+      "node_type": "action",
+      "title": "데이터 수집 & 분석",
+      "instruction": "## Data Analysis — 실험 결과 분석\n\n실험 데이터를 수집하고 통계적으로 분석한다.\n\n### 데이터 수집\n사용자에게 실험 결과 데이터를 요청한다:\n- 실험군/대조군 각각의 primary metric\n- secondary metrics\n- guardrail metrics\n- 샘플 수와 기간\n\n### 통계 분석\n1. **효과 크기**: 실험군 vs 대조군 차이 (%)\n2. **신뢰구간**: 95% CI\n3. **통계적 유의성**: p-value\n4. **실용적 유의성**: 비즈니스 관점에서 의미 있는가?\n\n### Segment 분석\n가능하다면 세그먼트별 결과를 확인한다:\n- 신규 vs 기존 사용자\n- 디바이스별 (모바일/데스크톱)\n- 유입 채널별\n\n### 결과 보고서\n```\n📈 Experiment Results\n━━━━━━━━━━━━━━━━━━━━━━━━━\nDuration: {기간}\nSample: {N} (control) / {N} (experiment)\n\nPrimary Metric: {지표명}\n  Control:    {값}\n  Experiment: {값}\n  Lift:       {+N%}\n  p-value:    {값}\n  Significant: {Yes/No}\n\nGuardrails: {All Pass / {위반 항목}}\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 8,
+      "node_type": "gate",
+      "title": "Keep / Kill / Iterate 판단",
+      "instruction": "## Decision — Keep, Kill, or Iterate\n\nEric Siu의 Growth Engine 핵심: 데이터 기반 의사결정.\n\n### 판단 프레임워크\n\n**🟢 KEEP (본격 적용)**\n조건: 통계적으로 유의미 + 실용적으로 의미 있음 + guardrail 위반 없음\n→ Feature flag 제거, 전체 사용자에게 적용\n→ 다음 실험으로 이동\n\n**🔴 KILL (폐기)**\n조건: 통계적으로 유의미하게 나쁨 OR guardrail 위반\n→ 코드 롤백\n→ 학습 기록 후 다음 가설로 이동\n\n**🟡 ITERATE (반복 실험)**\n조건: 유의미하지 않음 (샘플 부족 또는 효과 미미)\n→ 변형 실험 설계 (다른 변수 조정)\n→ 실험 설계 단계로 복귀\n\n### 결정 요약\n```\n🎯 Decision: {KEEP / KILL / ITERATE}\n━━━━━━━━━━━━━━━━━━━━━━━━━\nReason: {판단 근거 1-2문장}\nLearning: {이 실험에서 배운 것}\nNext: {다음 행동}\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n### 선택지\n1. KEEP — 전체 적용 & 다음 실험\n2. KILL — 롤백 & 다음 가설\n3. ITERATE — 변형 실험 설계\n4. 새 스프린트 — 다른 병목 지점으로 이동",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": true
+    },
+    {
+      "step_order": 9,
+      "node_type": "action",
+      "title": "학습 기록 & 스프린트 회고",
+      "instruction": "## Growth Learnings — 실험 학습 기록\n\n### 실험 카드 작성\n이 스프린트의 결과를 구조화하여 기록한다.\n\n```markdown\n# Growth Experiment Card\n\n## Meta\n- Date: {YYYY-MM-DD}\n- Sprint: #{N}\n- Funnel Stage: {AARRR 중 해당}\n- Decision: {KEEP / KILL / ITERATE}\n\n## Hypothesis\n{원래 가설}\n\n## Result\n- Primary Metric: {before} → {after} ({±N%})\n- Statistical Significance: {p-value}\n- Duration: {N days}\n\n## Learnings\n1. {핵심 학습 1}\n2. {핵심 학습 2}\n3. {예상과 다랐던 점}\n\n## Implications\n- 이 결과가 다른 실험에 미치는 영향\n- 후속 실험 아이디어\n\n## Assets\n- {관련 대시보드 링크}\n- {실험 설계 문서 경로}\n```\n\n### 스프린트 메트릭\n```\n📊 Growth Sprint Summary\n━━━━━━━━━━━━━━━━━━━━━━━━━\nExperiments Run: {N}\nKEEP: {N} / KILL: {N} / ITERATE: {N}\nTotal Lift: {primary metric 누적 변화}\nBiggest Win: {가장 큰 성과}\nBiggest Learning: {가장 중요한 교훈}\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n학습 카드를 `docs/growth/YYYY-MM-DD-experiment-{name}.md`에 저장한다."
+    }
+  ]
+}
