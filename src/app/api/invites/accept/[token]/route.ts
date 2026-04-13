@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { generateApiKey, hashPassword, type Role } from "@/lib/auth";
-import { errorResponse, queryOne, withTransaction } from "@/lib/db";
+import {
+  generateApiKey,
+  hashPassword,
+  verifyPassword,
+  type Role,
+} from "@/lib/auth";
+import { errorResponse, execute, queryOne, withTransaction } from "@/lib/db";
 import { isExpired } from "@/lib/invites";
 import { seedBuiltinWorkflows } from "@/lib/seed-workflows";
 import { resolveOrigin } from "@/lib/url";
@@ -70,6 +75,49 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
   if (invite.accepted_at) {
+    // Already accepted via web — if the user exists, issue a new API key for CLI
+    const existingUser = await queryOne<{
+      id: number;
+      username: string;
+      email: string | null;
+      role: Role;
+      password_hash: string;
+    }>(
+      `SELECT id, username, email, role, password_hash FROM users WHERE email = $1`,
+      [invite.email],
+    );
+
+    if (existingUser && body.password && typeof body.password === "string") {
+      const valid = await verifyPassword(
+        body.password.trim(),
+        existingUser.password_hash,
+      );
+      if (!valid) {
+        return NextResponse.json(
+          { error: "invalid_password" },
+          { status: 403 },
+        );
+      }
+
+      const { rawKey, prefix, keyHash } = generateApiKey();
+      await execute(
+        `INSERT INTO api_keys (user_id, key_hash, prefix, name) VALUES ($1, $2, $3, $4)`,
+        [existingUser.id, keyHash, prefix, "bluekiwi-cli"],
+      );
+
+      return NextResponse.json({
+        api_key: rawKey,
+        server_url: resolveOrigin(request),
+        server_version: process.env.BLUEKIWI_VERSION ?? "0.0.0-dev",
+        user: {
+          id: existingUser.id,
+          username: existingUser.username,
+          email: existingUser.email,
+          role: existingUser.role,
+        },
+      });
+    }
+
     return NextResponse.json({ error: "already_accepted" }, { status: 410 });
   }
   if (isExpired(new Date(invite.expires_at))) {
