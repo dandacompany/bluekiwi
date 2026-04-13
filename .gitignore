@@ -81,3 +81,4 @@ packages/cli/dist/
 docs/
 tests/
 local/
+mcp/.next/
