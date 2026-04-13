@@ -80,6 +80,8 @@ docker compose up -d
 npm install -g bluekiwi
 ```
 
+**방법 A — 초대 수락 (신규 팀원 권장)**
+
 **Settings → Team**에서 초대 토큰을 생성한 후:
 
 ```bash
@@ -87,6 +89,16 @@ bluekiwi accept <token> --server http://localhost:3100
 ```
 
 초대 유효성 검사 → 계정 생성 → API 키 발급 → 설치된 에이전트 런타임 자동 감지 → MCP 서버 및 스킬 설치까지 자동으로 진행됩니다.
+
+**방법 B — 기존 API 키로 init (superuser / admin)**
+
+이미 계정이 있는 경우(예: `/setup`으로 생성한 superuser), **Settings → API Keys**에서 키를 발급한 후:
+
+```bash
+bluekiwi init --server http://localhost:3100 --api-key bk_xxxx
+```
+
+서버 연결 확인 → 설치된 런타임 자동 감지 → MCP 서버 및 스킬 설치까지 자동으로 진행됩니다.
 
 ---
 

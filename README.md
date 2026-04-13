@@ -80,13 +80,25 @@ Open **http://localhost:3100/setup** → create your superuser account. The `/se
 npm install -g bluekiwi
 ```
 
-Create an invite for yourself in **Settings → Team**, then:
+**Option A — accept an invite (recommended for new team members)**
+
+Create an invite in **Settings → Team**, then:
 
 ```bash
 bluekiwi accept <token> --server http://localhost:3100
 ```
 
-This validates the invite, creates your account, issues an API key, detects your installed agent runtimes, and injects the BlueKiwi MCP server + skills into each one.
+Validates the invite → creates your account → issues an API key → detects installed agent runtimes → injects the BlueKiwi MCP server + skills into each one.
+
+**Option B — init with an existing API key (superuser / admin)**
+
+If you already have an account (e.g. the superuser created via `/setup`), generate a key in **Settings → API Keys**, then:
+
+```bash
+bluekiwi init --server http://localhost:3100 --api-key bk_xxxx
+```
+
+Connects to the server with the given key → detects installed runtimes → injects the MCP server + skills into each one.
 
 ---
 
