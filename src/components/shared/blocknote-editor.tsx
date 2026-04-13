@@ -32,7 +32,17 @@ export default function BlocknoteEditor({ initialContent, onChange }: Props) {
 
   return (
     <div className="blocknote-wrapper min-h-[22rem] overflow-hidden rounded-[1.25rem] border border-border bg-background">
-      <BlockNoteViewRaw editor={editor} onChange={handleChange} theme="light" />
+      <BlockNoteViewRaw
+        editor={editor}
+        onChange={handleChange}
+        theme="light"
+        sideMenu={false}
+        formattingToolbar={false}
+        slashMenu={false}
+        linkToolbar={false}
+        filePanel={false}
+        tableHandles={false}
+      />
     </div>
   );
 }
