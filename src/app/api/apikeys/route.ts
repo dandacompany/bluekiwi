@@ -7,12 +7,7 @@ import {
   query,
   queryOne,
 } from "@/lib/db";
-import {
-  checkPermission,
-  generateApiKey,
-  type Permission,
-  type User,
-} from "@/lib/auth";
+import { generateApiKey, type User } from "@/lib/auth";
 import { withAuth } from "@/lib/with-auth";
 
 type ApiKeyPublic = {
@@ -26,22 +21,20 @@ type ApiKeyPublic = {
   created_at: string;
 };
 
-function hasPermission(user: User, permission: Permission): boolean {
-  return checkPermission(user.role, permission);
-}
-
 export const GET = withAuth(
   "apikeys:read_own",
   async (_request, user: User) => {
-    const canReadAll = hasPermission(user, "apikeys:read_all");
-    const keys = canReadAll
-      ? await query<ApiKeyPublic>(
-          "SELECT id, prefix, name, user_id, last_used_at, expires_at, is_revoked, created_at FROM api_keys ORDER BY created_at DESC",
-        )
-      : await query<ApiKeyPublic>(
-          "SELECT id, prefix, name, user_id, last_used_at, expires_at, is_revoked, created_at FROM api_keys WHERE user_id = $1 ORDER BY created_at DESC",
-          [user.id],
-        );
+    const keys =
+      user.role === "superuser"
+        ? await query<ApiKeyPublic>(
+            `SELECT a.id, a.prefix, a.name, a.user_id, a.last_used_at, a.expires_at, a.is_revoked, a.created_at, u.username AS owner_name
+             FROM api_keys a JOIN users u ON u.id = a.user_id
+             ORDER BY a.created_at DESC`,
+          )
+        : await query<ApiKeyPublic>(
+            "SELECT id, prefix, name, user_id, last_used_at, expires_at, is_revoked, created_at FROM api_keys WHERE user_id = $1 ORDER BY created_at DESC",
+            [user.id],
+          );
 
     const res = listResponse(keys, keys.length);
     return NextResponse.json(res.body, { status: res.status });

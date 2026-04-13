@@ -1,7 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Copy, HelpCircle, Minus, Plus, Users, X } from "lucide-react";
+import {
+  Check,
+  Copy,
+  HelpCircle,
+  Minus,
+  Plus,
+  Trash2,
+  Users,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +45,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { DeleteUserDialog } from "./delete-user-dialog";
 
 interface Member {
   id: number;
@@ -457,6 +467,26 @@ export function TeamTab() {
                             ? t("team.roleViewer")
                             : member.role}
                     </Badge>
+                    {member.role !== "superuser" && (
+                      <DeleteUserDialog
+                        target={{
+                          id: member.id,
+                          username: member.username,
+                          role: member.role,
+                        }}
+                        isSelf={false}
+                        trigger={
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 shrink-0 text-[var(--destructive)] hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        }
+                        onSuccess={fetchMembers}
+                      />
+                    )}
                   </div>
                 ))}
               </div>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Save, User } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Save, Trash2, User } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "@/lib/i18n/context";
+import { DeleteUserDialog } from "./delete-user-dialog";
 
 interface ProfileTabProps {
   user: { userId: number; username: string; email: string; role: string };
@@ -22,6 +24,7 @@ interface ProfileTabProps {
 
 export function ProfileTab({ user }: ProfileTabProps) {
   const { t } = useTranslation();
+  const router = useRouter();
   const [name, setName] = useState(user.username);
   const [saving, setSaving] = useState(false);
 
@@ -105,6 +108,38 @@ export function ProfileTab({ user }: ProfileTabProps) {
           <Save className="h-4 w-4" />
           {saving ? t("settings.saving") : t("common.save")}
         </Button>
+
+        {/* Danger Zone — account deletion (not for superuser) */}
+        {user.role !== "superuser" && (
+          <div className="mt-8 border-t border-[var(--destructive)]/30 pt-6">
+            <h3 className="text-sm font-semibold text-[var(--destructive)]">
+              {t("deleteAccount.title")}
+            </h3>
+            <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+              {t("deleteAccount.description")}
+            </p>
+            <DeleteUserDialog
+              target={{
+                id: user.userId,
+                username: user.username,
+                role: user.role,
+              }}
+              isSelf
+              trigger={
+                <Button variant="destructive" size="sm" className="mt-3">
+                  <Trash2 className="h-4 w-4" />
+                  {t("deleteAccount.button")}
+                </Button>
+              }
+              onSuccess={() => {
+                // Clear session and redirect to login
+                fetch("/api/auth/logout", { method: "POST" }).finally(() => {
+                  router.push("/login");
+                });
+              }}
+            />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

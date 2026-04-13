@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { errorResponse, execute, okResponse, queryOne } from "@/lib/db";
-import { hashPassword, type Role, type User } from "@/lib/auth";
+import { errorResponse, execute, okResponse, query, queryOne } from "@/lib/db";
+import { hashPassword, verifyPassword, type Role, type User } from "@/lib/auth";
 import { withAuth } from "@/lib/with-auth";
+import { deleteUser, type DeleteMode } from "@/lib/delete-user";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -214,11 +215,8 @@ export const PUT = withAuth(
 );
 
 export const DELETE = withAuth(
-  "users:write",
-  async (_request: NextRequest, _user: User, { params }: Params) => {
-    void _request;
-    void _user;
-
+  "apikeys:read_own", // lowest permission — we do manual auth checks below
+  async (request: NextRequest, caller: User, { params }: Params) => {
     const { id } = await params;
     const userId = parseId(id);
 
@@ -227,17 +225,99 @@ export const DELETE = withAuth(
       return NextResponse.json(res.body, { status: res.status });
     }
 
-    const result = await execute(
-      "UPDATE users SET is_active = false, updated_at = NOW() WHERE id = $1",
-      [userId],
-    );
-
-    if (result.rowCount === 0) {
+    const target = await queryOne<User>("SELECT * FROM users WHERE id = $1", [
+      userId,
+    ]);
+    if (!target) {
       const res = errorResponse("NOT_FOUND", "user not found", 404);
       return NextResponse.json(res.body, { status: res.status });
     }
 
-    const res = okResponse({ id: userId, is_active: false });
+    // Superuser accounts cannot be deleted
+    if (target.role === "superuser") {
+      const res = errorResponse("FORBIDDEN", "cannot delete superuser", 403);
+      return NextResponse.json(res.body, { status: res.status });
+    }
+
+    const isSelf = caller.id === userId;
+
+    // Permission: self-delete allowed for anyone, admin+ can delete others
+    if (!isSelf) {
+      const callerLevel = { viewer: 0, editor: 1, admin: 2, superuser: 3 }[
+        caller.role
+      ];
+      if (callerLevel < 2) {
+        const res = errorResponse("FORBIDDEN", "forbidden", 403);
+        return NextResponse.json(res.body, { status: res.status });
+      }
+    }
+
+    const body = (await request.json()) as Record<string, unknown>;
+    const mode = body.mode as DeleteMode | undefined;
+    const transferTo = body.transfer_to as number | undefined;
+    const password = body.password as string | undefined;
+
+    if (!mode || !["transfer", "delete_all"].includes(mode)) {
+      const res = errorResponse(
+        "VALIDATION_ERROR",
+        "mode must be 'transfer' or 'delete_all'",
+        400,
+      );
+      return NextResponse.json(res.body, { status: res.status });
+    }
+
+    // Self-delete requires password verification
+    if (isSelf) {
+      if (!password) {
+        const res = errorResponse(
+          "VALIDATION_ERROR",
+          "password required for self-delete",
+          400,
+        );
+        return NextResponse.json(res.body, { status: res.status });
+      }
+      const valid = await verifyPassword(password, target.password_hash);
+      if (!valid) {
+        const res = errorResponse("FORBIDDEN", "invalid password", 403);
+        return NextResponse.json(res.body, { status: res.status });
+      }
+    }
+
+    // Transfer mode validation
+    if (mode === "transfer") {
+      if (!transferTo) {
+        const res = errorResponse(
+          "VALIDATION_ERROR",
+          "transfer_to is required for transfer mode",
+          400,
+        );
+        return NextResponse.json(res.body, { status: res.status });
+      }
+      if (transferTo === userId) {
+        const res = errorResponse(
+          "VALIDATION_ERROR",
+          "cannot transfer to self",
+          400,
+        );
+        return NextResponse.json(res.body, { status: res.status });
+      }
+      const recipient = await queryOne<{ id: number; is_active: boolean }>(
+        "SELECT id, is_active FROM users WHERE id = $1",
+        [transferTo],
+      );
+      if (!recipient || !recipient.is_active) {
+        const res = errorResponse(
+          "VALIDATION_ERROR",
+          "transfer target not found or inactive",
+          400,
+        );
+        return NextResponse.json(res.body, { status: res.status });
+      }
+    }
+
+    await deleteUser({ userId, mode, transferTo });
+
+    const res = okResponse({ id: userId, deleted: true });
     return NextResponse.json(res.body, { status: res.status });
   },
 );
