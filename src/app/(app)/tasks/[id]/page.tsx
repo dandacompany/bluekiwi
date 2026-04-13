@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useWs } from "@/lib/use-ws";
 import {
@@ -179,12 +179,14 @@ function buildTimelineSteps(logs: TaskLog[]): TimelineStep[] {
 
 export default function TaskDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const { t } = useTranslation();
   const taskId = params.id as string;
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedStep, setSelectedStep] = useState<number | null>(null);
   const [comments, setComments] = useState<StepComment[]>([]);
+  const [autoOpenVs, setAutoOpenVs] = useState(false);
 
   const fetchTask = useCallback(async () => {
     const res = await fetch(`/api/tasks/${taskId}`);
@@ -247,6 +249,19 @@ export default function TaskDetailPage() {
       cancelled = true;
     };
   }, [taskId]);
+
+  // Deep link: ?step=N&vs=true → auto-select step and open VS dialog
+  useEffect(() => {
+    if (!task) return;
+    const stepParam = searchParams.get("step");
+    const vsParam = searchParams.get("vs");
+    if (stepParam) {
+      setSelectedStep(Number(stepParam));
+    }
+    if (vsParam === "true") {
+      setAutoOpenVs(true);
+    }
+  }, [task, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useWs((msg) => {
     if (msg.type === "task_update" && msg.task_id === Number(taskId)) {
@@ -372,6 +387,8 @@ export default function TaskDetailPage() {
         )}
         onAddComment={handleAddComment}
         onRefresh={fetchTask}
+        autoOpenVs={autoOpenVs}
+        onVsOpened={() => setAutoOpenVs(false)}
       />
     </div>
   );

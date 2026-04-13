@@ -146,7 +146,13 @@ Previous: v<old>  →  New: v<new>
 Changed steps: <n>
 ```
 
-### Step 6: Offer Immediate Execution
+### Step 6: Open in Browser + Offer Execution
+
+Open the workflow detail page in the browser:
+
+```bash
+open "${BLUEKIWI_URL:-http://localhost:3100}/workflows/${WORKFLOW_ID}"
+```
 
 Ask via AskUserQuestion:
 

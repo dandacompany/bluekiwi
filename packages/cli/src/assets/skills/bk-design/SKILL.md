@@ -108,15 +108,22 @@ Call `create_workflow`:
 }
 ```
 
-### Step 6: Report Result
+### Step 6: Report Result + Open in Browser
 
-On success:
+On success, open the workflow detail page in the browser:
+
+```bash
+open "${BLUEKIWI_URL:-http://localhost:3100}/workflows/${WORKFLOW_ID}"
+```
+
+Then display:
 
 ```
 ✅ Workflow registered
 Name: <title> (ID: <id>)
 Steps: <n>
 Version: 1.0
+🔗 ${BLUEKIWI_URL}/workflows/${WORKFLOW_ID}
 
 Type `/bk-run` to execute it now.
 ```

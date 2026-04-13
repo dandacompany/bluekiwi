@@ -128,9 +128,19 @@ Call `list_workflows` to retrieve the list.
 
 **Multiple workflows**: Show selection via AskUserQuestion.
 
-### 2. Create Task
+### 2. Create Task + Open Monitoring Page
 
 Call `start_workflow`. Pass any argument as `context`.
+
+<HARD-RULE>
+After `start_workflow` returns the task_id, immediately open the task monitoring page in the user's browser:
+
+```bash
+open "${BLUEKIWI_URL:-http://localhost:3100}/tasks/${TASK_ID}"
+```
+
+Use `open` on macOS, `xdg-open` on Linux. Derive `BLUEKIWI_URL` from the MCP connection or default to `http://localhost:3100`.
+</HARD-RULE>
 
 ### 3. Execute First Step + Auto-Advance Loop
 
@@ -144,6 +154,8 @@ After execution, save with `execute_step`, then check the response for `next_act
 Starting: {workflow title} ({n} steps)
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 **1** → 2 → 3 → 4 → 5 → 6 → 7
+━━━━━━━━━━━━━━━━━━━━━━━━━
+📺 Live: ${BLUEKIWI_URL}/tasks/${TASK_ID}
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -165,7 +177,14 @@ Call `request_approval`, then immediately show the HITL approval AskUserQuestion
 
 #### Gate step (no next_action, node_type=gate)
 
-- If `visual_selection: true` → call `set_visual_html` with interactive HTML, then poll `get_web_response` every 3-5 seconds until a response arrives (max 120 seconds). When the response arrives, use it as the gate answer and call `advance`.
+- If `visual_selection: true`:
+  1. Call `set_visual_html` with interactive HTML
+  2. Open the VS deep link in the browser so the user can see and click the selection UI:
+     ```bash
+     open "${BLUEKIWI_URL:-http://localhost:3100}/tasks/${TASK_ID}?step=${STEP_ORDER}&vs=true"
+     ```
+  3. Poll `get_web_response` every 3-5 seconds until a response arrives (max 120 seconds)
+  4. When the response arrives, use it as the gate answer and call `advance`
 - If `visual_selection: false` → present the gate question to the user via AskUserQuestion. Use the response as gate answer, call `execute_step` with the answer, then `advance`.
 
 #### Attachments

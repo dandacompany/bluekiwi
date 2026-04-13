@@ -92,6 +92,9 @@ interface StepDetailProps {
   comments?: StepComment[];
   onAddComment?: (body: string) => void;
   onRefresh?: () => void;
+  /** Deep link: auto-open VS dialog when true */
+  autoOpenVs?: boolean;
+  onVsOpened?: () => void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -264,6 +267,8 @@ function VisualSelector({
   isVisualSelection,
   logStatus,
   onSelected,
+  autoOpen,
+  onAutoOpened,
 }: {
   html: string;
   taskId: number;
@@ -271,16 +276,27 @@ function VisualSelector({
   isVisualSelection: boolean;
   logStatus: string;
   onSelected?: () => void;
+  autoOpen?: boolean;
+  onAutoOpened?: () => void;
 }) {
   const { t } = useTranslation();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [open, setOpen] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const canSelect =
     isVisualSelection &&
     (logStatus === "pending" || logStatus === "running") &&
     !submitted;
+
+  // Deep link: auto-open dialog
+  useEffect(() => {
+    if (autoOpen && !open) {
+      setOpen(true);
+      onAutoOpened?.();
+    }
+  }, [autoOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!canSelect) return;
@@ -314,7 +330,7 @@ function VisualSelector({
   }, [canSelect, taskId, nodeId, onSelected]);
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           {isVisualSelection && canSelect
@@ -448,6 +464,8 @@ export function StepDetail({
   comments,
   onAddComment,
   onRefresh,
+  autoOpenVs,
+  onVsOpened,
 }: StepDetailProps) {
   const { t } = useTranslation();
   const [commentInput, setCommentInput] = useState("");
@@ -576,6 +594,8 @@ export function StepDetail({
             taskId={taskId}
             taskStatus={taskStatus}
             onRefresh={onRefresh}
+            autoOpenVs={autoOpenVs}
+            onVsOpened={onVsOpened}
           />
         )}
 
@@ -587,6 +607,8 @@ export function StepDetail({
             taskStatus={taskStatus}
             thinkingOpen={primary.status === "running"}
             onRefresh={onRefresh}
+            autoOpenVs={autoOpenVs}
+            onVsOpened={onVsOpened}
           />
         )}
 
@@ -706,12 +728,16 @@ function StepContent({
   taskStatus,
   thinkingOpen,
   onRefresh,
+  autoOpenVs,
+  onVsOpened,
 }: {
   log: StepLog;
   taskId: number;
   taskStatus: string;
   thinkingOpen: boolean;
   onRefresh?: () => void;
+  autoOpenVs?: boolean;
+  onVsOpened?: () => void;
 }) {
   return (
     <div className="space-y-4">
@@ -741,6 +767,8 @@ function StepContent({
           isVisualSelection={!!log.visual_selection}
           logStatus={log.status}
           onSelected={() => onRefresh?.()}
+          autoOpen={autoOpenVs}
+          onAutoOpened={onVsOpened}
         />
       )}
 
@@ -771,11 +799,15 @@ function LoopIterations({
   taskId,
   taskStatus,
   onRefresh,
+  autoOpenVs,
+  onVsOpened,
 }: {
   logs: StepLog[];
   taskId: number;
   taskStatus: string;
   onRefresh?: () => void;
+  autoOpenVs?: boolean;
+  onVsOpened?: () => void;
 }) {
   const { t } = useTranslation();
   const [showPrevious, setShowPrevious] = useState(false);
@@ -819,6 +851,8 @@ function LoopIterations({
                 taskStatus={taskStatus}
                 thinkingOpen={false}
                 onRefresh={onRefresh}
+                autoOpenVs={autoOpenVs}
+                onVsOpened={onVsOpened}
               />
             </CardContent>
           </Card>
@@ -837,6 +871,8 @@ function LoopIterations({
           taskStatus={taskStatus}
           thinkingOpen={latest.status === "running"}
           onRefresh={onRefresh}
+          autoOpenVs={autoOpenVs}
+          onVsOpened={onVsOpened}
         />
       </div>
     </div>
