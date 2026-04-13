@@ -6,13 +6,13 @@
 
 **AI Agent Workflow Engine**
 
-Design reusable workflows, run them from any AI agent, and watch every step in real time.
+Design reusable workflows, run them from any AI coding agent, and watch every step in real time.
 
 [![npm](https://img.shields.io/npm/v/bluekiwi?color=4169e1)](https://www.npmjs.com/package/bluekiwi)
 [![Docker](https://img.shields.io/badge/ghcr.io-bluekiwi-b7cf57)](https://ghcr.io/dandacompany/bluekiwi)
-[![License: MIT](https://img.shields.io/badge/License-MIT-lightgrey)](LICENSE)
+[![License](https://img.shields.io/badge/License-Sustainable_Use-lightgrey)](LICENSE.md)
 
-[Quick Setup](#quick-setup) · [Usage](#usage) · [Features](#features) · [MCP Tools](#mcp-tools) · [CLI](#cli) · [Configuration](#configuration) · [Troubleshooting](#troubleshooting)
+[Quick Setup](#quick-setup) · [Skills](#skills) · [MCP Tools](#mcp-tools) · [CLI](#cli) · [Self-Hosting](#self-hosting) · [Contributing](#contributing)
 
 🌐 [한국어](README.ko.md)
 
@@ -22,323 +22,245 @@ Design reusable workflows, run them from any AI agent, and watch every step in r
 
 ## What is BlueKiwi?
 
-BlueKiwi is a self-hosted server that turns **multi-step agent instructions into reusable workflows**.
-
-You build a workflow once in the web UI, then any connected AI agent (Claude Code, Codex, Gemini CLI, …) can start it, execute steps, pause for human input, and complete it — all tracked in a live timeline your team can watch in the browser.
+BlueKiwi is a **self-hosted workflow engine for AI coding agents**. You design multi-step workflows once in the web UI, then any connected agent (Claude Code, Codex CLI, Gemini CLI, …) can start and execute them — with every step logged in a live timeline you can watch in the browser.
 
 ```
-You type:  /bk-start "code review"
+You type:  /bk-start "backend code review"
 
 Agent ──▶ BlueKiwi MCP ──▶ BlueKiwi Server ──▶ Web UI (live timeline)
           list_workflows      stores logs          your browser
-          start_workflow      enforces RBAC        comments / artifacts
+          start_workflow      enforces RBAC        comments / approvals
           execute_step        saves outputs
+          advance
 ```
 
-**No more copy-pasting prompts.** Your best agent workflows become institutional knowledge.
+**No more copy-pasting prompts.** Your best agent workflows become reusable institutional knowledge.
 
 ---
 
 ## Quick Setup
 
-### Option 1 — Docker (recommended)
+### Prerequisites
+
+- Docker + Docker Compose
+
+### 1. Download the compose file
 
 ```bash
 mkdir bluekiwi && cd bluekiwi
-
-# Download docker-compose and env template
 curl -L https://raw.githubusercontent.com/dandacompany/bluekiwi/main/docker-compose.yml -o docker-compose.yml
 curl -L https://raw.githubusercontent.com/dandacompany/bluekiwi/main/.env.example -o .env
+```
 
-# Set a strong password and secret (required)
-# Edit .env → DB_PASSWORD and JWT_SECRET
+### 2. Configure `.env`
 
+Open `.env` and set the two required values:
+
+```bash
+# Generate with: openssl rand -hex 16
+DB_PASSWORD=your_strong_password
+
+# Generate with: openssl rand -hex 32
+JWT_SECRET=your_jwt_secret
+```
+
+### 3. Start
+
+```bash
 docker compose up -d
 ```
 
-Open **http://localhost:3100** → complete the `/setup` page → you're the **superuser**.
+Open **http://localhost:3100/setup** → create your superuser account. The `/setup` page is only available until the first account is created.
 
-> The stack runs Next.js on port `3100` (configurable via `APP_PORT`), PostgreSQL, and Redis — all in Docker.
+> The stack runs the Next.js app on port `3100` (configurable via `APP_PORT`), PostgreSQL 16, and Redis 7 — all managed by Docker.
 
-### Option 2 — Managed platforms
+### 4. Install the CLI
 
-One-click deploy templates are available under [`deploy/`](./deploy/) for:
+```bash
+npm install -g bluekiwi
+```
 
-| Platform         |                         |
-| ---------------- | ----------------------- |
-| Railway          | `deploy/railway.json`   |
-| Fly.io           | `deploy/fly.toml`       |
-| Render           | `deploy/render.yaml`    |
-| DigitalOcean App | `deploy/do-app.yaml`    |
-| Dokku            | `deploy/dokku-setup.sh` |
+Create an invite for yourself in **Settings → Team**, then:
+
+```bash
+bluekiwi accept <token> --server http://localhost:3100
+```
+
+This validates the invite, creates your account, issues an API key, detects your installed agent runtimes, and injects the BlueKiwi MCP server + skills into each one.
 
 ---
 
-## Usage
+## Skills
 
-### 1. First-time setup (superuser)
+After `bluekiwi accept`, you have these slash commands inside Claude Code (and other supported runtimes):
 
-After the server starts, navigate to **`/setup`** in your browser. This one-time wizard lets you create the superuser account. The `/setup` page is only available until the first account is created.
-
-If you're using the CLI directly (no invite), run:
-
-```bash
-npm install -g bluekiwi
-
-# Connect using an existing API key (superuser / admin use case)
-bluekiwi init --server https://your-bluekiwi-server.example.com --api-key bk_...
-```
-
-### 2. Invite your team
-
-Go to **Settings → Team** and create an invite link or token for each team member. Assign a role when creating the invite.
-
-### 3. Team members accept the invite
-
-```bash
-# Install the CLI
-npm install -g bluekiwi
-
-# Accept invite (interactive: asks for username + password, then selects runtimes)
-bluekiwi accept <token> --server https://your-bluekiwi-server.example.com
-
-# Verify the connection
-bluekiwi status
-```
-
-The `accept` command:
-
-1. Validates the invite token
-2. Prompts you to set a username and password
-3. Creates your account on the server and issues an API key
-4. Detects which agent runtimes are installed on your machine
-5. Installs the BlueKiwi MCP server and skills into each selected runtime
-6. Saves your credentials to `~/.bluekiwi/config.json`
-
-**Non-interactive / CI mode** — skip prompts by passing flags or environment variables:
-
-```bash
-bluekiwi accept <token> --server <url> --username alice --password secret
-```
-
-### 4. Use workflows from your agent
-
-Inside Claude Code (or any supported runtime), you now have these slash commands:
-
-| Command                | What it does                   |
-| ---------------------- | ------------------------------ |
-| `/bk-start <workflow>` | Start a workflow by name or ID |
-| `/bk-next`             | Advance to the next step       |
-| `/bk-status`           | Show current task progress     |
-| `/bk-rewind <step>`    | Jump back to a previous step   |
+| Command                | Description                                                                                  |
+| ---------------------- | -------------------------------------------------------------------------------------------- |
+| `/bk-start [workflow]` | Start or resume a workflow. Handles session restore, timed-out tasks, and HITL gates inline. |
+| `/bk-design [goal]`    | Design and register a new workflow from a natural-language description.                      |
+| `/bk-approve`          | Approve a paused HITL step when resuming a session mid-approval.                             |
+| `/bk-improve`          | Analyze a completed task and suggest workflow improvements.                                  |
+| `/bk-report`           | Generate a structured report for a completed task.                                           |
+| `/bk-instruction`      | Create or update an instruction template in the library.                                     |
+| `/bk-rewind`           | Rewind the current task to a previous step.                                                  |
+| `/bk-status`           | Show current task progress and step details.                                                 |
+| `/bk-version`          | Show or switch the active workflow version.                                                  |
+| `/bk-credential`       | List or create credentials available to the agent.                                           |
+| `/bk-scan`             | Run compliance pattern scans on the local repository.                                        |
+| `/bk-share`            | Share a folder with a user group.                                                            |
 
 **Example session:**
 
 ```
 You:   /bk-start "backend code review"
 
-Agent: Starting workflow "Backend Code Review" (6 steps)
-       Step 1/6 — Read changed files and summarize scope
-       [... executes ...]
-       Step 2/6 — Check for security issues
-       ⏸ Gate: Please review my findings and approve to continue.
+Agent: → Starting "Backend Code Review" (6 steps)
+         Step 1/6 — Summarize scope
+         [executes ...]
+         Step 2/6 — Security check
+         ⏸  Gate: Review findings and approve to continue.
+         [waits for human]
 
-You:   /bk-next
+You:   /bk-approve
 
-Agent: Step 3/6 — Performance analysis
-       [... continues ...]
+Agent: → Approved. Step 3/6 — Performance analysis ...
 ```
 
-While the agent runs, your team can watch the live timeline at  
-`https://your-server/tasks/{id}` — with structured outputs, comments, and artifacts per step.
-
-### 5. Build your own workflows
-
-Open the web UI → **Workflows → New Workflow** → add steps using the Cmd+K node picker.
-
-Three step types:
-
-- **Action** — the agent executes autonomously
-- **Gate** — pauses and waits for human approval before continuing
-- **Loop** — repeats until a condition is met
-
-Each step has an **instruction** field (what the agent should do) and an optional **structured output schema** (JSON schema the agent must fill in when the step completes).
+While the agent runs, watch the live timeline at **`http://localhost:3100/tasks/{id}`**.
 
 ---
 
-## Features
+## Workflow Builder
 
-### Live Timeline
+Open the web UI → **Workflows → New** → add steps.
 
-Every task execution is tracked step-by-step. Each step shows:
+### Node types
 
-- **Thinking** — the agent's reasoning
-- **Output** — the assistant response
-- **User input** — what the human provided at Gate steps
-- **Artifacts** — any files the agent saved
-- **Comments** — your team's notes on that step
+| Type       | Behavior                                                                                                                                                                                                                                                    |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Action** | Agent executes autonomously and advances automatically.                                                                                                                                                                                                     |
+| **Gate**   | Agent pauses and waits for the next `/bk-start` call or human signal to continue. Enable **Visual Selection** to render a click-based HTML UI (bk-options, bk-checklist, bk-slider, …) that the agent writes and the user interacts with in a popup dialog. |
+| **Loop**   | Agent repeats the step until a condition is met, then jumps forward.                                                                                                                                                                                        |
 
-### Workflow Editor
+### HITL (Human-in-the-Loop)
 
-- Drag-and-drop step reordering
-- **Cmd+K** node picker — search saved instruction templates
-- Horizontal minimap — full pipeline overview
-- Version history — every edit is non-destructive
+Mark any **Action** node as `hitl=true` to require explicit human approval before the agent can advance. The agent calls `request_approval` and stops; a human reviews the output in the web UI and clicks **Approve**.
 
-### Multi-Runtime Support
+### Task lifecycle
 
-| Runtime     | Auto-configured by `bluekiwi accept` |
-| ----------- | ------------------------------------ |
-| Claude Code | `~/.claude/mcp.json`                 |
-| Codex CLI   | `~/.codex/config.toml`               |
-| Gemini CLI  | `~/.gemini/settings.json`            |
-| OpenCode    | `~/.opencode/mcp.json`               |
-| OpenClaw    | `~/.openclaw/mcp.json`               |
+```
+pending → running → completed
+                  → failed
+                  → timed_out   (inactive for 2+ hours; /bk-start offers resume)
+```
 
-After installing, BlueKiwi also copies its built-in skills (e.g., `/bk-start`) into each runtime's skills directory so they're available as slash commands immediately.
-
-### Security & RBAC
-
-- **4-tier roles**: `superuser` → `admin` → `editor` → `viewer`
-- **API keys**: `bk_` prefix, SHA-256 hashed, with expiry and revocation
-- **No default credentials** — first visitor runs `/setup` to create the superuser account
-- The MCP server has **no direct DB access** — all requests go through the authenticated REST API
-
-### Internationalization
-
-Built-in Korean / English toggle. Add more languages by dropping a JSON file into `src/lib/i18n/`.
+Tasks can be **rewound** to any previous step from the web UI or via `/bk-rewind`.
 
 ---
 
 ## MCP Tools
 
-The `bluekiwi` MCP server exposes 16 tools your agent runtime can call:
+The `bluekiwi` MCP server exposes tools your agent runtime calls automatically. Full reference at **`/docs`** on your running server (Swagger UI + OpenAPI JSON).
 
-| Tool               | Description                       |
-| ------------------ | --------------------------------- |
-| `list_workflows`   | List all available workflows      |
-| `start_workflow`   | Start a workflow → creates a task |
-| `execute_step`     | Save the current step's output    |
-| `advance`          | Move to the next step             |
-| `heartbeat`        | Send progress ping (keep-alive)   |
-| `complete_task`    | Mark the task as done             |
-| `rewind`           | Jump back to a previous step      |
-| `get_web_response` | Fetch a URL (for Gate steps)      |
-| `submit_visual`    | Attach a screenshot/image         |
-| `save_artifacts`   | Persist files to the task         |
-| `load_artifacts`   | Load previously saved files       |
-| `get_comments`     | Read team comments on a step      |
-| `list_credentials` | List stored API secrets           |
-| `create_workflow`  | Create a new workflow via API     |
-| `update_workflow`  | Update an existing workflow       |
-| `delete_workflow`  | Delete a workflow                 |
+### Workflow execution
 
-**Run the MCP server manually** (for testing or custom integration):
+| Tool             | Description                                               |
+| ---------------- | --------------------------------------------------------- |
+| `list_workflows` | List workflows visible to the current user                |
+| `start_workflow` | Start a task from a workflow                              |
+| `execute_step`   | Submit the current step's output                          |
+| `advance`        | Move to the next step (or `peek=true` to inspect current) |
+| `heartbeat`      | Append progress ping to keep the step alive               |
+| `complete_task`  | Mark the task as completed or failed                      |
+| `rewind`         | Jump back to a previous step                              |
 
-```bash
-cd mcp && npm install && npm run build
-BLUEKIWI_API_URL=https://your-server.example.com \
-BLUEKIWI_API_KEY=bk_... \
-node dist/server.js
-```
+### Visual Selection
 
-Full OpenAPI spec available at **`/docs`** on your running server (Swagger UI).
+| Tool               | Description                                                     |
+| ------------------ | --------------------------------------------------------------- |
+| `set_visual_html`  | Write bk-\* component HTML for a visual_selection gate node     |
+| `get_web_response` | Fetch the user's click response after they submit the VS dialog |
+| `submit_visual`    | Attach rendered HTML to a step (lower-level alternative)        |
+
+### Human approval (HITL)
+
+| Tool               | Description                                                   |
+| ------------------ | ------------------------------------------------------------- |
+| `request_approval` | Signal that a human must approve before the agent can advance |
+| `approve_step`     | Approve the current HITL step (only called by `/bk-approve`)  |
+
+### Task data
+
+| Tool                              | Description                                                |
+| --------------------------------- | ---------------------------------------------------------- |
+| `list_tasks`                      | List tasks with optional filters (status, workflow, query) |
+| `get_comments`                    | Read team comments on a step                               |
+| `save_artifacts`                  | Persist files or references to the task                    |
+| `load_artifacts`                  | Load previously saved artifacts                            |
+| `save_feedback`                   | Save post-workflow feedback survey responses               |
+| `save_findings` / `list_findings` | Save or retrieve compliance scan findings                  |
+
+### Workflow management
+
+| Tool                                                          | Description                            |
+| ------------------------------------------------------------- | -------------------------------------- |
+| `create_workflow` / `update_workflow` / `delete_workflow`     | Full CRUD                              |
+| `list_workflow_versions`                                      | List all versions in a workflow family |
+| `activate_workflow` / `deactivate_workflow`                   | Toggle active version                  |
+| `append_node` / `insert_node` / `update_node` / `remove_node` | Node-level CRUD                        |
+
+### Attachments
+
+| Tool                                      | Description                                     |
+| ----------------------------------------- | ----------------------------------------------- |
+| `list_attachments` / `get_attachment`     | Browse and download node file attachments       |
+| `upload_attachment` / `delete_attachment` | Add or remove text file attachments from a node |
+
+### Instructions & Credentials
+
+| Tool                                                                                     | Description                  |
+| ---------------------------------------------------------------------------------------- | ---------------------------- |
+| `list_instructions` / `create_instruction` / `update_instruction` / `delete_instruction` | Instruction template library |
+| `list_credentials` / `create_credential` / `update_credential` / `delete_credential`     | Credential store             |
+
+### Folders & sharing
+
+| Tool                                 | Description                            |
+| ------------------------------------ | -------------------------------------- |
+| `list_folders` / `create_folder`     | Browse and create folders              |
+| `share_folder` / `unshare_folder`    | Share a folder with a user group       |
+| `move_workflow` / `move_instruction` | Move items between folders             |
+| `transfer_workflow`                  | Transfer ownership to another user     |
+| `list_my_groups`                     | List user groups the caller belongs to |
+
+### Compliance
+
+| Tool        | Description                                                                      |
+| ----------- | -------------------------------------------------------------------------------- |
+| `scan_repo` | Run static pattern scans on the local filesystem (runs in-process, not via REST) |
 
 ---
 
 ## CLI
 
-### Installation
-
 ```bash
 npm install -g bluekiwi
 ```
 
-### Commands
+| Command                                        | Description                                          |
+| ---------------------------------------------- | ---------------------------------------------------- |
+| `bluekiwi accept <token> --server <url>`       | Accept a team invite and configure agent runtimes    |
+| `bluekiwi init --server <url> --api-key <key>` | Connect with an existing API key (superuser / admin) |
+| `bluekiwi status`                              | Show connection status and current user info         |
+| `bluekiwi runtimes list`                       | Show supported runtimes and their install status     |
+| `bluekiwi runtimes add <name>`                 | Install BlueKiwi into an additional runtime          |
+| `bluekiwi runtimes remove <name>`              | Remove BlueKiwi from a runtime                       |
+| `bluekiwi logout`                              | Log out and remove all credentials                   |
+| `bluekiwi upgrade`                             | Upgrade CLI and refresh MCP assets in all runtimes   |
 
-| Command                           | Description                                          |
-| --------------------------------- | ---------------------------------------------------- |
-| `bluekiwi accept <token>`         | Accept a team invite and configure runtimes          |
-| `bluekiwi init`                   | Connect with an existing API key (no invite)         |
-| `bluekiwi status`                 | Show connection status and current user info         |
-| `bluekiwi workflows`              | List available workflows                             |
-| `bluekiwi run <workflow-id>`      | Start a workflow (prints task ID and web UI link)    |
-| `bluekiwi runtimes list`          | Show all supported runtimes and their install status |
-| `bluekiwi runtimes add <name>`    | Install BlueKiwi into an additional runtime          |
-| `bluekiwi runtimes remove <name>` | Uninstall BlueKiwi from a runtime                    |
-| `bluekiwi logout`                 | Log out and uninstall from all runtimes              |
-| `bluekiwi upgrade`                | Upgrade to the latest CLI and refresh assets         |
+**Supported runtimes:**
 
-**`bluekiwi accept`** — full flag reference:
-
-```bash
-bluekiwi accept <token> \
-  --server   <url>        # BlueKiwi server URL (required)
-  --username <name>       # Skip username prompt
-  --password <pass>       # Skip password prompt
-```
-
-**`bluekiwi init`** — connect using an existing API key (admin / superuser workflow):
-
-```bash
-bluekiwi init \
-  --server  <url>    # or env BLUEKIWI_SERVER
-  --api-key <key>    # or env BLUEKIWI_API_KEY
-  --runtime <name>   # repeat for multiple; or env BLUEKIWI_RUNTIMES=claude-code,codex
-  --yes              # non-interactive (use detected runtimes)
-```
-
----
-
-## Configuration
-
-### `~/.bluekiwi/config.json`
-
-After running `bluekiwi accept` or `bluekiwi init`, your credentials are stored at:
-
-```
-~/.bluekiwi/config.json   (mode 0600 — owner read/write only)
-~/.bluekiwi/              (mode 0700 — owner access only)
-```
-
-The file contains:
-
-```json
-{
-  "version": "1.0.0",
-  "server_url": "https://your-bluekiwi-server.example.com",
-  "api_key": "bk_...",
-  "user": {
-    "id": 1,
-    "username": "alice",
-    "email": "alice@example.com",
-    "role": "editor"
-  },
-  "runtimes": ["claude-code", "codex"],
-  "installed_at": "2026-01-01T00:00:00.000Z",
-  "last_used": "2026-01-01T00:00:00.000Z"
-}
-```
-
-To inspect the current config:
-
-```bash
-cat ~/.bluekiwi/config.json
-# or
-bluekiwi status
-```
-
-To reset (log out and remove credentials):
-
-```bash
-bluekiwi logout
-```
-
-### MCP config files (per runtime)
-
-`bluekiwi accept` / `bluekiwi init` injects the MCP server entry directly into each runtime's config:
-
-| Runtime     | Config file modified      |
+| Runtime     | Config injected           |
 | ----------- | ------------------------- |
 | Claude Code | `~/.claude/mcp.json`      |
 | Codex CLI   | `~/.codex/config.toml`    |
@@ -346,96 +268,87 @@ bluekiwi logout
 | OpenCode    | `~/.opencode/mcp.json`    |
 | OpenClaw    | `~/.openclaw/mcp.json`    |
 
-The injected entry runs the bundled `node dist/server.js` with two env vars:
-
-```
-BLUEKIWI_API_URL  = your server URL
-BLUEKIWI_API_KEY  = your API key
-```
-
-To add a runtime that wasn't installed when you first ran `accept`:
-
-```bash
-# Install the missing runtime first, then:
-bluekiwi runtimes add codex
-```
-
-To see which runtimes are detected and active:
-
-```bash
-bluekiwi runtimes list
-```
+After connecting, BlueKiwi also copies its built-in skills into each runtime's skills directory so slash commands are immediately available.
 
 ---
 
-## Troubleshooting
+## Self-Hosting
 
-**"Not authenticated" error**
+### Environment variables
 
-```
-Error: Not authenticated. Run `npx bluekiwi accept <token> --server <url>` first.
-```
+| Variable           | Required | Default                 | Description                        |
+| ------------------ | -------- | ----------------------- | ---------------------------------- |
+| `DB_PASSWORD`      | ✅       | —                       | PostgreSQL password                |
+| `JWT_SECRET`       | ✅       | —                       | JWT signing secret (min 32 chars)  |
+| `APP_PORT`         |          | `3100`                  | Host port for the web UI           |
+| `PUBLIC_URL`       |          | `http://localhost:3100` | Public URL shown in invite links   |
+| `BLUEKIWI_VERSION` |          | `latest`                | Pin a specific image tag           |
+| `RESEND_API_KEY`   |          | —                       | Enables email delivery for invites |
+| `FROM_EMAIL`       |          | —                       | Sender address for invite emails   |
 
-`~/.bluekiwi/config.json` is missing or corrupted. Re-run `bluekiwi accept` or `bluekiwi init`.
+### One-click deploy
 
----
+| Platform         | Template                       |
+| ---------------- | ------------------------------ |
+| Railway          | `deploy/railway.json`          |
+| Fly.io           | `deploy/fly.toml`              |
+| Render           | `deploy/render.yaml`           |
+| DigitalOcean App | `deploy/digitalocean-app.yaml` |
+| Dokku            | `deploy/dokku/`                |
 
-**"Connection failed" in `bluekiwi status`**
+### Database migrations
 
-The server is unreachable or the API key has been revoked. Check:
+The app runs migrations automatically on startup. For a fresh install, Docker loads `docker/init.sql` which creates the complete schema and marks the initial migration as applied — no manual steps needed.
 
-- The server URL in `~/.bluekiwi/config.json` is correct
-- The server is running (`docker compose ps`)
-- Your API key is not expired or revoked (**Settings → API Keys** in the web UI)
-
----
-
-**Runtime not detected by `bluekiwi accept`**
-
-The CLI checks for runtime binaries at install time. If you install a new agent runtime after running `bluekiwi accept`, add it manually:
-
-```bash
-bluekiwi runtimes add claude-code   # or: codex, gemini-cli, opencode, openclaw
-```
-
----
-
-**Slash commands not appearing in Claude Code**
-
-BlueKiwi installs skills files into `~/.claude/skills/`. If they're missing, re-run:
+To run migrations manually (e.g., in a CI pipeline):
 
 ```bash
-bluekiwi runtimes remove claude-code
-bluekiwi runtimes add claude-code
+npx tsx scripts/migrate.ts
 ```
+
+### Upgrading
+
+Pull the new image and restart:
+
+```bash
+docker compose pull && docker compose up -d
+```
+
+Migrations run automatically on the next app start.
 
 ---
 
-**Upgrading the CLI**
+## Security & RBAC
 
-```bash
-bluekiwi upgrade
-# Equivalent to: npm install -g bluekiwi@latest + reinstall assets into all runtimes
-```
+- **4-tier roles**: `superuser` → `admin` → `editor` → `viewer`
+- **API keys**: `bk_` prefix, SHA-256 hashed, with expiry and revocation
+- **Folders**: personal / group / public visibility with 2-level hierarchy
+- **Sharing**: grant groups `reader` or `contributor` access to specific folders
+- **No default credentials** — the superuser account is created on first visit to `/setup`
+- **MCP has no direct DB access** — all calls go through the authenticated REST API
 
 ---
 
 ## Contributing
 
-Issues and PRs are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup, architecture notes, and the database schema.
-
 ```bash
-# Local dev stack (hot reload)
 git clone https://github.com/dandacompany/bluekiwi.git
 cd bluekiwi
 bash scripts/dev.sh start
+# App:     http://localhost:3100
+# DB:      localhost:5433
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture notes, dev commands, and how to add migrations.
+
+Issues and PRs are welcome.
 
 ---
 
 ## License
 
-MIT — see [LICENSE](LICENSE).  
+[Sustainable Use License](LICENSE.md) — free for personal and internal business use.  
+Commercial redistribution or SaaS hosting requires a separate agreement.  
 Copyright © 2026 Dante Labs.
 
 ---
