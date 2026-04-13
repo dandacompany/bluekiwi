@@ -241,12 +241,17 @@ export const DELETE = withAuth(
 
     const isSelf = caller.id === userId;
 
-    // Permission: self-delete allowed for anyone, admin+ can delete others
+    // Permission: self-delete allowed for anyone, admin+ can delete lower roles
     if (!isSelf) {
-      const callerLevel = { viewer: 0, editor: 1, admin: 2, superuser: 3 }[
-        caller.role
-      ];
-      if (callerLevel < 2) {
+      const roleLevel: Record<string, number> = {
+        viewer: 0,
+        editor: 1,
+        admin: 2,
+        superuser: 3,
+      };
+      const callerLevel = roleLevel[caller.role] ?? 0;
+      const targetLevel = roleLevel[target.role] ?? 0;
+      if (callerLevel < 2 || callerLevel <= targetLevel) {
         const res = errorResponse("FORBIDDEN", "forbidden", 403);
         return NextResponse.json(res.body, { status: res.status });
       }

@@ -75,7 +75,14 @@ const ROLE_BADGE_VARIANT: Record<string, "default" | "secondary" | "outline"> =
     viewer: "outline",
   };
 
-export function TeamTab() {
+const ROLE_LEVEL: Record<string, number> = {
+  viewer: 0,
+  editor: 1,
+  admin: 2,
+  superuser: 3,
+};
+
+export function TeamTab({ callerRole }: { callerRole: string }) {
   const { t } = useTranslation();
   const [members, setMembers] = useState<Member[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
@@ -467,7 +474,8 @@ export function TeamTab() {
                             ? t("team.roleViewer")
                             : member.role}
                     </Badge>
-                    {member.role !== "superuser" && (
+                    {(ROLE_LEVEL[callerRole] ?? 0) >
+                      (ROLE_LEVEL[member.role] ?? 0) && (
                       <DeleteUserDialog
                         target={{
                           id: member.id,

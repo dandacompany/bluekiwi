@@ -159,7 +159,7 @@ export default function SettingsPage() {
 
           {isAdmin && (
             <TabsContent value="team">
-              <TeamTab />
+              <TeamTab callerRole={user.role} />
             </TabsContent>
           )}
 
