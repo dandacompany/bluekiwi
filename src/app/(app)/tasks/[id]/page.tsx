@@ -255,12 +255,10 @@ export default function TaskDetailPage() {
     if (!task) return;
     const stepParam = searchParams.get("step");
     const vsParam = searchParams.get("vs");
-    if (stepParam) {
-      setSelectedStep(Number(stepParam));
-    }
-    if (vsParam === "true") {
-      setAutoOpenVs(true);
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (stepParam) setSelectedStep(Number(stepParam));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (vsParam === "true") setAutoOpenVs(true);
   }, [task, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useWs((msg) => {

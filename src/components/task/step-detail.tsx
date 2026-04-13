@@ -340,6 +340,7 @@ function VisualSelector({
     if (!isFragment(html)) return html;
     // Lazy import to avoid bundling 30KB constant when not needed
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { VS_FRAME_TEMPLATE } = require("@/lib/vs-frame");
       const theme =
         typeof document !== "undefined" &&
@@ -362,6 +363,7 @@ function VisualSelector({
   // Deep link: auto-open dialog
   useEffect(() => {
     if (autoOpen && !open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOpen(true);
       onAutoOpened?.();
     }
