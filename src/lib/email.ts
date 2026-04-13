@@ -188,14 +188,11 @@ function buildInviteHtml(params: {
             <tr><td style="background:#f3f4f6;border-radius:8px;padding:16px;">
               <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#374151;">AI 코딩 에이전트에서 바로 연결하기</p>
               <p style="margin:0 0 10px;font-size:12px;color:#6b7280;line-height:1.5;">
-                BlueKiwi CLI가 설치되어 있다면 아래 명령어 하나로 계정 생성부터 MCP 연결까지 완료됩니다.
+                아래 명령어를 터미널에 붙여넣으면 CLI 설치부터 계정 생성, MCP 연결까지 한 번에 완료됩니다.
               </p>
               <div style="background:#1f2937;border-radius:6px;padding:12px;">
-                <code style="font-family:monospace;font-size:12px;color:#f9fafb;word-break:break-all;">${cliCommand}</code>
+                <code style="font-family:monospace;font-size:12px;color:#f9fafb;word-break:break-all;">npm i -g bluekiwi && ${cliCommand}</code>
               </div>
-              <p style="margin:8px 0 0;font-size:11px;color:#9ca3af;">
-                CLI 미설치 시: <code style="font-family:monospace;">npm install -g bluekiwi</code>
-              </p>
             </td></tr>
           </table>
 
