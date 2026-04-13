@@ -4,7 +4,8 @@ FROM node:22-alpine AS base
 FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+    npm ci --ignore-scripts --prefer-offline --no-audit --progress=false
 
 # ─── Builder ───
 FROM base AS builder
@@ -13,13 +14,15 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 # Inject version from package.json into Next.js build (NEXT_PUBLIC_* is inlined at build time)
-RUN export NEXT_PUBLIC_APP_VERSION=$(node -p "require('./package.json').version") && npm run build
+RUN --mount=type=cache,target=/app/.next/cache \
+    export NEXT_PUBLIC_APP_VERSION=$(node -p "require('./package.json').version") && npm run build
 
 # ─── MCP Builder ───
 FROM base AS mcp-builder
 WORKDIR /app/mcp
 COPY mcp/package.json mcp/package-lock.json ./
-RUN npm ci --ignore-scripts
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+    npm ci --ignore-scripts --prefer-offline --no-audit --progress=false
 COPY mcp/ .
 RUN npx tsc
 
