@@ -513,7 +513,10 @@ export default function TutorialPage() {
                       ["execute_step", t("tutorial.s7ToolExecuteStep")],
                       ["list_attachments", t("tutorial.s7ToolListAttachments")],
                       ["get_attachment", t("tutorial.s7ToolGetAttachment")],
-                      ["upload_attachment", t("tutorial.s7ToolUploadAttachment")],
+                      [
+                        "upload_attachment",
+                        t("tutorial.s7ToolUploadAttachment"),
+                      ],
                       ["request_approval", t("tutorial.s7ToolRequestApproval")],
                       ["complete_task", t("tutorial.s7ToolCompleteTask")],
                       ["rewind", t("tutorial.s7ToolRewind")],

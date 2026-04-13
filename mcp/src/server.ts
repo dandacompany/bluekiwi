@@ -969,7 +969,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           throw new BlueKiwiAuthError();
         }
         if (!res.ok) {
-          throw new BlueKiwiApiError(res.status, await res.text().catch(() => ""));
+          throw new BlueKiwiApiError(
+            res.status,
+            await res.text().catch(() => ""),
+          );
         }
 
         const contentType = res.headers.get("content-type") ?? "";
@@ -980,7 +983,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         const disposition = res.headers.get("content-disposition") ?? "";
         const filenameMatch =
-          /filename\*=UTF-8''([^;]+)|filename=\"?([^\";]+)\"?/i.exec(disposition);
+          /filename\*=UTF-8''([^;]+)|filename=\"?([^\";]+)\"?/i.exec(
+            disposition,
+          );
         const filename = decodeURIComponent(
           filenameMatch?.[1] ?? filenameMatch?.[2] ?? "",
         );

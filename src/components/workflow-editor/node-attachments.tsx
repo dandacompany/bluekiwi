@@ -91,11 +91,7 @@ export default function NodeAttachments({
           /* ignore non-JSON body */
         }
         toast.error(
-          translateServerError(
-            body.error,
-            t,
-            "Failed to load attachments",
-          ),
+          translateServerError(body.error, t, "Failed to load attachments"),
         );
         return;
       }

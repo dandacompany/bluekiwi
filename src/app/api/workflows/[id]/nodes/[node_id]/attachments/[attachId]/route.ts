@@ -61,7 +61,11 @@ export const GET = withAuth<Params>(
 
     const attachment = await loadAttachment(attachmentId, nodeId, workflowId);
     if (!attachment) {
-      const res = errorResponse("NOT_FOUND", "첨부 파일을 찾을 수 없습니다", 404);
+      const res = errorResponse(
+        "NOT_FOUND",
+        "첨부 파일을 찾을 수 없습니다",
+        404,
+      );
       return NextResponse.json(res.body, { status: res.status });
     }
 
@@ -111,11 +115,17 @@ export const DELETE = withAuth<Params>(
 
     const attachment = await loadAttachment(attachmentId, nodeId, workflowId);
     if (!attachment) {
-      const res = errorResponse("NOT_FOUND", "첨부 파일을 찾을 수 없습니다", 404);
+      const res = errorResponse(
+        "NOT_FOUND",
+        "첨부 파일을 찾을 수 없습니다",
+        404,
+      );
       return NextResponse.json(res.body, { status: res.status });
     }
 
-    await execute("DELETE FROM node_attachments WHERE id = $1", [attachment.id]);
+    await execute("DELETE FROM node_attachments WHERE id = $1", [
+      attachment.id,
+    ]);
 
     const res = okResponse({ id: attachment.id, deleted: true });
     return NextResponse.json(res.body, { status: res.status });
