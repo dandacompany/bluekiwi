@@ -83,7 +83,7 @@ const ROLE_LEVEL: Record<string, number> = {
 };
 
 export function TeamTab({ callerRole }: { callerRole: string }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [members, setMembers] = useState<Member[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
@@ -145,6 +145,7 @@ export function TeamTab({ callerRole }: { callerRole: string }) {
         body: JSON.stringify({
           email: inviteEmail.trim(),
           role: inviteRole,
+          locale,
         }),
       });
 

@@ -153,19 +153,67 @@ async function sendViaResend(
   }
 }
 
+const EMAIL_STRINGS = {
+  ko: {
+    heading: "팀원으로 초대되었습니다",
+    body: (name: string, role: string) =>
+      `<strong>${name}</strong>님이 BlueKiwi에 <strong>${role}</strong> 역할로 초대했습니다.<br/>아래 버튼을 클릭해 계정을 생성하거나, CLI로 바로 연결할 수 있습니다.`,
+    acceptBtn: "초대 수락하기",
+    cliHeading: "AI 코딩 에이전트에서 바로 연결하기",
+    cliDesc:
+      "아래 명령어를 터미널에 붙여넣으면 CLI 설치부터 계정 생성, MCP 연결까지 한 번에 완료됩니다.",
+    linkExpiry: (d: string) =>
+      `이 링크는 <strong>${d}</strong>까지 유효합니다.`,
+    linkFallback: "버튼이 동작하지 않으면 아래 주소를 브라우저에 붙여넣으세요:",
+    footer:
+      "이 메일은 BlueKiwi에서 자동 발송되었습니다. 본인이 요청하지 않은 경우 무시하세요.",
+    subject: (name: string) => `${name}님이 BlueKiwi에 초대했습니다`,
+    roles: { admin: "관리자", editor: "편집자", viewer: "열람자" } as Record<
+      string,
+      string
+    >,
+  },
+  en: {
+    heading: "You've been invited to join the team",
+    body: (name: string, role: string) =>
+      `<strong>${name}</strong> has invited you to BlueKiwi as <strong>${role}</strong>.<br/>Click the button below to create your account, or connect directly via CLI.`,
+    acceptBtn: "Accept Invitation",
+    cliHeading: "Connect from your AI coding agent",
+    cliDesc:
+      "Paste the command below into your terminal to install the CLI, create your account, and connect MCP in one step.",
+    linkExpiry: (d: string) =>
+      `This link is valid until <strong>${d}</strong>.`,
+    linkFallback:
+      "If the button doesn't work, paste this URL into your browser:",
+    footer:
+      "This email was sent automatically by BlueKiwi. If you didn't request this, please ignore it.",
+    subject: (name: string) => `${name} invited you to BlueKiwi`,
+    roles: { admin: "Admin", editor: "Editor", viewer: "Viewer" } as Record<
+      string,
+      string
+    >,
+  },
+} as const;
+
+type EmailLocale = keyof typeof EMAIL_STRINGS;
+
 function buildInviteHtml(params: {
   inviterName: string;
-  roleLabel: string;
   inviteUrl: string;
   expires: string;
   serverUrl: string;
   token: string;
+  role: string;
+  locale: EmailLocale;
 }): string {
-  const { inviterName, roleLabel, inviteUrl, expires, serverUrl, token } =
+  const { inviterName, inviteUrl, expires, serverUrl, token, role, locale } =
     params;
+  const s = EMAIL_STRINGS[locale] ?? EMAIL_STRINGS.en;
+  const roleLabel = s.roles[role] ?? role;
   const cliCommand = `bluekiwi accept ${token} --server ${serverUrl}`;
+  const lang = locale === "ko" ? "ko" : "en";
   return `<!DOCTYPE html>
-<html lang="ko">
+<html lang="${lang}">
 <head><meta charset="UTF-8" /></head>
 <body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;padding:40px 0;">
@@ -175,20 +223,19 @@ function buildInviteHtml(params: {
           <span style="color:#ffffff;font-size:20px;font-weight:700;">🥝 BlueKiwi</span>
         </td></tr>
         <tr><td style="padding:32px;">
-          <h1 style="margin:0 0 8px;font-size:18px;font-weight:600;color:#111827;">팀원으로 초대되었습니다</h1>
+          <h1 style="margin:0 0 8px;font-size:18px;font-weight:600;color:#111827;">${s.heading}</h1>
           <p style="margin:0 0 24px;font-size:14px;color:#6b7280;line-height:1.6;">
-            <strong>${inviterName}</strong>님이 BlueKiwi에 <strong>${roleLabel}</strong> 역할로 초대했습니다.<br/>
-            아래 버튼을 클릭해 계정을 생성하거나, CLI로 바로 연결할 수 있습니다.
+            ${s.body(inviterName, roleLabel)}
           </p>
           <a href="${inviteUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 24px;border-radius:8px;">
-            초대 수락하기
+            ${s.acceptBtn}
           </a>
 
           <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 0;">
             <tr><td style="background:#f3f4f6;border-radius:8px;padding:16px;">
-              <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#374151;">AI 코딩 에이전트에서 바로 연결하기</p>
+              <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#374151;">${s.cliHeading}</p>
               <p style="margin:0 0 10px;font-size:12px;color:#6b7280;line-height:1.5;">
-                아래 명령어를 터미널에 붙여넣으면 CLI 설치부터 계정 생성, MCP 연결까지 한 번에 완료됩니다.
+                ${s.cliDesc}
               </p>
               <div style="background:#1f2937;border-radius:6px;padding:12px;">
                 <code style="font-family:monospace;font-size:12px;color:#f9fafb;word-break:break-all;">npm i -g bluekiwi && ${cliCommand}</code>
@@ -197,14 +244,14 @@ function buildInviteHtml(params: {
           </table>
 
           <p style="margin:24px 0 0;font-size:12px;color:#9ca3af;">
-            이 링크는 <strong>${expires}</strong>까지 유효합니다.<br/>
-            버튼이 동작하지 않으면 아래 주소를 브라우저에 붙여넣으세요:<br/>
+            ${s.linkExpiry(expires)}<br/>
+            ${s.linkFallback}<br/>
             <a href="${inviteUrl}" style="color:#2563eb;word-break:break-all;">${inviteUrl}</a>
           </p>
         </td></tr>
         <tr><td style="padding:16px 32px;border-top:1px solid #e5e7eb;">
           <p style="margin:0;font-size:11px;color:#9ca3af;">
-            이 메일은 BlueKiwi에서 자동 발송되었습니다. 본인이 요청하지 않은 경우 무시하세요.
+            ${s.footer}
           </p>
         </td></tr>
       </table>
@@ -220,12 +267,14 @@ export async function sendInviteEmail({
   role,
   inviterName,
   expiresAt,
+  locale = "en",
 }: {
   to: string;
   inviteUrl: string;
   role: string;
   inviterName: string;
   expiresAt: Date;
+  locale?: string;
 }): Promise<{ sent: boolean; error?: string }> {
   const cfg = await loadEmailConfig();
 
@@ -233,21 +282,23 @@ export async function sendInviteEmail({
     return { sent: false, error: "Email not configured" };
   }
 
-  const roleLabel =
-    role === "admin" ? "관리자" : role === "editor" ? "편집자" : "열람자";
-  const expires = expiresAt.toLocaleDateString("ko-KR");
+  const loc: EmailLocale = locale === "ko" ? "ko" : "en";
+  const s = EMAIL_STRINGS[loc];
+  const dateLocale = loc === "ko" ? "ko-KR" : "en-US";
+  const expires = expiresAt.toLocaleDateString(dateLocale);
   const parsedUrl = new URL(inviteUrl);
   const serverUrl = parsedUrl.origin;
   const token = parsedUrl.pathname.split("/invite/")[1] ?? "";
   const html = buildInviteHtml({
     inviterName,
-    roleLabel,
     inviteUrl,
     expires,
     serverUrl,
     token,
+    role,
+    locale: loc,
   });
-  const subject = `${inviterName}님이 BlueKiwi에 초대했습니다`;
+  const subject = s.subject(inviterName);
 
   if (cfg.provider === "smtp") {
     return sendViaSmtp(cfg, to, subject, html);

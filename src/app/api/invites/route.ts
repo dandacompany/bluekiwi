@@ -28,9 +28,10 @@ export async function POST(request: NextRequest) {
     return user;
   }
 
-  const { email, role } = (await request.json()) as {
+  const { email, role, locale } = (await request.json()) as {
     email?: unknown;
     role?: unknown;
+    locale?: unknown;
   };
 
   if (
@@ -66,6 +67,7 @@ export async function POST(request: NextRequest) {
     role,
     inviterName: user.username,
     expiresAt: new Date(rows[0].expires_at),
+    locale: typeof locale === "string" ? locale : "en",
   });
 
   return NextResponse.json({
