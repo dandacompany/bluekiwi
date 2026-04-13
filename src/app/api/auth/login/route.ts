@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { queryOne } from "@/lib/db";
 import { verifyPassword } from "@/lib/auth";
 import { createSession } from "@/lib/session";
+import { resolveOrigin } from "@/lib/url";
 
 interface UserRow {
   id: number;
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
   response.cookies.set("session", token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: (process.env.PUBLIC_URL ?? "").startsWith("https://"),
+    secure: resolveOrigin(req).startsWith("https://"),
     maxAge: 60 * 60 * 24 * 7,
     path: "/",
   });

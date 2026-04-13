@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateApiKey, hashPassword, type Role } from "@/lib/auth";
 import { errorResponse, queryOne, withTransaction } from "@/lib/db";
 import { isExpired } from "@/lib/invites";
+import { resolveOrigin } from "@/lib/url";
 
 type Params = { params: Promise<{ token: string }> };
 
@@ -130,7 +131,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   return NextResponse.json({
     api_key: rawKey,
-    server_url: process.env.PUBLIC_URL ?? "http://localhost:3100",
+    server_url: resolveOrigin(request),
     server_version: process.env.BLUEKIWI_VERSION ?? "0.0.0-dev",
     user: created,
   });

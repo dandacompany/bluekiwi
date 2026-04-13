@@ -8,6 +8,7 @@ import {
   inviteExpiresAt,
 } from "@/lib/invites";
 import { sendInviteEmail } from "@/lib/email";
+import { resolveOrigin } from "@/lib/url";
 import { verifySession } from "@/lib/session";
 
 type InviteRecord = {
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
     [token, email.trim(), role, user.id, expiresAt],
   );
 
-  const publicUrl = process.env.PUBLIC_URL ?? "http://localhost:3100";
+  const publicUrl = resolveOrigin(request);
   const inviteUrl = buildInviteUrl(publicUrl, token);
 
   // Best-effort email — invite is created regardless of email result
