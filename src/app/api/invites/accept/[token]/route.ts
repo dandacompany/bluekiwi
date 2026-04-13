@@ -74,12 +74,8 @@ export async function POST(request: NextRequest, { params }: Params) {
     password?: unknown;
   };
 
-  if (
-    typeof body.username !== "string" ||
-    !body.username.trim() ||
-    typeof body.password !== "string" ||
-    !body.password.trim()
-  ) {
+  // Password is always required; username only for new signups
+  if (typeof body.password !== "string" || !body.password.trim()) {
     return NextResponse.json({ error: "invalid_input" }, { status: 400 });
   }
 
@@ -137,6 +133,10 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "expired" }, { status: 410 });
   }
 
+  // New signup: username is required
+  if (typeof body.username !== "string" || !body.username.trim()) {
+    return NextResponse.json({ error: "invalid_input" }, { status: 400 });
+  }
   const username = body.username.trim();
   const password = body.password.trim();
 

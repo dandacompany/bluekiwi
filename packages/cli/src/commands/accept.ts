@@ -21,22 +21,46 @@ export async function acceptCommand(
     );
     process.exit(1);
   }
-  const invite = (await validateRes.json()) as { email: string; role: string };
+  const invite = (await validateRes.json()) as {
+    email: string;
+    role: string;
+    already_accepted?: boolean;
+  };
   console.log(pc.green(`✓ Invited as ${invite.email} (${invite.role})`));
 
-  const answers =
-    opts.username && opts.password
+  // If account already exists (e.g. signed up via web), only need password to re-link
+  const answers = invite.already_accepted
+    ? opts.password
+      ? { username: "", password: opts.password }
+      : await prompts([
+          {
+            type: "password",
+            name: "password",
+            message: "Enter your existing password to link this CLI",
+          },
+        ])
+    : opts.username && opts.password
       ? { username: opts.username, password: opts.password }
       : await prompts([
           { type: "text", name: "username", message: "Choose a username" },
           { type: "password", name: "password", message: "Set a password" },
         ]);
 
-  console.log(pc.cyan("→ Creating account..."));
+  console.log(
+    pc.cyan(
+      invite.already_accepted
+        ? "→ Linking account..."
+        : "→ Creating account...",
+    ),
+  );
   const acceptRes = await fetch(`${opts.server}/api/invites/accept/${token}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(answers),
+    body: JSON.stringify(
+      invite.already_accepted
+        ? { password: (answers as { password: string }).password }
+        : answers,
+    ),
   });
   if (!acceptRes.ok) {
     console.error(pc.red(`Accept failed: ${await acceptRes.text()}`));
@@ -46,7 +70,13 @@ export async function acceptCommand(
     api_key: string;
     user: { id: number; username: string; email: string; role: string };
   };
-  console.log(pc.green(`✓ Account created: ${result.user.username}`));
+  console.log(
+    pc.green(
+      invite.already_accepted
+        ? `✓ Linked to account: ${result.user.username}`
+        : `✓ Account created: ${result.user.username}`,
+    ),
+  );
 
   const client = new BlueKiwiClient(opts.server, result.api_key);
   await client.request("GET", "/api/workflows");
