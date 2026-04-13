@@ -26,7 +26,7 @@ services:
       DATABASE_URL: postgresql://bluekiwi:${DB_PASSWORD}@db:5432/bluekiwi
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
-      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3100}
+      PUBLIC_URL: ${PUBLIC_URL:-}
       BLUEKIWI_VERSION: ${BLUEKIWI_VERSION:-latest}
       WS_RELAY_URL: http://ws-relay:3001
     depends_on:
