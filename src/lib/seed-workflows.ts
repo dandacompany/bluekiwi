@@ -24,6 +24,7 @@ interface SeedWorkflow {
   title: string;
   description: string;
   version: string;
+  category?: string;
   nodes: SeedNode[];
 }
 
@@ -44,6 +45,36 @@ export async function seedBuiltinWorkflows(
     .filter((f) => f.endsWith(".json"))
     .sort();
 
+  // Resolve or create category sub-folders under the parent folder
+  const categoryFolderIds = new Map<string, number>();
+
+  async function resolveFolderId(category?: string): Promise<number> {
+    if (!category) return folderId;
+
+    const cached = categoryFolderIds.get(category);
+    if (cached) return cached;
+
+    // Re-use existing sub-folder if present
+    const existing = await queryOne<{ id: number }>(
+      `SELECT id FROM folders WHERE name = $1 AND parent_id = $2 AND owner_id = $3 LIMIT 1`,
+      [category, folderId, ownerId],
+    );
+    if (existing) {
+      categoryFolderIds.set(category, existing.id);
+      return existing.id;
+    }
+
+    // Create sub-folder
+    const rows = await query<{ id: number }>(
+      `INSERT INTO folders (name, description, owner_id, parent_id, visibility)
+       VALUES ($1, '', $2, $3, 'inherit')
+       RETURNING id`,
+      [category, ownerId, folderId],
+    );
+    categoryFolderIds.set(category, rows[0].id);
+    return rows[0].id;
+  }
+
   let seeded = 0;
 
   for (const file of files) {
@@ -57,12 +88,14 @@ export async function seedBuiltinWorkflows(
     );
     if (existing) continue;
 
+    const targetFolderId = await resolveFolderId(wf.category);
+
     // Insert workflow
     const rows = await query<{ id: number }>(
       `INSERT INTO workflows (title, description, version, owner_id, folder_id, is_active)
        VALUES ($1, $2, $3, $4, $5, true)
        RETURNING id`,
-      [wf.title, wf.description, wf.version, ownerId, folderId],
+      [wf.title, wf.description, wf.version, ownerId, targetFolderId],
     );
     const workflowId = rows[0].id;
 
