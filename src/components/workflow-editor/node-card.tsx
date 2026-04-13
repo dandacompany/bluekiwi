@@ -10,6 +10,7 @@ import { useTranslation } from "@/lib/i18n/context";
 
 interface NodeDraft {
   key: string;
+  dbNodeId: number | null;
   title: string;
   node_type: "action" | "gate" | "loop";
   source: "inline" | "reference";

@@ -35,6 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 import NodeCard from "./node-card";
+import NodeAttachments from "./node-attachments";
 import StepMinimap from "./step-minimap";
 import NodePicker, { type PickerResult } from "./node-picker";
 import { InstructionPicker } from "./instruction-picker";
@@ -55,6 +56,7 @@ interface CredentialOption {
 
 interface NodeDraft {
   key: string;
+  dbNodeId: number | null; // DB id — null for unsaved new nodes
   title: string;
   node_type: "action" | "gate" | "loop";
   source: "inline" | "reference";
@@ -160,6 +162,7 @@ export default function WorkflowEditor({
       setNodes(
         workflow.nodes.map(
           (n: {
+            id: number;
             title: string;
             node_type: string;
             instruction: string;
@@ -170,6 +173,7 @@ export default function WorkflowEditor({
             visual_selection: boolean;
           }) => ({
             key: newKey(),
+            dbNodeId: n.id,
             title: n.title,
             node_type: n.node_type as NodeDraft["node_type"],
             source: n.instruction_id ? "reference" : "inline",
@@ -197,6 +201,7 @@ export default function WorkflowEditor({
       ...nodes,
       {
         key: newKey(),
+        dbNodeId: null,
         title: "",
         node_type: "action",
         source: "inline",
@@ -746,6 +751,14 @@ export default function WorkflowEditor({
                                   ))}
                                 </select>
                               </div>
+                            )}
+
+                            {/* Attachments */}
+                            {workflowId && node.dbNodeId && (
+                              <NodeAttachments
+                                workflowId={workflowId}
+                                nodeId={node.dbNodeId}
+                              />
                             )}
                           </div>
                         </div>
