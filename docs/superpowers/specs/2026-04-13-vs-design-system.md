@@ -399,24 +399,20 @@ Parameters: task_id (required), node_id (optional)
 
 **Iteration numbering:** Computed as `ROW_NUMBER() OVER (PARTITION BY task_id, node_id ORDER BY id)`.
 
-### Storage Cleanup — `visual_html` Pruning
+### Storage Policy — `visual_html` Retention
 
-`visual_html` is rendering-only content (HTML fragments, potentially large). Only the latest iteration's visual_html is useful — previous iterations are stale.
+`visual_html` is rendering-only content (HTML fragments, potentially large). All iterations are preserved by default — no automatic pruning.
 
-**Cleanup strategy:**
-- When `execute_step` creates a new iteration log for a loop node, set `visual_html = NULL` on previous iteration logs for the same `(task_id, node_id)`.
-- `web_response` (JSON, lightweight) is always preserved across all iterations.
-- No scheduled cleanup needed — pruning happens inline during execution.
+**Default behavior:** Keep all `visual_html` and `web_response` across iterations. Data accumulates over time but remains queryable for audit/review.
 
-**SQL in execute_step handler:**
-```sql
--- When loop_continue=true, clear visual_html on older iterations
-UPDATE task_logs
-SET visual_html = NULL
-WHERE task_id = $1 AND node_id = $2 AND id != $3 AND visual_html IS NOT NULL
-```
+**Manual cleanup:** Settings page provides a "Clear visual HTML history" action that bulk-nullifies `visual_html` on completed tasks while preserving `web_response`.
 
-This keeps the DB lean while preserving all response history.
+**Implementation:**
+- Settings page: add "Storage" section with "Clear VS render cache" button
+- API: `POST /api/settings/cleanup-visual-html` (superuser only)
+- SQL: `UPDATE task_logs SET visual_html = NULL WHERE task_id IN (SELECT id FROM tasks WHERE status IN ('completed', 'failed')) AND visual_html IS NOT NULL`
+- Show affected row count + estimated freed size before confirmation
+- `web_response` is never touched — always preserved
 
 ---
 
