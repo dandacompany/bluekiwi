@@ -79,7 +79,10 @@
       "step_order": 9,
       "node_type": "action",
       "title": "보고서 생성 — CRISP-DM Deployment",
-      "instruction": "## Report Generation — Deployment\n\nCRISP-DM의 Deployment를 분석 보고서로 구현한다.\n\n### 보고서 구조 (피라미드 원칙)\n\n```markdown\n# {분석 제목}\n\n## Executive Summary (1페이지)\n- 핵심 발견 3개 (bullet point)\n- 추천 액션 (가장 임팩트 큰 것 먼저)\n- 예상 효과\n\n## Background\n- 분석 배경과 목적\n- 분석 기간과 범위\n\n## Methodology\n- 데이터 소스 (간략)\n- 분석 기법 (비전문가도 이해 가능하게)\n\n## Findings\n### Finding 1: {인사이트 제목}\n- [차트/시각화]\n- 해석\n- 액션 아이템\n\n### Finding 2: {인사이트 제목}\n...\n\n## Recommendations\n| 우선순위 | 액션 | 예상 효과 | 난이도 | 담당 |\n|----------|------|----------|--------|------|\n| 1 | ... | ... | ... | ... |\n\n## Appendix\n- 상세 데이터 테이블\n- 추가 시각화\n- 기술적 세부사항\n```\n\n### 산출물\n- `reports/YYYY-MM-DD-{topic}-analysis.md` — 전체 보고서\n- `output/figures/` — 시각화 파일\n- `notebooks/` — 재현 가능한 분석 노트북 (해당 시)\n\n### 재현성 보장\n- 분석에 사용된 코드/쿼리를 보고서에 첨부 또는 링크\n- 데이터 스냅샷 경로 명시\n- 환경 정보 (Python 버전, 주요 패키지 버전) 기록"
+      "instruction": "## Report Generation — Deployment\n\nCRISP-DM의 Deployment를 분석 보고서로 구현한다.\n\n### 보고서 구조 (피라미드 원칙)\n\n```markdown\n# {분석 제목}\n\n## Executive Summary (1페이지)\n- 핵심 발견 3개 (bullet point)\n- 추천 액션 (가장 임팩트 큰 것 먼저)\n- 예상 효과\n\n## Background\n- 분석 배경과 목적\n- 분석 기간과 범위\n\n## Methodology\n- 데이터 소스 (간략)\n- 분석 기법 (비전문가도 이해 가능하게)\n\n## Findings\n### Finding 1: {인사이트 제목}\n- [차트/시각화]\n- 해석\n- 액션 아이템\n\n### Finding 2: {인사이트 제목}\n...\n\n## Recommendations\n| 우선순위 | 액션 | 예상 효과 | 난이도 | 담당 |\n|----------|------|----------|--------|------|\n| 1 | ... | ... | ... | ... |\n\n## Appendix\n- 상세 데이터 테이블\n- 추가 시각화\n- 기술적 세부사항\n```\n\n### 산출물\n- `reports/YYYY-MM-DD-{topic}-analysis.md` — 전체 보고서\n- `output/figures/` — 시각화 파일\n- `notebooks/` — 재현 가능한 분석 노트북 (해당 시)\n\n### 재현성 보장\n- 분석에 사용된 코드/쿼리를 보고서에 첨부 또는 링크\n- 데이터 스냅샷 경로 명시\n- 환경 정보 (Python 버전, 주요 패키지 버전) 기록",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
     }
   ]
 }

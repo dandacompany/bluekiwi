@@ -61,7 +61,10 @@
       "step_order": 7,
       "node_type": "action",
       "title": "EDA 보고서 & 노트북 생성",
-      "instruction": "## EDA Report — 재현 가능한 보고서\n\n### 보고서 구조\n```markdown\n# EDA Report: {데이터셋명}\n\n## 1. Executive Summary\n- 데이터 개요 (크기, 기간, 소스)\n- Top 3 Findings (1문장씩)\n- 추천 다음 단계\n\n## 2. Data Overview\n- 프로파일 요약 테이블\n- 품질 점수\n- 결측 패턴\n\n## 3. Univariate Analysis\n- 핵심 변수별 분포 차트 + 해석\n- 이상치 요약\n\n## 4. Relationships\n- 상관관계 히트맵\n- 핵심 관계 심층 차트 + 해석\n\n## 5. Patterns & Anomalies\n- 발견된 세그먼트\n- 시간 패턴\n- 이상치 목록\n\n## 6. Conclusions & Next Steps\n- 비즈니스 의미 해석\n- 추천 액션\n- 추가 분석 제안\n```\n\n### Jupyter Notebook (선택)\n분석 재현을 위한 노트북을 생성한다:\n- 셀 단위로 실행 가능한 코드\n- 마크다운 셀로 해석 추가\n- 시각화 인라인 표시\n\n### 산출물 목록\n```\noutput/\n├── reports/YYYY-MM-DD-{name}-eda.md\n├── figures/\n│   ├── univariate/\n│   ├── multivariate/\n│   └── patterns/\n└── notebooks/{name}-eda.ipynb (선택)\n```\n\n보고서 경로를 사용자에게 안내한다."
+      "instruction": "## EDA Report — 재현 가능한 보고서\n\n### 보고서 구조\n```markdown\n# EDA Report: {데이터셋명}\n\n## 1. Executive Summary\n- 데이터 개요 (크기, 기간, 소스)\n- Top 3 Findings (1문장씩)\n- 추천 다음 단계\n\n## 2. Data Overview\n- 프로파일 요약 테이블\n- 품질 점수\n- 결측 패턴\n\n## 3. Univariate Analysis\n- 핵심 변수별 분포 차트 + 해석\n- 이상치 요약\n\n## 4. Relationships\n- 상관관계 히트맵\n- 핵심 관계 심층 차트 + 해석\n\n## 5. Patterns & Anomalies\n- 발견된 세그먼트\n- 시간 패턴\n- 이상치 목록\n\n## 6. Conclusions & Next Steps\n- 비즈니스 의미 해석\n- 추천 액션\n- 추가 분석 제안\n```\n\n### Jupyter Notebook (선택)\n분석 재현을 위한 노트북을 생성한다:\n- 셀 단위로 실행 가능한 코드\n- 마크다운 셀로 해석 추가\n- 시각화 인라인 표시\n\n### 산출물 목록\n```\noutput/\n├── reports/YYYY-MM-DD-{name}-eda.md\n├── figures/\n│   ├── univariate/\n│   ├── multivariate/\n│   └── patterns/\n└── notebooks/{name}-eda.ipynb (선택)\n```\n\n보고서 경로를 사용자에게 안내한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
     }
   ]
 }

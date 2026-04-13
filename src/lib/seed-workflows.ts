@@ -84,10 +84,10 @@ export async function seedBuiltinWorkflows(
           node.node_type,
           node.title,
           node.instruction,
-          node.loop_back_to,
+          node.loop_back_to ?? null,
           node.node_type === "action" && !node.hitl ? 1 : 0,
-          node.hitl,
-          node.visual_selection,
+          node.hitl ?? false,
+          node.visual_selection ?? false,
         ],
       );
     }

@@ -79,7 +79,10 @@
       "step_order": 9,
       "node_type": "action",
       "title": "학습 기록 & 스프린트 회고",
-      "instruction": "## Growth Learnings — 실험 학습 기록\n\n### 실험 카드 작성\n이 스프린트의 결과를 구조화하여 기록한다.\n\n```markdown\n# Growth Experiment Card\n\n## Meta\n- Date: {YYYY-MM-DD}\n- Sprint: #{N}\n- Funnel Stage: {AARRR 중 해당}\n- Decision: {KEEP / KILL / ITERATE}\n\n## Hypothesis\n{원래 가설}\n\n## Result\n- Primary Metric: {before} → {after} ({±N%})\n- Statistical Significance: {p-value}\n- Duration: {N days}\n\n## Learnings\n1. {핵심 학습 1}\n2. {핵심 학습 2}\n3. {예상과 다랐던 점}\n\n## Implications\n- 이 결과가 다른 실험에 미치는 영향\n- 후속 실험 아이디어\n\n## Assets\n- {관련 대시보드 링크}\n- {실험 설계 문서 경로}\n```\n\n### 스프린트 메트릭\n```\n📊 Growth Sprint Summary\n━━━━━━━━━━━━━━━━━━━━━━━━━\nExperiments Run: {N}\nKEEP: {N} / KILL: {N} / ITERATE: {N}\nTotal Lift: {primary metric 누적 변화}\nBiggest Win: {가장 큰 성과}\nBiggest Learning: {가장 중요한 교훈}\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n학습 카드를 `docs/growth/YYYY-MM-DD-experiment-{name}.md`에 저장한다."
+      "instruction": "## Growth Learnings — 실험 학습 기록\n\n### 실험 카드 작성\n이 스프린트의 결과를 구조화하여 기록한다.\n\n```markdown\n# Growth Experiment Card\n\n## Meta\n- Date: {YYYY-MM-DD}\n- Sprint: #{N}\n- Funnel Stage: {AARRR 중 해당}\n- Decision: {KEEP / KILL / ITERATE}\n\n## Hypothesis\n{원래 가설}\n\n## Result\n- Primary Metric: {before} → {after} ({±N%})\n- Statistical Significance: {p-value}\n- Duration: {N days}\n\n## Learnings\n1. {핵심 학습 1}\n2. {핵심 학습 2}\n3. {예상과 다랐던 점}\n\n## Implications\n- 이 결과가 다른 실험에 미치는 영향\n- 후속 실험 아이디어\n\n## Assets\n- {관련 대시보드 링크}\n- {실험 설계 문서 경로}\n```\n\n### 스프린트 메트릭\n```\n📊 Growth Sprint Summary\n━━━━━━━━━━━━━━━━━━━━━━━━━\nExperiments Run: {N}\nKEEP: {N} / KILL: {N} / ITERATE: {N}\nTotal Lift: {primary metric 누적 변화}\nBiggest Win: {가장 큰 성과}\nBiggest Learning: {가장 중요한 교훈}\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n학습 카드를 `docs/growth/YYYY-MM-DD-experiment-{name}.md`에 저장한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
     }
   ]
 }

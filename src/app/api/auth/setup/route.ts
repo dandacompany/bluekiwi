@@ -61,8 +61,8 @@ export async function POST(req: NextRequest) {
   const folderId = folderRows[0].id;
 
   // Seed built-in workflows
-  await seedBuiltinWorkflows(userId, folderId).catch(() => {
-    /* non-fatal — setup succeeds even if seeding fails */
+  await seedBuiltinWorkflows(userId, folderId).catch((err) => {
+    console.error("[seed] built-in workflow seeding failed:", err);
   });
 
   const token = await createSession({
