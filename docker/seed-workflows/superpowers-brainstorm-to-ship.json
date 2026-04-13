@@ -1,6 +1,6 @@
 {
-  "title": "기능 브레인스토밍",
-  "description": "brainstorming 스킬의 전체 흐름을 체인으로 구현. 컨텍스트 탐색 → 비주얼 컴패니언 → 명확화 질문 → 접근 방식 → 설계 → 검토 → 구현 전환 → 실제 구현(codex exec) → Advisor 리뷰 → 단순화 → 커밋",
+  "title": "Brainstorm-to-Ship (Superpowers / Jesse Vincent)",
+  "description": "Brainstorm → Spec → Plan → TDD → Build → Review → Ship. Jesse Vincent의 Superpowers 프레임워크 기반 풀사이클 개발 워크플로. 소크라틱 브레인스토밍으로 요구사항을 정제하고, TDD 규율로 구현하며, Advisor 리뷰로 품질을 보장한다.",
   "version": "1.0",
   "nodes": [
     {

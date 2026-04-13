@@ -1,0 +1,106 @@
+{
+  "title": "Spec-Driven Development (Addy Osmani)",
+  "description": "Spec → Plan → Chunk → Build → Review. Google Chrome 팀 Addy Osmani의 LLM 코딩 워크플로. '15분 워터폴' 스펙 문서로 시작하여 작은 청크 단위 TDD 반복으로 구현하고, AI-on-AI 리뷰와 인간 최종 검토로 마감한다.",
+  "version": "1.0",
+  "nodes": [
+    {
+      "step_order": 1,
+      "node_type": "gate",
+      "title": "아이디어 인테이크",
+      "instruction": "## Idea Intake — 무엇을 만들 것인가?\n\n사용자에게 만들고 싶은 것을 자유롭게 설명하도록 요청한다.\n\n### 수집할 정보\n- 무엇을 만들고 싶은가? (1-2문장)\n- 누가 사용하는가?\n- 기존에 비슷한 것이 있는가? 있다면 뭐가 다른가?\n\n자유 텍스트로 받되, 핵심 아이디어를 1문장으로 정리하여 확인을 요청한다.\n\n\"이 이해가 맞는지 확인해주세요: [요약]\"",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 2,
+      "node_type": "loop",
+      "title": "스펙 정교화 — 15분 워터폴",
+      "instruction": "## Spec Refinement — LLM이 질문, 사용자가 답변\n\nAddy Osmani의 '15분 워터폴' 방식: LLM이 체계적으로 질문하여 스펙을 정교화한다.\n\n### 질문 영역 (한 번에 하나씩, 객관식 우선)\n\n**1단계: 요구사항**\n- 핵심 기능은 무엇인가? (must-have vs nice-to-have)\n- 사용자 흐름에서 가장 중요한 경로는?\n- 에러 상태에서 무슨 일이 일어나야 하는가?\n\n**2단계: 아키텍처 결정**\n- 프론트엔드/백엔드 기술 스택은?\n- 데이터 모델의 핵심 엔티티는?\n- 외부 서비스 의존성이 있는가?\n\n**3단계: 엣지 케이스**\n- 동시 접근 시 어떻게 처리하는가?\n- 데이터가 없을 때/매우 많을 때 동작은?\n- 권한이 없는 사용자가 접근하면?\n\n**4단계: 테스트 전략**\n- 무엇이 동작하면 '완성'인가? (수치 기준)\n- 어떤 테스트를 어떤 레벨에서 작성하는가?\n\n### 규칙\n- 한 번에 하나의 질문만 한다\n- 가능하면 2-4개 선택지를 제시한다\n- 사용자의 답변이 모호하면 구체화를 요청한다\n- 이전 답변을 바탕으로 후속 질문을 조정한다\n\n종료 조건: 요구사항, 아키텍처 결정, 주요 엣지 케이스, 테스트 전략이 모두 명확해졌을 때.",
+      "loop_back_to": 2,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 3,
+      "node_type": "action",
+      "title": "spec.md 작성",
+      "instruction": "## Spec Document — 종합 스펙 문서 작성\n\n이전 단계의 모든 답변을 종합하여 `docs/specs/YYYY-MM-DD-{topic}-spec.md`에 저장한다.\n\n### 필수 섹션\n\n```markdown\n# {Feature Name} Specification\n\n## 1. Overview\n- Problem Statement (해결하는 문제)\n- Target Users (대상 사용자)\n- Success Metrics (성공 수치 기준)\n\n## 2. Requirements\n### Must-Have\n- [ ] ...\n### Nice-to-Have\n- [ ] ...\n\n## 3. Architecture\n- Tech Stack\n- Data Model (핵심 엔티티와 관계)\n- Component Diagram (ASCII)\n- External Dependencies\n\n## 4. User Flows\n- Primary Flow (주요 경로)\n- Error States\n- Edge Cases\n\n## 5. API Design\n- Endpoints (method, path, request, response)\n- Authentication/Authorization\n\n## 6. Testing Strategy\n- Unit Tests: 무엇을 커버하는가\n- Integration Tests: 어떤 경계를 검증하는가\n- E2E Tests: 어떤 사용자 흐름을 검증하는가\n- Acceptance Criteria: 각 기능별 완료 조건\n\n## 7. Out of Scope\n- 이번에 하지 않을 것 (명시적으로)\n```\n\n### 품질 기준\n- 모든 섹션에 구체적 내용이 있어야 한다 (TBD/TODO 금지)\n- 두 가지로 해석될 수 있는 요구사항은 하나를 선택하고 이유를 명시\n- 데이터 모델은 필드 레벨까지 정의\n- API 엔드포인트는 request/response 예시 포함",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 4,
+      "node_type": "gate",
+      "title": "스펙 승인",
+      "instruction": "## Spec Review — 사용자 검토\n\n작성된 스펙 문서의 경로를 안내하고 핵심 내용을 요약하여 보여준다.\n\n### 요약 형식\n```\n📋 Spec Summary\n━━━━━━━━━━━━━━━━━━━━━━━━━\nFeature: {name}\nMust-Have: {N}개 요구사항\nEntities: {엔티티 목록}\nEndpoints: {N}개 API\nTests: Unit {N} / Integration {N} / E2E {N}\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n사용자에게 검토를 요청한다:\n- 승인: 구현 계획으로 진행\n- 수정: 구체적 수정 사항 반영 후 재검토\n- 재작성: 스펙 정교화 단계로 되돌아감",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": true
+    },
+    {
+      "step_order": 5,
+      "node_type": "action",
+      "title": "프로젝트 계획 — 마일스톤 분해",
+      "instruction": "## Project Plan — 청크 단위 마일스톤\n\nAddy Osmani 원칙: 스펙을 reasoning-capable 모델에 넣어 논리적이고 작은 작업 단위로 분해한다.\n\n### 분해 원칙\n1. **의존성 역순**: 데이터 모델 → 비즈니스 로직 → API → UI 순\n2. **독립 실행 가능**: 각 청크는 단독으로 테스트 가능\n3. **1청크 = 1PR 규모**: 리뷰 가능한 크기 (파일 10개 이내)\n4. **테스트 포함**: 각 청크에 해당 테스트가 포함\n\n### 청크 구조\n```markdown\n## Chunk 1: {제목}\n- **Goal**: 완료 조건 1문장\n- **Files**: 생성/수정할 파일 전체 경로\n- **Tests**: 작성할 테스트와 검증 명령\n- **Depends on**: 선행 청크 (없으면 'none')\n- **Complexity**: 낮음/중간/높음\n```\n\n### 프롬프트 플랜\n각 청크를 실행할 프롬프트를 미리 작성한다 (Osmani의 'prompt plan'):\n```\nChunk 1 프롬프트: \"spec.md의 Section 3 데이터 모델을 구현하라. {entity} 테이블/타입을 생성하고 단위 테스트를 작성하라.\"\n```\n\n`docs/specs/YYYY-MM-DD-{topic}-plan.md`에 저장한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 6,
+      "node_type": "gate",
+      "title": "계획 승인",
+      "instruction": "## Plan Review — 구현 계획 승인\n\n### 제시 형식\n\n| Chunk | 목표 | 파일 수 | 복잡도 | 의존성 |\n|-------|------|---------|--------|--------|\n| 1 | ... | N | 낮음 | none |\n| 2 | ... | N | 중간 | Chunk 1 |\n\n**총 청크 수**: N개\n**예상 병렬 가능**: Chunk X, Y (상호 독립)\n\n### 선택지\n1. 승인 — 구현 시작\n2. 청크 조정 — 합치기/나누기\n3. 순서 변경\n4. 스펙으로 되돌아감",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": true
+    },
+    {
+      "step_order": 7,
+      "node_type": "loop",
+      "title": "청크별 TDD 구현",
+      "instruction": "## Chunked TDD Implementation — 청크 단위 반복 구현\n\nAddy Osmani 원칙: 각 청크를 TDD로 반복 구현한다. 이전 청크의 컨텍스트를 이어받아 점진적으로 빌드한다.\n\n### 각 청크 실행 순서\n\n**1. Red — 테스트 먼저 작성**\n- spec.md의 해당 Acceptance Criteria를 테스트로 변환\n- 테스트 실행 → 실패 확인 (red)\n- 실패하지 않는 테스트는 테스트가 아님\n\n**2. Green — 최소 구현**\n- 테스트를 통과하는 최소한의 코드 작성\n- 과도한 추상화 금지 — 3번 반복 전까지 구체적으로\n- 외부 입력만 검증, 내부 코드는 신뢰\n\n**3. Refactor — 정리**\n- 중복 제거\n- 네이밍 개선\n- 테스트가 여전히 통과하는지 확인\n\n### 청크 완료 보고\n```\nChunk N/M 완료\n  ✓ Tests: X passed, 0 failed\n  ✓ Files: path/to/file.ts (created)\n  ✓ Coverage: N% → M%\n  → Next: Chunk N+1 — {목표}\n```\n\n### heartbeat\n각 청크 완료 시 heartbeat로 진행 상황을 보고한다.\n\n종료 조건: 모든 청크가 완료되고, 전체 테스트 스위트가 통과할 때.",
+      "loop_back_to": 7,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 8,
+      "node_type": "action",
+      "title": "통합 테스트 & 스모크 테스트",
+      "instruction": "## Integration Verification — 전체 통합 검증\n\n모든 청크가 합쳐진 상태에서 전체 시스템을 검증한다.\n\n### 검증 항목\n\n1. **전체 테스트 스위트**\n   - `npm test` (또는 프로젝트의 테스트 명령)\n   - 모든 테스트 통과 확인\n   - 커버리지 기준 충족 여부\n\n2. **빌드 검증**\n   - `npm run build` 성공\n   - TypeScript 에러 없음\n   - 린트 경고 확인\n\n3. **스모크 테스트** (UI 변경 시)\n   - 핵심 사용자 흐름 수동 확인\n   - 콘솔 에러 없음\n   - 반응형 레이아웃 깨지지 않음\n\n4. **데이터 무결성** (DB 변경 시)\n   - 마이그레이션 정방향/역방향 테스트\n   - 기존 데이터 호환성 확인\n\n### 이슈 발견 시\n즉시 수정하고 해당 청크의 테스트를 다시 실행한다.\n수정 내용을 artifacts로 기록한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 9,
+      "node_type": "action",
+      "title": "AI-on-AI 코드 리뷰",
+      "instruction": "## AI-on-AI Code Review — 교차 검증\n\nAddy Osmani 원칙: AI가 작성한 코드를 다른 AI 관점에서 리뷰한다.\n\n### 리뷰 관점 3가지\n\n**1. 보안 리뷰어 관점**\n- 입력 검증이 충분한가?\n- SQL 인젝션, XSS, CSRF 벡터가 있는가?\n- 시크릿이 코드에 하드코딩되지 않았는가?\n- 권한 체크가 모든 경로에 있는가?\n\n**2. 성능 리뷰어 관점**\n- N+1 쿼리가 있는가?\n- 불필요한 리렌더링이 있는가?\n- 대용량 데이터 처리 시 메모리 이슈가 있는가?\n- 인덱스가 필요한 쿼리가 있는가?\n\n**3. 유지보수 리뷰어 관점**\n- 함수/변수 이름이 동작을 설명하는가?\n- 복잡한 로직에 주석이 있는가? (왜(why)를 설명하는 주석)\n- 중복 코드가 있는가?\n- 에러 메시지가 해결 방법을 안내하는가?\n\n### 결과 형식\n```\n🔒 보안: N건 (CRITICAL 0, HIGH 0, MEDIUM N)\n⚡ 성능: N건\n🔧 유지보수: N건\n\nAUTO-FIXED: M건\nRECOMMENDED: K건 (사용자 판단 필요)\n```\n\n명확한 버그는 즉시 수정. 아키텍처 판단이 필요한 건 사용자에게 보고.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 10,
+      "node_type": "gate",
+      "title": "인간 최종 검토",
+      "instruction": "## Human Review — 머지 전 최종 검토\n\nAddy Osmani 원칙: \"인간 감독이 핵심이다. 엔지니어는 이해하지 못한 코드를 머지하지 않는다.\"\n\n### 보고 형식\n```\n📊 Implementation Summary\n━━━━━━━━━━━━━━━━━━━━━━━━━\nChunks completed: N/N\nFiles created: N\nFiles modified: N\nTests added: N (coverage: X%)\n━━━━━━━━━━━━━━━━━━━━━━━━━\n\n🔍 AI Review Results\n  보안: PASS (N건 auto-fixed)\n  성능: PASS\n  유지보수: N건 recommended\n\n📝 Key Decisions Made\n  1. {결정 사항과 이유}\n  2. {결정 사항과 이유}\n\n⚠️ Attention Required\n  - {사용자가 확인해야 할 사항}\n━━━━━━━━━━━━━━━━━━━━━━━━━\n```\n\n### 선택지\n1. 승인 — PR 생성으로 진행\n2. 수정 요청 — 구체적 수정 후 재검토\n3. 폐기 — 구현 결과 폐기",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": true
+    },
+    {
+      "step_order": 11,
+      "node_type": "action",
+      "title": "Ship — PR 생성",
+      "instruction": "## Ship — 최종 PR 생성\n\n### Pre-flight\n1. `git fetch origin && git rebase origin/main` — main과 동기화\n2. `npm test` — 모든 테스트 통과\n3. `npm run lint` — 린트 통과\n4. `npm run build` — 빌드 성공\n\n### 커밋 정리\n- 청크별 커밋이 남아있다면 의미 단위로 squash\n- 커밋 메시지는 conventional commits 형식:\n  `feat:`, `fix:`, `refactor:`, `test:`, `docs:`\n\n### PR 생성\n```\n## Summary\n- {핵심 변경 1-3줄}\n\n## Spec Reference\n- docs/specs/{spec 파일 경로}\n\n## Changes by Chunk\n- Chunk 1: {제목} — {파일 수}\n- Chunk 2: {제목} — {파일 수}\n\n## Test Plan\n- [ ] 단위 테스트 {N}건 통과\n- [ ] 통합 테스트 통과\n- [ ] 빌드 성공\n- [ ] AI 코드 리뷰 통과\n\n## Screenshots\n(UI 변경 시)\n```\n\nPR URL을 사용자에게 보고한다.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    }
+  ]
+}

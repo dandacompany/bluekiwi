@@ -1,6 +1,6 @@
 {
-  "title": "gstack Sprint Pipeline",
-  "description": "Think → Plan → Build → Review → Test → Ship → Verify → Reflect. Garry Tan의 gstack 프레임워크 기반 풀사이클 소프트웨어 스프린트 파이프라인. v2.0: DX Review, Post-deploy Health Check, Document Release 추가. 각 단계 instruction을 gstack 스킬 수준으로 강화.",
+  "title": "Sprint Pipeline (gstack / Garry Tan)",
+  "description": "Think → Plan → Build → Review → Test → Ship → Verify → Reflect. Garry Tan의 gstack 프레임워크 기반 풀사이클 스프린트 파이프라인. 역할 기반 에이전트(CEO, Eng Manager, Designer, QA Lead, CSO)가 각 단계를 수행한다.",
   "version": "1.0",
   "nodes": [
     {
