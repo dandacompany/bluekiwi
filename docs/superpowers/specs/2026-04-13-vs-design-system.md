@@ -356,7 +356,7 @@ Key changes:
 
 ### `get_web_response` — History Mode
 
-Extend to support full VS response history per node (parity with Visual Companion's event stream).
+Extend to support VS response history per node.
 
 **Current behavior:**
 ```
@@ -366,19 +366,19 @@ get_web_response(task_id) → latest web_response only (1 row)
 **Extended behavior:**
 ```
 get_web_response(task_id)                → latest (unchanged, backward compatible)
-get_web_response(task_id, node_id)       → all responses for that node (history mode)
+get_web_response(task_id, node_id)       → all web_response values for that node (history mode)
 ```
 
-When `node_id` is provided, return all `task_logs` rows for that node that have `web_response IS NOT NULL`, ordered by id:
+When `node_id` is provided, return `web_response` only (no visual_html — lightweight) for all iterations:
 
 ```json
 {
   "task_id": 19,
   "node_id": 109,
   "history": [
-    { "log_id": 45, "step_order": 4, "iteration": 1, "web_response": {"selections":["a"]}, "created_at": "..." },
-    { "log_id": 48, "step_order": 4, "iteration": 2, "web_response": {"selections":["b"],"values":{"confidence":80}}, "created_at": "..." },
-    { "log_id": 51, "step_order": 4, "iteration": 3, "web_response": {"selections":["b"],"values":{"confidence":95}}, "created_at": "..." }
+    { "iteration": 1, "web_response": {"selections":["a"]}, "created_at": "..." },
+    { "iteration": 2, "web_response": {"selections":["b"],"values":{"confidence":80}}, "created_at": "..." },
+    { "iteration": 3, "web_response": {"selections":["b"],"values":{"confidence":95}}, "created_at": "..." }
   ]
 }
 ```
@@ -387,16 +387,36 @@ When `node_id` is provided, return all `task_logs` rows for that node that have 
 ```
 "get_web_response"
 "Fetch VS response for a task. Without node_id: returns the latest response.
-With node_id: returns the full response history for that node across all
-loop iterations — useful for tracking how user preferences evolved."
+With node_id: returns the response history for that node across all loop
+iterations (web_response only, no visual_html). Useful for tracking how
+user preferences evolved across iterations."
 Parameters: task_id (required), node_id (optional)
 ```
 
 **API change:** `GET /api/tasks/{id}/respond?node_id=109`
-- Without `node_id` query param: existing behavior (latest 1 row)
-- With `node_id`: return history array
+- Without `node_id`: existing behavior (latest 1 row)
+- With `node_id`: return history array (web_response only, visual_html excluded)
 
-**Iteration numbering:** Derived from row order within the same `(task_id, node_id)` group. Not a stored column — computed as `ROW_NUMBER() OVER (PARTITION BY task_id, node_id ORDER BY id)`.
+**Iteration numbering:** Computed as `ROW_NUMBER() OVER (PARTITION BY task_id, node_id ORDER BY id)`.
+
+### Storage Cleanup — `visual_html` Pruning
+
+`visual_html` is rendering-only content (HTML fragments, potentially large). Only the latest iteration's visual_html is useful — previous iterations are stale.
+
+**Cleanup strategy:**
+- When `execute_step` creates a new iteration log for a loop node, set `visual_html = NULL` on previous iteration logs for the same `(task_id, node_id)`.
+- `web_response` (JSON, lightweight) is always preserved across all iterations.
+- No scheduled cleanup needed — pruning happens inline during execution.
+
+**SQL in execute_step handler:**
+```sql
+-- When loop_continue=true, clear visual_html on older iterations
+UPDATE task_logs
+SET visual_html = NULL
+WHERE task_id = $1 AND node_id = $2 AND id != $3 AND visual_html IS NOT NULL
+```
+
+This keeps the DB lean while preserving all response history.
 
 ---
 
