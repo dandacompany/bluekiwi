@@ -269,6 +269,40 @@ function isFragment(html: string): boolean {
   );
 }
 
+type DialogSize = "sm" | "md" | "lg" | "xl" | "full";
+
+/** Parse `<!-- @bk size=xl -->` from visual_html to determine dialog width */
+function parseDialogSize(html: string): DialogSize {
+  const m = html.match(/<!--\s*@bk\b[^>]*?\bsize=["']?(\w+)/i);
+  const valid: DialogSize[] = ["sm", "md", "lg", "xl", "full"];
+  const v = m?.[1] as DialogSize;
+  return valid.includes(v) ? v : "sm";
+}
+
+const DIALOG_WIDTH: Record<DialogSize, string> = {
+  sm: "", // default sm:max-w-[28rem] = 448px
+  md: "sm:max-w-2xl", // 672px
+  lg: "sm:max-w-4xl", // 896px
+  xl: "sm:max-w-6xl", // 1152px
+  full: "sm:max-w-[95vw]", // 95% viewport
+};
+
+const SCROLL_HEIGHT: Record<DialogSize, string> = {
+  sm: "max-h-[70vh]",
+  md: "max-h-[80vh]",
+  lg: "max-h-[85vh]",
+  xl: "max-h-[88vh]",
+  full: "max-h-[90vh]",
+};
+
+const IFRAME_MIN_HEIGHT: Record<DialogSize, string> = {
+  sm: "min-h-[400px]",
+  md: "min-h-[500px]",
+  lg: "min-h-[600px]",
+  xl: "min-h-[700px]",
+  full: "min-h-[80vh]",
+};
+
 function VisualSelector({
   html,
   taskId,
@@ -298,6 +332,8 @@ function VisualSelector({
     isVisualSelection &&
     (logStatus === "pending" || logStatus === "running") &&
     !submitted;
+
+  const dialogSize = useMemo(() => parseDialogSize(html), [html]);
 
   // Build srcDoc: wrap fragments with VS frame, pass full HTML as-is
   const srcDoc = useMemo(() => {
@@ -399,7 +435,9 @@ function VisualSelector({
             : t("tasks.viewVisual")}
         </Button>
       </DialogTrigger>
-      <DialogContent className="overflow-hidden p-0">
+      <DialogContent
+        className={cn("overflow-hidden p-0", DIALOG_WIDTH[dialogSize])}
+      >
         <DialogHeader className="border-b border-[var(--border)] p-5">
           <div className="flex items-center justify-between gap-3">
             <DialogTitle>
@@ -423,13 +461,13 @@ function VisualSelector({
             {t("tasks.visualSelectHint")}
           </div>
         )}
-        <ScrollArea className="max-h-[75vh]">
+        <ScrollArea className={SCROLL_HEIGHT[dialogSize]}>
           <div className="p-5">
             <div className="overflow-hidden rounded-[var(--radius)] border border-[var(--border)]">
               <iframe
                 ref={iframeRef}
                 srcDoc={srcDoc}
-                className="w-full min-h-[600px]"
+                className={cn("w-full", IFRAME_MIN_HEIGHT[dialogSize])}
                 sandbox="allow-scripts"
               />
             </div>

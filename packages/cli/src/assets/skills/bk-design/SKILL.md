@@ -192,34 +192,65 @@ When designing a `visual_selection: true` gate node, specify which `bk-*` compon
 - Keep component class names and JSON keys in their canonical English forms (`bk-options`, `selections`, `values`, `ranking`, `matrix`).
 </HARD-RULE>
 
+**Dialog size directive — add as the first line of the HTML:**
+
+```html
+<!-- @bk size=sm -->
+<!-- default 448px: simple options, checklist -->
+<!-- @bk size=md -->
+<!-- 672px: cards, code-compare -->
+<!-- @bk size=lg -->
+<!-- 896px: pros-cons, ranking, timeline -->
+<!-- @bk size=xl -->
+<!-- 1152px: mockups, matrix, side-by-side wireframes -->
+<!-- @bk size=full -->
+<!-- 95vw: dashboard previews, complex layouts -->
+```
+
+Rule: choose `xl` or `full` whenever content benefits from horizontal space (side-by-side comparisons, wireframe mockups, multi-column layouts). Omit or use `sm` for simple single-column choices.
+
 **Component → Use Case mapping:**
 
-| Component | Best for |
-|-----------|----------|
-| `bk-options` | Mutually exclusive choices with descriptions (A/B/C decisions) |
-| `bk-cards` | Visual previews (layout, chart type, UI template selection) |
-| `bk-checklist` | Feature toggles, multi-select from a list |
-| `bk-code-compare` | Comparing code approaches side by side |
-| `bk-slider` | Budget allocation, confidence levels, thresholds |
-| `bk-ranking` | Priority ordering (requirements, features) |
-| `bk-matrix` | Urgency/importance mapping, risk assessment |
+| Component         | Recommended size | Best for                                                       |
+| ----------------- | ---------------- | -------------------------------------------------------------- |
+| `bk-options`      | `sm`             | Mutually exclusive choices with descriptions (A/B/C decisions) |
+| `bk-cards`        | `md`             | Visual previews (layout, chart type, UI template selection)    |
+| `bk-checklist`    | `sm`             | Feature toggles, multi-select from a list                      |
+| `bk-code-compare` | `lg`             | Comparing code approaches side by side                         |
+| `bk-slider`       | `sm`             | Budget allocation, confidence levels, thresholds               |
+| `bk-ranking`      | `md`             | Priority ordering (requirements, features)                     |
+| `bk-matrix`       | `xl`             | Urgency/importance mapping, risk assessment                    |
+| `bk-split`        | `xl`             | Two-option comparison (A vs B)                                 |
+| `bk-pros-cons`    | `lg`             | Pros and cons review                                           |
+| `bk-mockup`       | `xl` or `full`   | UI wireframe / layout previews                                 |
+| `bk-timeline`     | `lg`             | Roadmap / milestone review                                     |
 
 **Instruction template patterns:**
 
 ```text
 Present the alternatives using bk-options with data-recommended on the suggested choice.
+(dialog: sm — default, no directive needed)
 ```
 
 ```text
-Show the layout candidates using bk-cards, then add a bk-slider named "confidence" (0-100, unit "%").
+Show the layout candidates using bk-cards (size=md), then add a bk-slider named "confidence" (0-100, unit "%").
+Start the HTML with: <!-- @bk size=md -->
 ```
 
 ```text
 Collect optional capabilities with bk-checklist and ask the user to rank the top three priorities using bk-ranking.
+(dialog: sm or md — omit directive or use <!-- @bk size=md -->)
 ```
 
 ```text
-Compare the two implementation approaches using bk-code-compare, then capture risk posture in a bk-matrix.
+Compare the two implementation approaches using bk-code-compare (size=lg), then capture risk posture in a bk-matrix (size=xl).
+If both appear on the same screen, use the larger size: <!-- @bk size=xl -->
+```
+
+```text
+Show a UI wireframe mockup or dashboard layout preview using bk-mockup with inline styles.
+Start the HTML with: <!-- @bk size=xl --> or <!-- @bk size=full -->
+Place two mockup cards side by side using display:grid;grid-template-columns:1fr 1fr.
 ```
 
 ### Attachments

@@ -293,6 +293,14 @@ const tools: Tool[] = [
     "set_visual_html",
     `Submit a VS content fragment for a visual_selection=true gate node. Write HTML fragments using bk-* component classes — the frame (CSS, JS, submit button) is added automatically. Do NOT include <html>, <head>, or <body> tags.
 
+DIALOG SIZE DIRECTIVE (optional, add as first line):
+<!-- @bk size=sm -->   default (448px) — simple options, checklist
+<!-- @bk size=md -->   medium (672px)  — cards, code-compare
+<!-- @bk size=lg -->   large (896px)   — pros-cons, ranking, timeline
+<!-- @bk size=xl -->   wide (1152px)   — mockups, matrix, side-by-side wireframes
+<!-- @bk size=full --> fullscreen (95vw) — dashboard previews, complex layouts
+If omitted, defaults to sm. Use xl or full for any content that benefits from horizontal space.
+
 Built-in components (use class names directly):
 SELECTION (collect choices):
 - bk-options: A/B/C cards. Wrap in .bk-options, each .bk-option with data-value. Optional data-recommended badge. Contains .bk-option-letter + .bk-option-body with h3+p.
