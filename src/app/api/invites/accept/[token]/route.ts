@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateApiKey, hashPassword, type Role } from "@/lib/auth";
 import { errorResponse, queryOne, withTransaction } from "@/lib/db";
 import { isExpired } from "@/lib/invites";
+import { seedBuiltinWorkflows } from "@/lib/seed-workflows";
 import { resolveOrigin } from "@/lib/url";
 
 type Params = { params: Promise<{ token: string }> };
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   const passwordHash = await hashPassword(password);
   const { rawKey, prefix, keyHash } = generateApiKey();
 
-  const created = await withTransaction(async (client) => {
+  const { user: created, folderId } = await withTransaction(async (client) => {
     const { rows: userRows } = await client.query(
       `INSERT INTO users (username, email, password_hash, role)
        VALUES ($1, $2, $3, $4)
@@ -115,9 +116,10 @@ export async function POST(request: NextRequest, { params }: Params) {
     );
 
     // Create default "My Workspace" folder for the new user
-    await client.query(
+    const { rows: folderRows } = await client.query<{ id: number }>(
       `INSERT INTO folders (name, description, owner_id, visibility, is_system)
-       VALUES ('My Workspace', 'Your personal workspace.', $1, 'personal', true)`,
+       VALUES ('My Workspace', 'Your personal workspace.', $1, 'personal', true)
+       RETURNING id`,
       [user.id],
     );
 
@@ -126,7 +128,12 @@ export async function POST(request: NextRequest, { params }: Params) {
       [user.id, invite.id],
     );
 
-    return user;
+    return { user, folderId: folderRows[0].id };
+  });
+
+  // Seed built-in workflows (best-effort, same as setup)
+  await seedBuiltinWorkflows(created.id, folderId).catch((err) => {
+    console.error("[seed] built-in workflow seeding failed:", err);
   });
 
   return NextResponse.json({
