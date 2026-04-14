@@ -5,12 +5,13 @@ import { CommandPalette } from "@/components/shared/command-palette";
 interface AppShellProps {
   children: React.ReactNode;
   user: { username: string; email: string; role: string } | null;
+  teamName?: string | null;
 }
 
-export function AppShell({ children, user }: AppShellProps) {
+export function AppShell({ children, user, teamName }: AppShellProps) {
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar user={user} />
+      <Sidebar user={user} teamName={teamName} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar />
         <main className="flex-1 overflow-y-auto">{children}</main>

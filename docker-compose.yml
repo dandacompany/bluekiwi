@@ -27,6 +27,7 @@ services:
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
       PUBLIC_URL: ${PUBLIC_URL:-}
+      TEAM_NAME: ${TEAM_NAME:-}
       BLUEKIWI_VERSION: ${BLUEKIWI_VERSION:-latest}
       WS_RELAY_URL: http://ws-relay:3001
     depends_on:

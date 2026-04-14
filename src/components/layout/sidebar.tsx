@@ -42,9 +42,10 @@ import { useTranslation } from "@/lib/i18n/context";
 
 interface SidebarProps {
   user: { username: string; email: string; role: string } | null;
+  teamName?: string | null;
 }
 
-export function Sidebar({ user }: SidebarProps) {
+export function Sidebar({ user, teamName }: SidebarProps) {
   const router = useRouter();
   const { t, locale, setLocale } = useTranslation();
   const [collapsed, setCollapsed] = useState<boolean>(() => {
@@ -124,9 +125,16 @@ export function Sidebar({ user }: SidebarProps) {
               height={32}
             />
             {!collapsed && (
-              <span className="font-semibold tracking-tight text-[var(--sidebar-foreground)]">
-                BlueKiwi
-              </span>
+              <div className="min-w-0">
+                <span className="block truncate font-semibold tracking-tight text-[var(--sidebar-foreground)]">
+                  BlueKiwi
+                </span>
+                {teamName ? (
+                  <span className="block truncate text-[10px] font-medium text-[var(--muted-foreground)]/85">
+                    {teamName}
+                  </span>
+                ) : null}
+              </div>
             )}
           </Link>
         </div>

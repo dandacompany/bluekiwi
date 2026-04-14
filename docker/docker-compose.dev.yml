@@ -69,6 +69,7 @@ services:
       DATABASE_URL: postgresql://bluekiwi:bluekiwi_dev_2026@db:5432/bluekiwi
       REDIS_URL: redis://:bluekiwi_redis_2026@redis:6379
       WS_RELAY_URL: http://ws-relay:3001
+      TEAM_NAME: ${TEAM_NAME:-}
       NODE_ENV: development
       NEXT_TELEMETRY_DISABLED: "1"
     volumes:

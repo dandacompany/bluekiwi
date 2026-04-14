@@ -292,6 +292,7 @@ npm install -g bluekiwi
 | `DB_PASSWORD`      | ✅   | —                       | PostgreSQL 비밀번호           |
 | `JWT_SECRET`       | ✅   | —                       | JWT 서명 시크릿 (최소 32자)   |
 | `APP_PORT`         |      | `3100`                  | 웹 UI 호스트 포트             |
+| `TEAM_NAME`        |      | —                       | UI 메타데이터와 사이드바 브랜딩에 표시할 선택적 팀명 |
 | `PUBLIC_URL`       |      | `http://localhost:3100` | 초대 링크에 표시되는 공개 URL |
 | `BLUEKIWI_VERSION` |      | `latest`                | 특정 이미지 태그 고정         |
 | `RESEND_API_KEY`   |      | —                       | 초대 이메일 발송 활성화       |

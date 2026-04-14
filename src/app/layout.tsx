@@ -3,14 +3,16 @@ import { Toaster } from "@/components/ui/sonner";
 import { I18nProvider } from "@/lib/i18n/context";
 import "./globals.css";
 
-const SITE_TITLE = "BlueKiwi — AI Agent Workflow Engine";
+const TEAM_NAME = process.env.TEAM_NAME?.trim() || "";
+const APP_NAME = TEAM_NAME ? `BlueKiwi · ${TEAM_NAME}` : "BlueKiwi";
+const SITE_TITLE = `${APP_NAME} — AI Agent Workflow Engine`;
 const SITE_DESC =
   "Design reusable workflows, run them from any AI coding agent, and watch every step in real time.";
 
 export const metadata: Metadata = {
   title: {
-    default: "BlueKiwi",
-    template: "%s | BlueKiwi",
+    default: APP_NAME,
+    template: `%s | ${APP_NAME}`,
   },
   description: SITE_DESC,
   metadataBase: new URL(process.env.PUBLIC_URL || "http://localhost:3100"),
@@ -25,7 +27,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    siteName: "BlueKiwi",
+    siteName: APP_NAME,
     title: SITE_TITLE,
     description: SITE_DESC,
     locale: "ko_KR",
@@ -34,7 +36,7 @@ export const metadata: Metadata = {
         url: "/og-cover.png",
         width: 1200,
         height: 630,
-        alt: "BlueKiwi — AI Agent Workflow Engine",
+        alt: SITE_TITLE,
       },
     ],
   },
