@@ -1,8 +1,13 @@
 import { getAllAdapters } from "../runtimes/detect.js";
 import pc from "picocolors";
 
-import { BUNDLED_MCP_PATH, BUNDLED_SKILLS } from "../assets/index.js";
-import { loadConfig, requireConfig, saveConfig } from "../config.js";
+import {
+  loadConfig,
+  requireConfig,
+  requireProfile,
+  saveConfig,
+} from "../config.js";
+import { applyProfileToRuntimes } from "../runtime-sync.js";
 
 async function list() {
   const cfg = loadConfig();
@@ -18,23 +23,21 @@ async function list() {
   }
 }
 
-async function add(name: string) {
+async function add(name: string, profileName?: string) {
   const cfg = requireConfig();
+  const { name: resolvedProfile } = requireProfile(cfg, profileName);
   const adapter = getAllAdapters().find((item) => item.name === name);
   if (!adapter) {
     console.error(`Unknown runtime: ${name}`);
     process.exit(1);
   }
-  adapter.installSkills(BUNDLED_SKILLS);
-  adapter.installMcp({
-    command: "node",
-    args: [BUNDLED_MCP_PATH],
-    env: { BLUEKIWI_API_URL: cfg.server_url, BLUEKIWI_API_KEY: cfg.api_key },
-  });
-  saveConfig({
+  const next = {
     ...cfg,
+    active_profile: resolvedProfile,
     runtimes: Array.from(new Set([...cfg.runtimes, name])),
-  });
+  };
+  applyProfileToRuntimes(next, resolvedProfile, [name]);
+  saveConfig(next);
   console.log(pc.green(`✓ Installed to ${adapter.displayName}`));
 }
 

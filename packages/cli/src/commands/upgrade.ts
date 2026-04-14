@@ -1,9 +1,8 @@
 import { execFileSync } from "child_process";
 import pc from "picocolors";
 
-import { BUNDLED_MCP_PATH, BUNDLED_SKILLS } from "../assets/index.js";
 import { loadConfig, saveConfig } from "../config.js";
-import { getAllAdapters } from "../runtimes/detect.js";
+import { applyProfileToRuntimes, pruneBundledSkills } from "../runtime-sync.js";
 
 export async function upgradeCommand(): Promise<void> {
   console.log(pc.cyan("→ Upgrading bluekiwi..."));
@@ -21,19 +20,21 @@ export async function upgradeCommand(): Promise<void> {
     return;
   }
 
-  const bundledNames = new Set(BUNDLED_SKILLS.map((s) => s.name));
+  pruneBundledSkills(cfg);
+  applyProfileToRuntimes(cfg, cfg.active_profile);
+  const active = cfg.profiles[cfg.active_profile];
 
-  for (const adapter of getAllAdapters()) {
-    if (!cfg.runtimes.includes(adapter.name)) continue;
-    adapter.installSkills(BUNDLED_SKILLS);
-    adapter.pruneSkills(bundledNames);
-    adapter.installMcp({
-      command: "node",
-      args: [BUNDLED_MCP_PATH],
-      env: { BLUEKIWI_API_URL: cfg.server_url, BLUEKIWI_API_KEY: cfg.api_key },
-    });
-  }
-
-  saveConfig({ ...cfg, last_used: new Date().toISOString() });
+  saveConfig({
+    ...cfg,
+    profiles: active
+      ? {
+          ...cfg.profiles,
+          [cfg.active_profile]: {
+            ...active,
+            last_used: new Date().toISOString(),
+          },
+        }
+      : cfg.profiles,
+  });
   console.log(pc.green("✓ Upgraded and reinstalled assets."));
 }

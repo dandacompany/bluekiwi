@@ -1,23 +1,26 @@
 import pc from "picocolors";
 
 import { BlueKiwiClient } from "../api-client.js";
-import { CONFIG_PATH, loadConfig } from "../config.js";
+import { CONFIG_PATH, loadConfig, requireProfile } from "../config.js";
 
-export async function statusCommand(): Promise<void> {
+export async function statusCommand(profileName?: string): Promise<void> {
   const cfg = loadConfig();
   if (!cfg) {
     console.log(pc.yellow(`Not authenticated. No config at ${CONFIG_PATH}.`));
     process.exit(1);
   }
 
-  console.log(`${pc.bold("Server:")}   ${cfg.server_url}`);
+  const { name, profile } = requireProfile(cfg, profileName);
+
+  console.log(`${pc.bold("Profile:")}  ${name}${name === cfg.active_profile ? " (active)" : ""}`);
+  console.log(`${pc.bold("Server:")}   ${profile.server_url}`);
   console.log(
-    `${pc.bold("User:")}     ${cfg.user.username} (${cfg.user.role})`,
+    `${pc.bold("User:")}     ${profile.user.username} (${profile.user.role})`,
   );
   console.log(`${pc.bold("Runtimes:")} ${cfg.runtimes.join(", ") || "(none)"}`);
 
   try {
-    const client = new BlueKiwiClient(cfg.server_url, cfg.api_key);
+    const client = new BlueKiwiClient(profile.server_url, profile.api_key);
     await client.request("GET", "/api/workflows");
     console.log(pc.green("✓ Connection OK"));
   } catch (err) {

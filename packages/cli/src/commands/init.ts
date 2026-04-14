@@ -2,14 +2,23 @@ import prompts, { type PromptObject } from "prompts";
 import pc from "picocolors";
 
 import { BlueKiwiClient } from "../api-client.js";
-import { BUNDLED_MCP_PATH, BUNDLED_SKILLS } from "../assets/index.js";
-import { loadConfig, saveConfig } from "../config.js";
+import {
+  createEmptyConfig,
+  getProfile,
+  loadConfig,
+  normalizeProfileName,
+  saveConfig,
+  upsertProfile,
+  type BluekiwiProfile,
+} from "../config.js";
+import { applyProfileToRuntimes } from "../runtime-sync.js";
 import { detectInstalledAdapters, getAllAdapters } from "../runtimes/detect.js";
 
 export interface InitOptions {
   server?: string;
   apiKey?: string;
   runtimes?: string[];
+  profile?: string;
   yes?: boolean;
 }
 
@@ -47,9 +56,11 @@ function maskApiKey(key: string): string {
 
 export async function initCommand(options: InitOptions = {}): Promise<void> {
   const isNonInteractive = options.yes === true || process.stdin.isTTY !== true;
+  const profileName = normalizeProfileName(options.profile);
 
   // Load existing config for pre-filling prompts
-  const existingCfg = loadConfig();
+  const existingCfg = loadConfig() ?? createEmptyConfig();
+  const existingProfile = getProfile(existingCfg, profileName);
 
   let server =
     normalizeEnvValue(options.server) ??
@@ -66,12 +77,12 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
         type: "text",
         name: "server",
         message: "BlueKiwi server URL",
-        initial: existingCfg?.server_url,
+        initial: existingProfile?.profile.server_url,
       });
     }
     if (apiKey === undefined) {
-      const maskedKey = existingCfg?.api_key
-        ? maskApiKey(existingCfg.api_key)
+      const maskedKey = existingProfile?.profile.api_key
+        ? maskApiKey(existingProfile.profile.api_key)
         : undefined;
       questions.push({
         type: "text",
@@ -89,11 +100,11 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
     // If user kept the masked key (just pressed Enter), restore original
     if (apiKey === undefined) {
       const entered = answers.apiKey as string | undefined;
-      const maskedKey = existingCfg?.api_key
-        ? maskApiKey(existingCfg.api_key)
+      const maskedKey = existingProfile?.profile.api_key
+        ? maskApiKey(existingProfile.profile.api_key)
         : undefined;
       if (entered && maskedKey && entered === maskedKey) {
-        apiKey = existingCfg!.api_key;
+        apiKey = existingProfile!.profile.api_key;
       } else {
         apiKey = entered;
       }
@@ -111,7 +122,7 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
 
   const client = new BlueKiwiClient(server, apiKey);
   await client.request("GET", "/api/workflows");
-  const me = {
+  const me = existingProfile?.profile.user ?? {
     id: 0,
     username: "unknown",
     email: "",
@@ -131,10 +142,11 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
   );
   const requestedRuntimeNames =
     requestedFromFlags.length > 0 ? requestedFromFlags : requestedFromEnv;
+  const hasExplicitRuntimeSelection = requestedRuntimeNames.length > 0;
 
   let selectedRuntimeNames: string[] = [];
 
-  if (requestedRuntimeNames.length > 0) {
+  if (hasExplicitRuntimeSelection) {
     const unknown = requestedRuntimeNames.filter(
       (name) => !adaptersByName.has(name),
     );
@@ -153,6 +165,8 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
     }
 
     selectedRuntimeNames = requestedRuntimeNames;
+  } else if (existingCfg.runtimes.length > 0) {
+    selectedRuntimeNames = existingCfg.runtimes;
   } else if (isNonInteractive) {
     if (detected.length === 0) {
       throw new Error(
@@ -175,25 +189,35 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
     selectedRuntimeNames = selected ?? [];
   }
 
-  for (const name of selectedRuntimeNames) {
-    const adapter = all.find((item) => item.name === name);
-    if (!adapter) continue;
-    adapter.installSkills(BUNDLED_SKILLS);
-    adapter.installMcp({
-      command: "node",
-      args: [BUNDLED_MCP_PATH],
-      env: { BLUEKIWI_API_URL: server, BLUEKIWI_API_KEY: apiKey },
-    });
-  }
-
-  saveConfig({
-    version: "1.0.0",
+  const now = new Date().toISOString();
+  const targetProfile: BluekiwiProfile = {
+    name: profileName,
     server_url: server,
     api_key: apiKey,
     user: me,
-    runtimes: selectedRuntimeNames,
-    installed_at: new Date().toISOString(),
-    last_used: new Date().toISOString(),
-  });
+    installed_at: existingProfile?.profile.installed_at ?? now,
+    last_used: now,
+  };
+  const shouldActivate =
+    hasExplicitRuntimeSelection ||
+    existingCfg.active_profile === profileName ||
+    Object.keys(existingCfg.profiles).length === 0;
+  const nextConfig = upsertProfile(
+    {
+      ...existingCfg,
+      runtimes: Array.from(
+        new Set([...existingCfg.runtimes, ...selectedRuntimeNames]),
+      ),
+    },
+    targetProfile,
+    { activate: shouldActivate },
+  );
+
+  if (shouldActivate && nextConfig.runtimes.length > 0) {
+    applyProfileToRuntimes(nextConfig, profileName, nextConfig.runtimes);
+  }
+
+  saveConfig(nextConfig);
   console.log(pc.green("✓ BlueKiwi connected"));
+  console.log(pc.dim(`Profile: ${profileName}`));
 }

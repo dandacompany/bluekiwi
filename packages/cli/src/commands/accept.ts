@@ -2,14 +2,28 @@ import prompts from "prompts";
 import pc from "picocolors";
 
 import { BlueKiwiClient } from "../api-client.js";
-import { BUNDLED_MCP_PATH, BUNDLED_SKILLS } from "../assets/index.js";
-import { saveConfig } from "../config.js";
+import {
+  createEmptyConfig,
+  loadConfig,
+  normalizeProfileName,
+  saveConfig,
+  upsertProfile,
+  type BluekiwiProfile,
+} from "../config.js";
+import { applyProfileToRuntimes } from "../runtime-sync.js";
 import { detectInstalledAdapters, getAllAdapters } from "../runtimes/detect.js";
 
 export async function acceptCommand(
   token: string,
-  opts: { server: string; username?: string; password?: string },
+  opts: {
+    server: string;
+    username?: string;
+    password?: string;
+    profile?: string;
+  },
 ): Promise<void> {
+  const profileName = normalizeProfileName(opts.profile);
+  const currentConfig = loadConfig() ?? createEmptyConfig();
   console.log(pc.cyan("→ Validating invite..."));
   const validateRes = await fetch(`${opts.server}/api/invites/accept/${token}`);
   if (!validateRes.ok) {
@@ -91,9 +105,9 @@ export async function acceptCommand(
     const choices = all.map((adapter) => ({
       title: adapter.displayName,
       value: adapter.name,
-      selected: detected.some(
-        (detectedAdapter) => detectedAdapter.name === adapter.name,
-      ),
+      selected:
+        currentConfig.runtimes.includes(adapter.name) ||
+        detected.some((detectedAdapter) => detectedAdapter.name === adapter.name),
       disabled: !adapter.isInstalled(),
     }));
 
@@ -108,32 +122,34 @@ export async function acceptCommand(
     chosen = selected ?? [];
   }
 
-  const all = getAllAdapters();
-  for (const name of chosen) {
-    const adapter = all.find((item) => item.name === name);
-    if (!adapter) continue;
-    console.log(pc.cyan(`→ Installing to ${adapter.displayName}...`));
-    adapter.installSkills(BUNDLED_SKILLS);
-    adapter.installMcp({
-      command: "node",
-      args: [BUNDLED_MCP_PATH],
-      env: {
-        BLUEKIWI_API_URL: opts.server,
-        BLUEKIWI_API_KEY: result.api_key,
-      },
-    });
-  }
-
-  saveConfig({
-    version: "1.0.0",
+  const now = new Date().toISOString();
+  const targetProfile: BluekiwiProfile = {
+    name: profileName,
     server_url: opts.server,
     api_key: result.api_key,
     user: result.user,
-    runtimes: chosen,
-    installed_at: new Date().toISOString(),
-    last_used: new Date().toISOString(),
-  });
+    installed_at: now,
+    last_used: now,
+  };
+  const nextConfig = upsertProfile(
+    {
+      ...currentConfig,
+      runtimes: Array.from(new Set([...currentConfig.runtimes, ...chosen])),
+    },
+    targetProfile,
+    {
+      activate:
+        chosen.length > 0 || Object.keys(currentConfig.profiles).length === 0,
+    },
+  );
+
+  if (chosen.length > 0) {
+    applyProfileToRuntimes(nextConfig, profileName, chosen);
+  }
+
+  saveConfig(nextConfig);
 
   console.log(pc.green("\n✓ BlueKiwi installed successfully!"));
+  console.log(pc.dim(`Profile: ${profileName}`));
   console.log(pc.dim("Try /bk-start in your agent runtime to begin."));
 }
