@@ -16,7 +16,6 @@ import {
   RotateCcw,
   Search,
   TriangleAlert,
-  Upload,
 } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { RunCommandDialog } from "@/components/workflows/run-command-dialog";
@@ -251,9 +250,7 @@ export default function WorkflowDetailPage() {
   const [taskStatusFilter, setTaskStatusFilter] = useState("");
   const [taskSearch, setTaskSearch] = useState("");
   const [runDialogOpen, setRunDialogOpen] = useState(false);
-  const [transferMode, setTransferMode] = useState<"export" | "import" | null>(
-    null,
-  );
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("history");
   const historySectionRef = useRef<HTMLDivElement | null>(null);
   const [versions, setVersions] = useState<VersionsResponse | null>(null);
@@ -468,13 +465,9 @@ export default function WorkflowDetailPage() {
               <Pencil className="mr-2 h-4 w-4" />
               {t("workflows.goEdit")}
             </Button>
-            <Button variant="outline" onClick={() => setTransferMode("export")}>
+            <Button variant="outline" onClick={() => setExportDialogOpen(true)}>
               <Download className="mr-2 h-4 w-4" />
               Export
-            </Button>
-            <Button variant="outline" onClick={() => setTransferMode("import")}>
-              <Upload className="mr-2 h-4 w-4" />
-              Import
             </Button>
             <Button
               onClick={() => setRunDialogOpen(true)}
@@ -993,17 +986,14 @@ export default function WorkflowDetailPage() {
             workflowId={workflow.id}
             workflowTitle={workflow.title}
           />
-          {transferMode && (
+          {exportDialogOpen && (
             <WorkflowTransferDialog
-              open={!!transferMode}
-              onClose={() => setTransferMode(null)}
-              mode={transferMode}
+              open={exportDialogOpen}
+              onClose={() => setExportDialogOpen(false)}
+              mode="export"
               workflowId={workflow.id}
               workflowTitle={workflow.title}
               folderId={workflow.folder_id}
-              onImported={(nextWorkflowId) =>
-                router.push(`/workflows/${nextWorkflowId}`)
-              }
             />
           )}
         </>

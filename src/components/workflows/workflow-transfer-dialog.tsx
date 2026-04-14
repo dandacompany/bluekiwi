@@ -58,8 +58,8 @@ interface Props {
   open: boolean;
   onClose: () => void;
   mode: Mode;
-  workflowId: number;
-  workflowTitle: string;
+  workflowId?: number;
+  workflowTitle?: string;
   folderId: number | null;
   onImported?: (workflowId: number) => void;
 }
@@ -114,15 +114,22 @@ export function WorkflowTransferDialog({
   }, [analysis, bindings]);
 
   const handleExport = async () => {
+    if (typeof workflowId !== "number") {
+      toast.error("내보낼 워크플로 정보를 찾지 못했습니다.");
+      return;
+    }
+
     setBusy(true);
     try {
       const response = await fetch(`/api/workflows/${workflowId}/export`);
       const json = await response.json();
       if (!response.ok) {
-        throw new Error(json?.error?.message ?? "워크플로를 내보내지 못했습니다");
+        throw new Error(
+          json?.error?.message ?? "워크플로를 내보내지 못했습니다",
+        );
       }
       downloadJson(
-        `${workflowTitle.replace(/\s+/g, "-").toLowerCase() || `workflow-${workflowId}`}.json`,
+        `${(workflowTitle ?? `workflow-${workflowId}`).replace(/\s+/g, "-").toLowerCase() || `workflow-${workflowId}`}.json`,
         json.data,
       );
       toast.success("워크플로 JSON을 다운로드했습니다.");
@@ -204,7 +211,9 @@ export function WorkflowTransferDialog({
       });
       const json = await response.json();
       if (!response.ok) {
-        throw new Error(json?.error?.message ?? "워크플로를 가져오지 못했습니다");
+        throw new Error(
+          json?.error?.message ?? "워크플로를 가져오지 못했습니다",
+        );
       }
       toast.success(
         unresolvedCount > 0
@@ -236,8 +245,8 @@ export function WorkflowTransferDialog({
           </DialogTitle>
           <DialogDescription>
             {mode === "export"
-              ? "지침은 포함하고, 크레덴셜은 서비스명과 key 이름만 포함한 JSON 패키지로 다운로드합니다."
-              : "JSON 패키지를 분석한 뒤 필요한 크레덴셜 매핑을 확인하고 새 워크플로로 가져옵니다."}
+              ? "이 워크플로를 JSON 파일로 저장합니다."
+              : "JSON 파일로 저장된 워크플로를 가져옵니다."}
           </DialogDescription>
         </DialogHeader>
 
@@ -247,22 +256,18 @@ export function WorkflowTransferDialog({
               <CardContent className="grid gap-4 p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-medium">{workflowTitle}</p>
+                    <p className="text-sm font-medium">
+                      {workflowTitle ?? `Workflow #${workflowId ?? ""}`}
+                    </p>
                     <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-                      embedded instruction과 credential manifest를 포함합니다.
+                      지침 내용은 포함되고, 크레덴셜 값은 제외됩니다.
                     </p>
                   </div>
-                  <Badge
-                    variant="outline"
-                    className="border-brand-blue-200 bg-brand-blue-100 text-brand-blue-700"
-                  >
-                    JSON package
-                  </Badge>
                 </div>
                 <div className="grid gap-2 rounded-2xl border border-border/70 bg-background px-4 py-3 text-sm text-[var(--muted-foreground)]">
-                  <p>포함: workflow metadata, nodes, embedded instructions</p>
-                  <p>포함: credential service명 + key 이름</p>
-                  <p>제외: credential secret value</p>
+                  <p>지침 내용은 파일에 포함됩니다.</p>
+                  <p>크레덴셜 이름과 key 항목은 유지됩니다.</p>
+                  <p>크레덴셜 값은 파일에 포함되지 않습니다.</p>
                 </div>
               </CardContent>
             </Card>
@@ -300,10 +305,6 @@ export function WorkflowTransferDialog({
                           {analysis.summary.node_count}개
                         </p>
                       </div>
-                      <Badge variant="outline">
-                        credential refs{" "}
-                        {analysis.summary.credential_requirement_count}
-                      </Badge>
                     </div>
 
                     <label className="grid gap-2">

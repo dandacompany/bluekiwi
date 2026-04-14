@@ -21,6 +21,7 @@ import {
   Repeat,
   Search,
   Trash2,
+  Upload,
   Workflow,
   X,
   Zap,
@@ -32,6 +33,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { VisibilityBadge } from "@/components/shared/visibility-badge";
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import { WorkflowVisibilityDialog } from "@/components/workflows/workflow-visibility-dialog";
+import { WorkflowTransferDialog } from "@/components/workflows/workflow-transfer-dialog";
 import { FolderTree, type FolderItem } from "@/components/folders/folder-tree";
 import {
   DropdownMenu,
@@ -155,6 +157,7 @@ export default function WorkflowsPage() {
     title: string;
     override: string | null;
   } | null>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const {
     data: workflows,
@@ -445,6 +448,14 @@ export default function WorkflowsPage() {
                 <Plus className="h-4 w-4" />
                 {t("workflows.newWorkflow")}
               </Link>
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setImportDialogOpen(true)}
+            >
+              <Upload className="h-4 w-4" />
+              Import
             </Button>
           </div>
         </div>
@@ -822,6 +833,14 @@ export default function WorkflowsPage() {
         open={visibilityTarget !== null}
         onClose={() => setVisibilityTarget(null)}
         onUpdate={fetchWorkflows}
+      />
+
+      <WorkflowTransferDialog
+        open={importDialogOpen}
+        onClose={() => setImportDialogOpen(false)}
+        mode="import"
+        folderId={selectedFolder}
+        onImported={(workflowId) => router.push(`/workflows/${workflowId}`)}
       />
     </div>
   );
