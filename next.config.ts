@@ -1,16 +1,9 @@
 import type { NextConfig } from "next";
 import path from "path";
-import { createRequire } from "module";
-
-const require = createRequire(import.meta.url);
-const pkg = require("./package.json") as { version: string };
 
 const WS_RELAY_URL = process.env.WS_RELAY_URL ?? "http://localhost:3001";
 
 const nextConfig: NextConfig = {
-  env: {
-    NEXT_PUBLIC_APP_VERSION: pkg.version,
-  },
   output: "standalone",
   outputFileTracingRoot: path.join(import.meta.dirname, "./"),
   serverExternalPackages: ["pg", "bcryptjs", "better-sqlite3"],

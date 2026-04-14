@@ -23,7 +23,6 @@ import {
   ArrowUpCircle,
 } from "lucide-react";
 
-const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
 const GITHUB_URL = "https://github.com/dandacompany/bluekiwi";
 const LICENSE_URL =
   "https://github.com/dandacompany/bluekiwi/blob/main/LICENSE.md";
@@ -55,22 +54,22 @@ export function Sidebar({ user }: SidebarProps) {
   });
 
   const [updateInfo, setUpdateInfo] = useState<{
+    current: string;
     hasUpdate: boolean;
     latest: string | null;
     releaseUrl: string | null;
-  }>({ hasUpdate: false, latest: null, releaseUrl: null });
+  }>({ current: "", hasUpdate: false, latest: null, releaseUrl: null });
 
   useEffect(() => {
     fetch("/api/version")
       .then((r) => r.json())
       .then((data) => {
-        if (data.hasUpdate) {
-          setUpdateInfo({
-            hasUpdate: true,
-            latest: data.latest,
-            releaseUrl: data.releaseUrl,
-          });
-        }
+        setUpdateInfo({
+          current: data.current ?? "",
+          hasUpdate: !!data.hasUpdate,
+          latest: data.latest ?? null,
+          releaseUrl: data.releaseUrl ?? null,
+        });
       })
       .catch(() => {});
   }, []);
@@ -237,7 +236,7 @@ export function Sidebar({ user }: SidebarProps) {
                   <a
                     href={
                       updateInfo.releaseUrl ??
-                      `${GITHUB_URL}/releases/tag/v${APP_VERSION}`
+                      `${GITHUB_URL}/releases/tag/v${updateInfo.current}`
                     }
                     target="_blank"
                     rel="noopener noreferrer"
@@ -245,18 +244,23 @@ export function Sidebar({ user }: SidebarProps) {
                   >
                     {updateInfo.hasUpdate ? (
                       <>
-                        <ArrowUpCircle className="mr-2 h-3.5 w-3.5 text-orange-500" />
-                        <span className="flex-1 text-orange-500">
-                          v{APP_VERSION}
-                        </span>
-                        <span className="ml-1 rounded-full bg-orange-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                          v{updateInfo.latest} 가능
+                        <ArrowUpCircle className="mr-2 h-3.5 w-3.5 text-emerald-500" />
+                        <span className="flex items-center gap-1 text-[11px] font-medium">
+                          <span className="text-muted-foreground line-through">
+                            v{updateInfo.current}
+                          </span>
+                          <span className="text-emerald-500">→</span>
+                          <span className="rounded-sm bg-emerald-500/15 px-1 py-0.5 font-semibold text-emerald-600 dark:text-emerald-400">
+                            v{updateInfo.latest}
+                          </span>
                         </span>
                       </>
                     ) : (
                       <>
                         <Tag className="mr-2 h-3.5 w-3.5 opacity-50" />
-                        <span className="opacity-50">v{APP_VERSION}</span>
+                        <span className="opacity-50">
+                          v{updateInfo.current}
+                        </span>
                       </>
                     )}
                   </a>

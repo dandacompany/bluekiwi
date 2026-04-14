@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import pkg from "../../../../package.json";
 
 const RELEASES_URL =
   "https://api.github.com/repos/dandacompany/bluekiwi/releases/latest";
@@ -6,7 +7,7 @@ const RELEASES_URL =
 export const runtime = "nodejs";
 
 export async function GET() {
-  const current = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
+  const current = pkg.version;
 
   try {
     const res = await fetch(RELEASES_URL, {
