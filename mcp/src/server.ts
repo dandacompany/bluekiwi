@@ -177,10 +177,11 @@ const tools: Tool[] = [
   ),
   tool(
     "start_workflow",
-    "Start a task from a workflow id. Optionally pin a specific version within the same family. Starting against an archived (inactive) version fails with HTTP 409.",
+    "Start a task from a workflow id. Optionally pin a specific version within the same family. Starting against an archived (inactive) version fails with HTTP 409. Pass a short `title` (max 60 chars, derived from the user's goal) so the task list shows a meaningful label instead of the raw prompt.",
     {
       workflow_id: { type: "number" },
       version: { type: "string" },
+      title: { type: "string" },
       context: { type: "string" },
       session_meta: { type: "string" },
       target: { type: "object" },
@@ -772,7 +773,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
         args.provider_slug = providerSlug;
         args.model_slug = modelSlug;
-        return wrap(await client.request("POST", "/api/tasks/start", args));
+        const started = await client.request<{
+          data?: { task_id?: number; workflow_id?: number };
+        }>("POST", "/api/tasks/start", args);
+        const startedTaskId = (started as { data?: { task_id?: number } })?.data
+          ?.task_id;
+        return wrap({
+          ...started,
+          ...(startedTaskId !== undefined && {
+            webui_url: `${apiUrl.replace(/\/$/, "")}/tasks/${startedTaskId}`,
+          }),
+        });
       }
       case "execute_step": {
         const taskId = requireNumberArg(args, "task_id");
@@ -929,8 +940,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           await client.request("DELETE", `/api/instructions/${instructionId}`),
         );
       }
-      case "create_workflow":
-        return wrap(await client.request("POST", "/api/workflows", args));
+      case "create_workflow": {
+        const created = await client.request<{ data?: { id?: number } }>(
+          "POST",
+          "/api/workflows",
+          args,
+        );
+        const createdId = (created as { data?: { id?: number } })?.data?.id;
+        return wrap({
+          ...created,
+          ...(createdId !== undefined && {
+            webui_url: `${apiUrl.replace(/\/$/, "")}/workflows/${createdId}`,
+          }),
+        });
+      }
       case "update_workflow": {
         const workflowId = requireNumberArg(args, "workflow_id");
         const body = { ...args };

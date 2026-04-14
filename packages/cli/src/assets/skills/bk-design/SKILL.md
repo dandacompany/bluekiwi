@@ -113,8 +113,10 @@ Call `create_workflow`:
 On success, open the workflow detail page in the browser:
 
 ```bash
-open "${BLUEKIWI_URL:-http://localhost:3100}/workflows/${WORKFLOW_ID}"
+open "${WEBUI_URL}/workflows/${WORKFLOW_ID}"
 ```
+
+`WEBUI_URL` = the `webui_url` field returned by `create_workflow`.
 
 Then display:
 
@@ -123,7 +125,7 @@ Then display:
 Name: <title> (ID: <id>)
 Steps: <n>
 Version: 1.0
-🔗 ${BLUEKIWI_URL}/workflows/${WORKFLOW_ID}
+🔗 ${WEBUI_URL}/workflows/${WORKFLOW_ID}
 
 Type `/bk-run` to execute it now.
 ```

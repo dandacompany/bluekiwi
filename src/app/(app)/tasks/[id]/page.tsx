@@ -28,6 +28,9 @@ interface TaskLog {
   visual_html: string | null;
   visual_selection: boolean | null;
   web_response: string | null;
+  hitl: boolean | null;
+  approved_at: string | null;
+  approval_requested_at: string | null;
   structured_output: {
     user_input?: string;
     thinking?: string;
@@ -51,6 +54,7 @@ interface TaskDetail {
   total_steps: number;
   status: string;
   current_step: number;
+  title: string | null;
   context: string;
   session_meta: string;
   provider_slug: string | null;
@@ -294,6 +298,9 @@ export default function TaskDetailPage() {
         visual_html: l.visual_html,
         visual_selection: l.visual_selection ?? null,
         web_response: l.web_response,
+        hitl: l.hitl ?? null,
+        approved_at: l.approved_at ?? null,
+        approval_requested_at: l.approval_requested_at ?? null,
         provider_slug: l.provider_slug,
         model_slug: l.model_slug,
         user_name: l.user_name,
@@ -362,6 +369,7 @@ export default function TaskDetailPage() {
       {/* Left: Timeline */}
       <TaskTimeline
         taskTitle={taskTitle}
+        taskSubtitle={task.title ?? undefined}
         taskStatus={task.status}
         provider={taskProvider}
         model={taskModel}

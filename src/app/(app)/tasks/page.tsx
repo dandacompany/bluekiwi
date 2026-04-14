@@ -38,6 +38,7 @@ interface Task {
   total_steps: number;
   status: string;
   current_step: number;
+  title: string | null;
   context: string;
   logs: TaskLog[];
   created_at: string;
@@ -275,9 +276,9 @@ export default function TasksPage() {
                           </p>
                           <StatusBadge status={task.status} t={t} />
                         </div>
-                        {task.context && (
+                        {(task.title ?? task.context) && (
                           <p className="mt-1 truncate text-sm text-[var(--muted-foreground)]">
-                            {task.context}
+                            {task.title ?? task.context.slice(0, 80)}
                           </p>
                         )}
                       </Link>

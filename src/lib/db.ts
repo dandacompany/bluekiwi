@@ -172,6 +172,7 @@ export interface Task {
   user_id: number | null;
   status: string;
   current_step: number;
+  title: string | null;
   context: string;
   running_context: string;
   session_meta: string;

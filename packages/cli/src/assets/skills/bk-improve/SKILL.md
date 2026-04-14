@@ -154,8 +154,10 @@ Changed steps: <n>
 Open the workflow detail page in the browser:
 
 ```bash
-open "${BLUEKIWI_URL:-http://localhost:3100}/workflows/${WORKFLOW_ID}"
+open "${WEBUI_URL}/workflows/${WORKFLOW_ID}"
 ```
+
+`WEBUI_URL` = the `webui_url` field returned by `update_workflow` or `create_workflow`.
 
 Ask via AskUserQuestion:
 

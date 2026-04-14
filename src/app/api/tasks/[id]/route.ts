@@ -53,7 +53,7 @@ export const GET = withAuth<Params>(
     }
 
     const logs = await query<TaskLog & { credential_service: string | null }>(
-      `SELECT tl.*, wn.visual_selection, (
+      `SELECT tl.*, wn.visual_selection, wn.hitl, (
        SELECT c.service_name FROM credentials c
        JOIN workflow_nodes cn2 ON cn2.credential_id = c.id
        WHERE cn2.id = tl.node_id

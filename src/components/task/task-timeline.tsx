@@ -21,6 +21,7 @@ export interface TimelineStep {
 
 interface TaskTimelineProps {
   taskTitle: string;
+  taskSubtitle?: string;
   taskStatus: string;
   provider?: string | null;
   model?: string | null;
@@ -52,6 +53,7 @@ function nodeTypeLabel(nodeType: string, translate: (key: string) => string) {
 
 export function TaskTimeline({
   taskTitle,
+  taskSubtitle,
   taskStatus,
   provider,
   model,
@@ -75,6 +77,14 @@ export function TaskTimeline({
         <h2 className="truncate text-sm font-semibold" title={taskTitle}>
           {taskTitle}
         </h2>
+        {taskSubtitle && (
+          <p
+            className="mt-0.5 truncate text-xs text-[var(--muted-foreground)]"
+            title={taskSubtitle}
+          >
+            {taskSubtitle}
+          </p>
+        )}
         <div className="mt-2 flex items-center gap-2">
           <StatusBadge status={taskStatus} />
           <span className="text-xs text-[var(--muted-foreground)]">

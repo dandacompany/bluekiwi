@@ -225,6 +225,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   user_id         INTEGER REFERENCES users(id) ON DELETE SET NULL,
   status          TEXT NOT NULL DEFAULT 'pending',
   current_step    INTEGER NOT NULL DEFAULT 0,
+  title           VARCHAR(120),
   context         TEXT NOT NULL DEFAULT '',
   running_context TEXT NOT NULL DEFAULT '{}',
   session_meta    TEXT NOT NULL DEFAULT '{}',

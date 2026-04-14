@@ -14,6 +14,7 @@ import {
   Zap,
   Repeat,
   Send,
+  ShieldCheck,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,9 @@ export interface StepLog {
   visual_html: string | null;
   visual_selection: boolean | null;
   web_response: string | null;
+  hitl: boolean | null;
+  approved_at: string | null;
+  approval_requested_at: string | null;
   provider_slug: string | null;
   model_slug: string | null;
   user_name: string | null;
@@ -95,6 +99,53 @@ interface StepDetailProps {
   /** Deep link: auto-open VS dialog when true */
   autoOpenVs?: boolean;
   onVsOpened?: () => void;
+}
+
+/* ------------------------------------------------------------------ */
+/*  HITL Approval Banner                                               */
+/* ------------------------------------------------------------------ */
+
+function HitlApprovalBanner({
+  taskId,
+  onApproved,
+}: {
+  taskId: number;
+  onApproved?: () => void;
+}) {
+  const { t } = useTranslation();
+  const [approving, setApproving] = useState(false);
+
+  const handleApprove = async () => {
+    setApproving(true);
+    try {
+      await fetch(`/api/tasks/${taskId}/approve`, { method: "POST" });
+      onApproved?.();
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  return (
+    <div className="mb-4 flex items-center justify-between gap-3 rounded-[1.25rem] border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/40 dark:bg-amber-950/30">
+      <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
+        <ShieldCheck className="h-4 w-4 shrink-0" />
+        <span>{t("tasks.hitlPendingApproval")}</span>
+      </div>
+      <Button
+        size="sm"
+        disabled={approving}
+        onClick={() => void handleApprove()}
+        className="shrink-0 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600"
+      >
+        {approving ? (
+          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />
+        )}
+        {t("tasks.hitlApprove")}
+      </Button>
+    </div>
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -687,6 +738,19 @@ export function StepDetail({
             )}
           </div>
         </div>
+
+        {/* HITL approval banner */}
+        {primary.hitl &&
+          primary.approval_requested_at &&
+          !primary.approved_at && (
+            <HitlApprovalBanner taskId={taskId} onApproved={onRefresh} />
+          )}
+        {primary.hitl && primary.approved_at && (
+          <div className="mb-4 flex items-center gap-2 rounded-[1.25rem] border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-900/40 dark:bg-green-950/30 dark:text-green-400">
+            <ShieldCheck className="h-4 w-4 shrink-0" />
+            <span>{t("tasks.hitlApproved")}</span>
+          </div>
+        )}
 
         {/* Loop iterations (collapsed previous, expanded latest) */}
         {hasMultiple && (

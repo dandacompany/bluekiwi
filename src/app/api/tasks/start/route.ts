@@ -20,6 +20,7 @@ export const POST = withAuth(
     const {
       workflow_id,
       version,
+      title,
       context,
       session_meta,
       target,
@@ -164,9 +165,10 @@ export const POST = withAuth(
 
     // Create task
     const taskId = await insert(
-      "INSERT INTO tasks (workflow_id, status, current_step, context, session_meta, target_meta, provider_slug, model_slug) VALUES ($1, 'running', 1, $2, $3, $4, $5, $6) RETURNING id",
+      "INSERT INTO tasks (workflow_id, status, current_step, title, context, session_meta, target_meta, provider_slug, model_slug) VALUES ($1, 'running', 1, $2, $3, $4, $5, $6, $7) RETURNING id",
       [
         workflow.id,
+        title ? String(title).slice(0, 120) : null,
         context ?? "",
         session_meta ?? "{}",
         target ? JSON.stringify(target) : null,

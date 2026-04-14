@@ -199,13 +199,20 @@ If the user selects "Create new workflow" from the selection UI → invoke `bk-d
 Call `start_workflow`. Pass any argument as `context`.
 
 <HARD-RULE>
+Always derive a short `title` (max 60 chars) from the user's goal or argument and pass it alongside `context`.
+- If the argument is short (≤60 chars): use it as-is.
+- If longer: distill the core topic into a concise noun phrase (e.g. "Hermes AI 아티클 생성" not the full paragraph).
+- Never pass the raw prompt verbatim when it exceeds 60 characters.
+</HARD-RULE>
+
+<HARD-RULE>
 After `start_workflow` returns the task_id, immediately open the task monitoring page in the user's browser:
 
 ```bash
-open "${BLUEKIWI_URL:-http://localhost:3100}/tasks/${TASK_ID}"
+open "${WEBUI_URL}/tasks/${TASK_ID}"
 ```
 
-Use `open` on macOS, `xdg-open` on Linux. Derive `BLUEKIWI_URL` from the MCP connection or default to `http://localhost:3100`.
+`WEBUI_URL` = the `webui_url` field returned by `start_workflow`. Use `open` on macOS, `xdg-open` on Linux.
 </HARD-RULE>
 
 ### 3. Execute First Step + Auto-Advance Loop
@@ -221,7 +228,7 @@ Starting: {workflow title} ({n} steps)
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 **1** → 2 → 3 → 4 → 5 → 6 → 7
 ━━━━━━━━━━━━━━━━━━━━━━━━━
-📺 Live: ${BLUEKIWI_URL}/tasks/${TASK_ID}
+📺 Live: ${WEBUI_URL}/tasks/${TASK_ID}
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -286,7 +293,7 @@ but agent-authored content must match the user's locale.
   2. Call `set_visual_html(task_id, node_id, html)` with the fragment.
   3. Open the VS deep link so the user sees the selection UI immediately:
      ```bash
-     open "${BLUEKIWI_URL:-http://localhost:3100}/tasks/${TASK_ID}?step=${STEP_ORDER}&vs=true"
+     open "${WEBUI_URL}/tasks/${TASK_ID}?step=${STEP_ORDER}&vs=true"
      ```
   4. Poll `get_web_response(task_id)` every 3-5 seconds until a response arrives (max 120 seconds).
   5. The response is a **JSON object** (not a plain string). Parse it to read the user's choices:
