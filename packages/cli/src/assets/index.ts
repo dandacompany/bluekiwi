@@ -16,6 +16,7 @@ export const BUNDLED_SKILLS: SkillBundle[] = [
   "bk-instruction",
   "bk-credential",
   "bk-design",
+  "bk-import",
   "bk-improve",
   "bk-report",
   "bk-scan",
