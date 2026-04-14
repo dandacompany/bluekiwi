@@ -27,7 +27,7 @@ export const GET = withResource<Credential>({
   handler: async ({ resource: cred }) => {
     const res = okResponse({
       ...cred,
-      secrets: JSON.stringify(maskSecrets(cred.secrets)),
+      secrets_masked: maskSecrets(cred.secrets),
     });
     return NextResponse.json(res.body, { status: res.status });
   },
@@ -69,7 +69,7 @@ export const PUT = withAuth<Params>(
     );
     const res = okResponse({
       ...updated!,
-      secrets: JSON.stringify(maskSecrets(updated!.secrets)),
+      secrets_masked: maskSecrets(updated!.secrets),
     });
     return NextResponse.json(res.body, { status: res.status });
   },

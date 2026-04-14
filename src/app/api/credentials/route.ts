@@ -24,7 +24,7 @@ export const GET = withAuth("credentials:read", async (request, user) => {
   // Always mask secrets in list responses. Reveal is a separate endpoint.
   const masked = rows.map((c) => ({
     ...c,
-    secrets: JSON.stringify(maskSecrets(c.secrets)),
+    secrets_masked: maskSecrets(c.secrets),
   }));
   const res = listResponse(masked, masked.length);
   return NextResponse.json(res.body, { status: res.status });
@@ -75,7 +75,7 @@ export const POST = withAuth("credentials:write", async (request, user) => {
   // Return masked in response
   const res = okResponse({
     ...row!,
-    secrets: JSON.stringify(maskSecrets(row!.secrets)),
+    secrets_masked: maskSecrets(row!.secrets),
   });
   return NextResponse.json(res.body, { status: res.status });
 });
