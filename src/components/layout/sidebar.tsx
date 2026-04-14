@@ -120,10 +120,22 @@ export function Sidebar({ user, teamName }: SidebarProps) {
     <TooltipProvider>
       <aside
         className={cn(
-          "flex h-screen flex-col border-r border-[var(--sidebar-border)] bg-[var(--sidebar-background)] transition-[width] duration-200 ease-in-out",
+          "relative flex h-screen flex-col overflow-visible border-r border-[var(--sidebar-border)] bg-[var(--sidebar-background)] transition-[width] duration-200 ease-in-out",
           collapsed ? "w-14" : "w-[220px]",
         )}
       >
+        <button
+          onClick={toggle}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="absolute top-12 right-0 z-40 flex h-7 w-7 translate-x-1/2 items-center justify-center rounded-full border border-[var(--sidebar-border)] bg-[var(--sidebar-background)] text-[var(--muted-foreground)] shadow-md transition-colors hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-foreground)]"
+        >
+          {collapsed ? (
+            <ChevronsRight className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronsLeft className="h-3.5 w-3.5" />
+          )}
+        </button>
+
         {/* Logo */}
         <div className="flex h-14 items-center gap-2 border-b border-[var(--sidebar-border)] px-3">
           <Link href="/" className="flex items-center gap-2">
@@ -287,17 +299,6 @@ export function Sidebar({ user, teamName }: SidebarProps) {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-
-          <button
-            onClick={toggle}
-            className="mt-1 flex w-full items-center justify-center rounded-lg p-2 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--sidebar-accent)]/50 hover:text-[var(--sidebar-foreground)]"
-          >
-            {collapsed ? (
-              <ChevronsRight className="h-4 w-4" />
-            ) : (
-              <ChevronsLeft className="h-4 w-4" />
-            )}
-          </button>
         </div>
       </aside>
       <Dialog open={versionDialogOpen} onOpenChange={setVersionDialogOpen}>
