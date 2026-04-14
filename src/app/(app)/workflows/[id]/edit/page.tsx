@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import WorkflowEditor from "@/components/workflow-editor/editor";
 
 interface MeResponse {
-  id: number;
+  userId: number;
   role: "viewer" | "editor" | "admin" | "superuser";
 }
 
@@ -45,7 +45,7 @@ export default function EditWorkflowPage() {
   const canEdit =
     !!me &&
     !!workflow &&
-    (me.id === workflow.owner_id || me.role === "superuser");
+    (me.userId === workflow.owner_id || me.role === "superuser");
 
   return <WorkflowEditor workflowId={workflowId} canEdit={canEdit} />;
 }

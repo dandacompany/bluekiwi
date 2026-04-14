@@ -55,7 +55,7 @@ interface WorkflowDetail {
 }
 
 interface MeResponse {
-  id: number;
+  userId: number;
   username: string;
   role: "viewer" | "editor" | "admin" | "superuser";
 }
@@ -242,7 +242,7 @@ export default function WorkflowDetailPage() {
   const canEdit =
     !!me &&
     !!workflow &&
-    (me.id === workflow.owner_id || me.role === "superuser");
+    (me.userId === workflow.owner_id || me.role === "superuser");
 
   const fetchWorkflow = useCallback(async () => {
     setLoading(true);
