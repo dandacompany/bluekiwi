@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Copy,
+  Download,
   FolderOpen,
   FolderPlus,
   LayoutGrid,
@@ -158,6 +159,11 @@ export default function WorkflowsPage() {
     override: string | null;
   } | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [exportTarget, setExportTarget] = useState<{
+    id: number;
+    title: string;
+    folderId: number | null;
+  } | null>(null);
 
   const {
     data: workflows,
@@ -655,6 +661,18 @@ export default function WorkflowsPage() {
                                   <Copy className="mr-2 h-3.5 w-3.5" />
                                   {t("common.duplicate")}
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    setExportTarget({
+                                      id: wf.id,
+                                      title: wf.title,
+                                      folderId: wf.folder_id ?? null,
+                                    })
+                                  }
+                                >
+                                  <Download className="mr-2 h-3.5 w-3.5" />
+                                  {t("workflows.export")}
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   className="text-[var(--destructive)]"
@@ -752,15 +770,27 @@ export default function WorkflowsPage() {
                                     <Pencil className="mr-2 h-3.5 w-3.5" />
                                     {t("common.edit")}
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => handleDuplicate(wf)}
-                                  >
-                                    <Copy className="mr-2 h-3.5 w-3.5" />
-                                    {t("common.duplicate")}
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    className="text-[var(--destructive)]"
+                                <DropdownMenuItem
+                                  onClick={() => handleDuplicate(wf)}
+                                >
+                                  <Copy className="mr-2 h-3.5 w-3.5" />
+                                  {t("common.duplicate")}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    setExportTarget({
+                                      id: wf.id,
+                                      title: wf.title,
+                                      folderId: wf.folder_id ?? null,
+                                    })
+                                  }
+                                >
+                                  <Download className="mr-2 h-3.5 w-3.5" />
+                                  {t("workflows.export")}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-[var(--destructive)]"
                                     onClick={() => setDeleteTarget(wf)}
                                   >
                                     <Trash2 className="mr-2 h-3.5 w-3.5" />
@@ -842,6 +872,17 @@ export default function WorkflowsPage() {
         folderId={selectedFolder}
         onImported={(workflowId) => router.push(`/workflows/${workflowId}`)}
       />
+
+      {exportTarget && (
+        <WorkflowTransferDialog
+          open={exportTarget !== null}
+          onClose={() => setExportTarget(null)}
+          mode="export"
+          workflowId={exportTarget.id}
+          workflowTitle={exportTarget.title}
+          folderId={exportTarget.folderId}
+        />
+      )}
     </div>
   );
 }
