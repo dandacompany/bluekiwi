@@ -467,7 +467,7 @@ export default function WorkflowDetailPage() {
             </Button>
             <Button variant="outline" onClick={() => setExportDialogOpen(true)}>
               <Download className="mr-2 h-4 w-4" />
-              Export
+              {t("workflows.export")}
             </Button>
             <Button
               onClick={() => setRunDialogOpen(true)}

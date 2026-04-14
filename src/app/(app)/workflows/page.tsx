@@ -455,7 +455,7 @@ export default function WorkflowsPage() {
               onClick={() => setImportDialogOpen(true)}
             >
               <Upload className="h-4 w-4" />
-              Import
+              {t("workflows.import")}
             </Button>
           </div>
         </div>

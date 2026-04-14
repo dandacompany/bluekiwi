@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "@/lib/i18n/context";
 
 type Mode = "export" | "import";
 
@@ -87,6 +88,7 @@ export function WorkflowTransferDialog({
   folderId,
   onImported,
 }: Props) {
+  const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [uploadName, setUploadName] = useState("");
   const [packageData, setPackageData] = useState<unknown>(null);
@@ -244,12 +246,14 @@ export function WorkflowTransferDialog({
             ) : (
               <Upload className="h-4 w-4 text-brand-blue-600" />
             )}
-            {mode === "export" ? "워크플로 내보내기" : "워크플로 가져오기"}
+            {mode === "export"
+              ? t("workflows.exportTitle")
+              : t("workflows.importTitle")}
           </DialogTitle>
           <DialogDescription>
             {mode === "export"
-              ? "이 워크플로를 JSON 파일로 저장합니다."
-              : "JSON 파일로 저장된 워크플로를 가져옵니다."}
+              ? t("workflows.exportDescription")
+              : t("workflows.importDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -441,7 +445,7 @@ export function WorkflowTransferDialog({
               ) : (
                 <Download className="mr-2 h-4 w-4" />
               )}
-              JSON 다운로드
+              {t("workflows.export")}
             </Button>
           ) : (
             <Button
@@ -453,7 +457,7 @@ export function WorkflowTransferDialog({
               ) : (
                 <Upload className="mr-2 h-4 w-4" />
               )}
-              워크플로 가져오기
+              {t("workflows.import")}
             </Button>
           )}
         </DialogFooter>
