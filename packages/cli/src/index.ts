@@ -80,10 +80,7 @@ program
 program.command("runtimes").action(runtimesCommand.list);
 program
   .command("runtimes:add <name>")
-  .option(
-    "--profile <name>",
-    "Profile to install into runtimes and set active",
-  )
+  .option("--profile <name>", "Profile to install into runtimes and set active")
   .action((name: string, opts: { profile?: string }) =>
     runtimesCommand.add(name, opts.profile),
   );

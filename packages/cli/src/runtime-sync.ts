@@ -1,8 +1,5 @@
 import { BUNDLED_MCP_PATH, BUNDLED_SKILLS } from "./assets/index.js";
-import {
-  type BluekiwiConfig,
-  requireProfile,
-} from "./config.js";
+import { type BluekiwiConfig, requireProfile } from "./config.js";
 import { getAllAdapters } from "./runtimes/detect.js";
 
 export function applyProfileToRuntimes(

@@ -288,16 +288,16 @@ After connecting, BlueKiwi also copies its built-in skills into each runtime's s
 
 ### Environment variables
 
-| Variable           | Required | Default                 | Description                        |
-| ------------------ | -------- | ----------------------- | ---------------------------------- |
-| `DB_PASSWORD`      | ✅       | —                       | PostgreSQL password                |
-| `JWT_SECRET`       | ✅       | —                       | JWT signing secret (min 32 chars)  |
-| `APP_PORT`         |          | `3100`                  | Host port for the web UI           |
+| Variable           | Required | Default                 | Description                                                   |
+| ------------------ | -------- | ----------------------- | ------------------------------------------------------------- |
+| `DB_PASSWORD`      | ✅       | —                       | PostgreSQL password                                           |
+| `JWT_SECRET`       | ✅       | —                       | JWT signing secret (min 32 chars)                             |
+| `APP_PORT`         |          | `3100`                  | Host port for the web UI                                      |
 | `TEAM_NAME`        |          | —                       | Optional team label shown in UI metadata and sidebar branding |
-| `PUBLIC_URL`       |          | `http://localhost:3100` | Public URL shown in invite links   |
-| `BLUEKIWI_VERSION` |          | `latest`                | Pin a specific image tag           |
-| `RESEND_API_KEY`   |          | —                       | Enables email delivery for invites |
-| `FROM_EMAIL`       |          | —                       | Sender address for invite emails   |
+| `PUBLIC_URL`       |          | `http://localhost:3100` | Public URL shown in invite links                              |
+| `BLUEKIWI_VERSION` |          | `latest`                | Pin a specific image tag                                      |
+| `RESEND_API_KEY`   |          | —                       | Enables email delivery for invites                            |
+| `FROM_EMAIL`       |          | —                       | Sender address for invite emails                              |
 
 ### One-click deploy
 

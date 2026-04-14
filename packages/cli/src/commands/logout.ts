@@ -1,6 +1,11 @@
 import pc from "picocolors";
 
-import { clearConfig, loadConfig, removeProfile, saveConfig } from "../config.js";
+import {
+  clearConfig,
+  loadConfig,
+  removeProfile,
+  saveConfig,
+} from "../config.js";
 import { getAllAdapters } from "../runtimes/detect.js";
 import { applyProfileToRuntimes } from "../runtime-sync.js";
 
@@ -21,7 +26,9 @@ export async function logoutCommand(profileName?: string): Promise<void> {
         }
       }
       clearConfig();
-      console.log(pc.green(`✓ Removed profile '${profileName}' and logged out.`));
+      console.log(
+        pc.green(`✓ Removed profile '${profileName}' and logged out.`),
+      );
       return;
     }
 

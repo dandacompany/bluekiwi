@@ -12,7 +12,9 @@ export async function statusCommand(profileName?: string): Promise<void> {
 
   const { name, profile } = requireProfile(cfg, profileName);
 
-  console.log(`${pc.bold("Profile:")}  ${name}${name === cfg.active_profile ? " (active)" : ""}`);
+  console.log(
+    `${pc.bold("Profile:")}  ${name}${name === cfg.active_profile ? " (active)" : ""}`,
+  );
   console.log(`${pc.bold("Server:")}   ${profile.server_url}`);
   console.log(
     `${pc.bold("User:")}     ${profile.user.username} (${profile.user.role})`,

@@ -72,7 +72,11 @@ function normalizeProfileName(name?: string | null): string {
 
 function isLegacyConfig(value: unknown): value is LegacyBluekiwiConfig {
   const raw = value as Partial<LegacyBluekiwiConfig> | null;
-  return !!raw && typeof raw.server_url === "string" && typeof raw.api_key === "string";
+  return (
+    !!raw &&
+    typeof raw.server_url === "string" &&
+    typeof raw.api_key === "string"
+  );
 }
 
 function normalizeProfile(
@@ -150,8 +154,7 @@ function normalizeConfig(raw: unknown): BluekiwiConfig | null {
       : profileNames[0];
 
   return {
-    version:
-      typeof value.version === "string" ? value.version : CONFIG_VERSION,
+    version: typeof value.version === "string" ? value.version : CONFIG_VERSION,
     active_profile: activeProfile,
     profiles,
     runtimes: coerceRuntimes(value.runtimes),
@@ -164,9 +167,7 @@ export function loadConfig(): BluekiwiConfig | null {
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf8")) as unknown;
     const normalized = normalizeConfig(raw);
     if (!normalized) return null;
-    if (
-      JSON.stringify(raw, null, 2) !== JSON.stringify(normalized, null, 2)
-    ) {
+    if (JSON.stringify(raw, null, 2) !== JSON.stringify(normalized, null, 2)) {
       saveConfig(normalized);
     }
     return normalized;
