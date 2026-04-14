@@ -315,8 +315,11 @@ export default function WorkflowDetailPage() {
 
   useEffect(() => {
     if (!validId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchWorkflow();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchTasks();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchVersions();
   }, [validId, workflowId, fetchWorkflow, fetchTasks, fetchVersions]);
 
