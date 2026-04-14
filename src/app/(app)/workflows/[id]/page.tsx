@@ -16,6 +16,7 @@ import {
   Search,
 } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
+import { RunCommandDialog } from "@/components/workflows/run-command-dialog";
 import { VisibilityBadge } from "@/components/shared/visibility-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -224,7 +225,7 @@ export default function WorkflowDetailPage() {
   const [taskLoading, setTaskLoading] = useState(true);
   const [taskStatusFilter, setTaskStatusFilter] = useState("");
   const [taskSearch, setTaskSearch] = useState("");
-  const [starting, setStarting] = useState(false);
+  const [runDialogOpen, setRunDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("history");
   const historySectionRef = useRef<HTMLDivElement | null>(null);
   const [versions, setVersions] = useState<VersionsResponse | null>(null);
@@ -366,38 +367,6 @@ export default function WorkflowDetailPage() {
 
   const previewTasks = useMemo(() => sortedTasks.slice(0, 3), [sortedTasks]);
 
-  const runWorkflow = async () => {
-    if (!workflow) return;
-    setStarting(true);
-    try {
-      // The dropdown now navigates to the selected version, so by the time
-      // Run is pressed the page is already showing that version. Starting
-      // the currently viewed workflow is the only sensible action.
-      const res = await fetch("/api/tasks/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workflow_id: workflow.id }),
-      });
-      if (!res.ok) {
-        if (res.status === 409) {
-          toast.error(t("workflows.inactiveStartBlocked"));
-          return;
-        }
-        toast.error(t("workflows.runFailed"));
-        return;
-      }
-      const json = await res.json();
-      const taskId = json?.data?.task_id;
-      toast.success(t("workflows.runStarted", { id: taskId ?? "" }));
-      await fetchTasks();
-      if (typeof taskId === "number") {
-        router.push(`/tasks/${taskId}`);
-      }
-    } finally {
-      setStarting(false);
-    }
-  };
-
   if (!Number.isFinite(workflowId)) {
     return (
       <main className="mx-auto max-w-5xl px-4 py-6">
@@ -473,9 +442,9 @@ export default function WorkflowDetailPage() {
               <Pencil className="mr-2 h-4 w-4" />
               {t("workflows.goEdit")}
             </Button>
-            <Button onClick={runWorkflow} disabled={starting}>
+            <Button onClick={() => setRunDialogOpen(true)}>
               <Play className="mr-2 h-4 w-4" />
-              {starting ? t("common.loading") : t("workflows.run")}
+              {t("workflows.run")}
             </Button>
           </div>
         </div>
@@ -937,6 +906,15 @@ export default function WorkflowDetailPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {workflow && (
+        <RunCommandDialog
+          open={runDialogOpen}
+          onClose={() => setRunDialogOpen(false)}
+          workflowId={workflow.id}
+          workflowTitle={workflow.title}
+        />
+      )}
     </main>
   );
 }

@@ -406,6 +406,21 @@
     "results": " results",
     "movedToFolder": "Workflow moved to folder."
   },
+  "runDialog": {
+    "step1Label": "Task setup",
+    "step2Label": "Get command",
+    "step1Desc": "Optionally give this run a title and context. Both fields are optional.",
+    "titleLabel": "Title (optional)",
+    "titlePlaceholder": "e.g. Q1 Analysis, Security Audit...",
+    "contextLabel": "Request (optional)",
+    "contextPlaceholder": "Describe what you want the agent to accomplish.",
+    "nextBtn": "Next",
+    "backBtn": "Back",
+    "toolLabel": "Select AI tool",
+    "commandLabel": "Paste into session",
+    "copyBtn": "Copy",
+    "usageHint": "Paste the command above into your AI coding agent session to start the workflow."
+  },
   "tasks": {
     "title": "Tasks",
     "empty": "No tasks",
