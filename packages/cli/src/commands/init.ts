@@ -53,6 +53,7 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
 
   let server =
     normalizeEnvValue(options.server) ??
+    normalizeEnvValue(process.env.BLUEKIWI_API_URL) ??
     normalizeEnvValue(process.env.BLUEKIWI_SERVER);
   let apiKey =
     normalizeEnvValue(options.apiKey) ??
@@ -102,7 +103,7 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
   if (server === undefined || apiKey === undefined) {
     if (isNonInteractive) {
       throw new Error(
-        "Non-interactive mode: --server and --api-key (or BLUEKIWI_SERVER/BLUEKIWI_API_KEY) are required",
+        "Non-interactive mode: --server and --api-key (or BLUEKIWI_API_URL/BLUEKIWI_API_KEY) are required",
       );
     }
     throw new Error("BlueKiwi server URL and API key are required");
