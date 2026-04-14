@@ -1,4 +1,4 @@
-import prompts, { type PromptObject } from "prompts";
+import prompts from "prompts";
 import pc from "picocolors";
 
 import { BlueKiwiClient } from "../api-client.js";
@@ -61,6 +61,7 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
   // Load existing config for pre-filling prompts
   const existingCfg = loadConfig() ?? createEmptyConfig();
   let existingProfile = getProfile(existingCfg, profileName);
+  const activeProfile = getProfile(existingCfg, existingCfg.active_profile);
 
   let server =
     normalizeEnvValue(options.server) ??
@@ -83,21 +84,25 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
     }
   }
 
-  if (!isNonInteractive && (server === undefined || apiKey === undefined)) {
-    const questions: PromptObject[] = [];
-    if (server === undefined) {
-      questions.push({
+  if (!isNonInteractive) {
+    if (options.server === undefined) {
+      const serverAnswer = await prompts({
         type: "text",
         name: "server",
         message: "BlueKiwi server URL",
-        initial: existingProfile?.profile.server_url,
+        initial:
+          existingProfile?.profile.server_url ??
+          activeProfile?.profile.server_url ??
+          server,
       });
+      server = normalizeEnvValue(serverAnswer.server) ?? server;
     }
+
     if (apiKey === undefined) {
       const maskedKey = existingProfile?.profile.api_key
         ? maskApiKey(existingProfile.profile.api_key)
         : undefined;
-      questions.push({
+      const apiKeyAnswer = await prompts({
         type: "text",
         name: "apiKey",
         message: maskedKey
@@ -105,17 +110,8 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
           : "API key (bk_...)",
         initial: maskedKey,
       });
-    }
 
-    const answers = await prompts(questions);
-    server ??= answers.server;
-
-    // If user kept the masked key (just pressed Enter), restore original
-    if (apiKey === undefined) {
-      const entered = answers.apiKey as string | undefined;
-      const maskedKey = existingProfile?.profile.api_key
-        ? maskApiKey(existingProfile.profile.api_key)
-        : undefined;
+      const entered = apiKeyAnswer.apiKey as string | undefined;
       if (entered && maskedKey && entered === maskedKey) {
         apiKey = existingProfile!.profile.api_key;
       } else {

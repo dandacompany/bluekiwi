@@ -30,39 +30,42 @@ const program = new Command();
 program
   .name("bluekiwi")
   .description("BlueKiwi CLI — connect your agent runtime to a BlueKiwi server")
-  .version(pkg.version);
+  .helpOption("-h, --help", "display help for command")
+  .version(pkg.version, "-v, --version", "display version number");
 
 program
   .command("accept <token>")
-  .requiredOption("--server <url>", "BlueKiwi server URL")
-  .option("--profile <name>", "Profile name (default: default)")
-  .option("--username <name>", "Username (non-interactive)")
-  .option("--password <pass>", "Password (non-interactive)")
+  .requiredOption("-s, --server <url>", "BlueKiwi server URL")
+  .option("-p, --profile <name>", "Profile name (default: default)")
+  .option("-u, --username <name>", "Username (non-interactive)")
+  .option("-w, --password <pass>", "Password (non-interactive)")
   .action(acceptCommand);
 
 program
   .command("init")
-  .option("--server <url>", "BlueKiwi server URL")
-  .option("--api-key <key>", "API key (bk_...)")
-  .option("--profile <name>", "Profile name (default: default)")
+  .option("-s, --server <url>", "BlueKiwi server URL")
+  .option("-k, --api-key <key>", "API key (bk_...)")
+  .option("--apikey <key>", "Alias for --api-key")
+  .option("-p, --profile <name>", "Profile name (default: default)")
   .option(
-    "--runtime <name>",
+    "-r, --runtime <name>",
     "Runtime to install into (repeatable, or comma-separated)",
     collectRuntimes,
     [],
   )
-  .option("--yes", "Suppress all prompts (non-interactive)")
+  .option("-y, --yes", "Suppress all prompts (non-interactive)")
   .action(
     (opts: {
       server?: string;
       apiKey?: string;
+      apikey?: string;
       runtime?: string[];
       profile?: string;
       yes?: boolean;
     }) =>
       initCommand({
         server: opts.server,
-        apiKey: opts.apiKey,
+        apiKey: opts.apiKey ?? opts.apikey,
         runtimes: opts.runtime?.length ? opts.runtime : undefined,
         profile: opts.profile,
         yes: opts.yes,
@@ -70,17 +73,20 @@ program
   );
 program
   .command("status")
-  .option("--profile <name>", "Profile name (default: active profile)")
+  .option("-p, --profile <name>", "Profile name (default: active profile)")
   .action((opts: { profile?: string }) => statusCommand(opts.profile));
 program.command("upgrade").action(upgradeCommand);
 program
   .command("logout")
-  .option("--profile <name>", "Remove only one profile")
+  .option("-p, --profile <name>", "Remove only one profile")
   .action((opts: { profile?: string }) => logoutCommand(opts.profile));
 program.command("runtimes").action(runtimesCommand.list);
 program
   .command("runtimes:add <name>")
-  .option("--profile <name>", "Profile to install into runtimes and set active")
+  .option(
+    "-p, --profile <name>",
+    "Profile to install into runtimes and set active",
+  )
   .action((name: string, opts: { profile?: string }) =>
     runtimesCommand.add(name, opts.profile),
   );
@@ -90,6 +96,21 @@ program.command("profile:list").action(profileCommand.list);
 program.command("profile:use <name>").action(profileCommand.use);
 program.command("profile:remove <name>").action(profileCommand.remove);
 program.command("dev-link").action(devLinkCommand);
+program.command("help [command]").action((command?: string) => {
+  if (!command) {
+    program.outputHelp();
+    return;
+  }
+
+  const target = program.commands.find(
+    (cmd) => cmd.name() === command || cmd.aliases().includes(command),
+  );
+  if (!target) {
+    console.error(`Unknown command '${command}'`);
+    process.exit(1);
+  }
+  target.outputHelp();
+});
 
 program.parseAsync(process.argv).catch((err) => {
   console.error(err.message);
