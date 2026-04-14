@@ -58,14 +58,14 @@ Ask via AskUserQuestion:
 
 ### Step 4: Design Workflow Structure
 
-Analyze the goal and design the nodes.
+Analyze the goal and design the nodes. **Every node instruction must satisfy the Instruction Depth Standard below before proceeding to Step 5.**
 
 **Node structure example:**
 
 ```json
 {
   "title": "Clarify Goal",
-  "instruction": "Analyze the user's stated goal and extract the 3 most important clarifying questions.",
+  "instruction": "## Goal Clarification\n\nExtract precise requirements before any work begins:\n\n1. Read the user's stated goal word by word and list every ambiguity.\n2. For each ambiguity, formulate one closed-ended question (yes/no or multiple choice).\n3. Ask the questions one at a time — never batch them.\n\n**Output**: A numbered list of confirmed constraints and success criteria.\n**Verification**: Every ambiguity is resolved; no open questions remain.",
   "node_type": "action",
   "hitl": false,
   "order": 1
@@ -183,6 +183,75 @@ Type `/bk-run` to execute it now.
 - Use `hitl: true` on `action` nodes only when the step requires explicit human judgment mid-flow (e.g., security-sensitive operations, irreversible actions).
 - Use `visual_selection: true` on `gate` nodes when the selection is best expressed visually — e.g., choosing a layout, picking a chart type, selecting a UI template. The agent must call `set_visual_html` with interactive HTML before executing the step; the user's click supplies the response.
 - For nodes requiring external API calls, specify `credential_id`. Create credentials first with `/bk-credential`.
+
+## Instruction Depth Standard
+
+<HARD-RULE>
+Before calling `create_workflow`, verify every node instruction satisfies ALL of the following:
+
+1. **Role/context** (first line or heading): who or what performs this step — e.g., "## Market Analyst", "You are acting as a senior code reviewer"
+2. **Numbered sub-steps**: at minimum 2 explicit steps describing HOW to perform the action, not just WHAT to produce
+3. **Output specification**: exactly what is produced — file path + format, structured data shape, or required fields
+4. **Verification**: one line stating how to confirm the step succeeded
+5. **Loop nodes only**: termination condition as the final line — "Termination: end when X"
+
+**Minimum instruction length: 80 words.** If an instruction is shorter, it is not specific enough — expand it.
+</HARD-RULE>
+
+### Anti-patterns → Prescriptive Rewrites
+
+| ❌ Vague — do not write    | ✅ Prescriptive — write this instead                                                                                                                                                           |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "Analyze the data."        | "Read the CSV at `data/input.csv`. Compute row count, null counts per column, and value distributions for numeric columns. Output a summary table to `data/eda-summary.md`."                   |
+| "Review the results."      | "Check each output against the success criteria from Step 1. Build a pass/fail table with one evidence line per criterion. Flag any criterion below threshold in red."                         |
+| "Ask the user what to do." | "Present exactly 3 options via bk-options (sm): A) proceed as-is, B) revise the output, C) abort. Include a one-sentence consequence for each option."                                         |
+| "Generate a report."       | "Create `docs/report-YYYY-MM-DD.md` with sections: Executive Summary (3 bullets), Findings (numbered, each with evidence), Recommendations (priority-ordered), Next Steps (owner + deadline)." |
+| "Search the web."          | "Run a web search for each of the 3 queries listed. For each result, record: source URL, publication date, key claim (1 sentence). Discard results older than 12 months."                      |
+
+### Instruction Templates by Node Type
+
+**action — data / research step:**
+
+```
+## <Expert Role>
+
+<One sentence: what this step accomplishes and why it matters here.>
+
+1. <First concrete action — tool call, file read, calculation>
+2. <Second concrete action — transformation, filtering, aggregation>
+3. <Third action if needed>
+
+**Output**: <Exact file path or data structure>
+**Verification**: <Command or check that confirms success>
+```
+
+**gate — user decision:**
+
+```
+<Brief context: what was just produced and what the user must decide.>
+
+Present options using bk-options (size=sm):
+- A) <Option> — <one-sentence consequence>
+- B) <Option> — <one-sentence consequence>
+- C) <Option> — <one-sentence consequence>
+
+Mark the recommended option with `data-recommended`.
+```
+
+**loop — iterative interaction:**
+
+```
+## <Role>
+
+<What is being iterated and why iteration is needed.>
+
+Each iteration:
+1. <What to present or ask>
+2. <How to process the response>
+3. <How to update state>
+
+**Termination**: End when <specific, measurable condition>.
+```
 
 #### VS Component Selection Guide
 
