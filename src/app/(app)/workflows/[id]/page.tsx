@@ -315,15 +315,6 @@ export default function WorkflowDetailPage() {
 
   useEffect(() => {
     if (!validId) return;
-
-    // Reset data to avoid stale rendering while the new version loads.
-    // Every section (hero, tabs, tasks, versions) is keyed on workflowId,
-    // so when the dropdown navigates to a different version we want the
-    // UI to visibly reset instead of showing the previous version's rows.
-    setWorkflow(null);
-    setTasks([]);
-    setVersions(null);
-
     void fetchWorkflow();
     void fetchTasks();
     void fetchVersions();
