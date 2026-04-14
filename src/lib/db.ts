@@ -322,6 +322,23 @@ export function maskSecrets(secretsJson: string): Record<string, string> {
 
 // ─── Node resolver (async) ───
 
+export interface SlimNode {
+  id: number;
+  step_order: number;
+  title: string;
+  node_type: string;
+}
+
+/** Lightweight node list — titles and types only, no instruction content. */
+export async function resolveNodesSlim(
+  workflowId: number,
+): Promise<SlimNode[]> {
+  return query<SlimNode>(
+    "SELECT id, step_order, title, node_type FROM workflow_nodes WHERE workflow_id = $1 ORDER BY step_order ASC",
+    [workflowId],
+  );
+}
+
 export async function resolveNodes(
   workflowId: number,
 ): Promise<ResolvedWorkflowNode[]> {

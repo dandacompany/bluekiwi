@@ -5,6 +5,7 @@ import {
   withTransaction,
   Workflow,
   resolveNodes,
+  resolveNodesSlim,
   okResponse,
   listResponse,
   errorResponse,
@@ -21,6 +22,7 @@ export const GET = withAuth(
   async (request: NextRequest, user) => {
     const url = new URL(request.url);
     const includeInactive = url.searchParams.get("include_inactive") === "true";
+    const slim = url.searchParams.get("slim") !== "false"; // default true
     const folderId = url.searchParams.get("folder_id");
     const q = url.searchParams.get("q");
 
@@ -53,7 +55,9 @@ export const GET = withAuth(
     const workflowsWithNodes = await Promise.all(
       workflows.map(async (workflow) => ({
         ...workflow,
-        nodes: await resolveNodes(workflow.id),
+        nodes: slim
+          ? await resolveNodesSlim(workflow.id)
+          : await resolveNodes(workflow.id),
       })),
     );
 

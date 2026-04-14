@@ -136,10 +136,11 @@ const server = new Server(
 const tools: Tool[] = [
   tool(
     "list_workflows",
-    "List workflows visible to the current user. By default only active versions are returned. Pass include_inactive=true to see archived versions. Pass folder_id to filter by a specific folder.",
+    "List workflows visible to the current user. Returns slim metadata by default (id, title, description, version, node titles+types — no instruction content). Pass slim=false to include full node details including instruction text. Pass include_inactive=true to see archived versions. Pass folder_id to filter by folder.",
     {
       include_inactive: { type: "boolean" },
       folder_id: { type: "number" },
+      slim: { type: "boolean" },
     },
   ),
   tool(
@@ -712,6 +713,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args.include_inactive === true) qs.set("include_inactive", "true");
         if (typeof args.folder_id === "number")
           qs.set("folder_id", String(args.folder_id));
+        // slim defaults to true — only pass false when explicitly requested
+        if (args.slim === false) qs.set("slim", "false");
         const suffix = qs.toString() ? `?${qs.toString()}` : "";
         return wrap(await client.request("GET", `/api/workflows${suffix}`));
       }
