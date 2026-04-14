@@ -56,11 +56,11 @@ function maskApiKey(key: string): string {
 
 export async function initCommand(options: InitOptions = {}): Promise<void> {
   const isNonInteractive = options.yes === true || process.stdin.isTTY !== true;
-  const profileName = normalizeProfileName(options.profile);
+  let profileName = normalizeProfileName(options.profile);
 
   // Load existing config for pre-filling prompts
   const existingCfg = loadConfig() ?? createEmptyConfig();
-  const existingProfile = getProfile(existingCfg, profileName);
+  let existingProfile = getProfile(existingCfg, profileName);
 
   let server =
     normalizeEnvValue(options.server) ??
@@ -69,6 +69,19 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
   let apiKey =
     normalizeEnvValue(options.apiKey) ??
     normalizeEnvValue(process.env.BLUEKIWI_API_KEY);
+
+  if (!isNonInteractive) {
+    if (options.profile === undefined) {
+      const profileAnswer = await prompts({
+        type: "text",
+        name: "profile",
+        message: "Profile name",
+        initial: profileName,
+      });
+      profileName = normalizeProfileName(profileAnswer.profile);
+      existingProfile = getProfile(existingCfg, profileName);
+    }
+  }
 
   if (!isNonInteractive && (server === undefined || apiKey === undefined)) {
     const questions: PromptObject[] = [];

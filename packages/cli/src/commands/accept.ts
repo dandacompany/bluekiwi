@@ -22,8 +22,19 @@ export async function acceptCommand(
     profile?: string;
   },
 ): Promise<void> {
-  const profileName = normalizeProfileName(opts.profile);
+  let profileName = normalizeProfileName(opts.profile);
   const currentConfig = loadConfig() ?? createEmptyConfig();
+
+  if (process.stdin.isTTY && opts.profile === undefined) {
+    const profileAnswer = await prompts({
+      type: "text",
+      name: "profile",
+      message: "Profile name",
+      initial: profileName,
+    });
+    profileName = normalizeProfileName(profileAnswer.profile);
+  }
+
   console.log(pc.cyan("→ Validating invite..."));
   const validateRes = await fetch(`${opts.server}/api/invites/accept/${token}`);
   if (!validateRes.ok) {
@@ -107,7 +118,9 @@ export async function acceptCommand(
       value: adapter.name,
       selected:
         currentConfig.runtimes.includes(adapter.name) ||
-        detected.some((detectedAdapter) => detectedAdapter.name === adapter.name),
+        detected.some(
+          (detectedAdapter) => detectedAdapter.name === adapter.name,
+        ),
       disabled: !adapter.isInstalled(),
     }));
 
