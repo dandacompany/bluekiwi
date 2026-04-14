@@ -432,5 +432,6 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 
 INSERT INTO schema_migrations (filename) VALUES
   ('001_initial_schema.sql'),
-  ('002_system_settings.sql')
+  ('002_system_settings.sql'),
+  ('009_task_title.sql')
 ON CONFLICT (filename) DO NOTHING;
