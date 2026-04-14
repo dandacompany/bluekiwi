@@ -14,4 +14,4 @@ RUN chmod +x /usr/local/bin/dev-entrypoint.sh
 EXPOSE 3000
 
 ENTRYPOINT ["dev-entrypoint.sh"]
-CMD ["npx", "next", "dev", "-H", "0.0.0.0", "--webpack"]
+CMD ["npx", "next", "dev", "-H", "0.0.0.0"]

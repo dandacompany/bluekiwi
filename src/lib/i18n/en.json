@@ -240,7 +240,16 @@
     "new": "New",
     "github": "GitHub Repository",
     "license": "License",
-    "support": "Support Developer"
+    "support": "Support Developer",
+    "version": "Version",
+    "updateAvailable": "Update available",
+    "versionDialogTitle": "BlueKiwi version",
+    "versionDialogDescUpdate": "A newer version is available. You are on v{current}, and the latest release is v{latest}.",
+    "versionDialogDescCurrent": "You are using the latest known version: v{current}.",
+    "updateMethodCliTitle": "If you installed the CLI",
+    "updateMethodNpmTitle": "If you want to reinstall globally",
+    "updateMethodDockerTitle": "If you run BlueKiwi with Docker Compose",
+    "viewReleaseNotes": "View release notes"
   },
   "auth": {
     "login": "Login",

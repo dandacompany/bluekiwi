@@ -240,7 +240,16 @@
     "new": "새로 만들기",
     "github": "GitHub 저장소",
     "license": "라이센스",
-    "support": "개발자 후원"
+    "support": "개발자 후원",
+    "version": "버전",
+    "updateAvailable": "업데이트 필요",
+    "versionDialogTitle": "BlueKiwi 버전",
+    "versionDialogDescUpdate": "새 버전이 있습니다. 현재 버전은 v{current}이고, 최신 릴리스는 v{latest}입니다.",
+    "versionDialogDescCurrent": "현재 알려진 최신 버전 v{current}을 사용 중입니다.",
+    "updateMethodCliTitle": "CLI로 설치한 경우",
+    "updateMethodNpmTitle": "전역 재설치를 원할 경우",
+    "updateMethodDockerTitle": "Docker Compose로 운영 중인 경우",
+    "viewReleaseNotes": "릴리스 노트 보기"
   },
   "auth": {
     "login": "로그인",

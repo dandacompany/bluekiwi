@@ -31,6 +31,14 @@ ensure_lightningcss_binary() {
   echo "[dev-entrypoint] lightningcss linux-arm64-musl binary installed ✓"
 }
 
+reset_next_dev_state() {
+  if [ -d /app/.next/dev ] || [ -d /app/.next/cache ]; then
+    echo "[dev-entrypoint] clearing stale Next dev artifacts..."
+    rm -rf /app/.next/dev /app/.next/cache 2>/dev/null || true
+    echo "[dev-entrypoint] Next dev artifacts cleared ✓"
+  fi
+}
+
 if [ "$CURRENT_HASH" != "$STORED_HASH" ]; then
   echo "[dev-entrypoint] package-lock.json changed — refreshing node_modules..."
 
@@ -53,5 +61,6 @@ fi
 
 cd /app
 ensure_lightningcss_binary
+reset_next_dev_state
 
 exec "$@"

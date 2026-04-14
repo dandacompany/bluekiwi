@@ -28,6 +28,15 @@ const LICENSE_URL =
   "https://github.com/dandacompany/bluekiwi/blob/main/LICENSE.md";
 const SUPPORT_URL = "https://buymeacoffee.com/dante.labs";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -60,6 +69,7 @@ export function Sidebar({ user, teamName }: SidebarProps) {
     latest: string | null;
     releaseUrl: string | null;
   }>({ current: "", hasUpdate: false, latest: null, releaseUrl: null });
+  const [versionDialogOpen, setVersionDialogOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/version")
@@ -172,7 +182,7 @@ export function Sidebar({ user, teamName }: SidebarProps) {
               <DropdownMenuTrigger asChild>
                 <button
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-lg px-3 py-2 transition-colors hover:bg-[var(--sidebar-accent)]/50",
+                    "relative flex w-full items-center gap-2 rounded-lg px-3 py-2 transition-colors hover:bg-[var(--sidebar-accent)]/50",
                     collapsed && "justify-center",
                   )}
                 >
@@ -189,6 +199,9 @@ export function Sidebar({ user, teamName }: SidebarProps) {
                       </p>
                     </div>
                   )}
+                  {updateInfo.hasUpdate ? (
+                    <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-[var(--sidebar-background)]" />
+                  ) : null}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -240,38 +253,31 @@ export function Sidebar({ user, teamName }: SidebarProps) {
                     {t("nav.support")}
                   </a>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <a
-                    href={
-                      updateInfo.releaseUrl ??
-                      `${GITHUB_URL}/releases/tag/v${updateInfo.current}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center"
-                  >
-                    {updateInfo.hasUpdate ? (
-                      <>
-                        <ArrowUpCircle className="mr-2 h-3.5 w-3.5 text-emerald-500" />
-                        <span className="flex items-center gap-1 text-[11px] font-medium">
-                          <span className="text-muted-foreground line-through">
-                            v{updateInfo.current}
-                          </span>
-                          <span className="text-emerald-500">→</span>
-                          <span className="rounded-sm bg-emerald-500/15 px-1 py-0.5 font-semibold text-emerald-600 dark:text-emerald-400">
-                            v{updateInfo.latest}
-                          </span>
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <Tag className="mr-2 h-3.5 w-3.5 opacity-50" />
-                        <span className="opacity-50">
+                <DropdownMenuItem onClick={() => setVersionDialogOpen(true)}>
+                  {updateInfo.hasUpdate ? (
+                    <>
+                      <ArrowUpCircle className="mr-2 h-3.5 w-3.5 text-emerald-500" />
+                      <span className="flex flex-1 items-center gap-1 text-[11px] font-medium">
+                        <span className="text-muted-foreground line-through">
                           v{updateInfo.current}
                         </span>
-                      </>
-                    )}
-                  </a>
+                        <span className="text-emerald-500">→</span>
+                        <span className="rounded-sm bg-emerald-500/15 px-1 py-0.5 font-semibold text-emerald-600 dark:text-emerald-400">
+                          v{updateInfo.latest}
+                        </span>
+                      </span>
+                      <Badge variant="success" className="ml-2 px-2 py-0.5">
+                        {t("nav.updateAvailable")}
+                      </Badge>
+                    </>
+                  ) : (
+                    <>
+                      <Tag className="mr-2 h-3.5 w-3.5 opacity-50" />
+                      <span className="flex-1 opacity-70">
+                        {t("nav.version")} v{updateInfo.current}
+                      </span>
+                    </>
+                  )}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
@@ -294,6 +300,90 @@ export function Sidebar({ user, teamName }: SidebarProps) {
           </button>
         </div>
       </aside>
+      <Dialog open={versionDialogOpen} onOpenChange={setVersionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("nav.versionDialogTitle")}</DialogTitle>
+            <DialogDescription>
+              {updateInfo.hasUpdate
+                ? t("nav.versionDialogDescUpdate", {
+                    current: updateInfo.current,
+                    latest: updateInfo.latest ?? "",
+                  })
+                : t("nav.versionDialogDescCurrent", {
+                    current: updateInfo.current,
+                  })}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 text-sm">
+            {updateInfo.hasUpdate ? (
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <ArrowUpCircle className="h-4 w-4 text-emerald-500" />
+                  <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                    {t("nav.updateAvailable")}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  v{updateInfo.current} → v{updateInfo.latest}
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-border bg-muted/30 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Tag className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">
+                    {t("nav.version")} v{updateInfo.current}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div>
+                <p className="font-medium">{t("nav.updateMethodCliTitle")}</p>
+                <pre className="mt-1 overflow-x-auto rounded-xl border border-border bg-muted/30 px-3 py-2 font-mono text-xs">
+bluekiwi upgrade
+                </pre>
+              </div>
+              <div>
+                <p className="font-medium">{t("nav.updateMethodNpmTitle")}</p>
+                <pre className="mt-1 overflow-x-auto rounded-xl border border-border bg-muted/30 px-3 py-2 font-mono text-xs">
+npm install -g bluekiwi@latest
+                </pre>
+              </div>
+              <div>
+                <p className="font-medium">{t("nav.updateMethodDockerTitle")}</p>
+                <pre className="mt-1 overflow-x-auto rounded-xl border border-border bg-muted/30 px-3 py-2 font-mono text-xs">
+docker compose pull && docker compose up -d
+                </pre>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <button
+              type="button"
+              className="inline-flex h-10 items-center justify-center rounded-2xl border border-border px-4 text-sm font-medium transition-colors hover:bg-accent"
+              onClick={() => setVersionDialogOpen(false)}
+            >
+              {t("common.close")}
+            </button>
+            <a
+              href={
+                updateInfo.releaseUrl ??
+                `${GITHUB_URL}/releases/tag/v${updateInfo.current}`
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-10 items-center justify-center rounded-2xl bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              {t("nav.viewReleaseNotes")}
+            </a>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </TooltipProvider>
   );
 }
