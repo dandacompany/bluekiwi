@@ -340,7 +340,7 @@
     "title": "워크플로",
     "newWorkflow": "새 워크플로",
     "detailTitle": "워크플로 상세",
-    "goEdit": "편집으로 이동",
+    "edit": "수정",
     "history": "실행 이력",
     "nodesTab": "노드",
     "meta": "메타데이터",

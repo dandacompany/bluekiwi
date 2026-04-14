@@ -463,7 +463,7 @@ export default function WorkflowDetailPage() {
               title={canEdit ? undefined : t("ownership.cantEdit")}
             >
               <Pencil className="mr-2 h-4 w-4" />
-              {t("workflows.goEdit")}
+              {t("workflows.edit")}
             </Button>
             <Button variant="outline" onClick={() => setExportDialogOpen(true)}>
               <Download className="mr-2 h-4 w-4" />

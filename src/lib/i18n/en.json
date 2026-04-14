@@ -340,7 +340,7 @@
     "title": "Workflows",
     "newWorkflow": "New Workflow",
     "detailTitle": "Workflow Details",
-    "goEdit": "Open editor",
+    "edit": "Edit",
     "history": "History",
     "nodesTab": "Nodes",
     "meta": "Metadata",
