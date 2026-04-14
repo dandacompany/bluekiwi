@@ -586,7 +586,9 @@ function WebResponseForm({
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+          onKeyDown={(e) =>
+            e.key === "Enter" && !e.nativeEvent.isComposing && handleSubmit()
+          }
           placeholder={t("tasks.typeResponse")}
           className="flex-1 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue-500"
         />
@@ -862,7 +864,11 @@ export function StepDetail({
                   type="text"
                   value={commentInput}
                   onChange={(e) => setCommentInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleAddComment()}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" &&
+                    !e.nativeEvent.isComposing &&
+                    handleAddComment()
+                  }
                   placeholder={t("tasks.addComment")}
                   className="flex-1 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue-500"
                 />
