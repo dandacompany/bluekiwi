@@ -676,6 +676,23 @@ Only populated fields are included.`,
     ["workflow_id", "new_owner_id"],
   ),
   tool("list_my_groups", "List user groups the current user belongs to."),
+  tool(
+    "submit_report",
+    "Send a developer feedback report to the BlueKiwi developer (dante@dante-labs.com). " +
+      "Use this when the user has experienced a bug, unexpected behavior, or wants to suggest an improvement. " +
+      "PII (emails, phone numbers, API keys, file paths) is automatically stripped server-side before sending. " +
+      "type: 'bug' | 'feedback' | 'improvement' | 'other'. " +
+      "title: short summary (max 200 chars). " +
+      "message: the user's description of the issue or suggestion (max 10000 chars). " +
+      "context: optional sanitized session context such as workflow name, step number, error text (max 5000 chars).",
+    {
+      type: { type: "string" },
+      title: { type: "string" },
+      message: { type: "string" },
+      context: { type: "string" },
+    },
+    ["type", "title", "message"],
+  ),
   /*
 scan_repo is the single local-execution exception in an otherwise REST-thin MCP wrapper.
 The REST backend has no visibility into the agent's filesystem, so delegating static
@@ -1221,6 +1238,8 @@ tools must stay thin proxies — do not replicate this pattern elsewhere.
         return wrap(await client.request("GET", "/api/auth/me/groups"));
       case "scan_repo":
         return await scanRepoLocal(args);
+      case "submit_report":
+        return wrap(await client.request("POST", "/api/report", args));
       default:
         return wrapError(`Unknown tool: ${name}`);
     }
