@@ -1,15 +1,5 @@
 # BlueKiwi 실전 튜토리얼 #01 — 시장조사 워크플로
 
-> Claude Code + BlueKiwi MCP만으로, "국내 AI 코딩 어시스턴트(Cursor/Windsurf/Claude Code) 시장조사 → 비교 보고서" 까지 한 번에 끝낸 실제 세션 기록.
->
-> - **세션 일시:** 2026-04-14 08:35 ~ 08:47 (KST, 약 12분)
-> - **에이전트:** Claude Code v2.1.105 (Opus 4.6, 1M context)
-> - **서버:** `https://dantelabs.bluekiwi.work` (BlueKiwi v0.3.9)
-> - **작업 폴더:** `~/workspace/dante-code/projects/test`
-> - **워크플로 ID:** #90 (7 steps) · **태스크 ID:** #1
-
----
-
 ## 0. 이 튜토리얼이 보여주는 것
 
 자연어 한 줄을 던지면 BlueKiwi가:
@@ -303,19 +293,3 @@ Starting: 국내 AI 코딩 어시스턴트 시장조사 (7 steps)
 
 `/bk-start workflow_id=90` 하면서 입력 프롬프트만 바꾸면 같은 구조로
 다시 돌아갑니다.
-
----
-
-## 7. 다음에 시도해볼 것
-
-- **Step 6에서 다른 옵션 (벤치마크 추가)** 선택 시 워크플로가 어떻게
-  분기하는지 — pros-cons VS 컴포넌트의 분기 동작 검증.
-- **`/bk-improve`** 로 같은 워크플로를 v2 로 개선 (예: 검색 쿼리에
-  GitHub stars / npm downloads 자동 수집 노드 추가).
-- **`/bk-share`** 로 이 워크플로를 팀 폴더에 공유 → 다른 팀원이 자기
-  주제로 재실행.
-
----
-
-_세션 캡처 원본: `tests/tmux/2026-04-14-market-research.md` (생성 예정)_
-_보고서 위치: `~/workspace/dante-code/projects/test/ai-coding-assistants-kr-report.md`_
