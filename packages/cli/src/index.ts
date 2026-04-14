@@ -91,7 +91,36 @@ program
     runtimesCommand.add(name, opts.profile),
   );
 program.command("runtimes:remove <name>").action(runtimesCommand.remove);
-program.command("profile").action(profileCommand.list);
+program
+  .command("profile [action] [name]")
+  .description("List, switch, or remove BlueKiwi profiles")
+  .action(async (action?: string, name?: string) => {
+    if (!action || action === "list") {
+      await profileCommand.list();
+      return;
+    }
+
+    if (action === "use") {
+      if (!name) {
+        console.error("Usage: bluekiwi profile use <name>");
+        process.exit(1);
+      }
+      await profileCommand.use(name);
+      return;
+    }
+
+    if (action === "remove") {
+      if (!name) {
+        console.error("Usage: bluekiwi profile remove <name>");
+        process.exit(1);
+      }
+      await profileCommand.remove(name);
+      return;
+    }
+
+    console.error(`Unknown profile action '${action}'`);
+    process.exit(1);
+  });
 program.command("profile:list").action(profileCommand.list);
 program.command("profile:use <name>").action(profileCommand.use);
 program.command("profile:remove <name>").action(profileCommand.remove);
