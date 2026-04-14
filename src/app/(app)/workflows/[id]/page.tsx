@@ -219,10 +219,11 @@ export default function WorkflowDetailPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const workflowId = Number(params.id);
+  const validId = Number.isFinite(workflowId);
   const [workflow, setWorkflow] = useState<WorkflowDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(validId);
   const [tasks, setTasks] = useState<TaskItem[]>([]);
-  const [taskLoading, setTaskLoading] = useState(true);
+  const [taskLoading, setTaskLoading] = useState(validId);
   const [taskStatusFilter, setTaskStatusFilter] = useState("");
   const [taskSearch, setTaskSearch] = useState("");
   const [runDialogOpen, setRunDialogOpen] = useState(false);
@@ -313,11 +314,7 @@ export default function WorkflowDetailPage() {
   }, [workflowId, taskStatusFilter, taskSearch]);
 
   useEffect(() => {
-    if (!Number.isFinite(workflowId)) {
-      setLoading(false);
-      setTaskLoading(false);
-      return;
-    }
+    if (!validId) return;
 
     // Reset data to avoid stale rendering while the new version loads.
     // Every section (hero, tabs, tasks, versions) is keyed on workflowId,
@@ -330,7 +327,7 @@ export default function WorkflowDetailPage() {
     void fetchWorkflow();
     void fetchTasks();
     void fetchVersions();
-  }, [workflowId, fetchWorkflow, fetchTasks, fetchVersions]);
+  }, [validId, workflowId, fetchWorkflow, fetchTasks, fetchVersions]);
 
   useWs(() => {
     void fetchTasks();
@@ -367,7 +364,7 @@ export default function WorkflowDetailPage() {
 
   const previewTasks = useMemo(() => sortedTasks.slice(0, 3), [sortedTasks]);
 
-  if (!Number.isFinite(workflowId)) {
+  if (!validId) {
     return (
       <main className="mx-auto max-w-5xl px-4 py-6">
         <div className="text-sm text-[var(--destructive)]">
