@@ -215,6 +215,9 @@ export function WorkflowTransferDialog({
           json?.error?.message ?? "워크플로를 가져오지 못했습니다",
         );
       }
+      if (typeof json?.data?.id !== "number") {
+        throw new Error("가져온 워크플로 정보를 확인하지 못했습니다.");
+      }
       toast.success(
         unresolvedCount > 0
           ? "워크플로를 가져왔습니다. 크레덴셜 설정이 더 필요합니다."

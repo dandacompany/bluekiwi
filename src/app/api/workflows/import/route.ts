@@ -6,7 +6,11 @@ import {
   errorResponse,
   type Workflow,
 } from "@/lib/db";
-import { canEditFolder, canUseCredential, loadFolder } from "@/lib/authorization";
+import {
+  canEditFolder,
+  canUseCredential,
+  loadFolder,
+} from "@/lib/authorization";
 import { withAuth } from "@/lib/with-auth";
 import { parseWorkflowPackage } from "@/lib/workflow-transfer";
 
@@ -171,10 +175,15 @@ export const POST = withAuth(
           );
         }
 
-        const workflow = await queryOne<Workflow>(
+        const workflowResult = await client.query<Workflow>(
           "SELECT * FROM workflows WHERE id = $1",
           [workflowId],
         );
+        const workflow = workflowResult.rows[0];
+        if (!workflow) {
+          throw new Error("가져온 워크플로를 확인하지 못했습니다");
+        }
+
         return workflow;
       });
 
@@ -183,7 +192,9 @@ export const POST = withAuth(
     } catch (error) {
       const res = errorResponse(
         "VALIDATION_ERROR",
-        error instanceof Error ? error.message : "워크플로를 가져오지 못했습니다",
+        error instanceof Error
+          ? error.message
+          : "워크플로를 가져오지 못했습니다",
         400,
       );
       return NextResponse.json(res.body, { status: res.status });
