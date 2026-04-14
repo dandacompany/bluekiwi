@@ -39,7 +39,8 @@ const CODE_TO_I18N_KEY: Record<string, string> = {
   WORKSPACE_MISSING: "serverErrors.myWorkspaceMissing",
   MY_WORKSPACE_MISSING: "serverErrors.myWorkspaceMissing",
   VERSION_INACTIVE: "serverErrors.versionInactive",
-  WORKFLOW_CREDENTIAL_SETUP_REQUIRED: "serverErrors.workflowCredentialSetupRequired",
+  WORKFLOW_CREDENTIAL_SETUP_REQUIRED:
+    "serverErrors.workflowCredentialSetupRequired",
 };
 
 /**
