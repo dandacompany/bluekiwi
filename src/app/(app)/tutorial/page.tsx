@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
   FolderOpen,
@@ -15,6 +16,104 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useTranslation } from "@/lib/i18n/context";
+import { WorkflowTransferDialog } from "@/components/workflows/workflow-transfer-dialog";
+
+function TryWorkflowButton({ slug }: { slug: string }) {
+  const router = useRouter();
+  const { t } = useTranslation();
+  const [loading, setLoading] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [packageData, setPackageData] = useState<{
+    data: unknown;
+    name: string;
+  } | null>(null);
+
+  const handleClick = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/guides/${slug}/workflow`);
+      const json = await res.json();
+      if (!res.ok)
+        throw new Error(json?.error ?? "워크플로를 불러오지 못했습니다.");
+      setPackageData({ data: json.data, name: `${slug}.json` });
+      setDialogOpen(true);
+    } catch {
+      // silently fall through — dialog won't open
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <button
+        onClick={handleClick}
+        disabled={loading}
+        className="not-prose mt-8 flex items-center gap-2 rounded-xl bg-brand-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-blue-700 active:scale-95 disabled:opacity-60"
+      >
+        {loading ? (
+          <>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              className="animate-spin"
+            >
+              <circle
+                cx="8"
+                cy="8"
+                r="6"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeDasharray="28"
+                strokeDashoffset="10"
+                strokeLinecap="round"
+              />
+            </svg>
+            {t("tutorial.tryWorkflowLoading")}
+          </>
+        ) : (
+          <>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path
+                d="M8 2v8M5 7l3 3 3-3"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M2 11v1a2 2 0 002 2h8a2 2 0 002-2v-1"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            </svg>
+            {t("tutorial.tryWorkflowAdd")}
+          </>
+        )}
+      </button>
+      {packageData && (
+        <WorkflowTransferDialog
+          open={dialogOpen}
+          onClose={() => {
+            setDialogOpen(false);
+            setPackageData(null);
+          }}
+          mode="import"
+          folderId={null}
+          initialPackage={packageData}
+          onImported={(workflowId) => {
+            setDialogOpen(false);
+            setPackageData(null);
+            router.push(`/workflows/${workflowId}`);
+          }}
+        />
+      )}
+    </>
+  );
+}
 
 const S = {
   card: "border-b border-border py-10 last:border-b-0",
@@ -150,29 +249,29 @@ interface GuideMeta {
 }
 
 function GuidesTab() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [guides, setGuides] = useState<GuideMeta[]>([]);
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const [content, setContent] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/guides")
+    fetch(`/api/guides?lang=${locale}`)
       .then((r) => r.json())
       .then((data: GuideMeta[]) => setGuides(data))
       .catch(() => setGuides([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     if (!activeSlug) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setContent("");
-    void fetch(`/api/guides/${activeSlug}`)
+    void fetch(`/api/guides/${activeSlug}?lang=${locale}`)
       .then((r) => r.json())
       .then((data: { content?: string }) => setContent(data.content ?? ""))
       .catch(() => setContent(""));
-  }, [activeSlug]);
+  }, [activeSlug, locale]);
 
   if (loading) {
     return (
@@ -194,9 +293,10 @@ function GuidesTab() {
         >
           {t("tutorial.guidesBack")}
         </button>
-        <article className="prose prose-sm max-w-none dark:prose-invert prose-headings:font-bold prose-code:rounded prose-code:bg-brand-blue-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-brand-blue-700 prose-code:before:content-none prose-code:after:content-none prose-pre:rounded-xl prose-pre:border prose-pre:border-border prose-pre:bg-surface-soft prose-img:rounded-xl prose-img:border prose-img:border-border">
+        <article className="prose prose-sm max-w-none dark:prose-invert prose-headings:font-bold prose-code:rounded prose-code:bg-brand-blue-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-brand-blue-700 prose-code:before:content-none prose-code:after:content-none prose-img:rounded-xl prose-img:border prose-img:border-border [&_.guide-code-block]:not-prose">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
+            urlTransform={(url) => url}
             components={{
               img: ({ src, alt }) => (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -209,6 +309,117 @@ function GuidesTab() {
                   }}
                 />
               ),
+              pre: ({ children }) => {
+                // Extract language/filename from the nested code element's className
+                let label = "";
+                const child = Array.isArray(children) ? children[0] : children;
+                if (child && typeof child === "object" && "props" in child) {
+                  const cls: string =
+                    (child.props as { className?: string }).className ?? "";
+                  const match = cls.match(/language-(\S+)/);
+                  if (match) label = match[1];
+                }
+                return (
+                  <div
+                    className="guide-code-block not-prose my-5 overflow-hidden"
+                    style={{ backgroundColor: "#111111", borderRadius: "14px" }}
+                  >
+                    <div
+                      className="flex items-center gap-3 px-4 py-3"
+                      style={{
+                        backgroundColor: "rgba(255,255,255,0.04)",
+                        borderBottom: "1px solid rgba(255,255,255,0.07)",
+                      }}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="block h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: "#ff5f57" }}
+                        />
+                        <span
+                          className="block h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: "#febc2e" }}
+                        />
+                        <span
+                          className="block h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: "#28c840" }}
+                        />
+                      </div>
+                      {label && (
+                        <span
+                          className="text-xs font-medium tracking-wide"
+                          style={{
+                            color: "rgba(255,255,255,0.4)",
+                            fontFamily: "'JetBrains Mono', monospace",
+                          }}
+                        >
+                          {label}
+                        </span>
+                      )}
+                    </div>
+                    <div className="overflow-x-auto px-5 py-4">
+                      <pre
+                        className="m-0 p-0 text-sm leading-relaxed"
+                        style={{
+                          fontFamily:
+                            "'JetBrains Mono', 'Fira Code', monospace",
+                          color: "#d4d0c8",
+                          background: "transparent",
+                          border: "none",
+                        }}
+                      >
+                        {children}
+                      </pre>
+                    </div>
+                  </div>
+                );
+              },
+              code: ({ className, children, ...props }) => {
+                // Block code: has language class OR content contains newlines (no-lang fenced block)
+                const hasLang = className?.startsWith("language-");
+                const hasNewline =
+                  typeof children === "string" && children.includes("\n");
+                const isBlock = hasLang || hasNewline;
+                if (isBlock) {
+                  return (
+                    <code
+                      style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        color: "#d4d0c8",
+                        background: "transparent",
+                      }}
+                      {...props}
+                    >
+                      {children}
+                    </code>
+                  );
+                }
+                // Inline code keeps the original pill style
+                return (
+                  <code
+                    className="rounded bg-brand-blue-100 px-1.5 py-0.5 font-mono text-sm text-brand-blue-700"
+                    {...props}
+                  >
+                    {children}
+                  </code>
+                );
+              },
+              a: ({ href, children }) => {
+                if (href?.startsWith("bk://try/")) {
+                  const slug = href.slice("bk://try/".length);
+                  return <TryWorkflowButton slug={slug} />;
+                }
+                return (
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand-blue-600 underline hover:text-brand-blue-700"
+                  >
+                    {children}
+                  </a>
+                );
+              },
             }}
           >
             {content}
@@ -243,11 +454,6 @@ function GuidesTab() {
                 <p className="font-semibold leading-snug text-foreground group-hover:text-brand-blue-700">
                   {guide.title}
                 </p>
-                {guide.description && (
-                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                    {guide.description}
-                  </p>
-                )}
               </div>
             </div>
           </button>

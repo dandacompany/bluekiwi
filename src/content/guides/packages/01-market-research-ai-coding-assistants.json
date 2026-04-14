@@ -1,0 +1,97 @@
+{
+  "format": "bluekiwi.workflow-package",
+  "version": 1,
+  "exported_at": "2026-04-14T00:00:00.000Z",
+  "workflow": {
+    "title": "국내 AI 코딩 어시스턴트 시장조사",
+    "description": "Cursor, Windsurf, Claude Code를 중심으로 국내 AI 코딩 어시스턴트 시장을 비교 분석하는 워크플로입니다.",
+    "version": "1.0",
+    "evaluation_contract": null,
+    "nodes": [
+      {
+        "step_order": 1,
+        "node_type": "action",
+        "title": "조사 범위·항목 정의",
+        "instruction": "이번 시장조사의 범위와 비교 항목을 정의하세요.\n\n조사 대상: Cursor, Windsurf, Claude Code\n\n비교 항목:\n- 가격 정책 (개인/팀/엔터프라이즈)\n- 핵심 기능 차별점\n- 한국 사용자 커뮤니티 반응 (블로그, 유튜브, 커뮤니티)\n- 강점과 약점\n\n결과물: scope.json 파일로 저장하세요.",
+        "loop_back_to": null,
+        "auto_advance": true,
+        "hitl": false,
+        "visual_selection": false,
+        "instruction_template": null,
+        "credential_requirement": null
+      },
+      {
+        "step_order": 2,
+        "node_type": "action",
+        "title": "Cursor 리서치",
+        "instruction": "Cursor AI 코딩 어시스턴트에 대해 다음 항목을 웹 검색으로 조사하세요.\n\n- 가격 정책 (Hobby, Pro, Business, Enterprise)\n- 핵심 기능 (Tab 자동완성, Composer, Agent, MCP 지원 등)\n- 한국 사용자 반응 (블로그 후기, 유튜브 리뷰, 커뮤니티 반응)\n- 강점과 약점\n\n검색 쿼리 예시:\n- \"Cursor AI editor pricing 2025 Hobby Pro Business Enterprise plan\"\n- \"Cursor AI 후기 사용법 한국 블로그\"\n- \"커서 AI 단점 불만 한국 개발자\"\n\n결과물: cursor.json 파일로 저장하세요.",
+        "loop_back_to": null,
+        "auto_advance": true,
+        "hitl": false,
+        "visual_selection": false,
+        "instruction_template": null,
+        "credential_requirement": null
+      },
+      {
+        "step_order": 3,
+        "node_type": "action",
+        "title": "Windsurf 리서치",
+        "instruction": "Windsurf AI 코딩 어시스턴트에 대해 다음 항목을 웹 검색으로 조사하세요.\n\n- 가격 정책 (Free, Pro, Teams)\n- 핵심 기능 (Cascade, Flows, MCP 지원 등)\n- 한국 사용자 반응 (블로그 후기, 유튜브 리뷰, 커뮤니티 반응)\n- 강점과 약점 (특히 최근 소유권 변동 이슈)\n\n검색 쿼리 예시:\n- \"Windsurf AI editor pricing 2025\"\n- \"Windsurf 후기 한국 개발자 블로그\"\n- \"Windsurf Codeium 단점 문제점\"\n\n결과물: windsurf.json 파일로 저장하세요.",
+        "loop_back_to": null,
+        "auto_advance": true,
+        "hitl": false,
+        "visual_selection": false,
+        "instruction_template": null,
+        "credential_requirement": null
+      },
+      {
+        "step_order": 4,
+        "node_type": "action",
+        "title": "Claude Code 리서치",
+        "instruction": "Claude Code(Anthropic)에 대해 다음 항목을 웹 검색으로 조사하세요.\n\n- 가격 정책 (Claude 구독 플랜 연동)\n- 핵심 기능 (Skills, Hooks, 서브에이전트, MCP 연동 등)\n- 한국 사용자 반응 (블로그 후기, 유튜브 리뷰, 커뮤니티 반응)\n- 강점과 약점 (특히 터미널 기반 진입장벽)\n\n검색 쿼리 예시:\n- \"Claude Code pricing 2025 subscription\"\n- \"Claude Code 후기 한국 개발자 사용기\"\n- \"Claude Code 단점 불편 터미널\"\n\n결과물: claude-code.json 파일로 저장하세요.",
+        "loop_back_to": null,
+        "auto_advance": true,
+        "hitl": false,
+        "visual_selection": false,
+        "instruction_template": null,
+        "credential_requirement": null
+      },
+      {
+        "step_order": 5,
+        "node_type": "action",
+        "title": "비교 분석 & 강약점 도출",
+        "instruction": "앞서 수집한 cursor.json, windsurf.json, claude-code.json 데이터를 바탕으로 세 제품을 비교 분석하세요.\n\n포함할 내용:\n1. 가격 비교표 (마크다운 테이블)\n2. 핵심 기능 차별점 비교\n3. 한국 커뮤니티 반응 요약\n4. 제품별 강점/약점 (SWOT 형식)\n\n결과물: comparison.md 파일로 저장하세요.",
+        "loop_back_to": null,
+        "auto_advance": true,
+        "hitl": false,
+        "visual_selection": false,
+        "instruction_template": null,
+        "credential_requirement": null
+      },
+      {
+        "step_order": 6,
+        "node_type": "gate",
+        "title": "초안 검토",
+        "instruction": "comparison.md 초안을 사용자가 검토합니다. 바로 최종 보고서를 생성할지, 아니면 추가 보완 항목을 선택할지 결정하세요.",
+        "loop_back_to": null,
+        "auto_advance": false,
+        "hitl": false,
+        "visual_selection": true,
+        "instruction_template": null,
+        "credential_requirement": null
+      },
+      {
+        "step_order": 7,
+        "node_type": "action",
+        "title": "최종 마크다운 보고서 생성",
+        "instruction": "지금까지의 조사 결과와 사용자 피드백을 바탕으로 최종 마크다운 보고서를 작성하세요.\n\n보고서 구성:\n1. Executive Summary\n2. 가격 정책 비교\n3. 핵심 기능 차별점\n4. 한국 커뮤니티 반응\n5. 강점/약점\n6. 사용자 유형별 추천\n7. 출처 & 한계\n\n결과물: ai-coding-assistants-kr-report.md 파일로 저장하세요.",
+        "loop_back_to": null,
+        "auto_advance": true,
+        "hitl": false,
+        "visual_selection": false,
+        "instruction_template": null,
+        "credential_requirement": null
+      }
+    ]
+  }
+}

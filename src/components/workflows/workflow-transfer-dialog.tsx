@@ -63,6 +63,8 @@ interface Props {
   workflowTitle?: string;
   folderId: number | null;
   onImported?: (workflowId: number) => void;
+  /** Pre-loaded package (skips file upload step) */
+  initialPackage?: { data: unknown; name: string };
 }
 
 function downloadJson(filename: string, value: unknown) {
@@ -87,6 +89,7 @@ export function WorkflowTransferDialog({
   workflowTitle,
   folderId,
   onImported,
+  initialPackage,
 }: Props) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
@@ -106,6 +109,13 @@ export function WorkflowTransferDialog({
       setImportTitle("");
     }
   }, [open]);
+
+  useEffect(() => {
+    if (open && initialPackage && !packageData) {
+      void handleAnalyze(initialPackage.data, initialPackage.name);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialPackage]);
 
   const unresolvedCount = useMemo(() => {
     if (!analysis) return 0;

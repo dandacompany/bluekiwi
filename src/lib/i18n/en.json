@@ -26,6 +26,8 @@
     "guidesBack": "← Back to list",
     "guidesLoading": "Loading...",
     "guidesEmpty": "No guides available.",
+    "tryWorkflowAdd": "Add this workflow to my workspace",
+    "tryWorkflowLoading": "Loading workflow...",
     "heroTitle": "The shortest path to building workflows",
     "heroDesc": "A guide to quickly learn the real workflow: writing instructions, assembling workflows, executing, and reviewing results in BlueKiwi.",
     "navStart": "Getting Started",

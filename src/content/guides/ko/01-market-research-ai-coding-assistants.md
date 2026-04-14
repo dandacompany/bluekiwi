@@ -4,8 +4,8 @@
 
 자연어 한 줄을 던지면 BlueKiwi가:
 
-1. `/bk-design` 으로 7단계 워크플로를 **설계 → DB 등록**
-2. `/bk-start` 로 **단계별 자동 실행** (웹 검색 + 산출물 작성)
+1. `/bk-design` 스킬로 7단계 워크플로를 **설계 → 서버 등록**
+2. `/bk-start` 스킬로 **단계별 자동 실행** (웹 검색 + 산출물 작성)
 3. 중간에 **VS Gate(Visual Selection)** 로 사람 검토 받고
 4. 최종 **마크다운 보고서** 까지 자동 생성
 
@@ -32,36 +32,27 @@ bluekiwi --version                # 0.3.9
 }
 ```
 
-### 1-2. Claude Code MCP 등록 확인
+### 1-2. 스킬 등록 확인
 
-설치 시 `~/.claude.json` 의 `mcpServers.bluekiwi` 가 자동 등록됩니다.
+BlueKiwi CLI를 설치하면 `/bk-design`, `/bk-start` 등의 **스킬**이 Claude Code에 자동 등록됩니다. 스킬은 Claude Code의 슬래시 커맨드로 실행되며, 내부적으로 BlueKiwi 서버와 통신합니다.
 
-```json
-{
-  "command": "node",
-  "args": ["/Users/.../node_modules/bluekiwi/dist/assets/mcp/server.js"],
-  "env": {
-    "BLUEKIWI_API_URL": "https://dantelabs.bluekiwi.work",
-    "BLUEKIWI_API_KEY": "bk_..."
-  }
-}
-```
+> **사용자는 스킬만 호출하면 됩니다.** MCP 연결이나 API 호출은 스킬이 알아서 처리합니다.
+
+설치가 정상적으로 완료되면 Claude Code 세션에서 `/bk-` 로 시작하는 스킬들을 바로 사용할 수 있습니다.
 
 ### 1-3. ⚠️ 권한 모드 주의
 
-`don't ask` 모드로 Claude Code를 띄우면 **MCP 툴 호출이 자동 차단**됩니다 (이번 세션에서 한 번 막혔던 부분). 다음 중 하나로 시작하세요:
+스킬이 BlueKiwi 서버와 자동으로 통신하려면 **적절한 권한 모드**로 Claude Code를 시작해야 합니다. `don't ask` 모드에서는 스킬 실행이 차단되어 매 단계마다 수동 승인이 필요합니다.
 
 ```bash
-# 권장: bypass 모드 (개인 머신에서)
+# 권장: bypass 모드 — 스킬이 자동으로 실행됨 (개인 머신에서 사용)
 claude --permission-mode bypassPermissions
 
-# 또는 acceptEdits — MCP는 매번 승인 묻기
+# 또는 acceptEdits — 스킬 실행 시 승인 팝업이 뜸
 claude --permission-mode acceptEdits
 ```
 
 세션 시작 후 우하단에 `⏵⏵ bypass permissions on` 이 보이면 OK.
-
-![screenshot: Claude Code 시작 화면 — 우하단 'bypass permissions on' 표시](../images/01-claude-bypass-mode.png)
 
 ---
 
@@ -70,8 +61,8 @@ claude --permission-mode acceptEdits
 작업 폴더(`~/workspace/.../test`)에서 Claude Code를 띄우고 다음을 입력:
 
 ```text
-BlueKiwi MCP를 이용해서 국내 AI 코딩 어시스턴트 시장(Cursor, Windsurf,
-Claude Code 중심) 시장조사를 진행해줘.
+국내 AI 코딩 어시스턴트 시장(Cursor, Windsurf, Claude Code 중심)
+시장조사를 진행해줘.
 
 비교 항목:
 - 가격 정책 (개인/팀/엔터프라이즈)
@@ -79,13 +70,11 @@ Claude Code 중심) 시장조사를 진행해줘.
 - 한국 사용자 커뮤니티 반응 (블로그, 유튜브, 커뮤니티)
 - 강점과 약점
 
-워크플로로 설계(/bk-design)하고 실행(/bk-start)까지 진행해서, 마지막에
-마크다운 비교 보고서까지 만들어줘.
+/bk-design 으로 워크플로를 설계하고 /bk-start 로 실행까지 진행해서,
+마지막에 마크다운 비교 보고서까지 만들어줘.
 ```
 
 이게 끝입니다. 이후는 모두 에이전트가 알아서 합니다.
-
-![screenshot: 프롬프트 입력 직후 에이전트가 /bk-design 스킬을 로드하는 모습](../images/02-prompt-submitted.png)
 
 ---
 
@@ -95,11 +84,9 @@ Claude Code 중심) 시장조사를 진행해줘.
 
 ```
 ⏺ Skill(bk-design)  Successfully loaded skill
-  Called bluekiwi 2 times, searched memories
 ```
 
-에이전트가 BlueKiwi에서 기존 폴더/워크플로를 살펴보고, 메모리에서
-"시장조사" 패턴을 검색한 뒤 **7단계 설계안**을 제시합니다.
+에이전트가 `/bk-design` 스킬을 실행합니다. 스킬은 BlueKiwi 서버에서 기존 폴더·워크플로를 조회하고, 목표에 맞는 **7단계 설계안**을 제시합니다.
 
 ```
 Workflow: 국내 AI 코딩 어시스턴트 시장조사 (Cursor/Windsurf/Claude Code)
@@ -115,23 +102,12 @@ Workflow: 국내 AI 코딩 어시스턴트 시장조사 (Cursor/Windsurf/Claude 
 Total 7 steps · Folder: Marketing & Content
 ```
 
-![screenshot: bk-design이 제안한 7단계 워크플로 트리](../images/03-bk-design-workflow-tree.png)
-
-> **★ 설계 인사이트 (에이전트가 직접 남긴 메모)**
->
-> - 제품별로 리서치 노드를 분리하면 각 단계의 아티팩트가 독립적으로
->   저장되어 최종 비교 단계에서 `load_artifacts` 로 병합하기 쉽다.
-> - 6번 gate에 `pros-cons` VS 컴포넌트를 쓰면 단순 승인이 아니라
->   "보완 필요 항목"을 시각적으로 선택받을 수 있어 반복 없이 품질이 올라감.
-
-이후 `create_workflow` + `append_node` × 7회로 서버에 등록:
+설계안을 승인하면 스킬이 워크플로를 BlueKiwi 서버에 등록합니다:
 
 ```
 ✅ Workflow registered
 Name: 국내 AI 코딩 어시스턴트 시장조사 (ID: 90) · Steps: 7 · Version: 1.0
 ```
-
-![screenshot: dantelabs.bluekiwi.work/workflows/90 — 등록된 워크플로 상세 페이지](../images/04-workflow-registered-web.png)
 
 ### Phase B — `/bk-start` 실행
 
@@ -146,8 +122,6 @@ Starting: 국내 AI 코딩 어시스턴트 시장조사 (7 steps)
 
 각 단계가 BlueKiwi 서버 측에서 추적되며(태스크 #1), 진행 상황을 웹 UI에서
 실시간으로 볼 수 있습니다.
-
-![screenshot: 태스크 진행 상황을 보여주는 웹 UI — 7단계 진행 바 + 실시간 로그](../images/05-task-live-progress.png)
 
 #### Step 1 — 조사 범위·항목 정의
 
@@ -182,8 +156,6 @@ Starting: 국내 AI 코딩 어시스턴트 시장조사 (7 steps)
 영문 + 한글 쿼리를 섞어서 글로벌 가격 정보 + 국내 사용자 반응을
 모두 수집한 점이 핵심.
 
-![screenshot: 터미널에서 Web Search 4회 → Write(cursor.json) 출력 흐름](../images/06-step2-cursor-research.png)
-
 #### Step 5 — 비교 분석 & 강약점 도출
 
 `comparison.md` (72줄) 작성. 가격 비교표 + 기능 차별점 + 한국 커뮤니티
@@ -205,8 +177,6 @@ Starting: 국내 AI 코딩 어시스턴트 시장조사 (7 steps)
   5. Type something.
 ```
 
-![screenshot: VS Gate — 4가지 보완 옵션이 표시된 AskUserQuestion 다이얼로그](../images/07-vs-gate-options.png)
-
 이번에는 `1. 승인`을 선택. (실무에선 2~4를 골라 보완 루프를 한 번 더
 돌릴 수도 있음.)
 
@@ -226,8 +196,6 @@ Starting: 국내 AI 코딩 어시스턴트 시장조사 (7 steps)
 6. 사용자 유형별 추천
 7. 출처 & 한계
 
-![screenshot: 완료 메시지 — '✅ Task #1 Completed — 7/7 steps' 및 산출물 표](../images/08-task-completed.png)
-
 ---
 
 ## 4. 최종 산출물
@@ -246,9 +214,6 @@ Starting: 국내 AI 코딩 어시스턴트 시장조사 (7 steps)
 서버 측에는 워크플로 #90, 태스크 #1 로 모든 단계 로그·아티팩트가 보존되어
 **같은 워크플로를 다른 주제로 재실행** 할 수 있습니다.
 
-![screenshot: 작업 폴더 트리 — scope.json부터 최종 보고서까지 6개 파일](../images/09-output-files.png)
-![screenshot: ai-coding-assistants-kr-report.md 렌더링 — 비교표가 보이는 섹션 1~2](../images/10-final-report-preview.png)
-
 ---
 
 ## 5. 핵심 결론 (보고서 요약)
@@ -262,34 +227,26 @@ Starting: 국내 AI 코딩 어시스턴트 시장조사 (7 steps)
 
 ---
 
-## 6. 회고 — 무엇이 좋았고, 무엇을 조심해야 하나
+## 6. 정리 및 활용 팁
 
-### 잘 동작한 것
+### 이 워크플로의 강점
 
-- **자연어 한 줄 → 7단계 자동 실행**: 사용자가 단계를 하나씩 지시할 필요가
-  없음. `/bk-design` 이 설계까지 알아서 해줌.
-- **중간 산출물 분리**: `cursor.json` / `windsurf.json` / `claude-code.json`
-  로 나뉘어 있어, 한 제품만 갱신해서 재실행하기 쉬움.
-- **VS Gate**: "그냥 자동으로 다 하지 말고 내가 한번 보고 결정"이 한 단계로
-  깔끔하게 들어감.
+- **자연어 한 줄로 7단계 자동 실행**: 각 단계를 직접 지시할 필요 없이 `/bk-design` 스킬이 목표를 분석해 전체 구조를 설계합니다.
+- **단계별 산출물 분리**: `cursor.json` / `windsurf.json` / `claude-code.json` 처럼 각 단계의 결과가 독립적으로 저장되므로 특정 항목만 수정해 재실행할 수 있습니다.
+- **VS Gate로 중간 개입**: "일단 끝까지 자동 실행"이 아니라, 중간 검토 시점을 워크플로 안에 명시적으로 포함시킬 수 있습니다.
 
-### 막혔던 부분 (남이 따라할 때 주의)
+### 주의 사항
 
-- **권한 모드**: `don't ask` 로 띄우면 MCP 호출이 통째로 차단됨.
-  반드시 `bypassPermissions` 또는 `acceptEdits` 로 시작.
-- **VS Gate 폴링 URL이 localhost로 표시**: bk-start 스킬이 출력하는
-  `http://localhost:3100/tasks/N` 은 dev 환경 기본값. 실제 호스팅 서버를
-  쓸 때는 `https://dantelabs.bluekiwi.work/tasks/N` 으로 직접 접속하면 됨.
-  (에이전트는 폴링 + AskUserQuestion 폴백을 같이 쓰므로 터미널에서도 응답 가능.)
+- **권한 모드 설정 필수**: `don't ask` 모드에서는 스킬 자동 실행이 차단됩니다. 반드시 `bypassPermissions` 또는 `acceptEdits` 모드로 시작하세요.
 
 ### 응용 아이디어
 
-이번 워크플로 #90 은 **"3개 대상 × 4개 비교 축 × VS 검토"** 라는 일반
-시장조사 패턴이라 그대로 **다른 주제로 재사용** 가능합니다:
+이 워크플로는 **"N개 대상 × 비교 축 × VS 검토"** 구조로 설계되어 있어 다른 주제에 그대로 재사용할 수 있습니다:
 
 - 노코드 자동화 툴 비교 (n8n / Make / Zapier / Activepieces)
 - 벡터 DB 비교 (Pinecone / Weaviate / Qdrant / pgvector)
 - LLM 게이트웨이 비교 (OpenRouter / LiteLLM / Portkey)
 
-`/bk-start workflow_id=90` 하면서 입력 프롬프트만 바꾸면 같은 구조로
-다시 돌아갑니다.
+`/bk-start workflow_id=90` 실행 시 입력 프롬프트만 바꾸면 동일한 구조로 다시 실행됩니다.
+
+[이 워크플로 내 워크스페이스에 추가하기](bk://try/01-market-research-ai-coding-assistants)

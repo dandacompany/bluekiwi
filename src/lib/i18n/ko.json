@@ -26,6 +26,8 @@
     "guidesBack": "← 목록으로",
     "guidesLoading": "로딩 중...",
     "guidesEmpty": "등록된 가이드가 없습니다.",
+    "tryWorkflowAdd": "이 워크플로 내 워크스페이스에 추가하기",
+    "tryWorkflowLoading": "워크플로 불러오는 중...",
     "heroTitle": "작업 흐름을 만드는 가장 짧은 경로",
     "heroDesc": "BlueKiwi에서 지침 작성, 워크플로 조립, 실행, 결과 확인까지 실제 사용 흐름을 빠르게 익힐 수 있도록 구성한 안내서입니다.",
     "navStart": "시작하기",
