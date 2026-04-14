@@ -3,7 +3,7 @@ import pc from "picocolors";
 
 import { BlueKiwiClient } from "../api-client.js";
 import { BUNDLED_MCP_PATH, BUNDLED_SKILLS } from "../assets/index.js";
-import { saveConfig } from "../config.js";
+import { loadConfig, saveConfig } from "../config.js";
 import { detectInstalledAdapters, getAllAdapters } from "../runtimes/detect.js";
 
 export interface InitOptions {
@@ -40,8 +40,16 @@ function uniquePreserveOrder(values: string[]): string[] {
   return unique;
 }
 
+function maskApiKey(key: string): string {
+  if (key.length <= 8) return key;
+  return key.slice(0, 8) + "***";
+}
+
 export async function initCommand(options: InitOptions = {}): Promise<void> {
   const isNonInteractive = options.yes === true || process.stdin.isTTY !== true;
+
+  // Load existing config for pre-filling prompts
+  const existingCfg = loadConfig();
 
   let server =
     normalizeEnvValue(options.server) ??
@@ -57,19 +65,38 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
         type: "text",
         name: "server",
         message: "BlueKiwi server URL",
+        initial: existingCfg?.server_url,
       });
     }
     if (apiKey === undefined) {
+      const maskedKey = existingCfg?.api_key
+        ? maskApiKey(existingCfg.api_key)
+        : undefined;
       questions.push({
-        type: "password",
+        type: "text",
         name: "apiKey",
-        message: "API key (bk_...)",
+        message: maskedKey
+          ? `API key (press Enter to keep ${maskedKey})`
+          : "API key (bk_...)",
+        initial: maskedKey,
       });
     }
 
     const answers = await prompts(questions);
     server ??= answers.server;
-    apiKey ??= answers.apiKey;
+
+    // If user kept the masked key (just pressed Enter), restore original
+    if (apiKey === undefined) {
+      const entered = answers.apiKey as string | undefined;
+      const maskedKey = existingCfg?.api_key
+        ? maskApiKey(existingCfg.api_key)
+        : undefined;
+      if (entered && maskedKey && entered === maskedKey) {
+        apiKey = existingCfg!.api_key;
+      } else {
+        apiKey = entered;
+      }
+    }
   }
 
   if (server === undefined || apiKey === undefined) {

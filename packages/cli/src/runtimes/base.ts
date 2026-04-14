@@ -16,6 +16,7 @@ export interface RuntimeAdapter {
   getSkillsDir(): string;
   getMcpConfigPath(): string;
   installSkills(skills: SkillBundle[]): void;
+  pruneSkills(keep: Set<string>): void;
   installMcp(config: McpServerConfig): void;
   uninstall(): void;
 }

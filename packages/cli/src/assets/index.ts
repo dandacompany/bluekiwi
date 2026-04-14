@@ -9,6 +9,7 @@ const SKILLS_ROOT = join(here, "skills");
 
 export const BUNDLED_SKILLS: SkillBundle[] = [
   "bk-start",
+  "bk-next",
   "bk-status",
   "bk-rewind",
   "bk-approve",
@@ -20,6 +21,7 @@ export const BUNDLED_SKILLS: SkillBundle[] = [
   "bk-scan",
   "bk-share",
   "bk-version",
+  "bk-help",
 ].map((name) => ({
   name,
   content: readFileSync(join(SKILLS_ROOT, name, "SKILL.md"), "utf8"),

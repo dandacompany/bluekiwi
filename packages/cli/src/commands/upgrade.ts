@@ -21,9 +21,12 @@ export async function upgradeCommand(): Promise<void> {
     return;
   }
 
+  const bundledNames = new Set(BUNDLED_SKILLS.map((s) => s.name));
+
   for (const adapter of getAllAdapters()) {
     if (!cfg.runtimes.includes(adapter.name)) continue;
     adapter.installSkills(BUNDLED_SKILLS);
+    adapter.pruneSkills(bundledNames);
     adapter.installMcp({
       command: "node",
       args: [BUNDLED_MCP_PATH],

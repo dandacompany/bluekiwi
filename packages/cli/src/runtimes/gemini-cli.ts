@@ -40,6 +40,15 @@ export class GeminiCliAdapter implements RuntimeAdapter {
     }
   }
 
+  pruneSkills(keep: Set<string>): void {
+    if (!existsSync(SKILLS_DIR)) return;
+    for (const entry of readdirSync(SKILLS_DIR)) {
+      if (entry.startsWith("bk-") && !keep.has(entry)) {
+        rmSync(join(SKILLS_DIR, entry), { recursive: true, force: true });
+      }
+    }
+  }
+
   installMcp(config: McpServerConfig): void {
     mkdirSync(BASE, { recursive: true });
     let existing: { mcpServers?: Record<string, McpServerConfig> } = {};
