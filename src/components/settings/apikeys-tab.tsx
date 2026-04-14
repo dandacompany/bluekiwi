@@ -58,6 +58,7 @@ export function ApiKeysTab() {
   const [newKeyName, setNewKeyName] = useState("");
   const [creating, setCreating] = useState(false);
   const [createdRawKey, setCreatedRawKey] = useState<string | null>(null);
+  const [cliInitCommand, setCliInitCommand] = useState("");
 
   const fetchKeys = useCallback(async () => {
     setLoading(true);
@@ -105,7 +106,19 @@ export function ApiKeysTab() {
         throw new Error(json.error?.message ?? t("apiKeys.createFailed"));
       }
       const json = await res.json();
-      setCreatedRawKey(json.data?.raw_key ?? null);
+      const rawKey = json.data?.raw_key ?? null;
+      setCreatedRawKey(rawKey);
+      if (rawKey) {
+        const origin =
+          typeof window !== "undefined"
+            ? window.location.origin
+            : process.env.NEXT_PUBLIC_APP_URL ?? "";
+        setCliInitCommand(
+          `npm i -g bluekiwi && bluekiwi init --server ${origin} --api-key ${rawKey}`,
+        );
+      } else {
+        setCliInitCommand("");
+      }
       fetchKeys();
     } catch (err) {
       toast.error(
@@ -125,6 +138,7 @@ export function ApiKeysTab() {
     if (!open) {
       setNewKeyName("");
       setCreatedRawKey(null);
+      setCliInitCommand("");
     }
     setCreateOpen(open);
   };
@@ -175,6 +189,26 @@ export function ApiKeysTab() {
                         <Copy className="h-4 w-4" />
                       </Button>
                     </div>
+                    {cliInitCommand ? (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">
+                          {t("apiKeys.cliInitLabel")}
+                        </p>
+                        <div className="flex items-center gap-2 rounded-md border bg-[var(--muted)] p-3">
+                          <code className="flex-1 break-all text-xs leading-5">
+                            {cliInitCommand}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleCopy(cliInitCommand)}
+                            title={t("apiKeys.copyCliCommand")}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
                     <p className="text-xs text-[var(--destructive)]">
                       {t("apiKeys.keyWarning2")}
                     </p>

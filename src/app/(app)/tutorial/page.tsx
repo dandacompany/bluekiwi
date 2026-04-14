@@ -1051,10 +1051,7 @@ export default function TutorialPage() {
                     <li>
                       1. <Code>npm install -g bluekiwi</Code>{" "}
                       <span className="text-muted-foreground">
-                        {t("tutorial.s7Setup1").replace(
-                          "npm install -g bluekiwi 로 ",
-                          "",
-                        )}
+                        {t("tutorial.s7Setup1")}
                       </span>
                     </li>
                     <li>
@@ -1064,24 +1061,24 @@ export default function TutorialPage() {
                       </span>
                     </li>
                     <li>
-                      3. <Code>{"bluekiwi accept <token> --server <url>"}</Code>
+                      3. <Code>{"bluekiwi accept <token> -s <url>"}</Code>{" "}
+                      <span className="text-muted-foreground">
+                        {t("tutorial.s7Setup3")}
+                      </span>
                     </li>
                     <li>
-                      4. <Code>bluekiwi init</Code>{" "}
+                      4.{" "}
+                      <Code>
+                        {"bluekiwi init -p <profile> -s <url> -k <api-key>"}
+                      </Code>{" "}
                       <span className="text-muted-foreground">
-                        {t("tutorial.s7Setup4").replace(
-                          "bluekiwi init 으로 ",
-                          "",
-                        )}
+                        {t("tutorial.s7Setup4")}
                       </span>
                     </li>
                     <li>
                       5. <Code>bluekiwi status</Code>{" "}
                       <span className="text-muted-foreground">
-                        {t("tutorial.s7Setup5").replace(
-                          "bluekiwi status 로 ",
-                          "",
-                        )}
+                        {t("tutorial.s7Setup5")}
                       </span>
                     </li>
                   </ol>

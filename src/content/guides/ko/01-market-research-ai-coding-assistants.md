@@ -19,17 +19,31 @@
 
 ```bash
 npm i -g bluekiwi
-bluekiwi accept <초대 토큰>      # 또는 bluekiwi login
-bluekiwi --version                # 0.3.9
+bluekiwi accept <초대 토큰> -s https://dantelabs.bluekiwi.work
+bluekiwi status
 ```
 
-`~/.bluekiwi/config.json` 에 서버 URL과 API 키가 저장됩니다.
+`~/.bluekiwi/config.json` 에 활성 프로필과 서버/API 키 정보가 저장됩니다.
 
 ```json
 {
-  "server_url": "https://dantelabs.bluekiwi.work",
-  "api_key": "bk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  "version": "2.0.0",
+  "active_profile": "default",
+  "profiles": {
+    "default": {
+      "name": "default",
+      "server_url": "https://dantelabs.bluekiwi.work",
+      "api_key": "bk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    }
+  },
+  "runtimes": ["claude-code"]
 }
+```
+
+초대 토큰 대신 직접 발급한 API 키를 쓸 때는 이렇게 연결할 수 있습니다:
+
+```bash
+bluekiwi init -p dev -s https://dantelabs.bluekiwi.work -k bk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 ### 1-2. 스킬 등록 확인

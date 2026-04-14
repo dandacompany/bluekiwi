@@ -19,17 +19,31 @@ All of this is shown with a real session log.
 
 ```bash
 npm i -g bluekiwi
-bluekiwi accept <invite-token>      # or: bluekiwi login
-bluekiwi --version                  # 0.3.9
+bluekiwi accept <invite-token> -s https://dantelabs.bluekiwi.work
+bluekiwi status
 ```
 
-`~/.bluekiwi/config.json` stores your server URL and API key.
+`~/.bluekiwi/config.json` stores your active profile plus the server/API key details.
 
 ```json
 {
-  "server_url": "https://dantelabs.bluekiwi.work",
-  "api_key": "bk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  "version": "2.0.0",
+  "active_profile": "default",
+  "profiles": {
+    "default": {
+      "name": "default",
+      "server_url": "https://dantelabs.bluekiwi.work",
+      "api_key": "bk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    }
+  },
+  "runtimes": ["claude-code"]
 }
+```
+
+If you already have a raw API key instead of an invite token, connect like this:
+
+```bash
+bluekiwi init -p dev -s https://dantelabs.bluekiwi.work -k bk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 ### 1-2. Verify Skill Registration
