@@ -928,7 +928,7 @@ export const openApiSpec = {
         },
       },
     },
-    "/api/workflows/{id}/nodes/{nodeId}": {
+    "/api/workflows/{id}/node-items/{nodeId}": {
       patch: {
         tags: ["Workflow Nodes"],
         summary: "노드 부분 수정",
@@ -1014,7 +1014,7 @@ export const openApiSpec = {
         },
       },
     },
-    "/api/workflows/{id}/nodes/{nodeId}/attachments": {
+    "/api/workflows/{id}/node-items/{nodeId}/attachments": {
       get: {
         tags: ["Node Attachments"],
         summary: "노드 첨부 파일 목록 조회",
@@ -1132,7 +1132,7 @@ export const openApiSpec = {
         },
       },
     },
-    "/api/workflows/{id}/nodes/{nodeId}/attachments/{attachId}": {
+    "/api/workflows/{id}/node-items/{nodeId}/attachments/{attachId}": {
       get: {
         tags: ["Node Attachments"],
         summary: "노드 첨부 파일 다운로드",

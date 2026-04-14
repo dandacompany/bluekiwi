@@ -640,7 +640,7 @@ export function StepDetail({
     async function fetchAttachments() {
       try {
         const res = await fetch(
-          `/api/workflows/${workflowId}/nodes/${primary.node_id}/attachments`,
+          `/api/workflows/${workflowId}/node-items/${primary.node_id}/attachments`,
         );
         if (!res.ok) throw new Error("Failed to fetch attachments");
         const json = (await res.json()) as { data?: NodeAttachment[] };

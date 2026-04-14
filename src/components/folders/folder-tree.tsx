@@ -412,7 +412,10 @@ export function FolderTree({
             </div>
           ) : (
             <>
-              <span className="flex-1 truncate text-sm">
+              <span
+                className="flex-1 truncate text-sm"
+                title={folder.is_system ? t("folders.myWorkspace") : folder.name}
+              >
                 {folder.is_system ? t("folders.myWorkspace") : folder.name}
               </span>
               {folder.is_mine && (

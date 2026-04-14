@@ -1023,7 +1023,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return wrap(
           await client.request(
             "PATCH",
-            `/api/workflows/${workflowId}/nodes/${nodeId}`,
+            `/api/workflows/${workflowId}/node-items/${nodeId}`,
             body,
           ),
         );
@@ -1034,7 +1034,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return wrap(
           await client.request(
             "DELETE",
-            `/api/workflows/${workflowId}/nodes/${nodeId}`,
+            `/api/workflows/${workflowId}/node-items/${nodeId}`,
           ),
         );
       }
@@ -1044,7 +1044,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return wrap(
           await client.request(
             "GET",
-            `/api/workflows/${workflowId}/nodes/${nodeId}/attachments`,
+            `/api/workflows/${workflowId}/node-items/${nodeId}/attachments`,
           ),
         );
       }
@@ -1054,7 +1054,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const attachmentId = requireNumberArg(args, "attachment_id");
         const url =
           `${apiUrl.replace(/\/$/, "")}` +
-          `/api/workflows/${workflowId}/nodes/${nodeId}/attachments/${attachmentId}`;
+          `/api/workflows/${workflowId}/node-items/${nodeId}/attachments/${attachmentId}`;
         const res = await fetch(url, {
           method: "GET",
           headers: {
@@ -1119,7 +1119,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return wrap(
           await client.requestFormData(
             "POST",
-            `/api/workflows/${workflowId}/nodes/${nodeId}/attachments`,
+            `/api/workflows/${workflowId}/node-items/${nodeId}/attachments`,
             formData,
           ),
         );
@@ -1131,7 +1131,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return wrap(
           await client.request(
             "DELETE",
-            `/api/workflows/${workflowId}/nodes/${nodeId}/attachments/${attachmentId}`,
+            `/api/workflows/${workflowId}/node-items/${nodeId}/attachments/${attachmentId}`,
           ),
         );
       }

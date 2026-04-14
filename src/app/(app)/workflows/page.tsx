@@ -1,8 +1,15 @@
 "use client";
 
-import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import {
+  useState,
+  useCallback,
+  useRef,
+  useMemo,
+  useEffect,
+  type CSSProperties,
+} from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import {
   ArrowRight,
@@ -15,6 +22,7 @@ import {
   FolderPlus,
   LayoutGrid,
   LayoutList,
+  Loader2,
   MessageSquare,
   MoreHorizontal,
   Pencil,
@@ -31,6 +39,13 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { VisibilityBadge } from "@/components/shared/visibility-badge";
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import { WorkflowVisibilityDialog } from "@/components/workflows/workflow-visibility-dialog";
@@ -48,7 +63,12 @@ import { useTranslation } from "@/lib/i18n/context";
 import { useListFetch } from "@/lib/use-list-fetch";
 import { useDeleteHandler } from "@/lib/use-delete-handler";
 
-const PAGE_SIZE = 10;
+const FOLDER_PANE_WIDTH_KEY = "bluekiwi:workflows:folder-pane-width";
+const DEFAULT_FOLDER_PANE_WIDTH = 320;
+const MIN_FOLDER_PANE_WIDTH = 240;
+const MAX_FOLDER_PANE_WIDTH = 520;
+const PAGE_SIZE_OPTIONS = [5, 10, 20, 50] as const;
+const SEARCH_DEBOUNCE_MS = 250;
 
 interface WorkflowNodeItem {
   id: number;
@@ -123,11 +143,24 @@ function NodePipeline({ nodes }: { nodes: WorkflowNodeItem[] }) {
 }
 
 export default function WorkflowsPage() {
+  const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useTranslation();
-  const [page, setPage] = useState(1);
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [page, setPage] = useState(() => {
+    const raw = Number(searchParams.get("page"));
+    return Number.isFinite(raw) && raw > 0 ? raw : 1;
+  });
+  const [pageSize, setPageSize] = useState<number>(() => {
+    const raw = Number(searchParams.get("page_size"));
+    return PAGE_SIZE_OPTIONS.includes(raw as (typeof PAGE_SIZE_OPTIONS)[number])
+      ? raw
+      : 10;
+  });
+  const [viewMode, setViewMode] = useState<"list" | "grid">(() => {
+    const raw = searchParams.get("view");
+    return raw === "grid" ? "grid" : "list";
+  });
   const [selectedFolder, setSelectedFolder] = useState<number | null>(() => {
     const fid = searchParams.get("folder_id");
     return fid ? Number(fid) : null;
@@ -138,10 +171,42 @@ export default function WorkflowsPage() {
   const [headerRenameValue, setHeaderRenameValue] = useState("");
   const headerInputRef = useRef<HTMLInputElement>(null);
   const createRootFolderRef = useRef<(() => void) | null>(null);
+  const layoutRef = useRef<HTMLDivElement>(null);
+  const listScrollRef = useRef<HTMLElement>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [isResizingFolders, setIsResizingFolders] = useState(false);
+  const [folderPaneWidth, setFolderPaneWidth] = useState<number>(() => {
+    if (typeof window === "undefined") return DEFAULT_FOLDER_PANE_WIDTH;
+    const raw = window.localStorage.getItem(FOLDER_PANE_WIDTH_KEY);
+    const parsed = raw ? Number(raw) : NaN;
+    if (!Number.isFinite(parsed)) return DEFAULT_FOLDER_PANE_WIDTH;
+    return Math.min(
+      MAX_FOLDER_PANE_WIDTH,
+      Math.max(MIN_FOLDER_PANE_WIDTH, parsed),
+    );
+  });
   const [rootCtxMenu, setRootCtxMenu] = useState<{
     x: number;
     y: number;
   } | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setIsDesktop(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      FOLDER_PANE_WIDTH_KEY,
+      String(folderPaneWidth),
+    );
+  }, [folderPaneWidth]);
+
   useEffect(() => {
     if (!rootCtxMenu) return;
     const dismiss = () => setRootCtxMenu(null);
@@ -152,7 +217,10 @@ export default function WorkflowsPage() {
       document.removeEventListener("contextmenu", dismiss);
     };
   }, [rootCtxMenu]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
+  const [debouncedSearch, setDebouncedSearch] = useState(() => {
+    return searchParams.get("q") ?? "";
+  });
   const [visibilityTarget, setVisibilityTarget] = useState<{
     id: number;
     title: string;
@@ -173,9 +241,9 @@ export default function WorkflowsPage() {
     const params = new URLSearchParams();
     if (selectedFolder !== null)
       params.set("folder_id", String(selectedFolder));
-    if (search) params.set("q", search);
+    if (debouncedSearch) params.set("q", debouncedSearch);
     return `/api/workflows?${params}`;
-  }, [selectedFolder, search]);
+  }, [selectedFolder, debouncedSearch]);
 
   const { deleteTarget, setDeleteTarget, handleDelete } =
     useDeleteHandler<WorkflowItem>({
@@ -187,8 +255,59 @@ export default function WorkflowsPage() {
       fallbackMessage: t("common.deleteFailed"),
     });
 
-  const totalPages = Math.max(1, Math.ceil(workflows.length / PAGE_SIZE));
-  const paged = workflows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(workflows.length / pageSize));
+  const paged = workflows.slice((page - 1) * pageSize, page * pageSize);
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(search.trim());
+    }, SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    listScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [selectedFolder, debouncedSearch, pageSize, viewMode]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selectedFolder !== null) {
+      params.set("folder_id", String(selectedFolder));
+    }
+    if (search.trim()) {
+      params.set("q", search.trim());
+    }
+    if (page > 1) {
+      params.set("page", String(page));
+    }
+    if (pageSize !== 10) {
+      params.set("page_size", String(pageSize));
+    }
+    if (viewMode !== "list") {
+      params.set("view", viewMode);
+    }
+
+    const next = params.toString();
+    const current = searchParams.toString();
+    if (next !== current) {
+      router.replace(next ? `${pathname}?${next}` : pathname, {
+        scroll: false,
+      });
+    }
+  }, [
+    pathname,
+    router,
+    searchParams,
+    selectedFolder,
+    search,
+    page,
+    pageSize,
+    viewMode,
+  ]);
 
   const clearSearch = useCallback(() => {
     setSearch("");
@@ -306,11 +425,115 @@ export default function WorkflowsPage() {
     }
   };
 
+  const startFolderResize = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (!isDesktop || !layoutRef.current) return;
+      event.preventDefault();
+      const pointerId = event.pointerId;
+      const handle = event.currentTarget;
+      setIsResizingFolders(true);
+      handle.setPointerCapture(pointerId);
+
+      const updateWidth = (clientX: number) => {
+        const bounds = layoutRef.current?.getBoundingClientRect();
+        if (!bounds) return;
+        const nextWidth = clientX - bounds.left;
+        setFolderPaneWidth(
+          Math.min(
+            MAX_FOLDER_PANE_WIDTH,
+            Math.max(MIN_FOLDER_PANE_WIDTH, Math.round(nextWidth)),
+          ),
+        );
+      };
+
+      updateWidth(event.clientX);
+
+      const onPointerMove = (moveEvent: PointerEvent) => {
+        updateWidth(moveEvent.clientX);
+      };
+
+      const stop = () => {
+        setIsResizingFolders(false);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+        window.removeEventListener("pointermove", onPointerMove);
+        window.removeEventListener("pointerup", stop);
+        window.removeEventListener("pointercancel", stop);
+      };
+
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+      window.addEventListener("pointermove", onPointerMove);
+      window.addEventListener("pointerup", stop);
+      window.addEventListener("pointercancel", stop);
+    },
+    [isDesktop],
+  );
+
+  const workflowLayoutStyle = useMemo<CSSProperties | undefined>(() => {
+    if (!isDesktop) return undefined;
+    return {
+      gridTemplateColumns: `${folderPaneWidth}px 8px minmax(0,1fr)`,
+    };
+  }, [folderPaneWidth, isDesktop]);
+
+  const renderPaginationControls = useCallback(
+    (position: "top" | "bottom") => (
+      <div
+        className={`flex items-center justify-end gap-2 ${position === "top" ? "mb-4" : "mt-6"}`}
+      >
+        <span className="text-xs text-[var(--muted-foreground)]">
+          {t("workflows.results")}:
+        </span>
+        <Select
+          value={String(pageSize)}
+          onValueChange={(value) => {
+            setPageSize(Number(value));
+            setPage(1);
+          }}
+        >
+          <SelectTrigger size="sm" className="w-20 bg-background">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="end">
+            {PAGE_SIZE_OPTIONS.map((size) => (
+              <SelectItem key={size} value={String(size)}>
+                {size}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          disabled={page <= 1}
+          onClick={() => setPage((p) => p - 1)}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <span className="min-w-16 text-right text-xs text-[var(--muted-foreground)]">
+          {page} / {totalPages}
+        </span>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          disabled={page >= totalPages}
+          onClick={() => setPage((p) => p + 1)}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    ),
+    [page, pageSize, t, totalPages],
+  );
+
   return (
-    <div className="flex flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       {/* ── Page header ── */}
       <div className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--background)]/95 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl px-6 h-14 flex items-center justify-between gap-4">
+        <div className="flex h-14 items-center justify-between gap-4 px-5">
           <div className="flex items-center gap-2">
             <Workflow className="h-5 w-5 text-[var(--muted-foreground)]" />
             <h1
@@ -397,30 +620,6 @@ export default function WorkflowsPage() {
             })}
           </div>
           <div className="flex items-center gap-2">
-            {/* Search */}
-            <div className="relative">
-              <Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted-foreground)]" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-                placeholder={t("common.search")}
-                className="h-8 w-52 rounded-[var(--radius-sm)] border border-[var(--border)] bg-transparent pl-8 pr-7 text-sm outline-none placeholder:text-[var(--muted-foreground)] focus:border-brand-blue-400 focus:ring-1 focus:ring-brand-blue-400/30"
-              />
-              {search && (
-                <button
-                  type="button"
-                  onClick={clearSearch}
-                  className="absolute top-1/2 right-2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
-
             {/* View toggle */}
             <div className="flex rounded-[var(--radius)] border border-[var(--border)] p-0.5">
               <Button
@@ -468,62 +667,122 @@ export default function WorkflowsPage() {
       </div>
 
       {/* ── Body: sidebar + content ── */}
-      <div className="mx-auto max-w-7xl w-full px-6 py-6">
-        <div className="flex gap-6">
-          {/* Left: Folder sidebar */}
-          <aside className="w-52 shrink-0">
-            <div className="sticky top-[56px]">
-              {/* "All" entry */}
-              <button
-                onClick={() => handleFolderSelect(null)}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  setRootCtxMenu({ x: e.clientX, y: e.clientY });
-                }}
-                className={`mb-1 flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 text-sm transition-colors ${
-                  selectedFolder === null
-                    ? "bg-brand-blue-100 font-medium text-brand-blue-700"
-                    : "text-[var(--muted-foreground)] hover:bg-surface-soft hover:text-[var(--foreground)]"
-                }`}
+      <div
+        ref={layoutRef}
+        className={`grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[320px_8px_minmax(0,1fr)] ${isResizingFolders ? "cursor-col-resize" : ""}`}
+        style={workflowLayoutStyle}
+      >
+        {/* Left: Folder rail */}
+        <aside className="flex min-h-0 flex-col border-b border-[var(--border)] bg-surface-soft/60 lg:border-r lg:border-b-0">
+          <div className="shrink-0 border-b border-[var(--border)] px-4 py-4">
+            <p className="text-sm font-semibold">{t("folders.title")}</p>
+            <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+              {selectedFolderItem
+                ? selectedFolderItem.is_system
+                  ? t("folders.myWorkspace")
+                  : selectedFolderItem.name
+                : t("workflows.allWorkflows")}
+            </p>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+            {/* "All" entry */}
+            <button
+              onClick={() => handleFolderSelect(null)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setRootCtxMenu({ x: e.clientX, y: e.clientY });
+              }}
+              className={`mb-1 flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 text-sm transition-colors ${
+                selectedFolder === null
+                  ? "bg-brand-blue-100 font-medium text-brand-blue-700"
+                  : "text-[var(--muted-foreground)] hover:bg-surface-soft hover:text-[var(--foreground)]"
+              }`}
+            >
+              <FolderOpen className="h-3.5 w-3.5 shrink-0" />
+              {t("workflows.allWorkflows")}
+            </button>
+            <FolderTree
+              selectedId={selectedFolder}
+              onSelect={handleFolderSelect}
+              onFoldersChange={setFolderList}
+              onWorkflowDrop={handleWorkflowDrop}
+              refreshKey={folderRefreshKey}
+              onCreateRootRef={(fn) => {
+                createRootFolderRef.current = fn;
+              }}
+            />
+
+            {/* Root context menu */}
+            {rootCtxMenu && (
+              <div
+                className="fixed z-50 min-w-[140px] overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--card)] py-1 shadow-[var(--shadow-card)]"
+                style={{ top: rootCtxMenu.y, left: rootCtxMenu.x }}
+                onClick={() => setRootCtxMenu(null)}
               >
-                <FolderOpen className="h-3.5 w-3.5 shrink-0" />
-                {t("workflows.allWorkflows")}
-              </button>
-              <FolderTree
-                selectedId={selectedFolder}
-                onSelect={handleFolderSelect}
-                onFoldersChange={setFolderList}
-                onWorkflowDrop={handleWorkflowDrop}
-                refreshKey={folderRefreshKey}
-                onCreateRootRef={(fn) => {
-                  createRootFolderRef.current = fn;
-                }}
-              />
-
-              {/* Root context menu */}
-              {rootCtxMenu && (
-                <div
-                  className="fixed z-50 min-w-[140px] overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--card)] py-1 shadow-[var(--shadow-card)]"
-                  style={{ top: rootCtxMenu.y, left: rootCtxMenu.x }}
-                  onClick={() => setRootCtxMenu(null)}
+                <button
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-surface-soft"
+                  onClick={() => {
+                    createRootFolderRef.current?.();
+                    setRootCtxMenu(null);
+                  }}
                 >
-                  <button
-                    className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-surface-soft"
-                    onClick={() => {
-                      createRootFolderRef.current?.();
-                      setRootCtxMenu(null);
-                    }}
-                  >
-                    <FolderPlus className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-                    {t("folders.new")}
-                  </button>
-                </div>
-              )}
-            </div>
-          </aside>
+                  <FolderPlus className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+                  {t("folders.new")}
+                </button>
+              </div>
+            )}
+          </div>
+        </aside>
 
-          {/* Right: Workflow list */}
-          <div className="min-w-0 flex-1">
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label={t("folders.title")}
+          onPointerDown={startFolderResize}
+          className="hidden lg:flex items-stretch justify-center bg-transparent"
+        >
+          <div className="group flex w-2 cursor-col-resize items-center justify-center">
+            <div className="h-full w-px bg-[var(--border)] transition-colors group-hover:bg-brand-blue-400 group-active:bg-brand-blue-500" />
+          </div>
+        </div>
+
+        {/* Right: Workflow list */}
+        <section ref={listScrollRef} className="min-h-0 overflow-y-auto">
+          <div className="px-5 py-5">
+            <div className="sticky top-0 z-10 -mx-5 mb-4 border-b border-[var(--border)] bg-[var(--background)]/95 px-5 py-3 backdrop-blur-sm">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="relative w-full max-w-md">
+                  <Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted-foreground)]" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      setPage(1);
+                    }}
+                    placeholder={t("common.search")}
+                    className="h-9 w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-transparent pl-8 pr-7 text-sm outline-none placeholder:text-[var(--muted-foreground)] focus:border-brand-blue-400 focus:ring-1 focus:ring-brand-blue-400/30"
+                  />
+                  {search !== debouncedSearch ? (
+                    <span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[var(--muted-foreground)]">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    </span>
+                  ) : search && (
+                    <button
+                      type="button"
+                      onClick={clearSearch}
+                      className="absolute top-1/2 right-2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+                <div className="shrink-0">
+                  {renderPaginationControls("top")}
+                </div>
+              </div>
+            </div>
+
             {/* Active filters indicator */}
             {(search || selectedFolder !== null) && (
               <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -816,36 +1075,11 @@ export default function WorkflowsPage() {
                   )}
                 </div>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="mt-6 flex items-center justify-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      disabled={page <= 1}
-                      onClick={() => setPage((p) => p - 1)}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <span className="text-xs text-[var(--muted-foreground)]">
-                      {page} / {totalPages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      disabled={page >= totalPages}
-                      onClick={() => setPage((p) => p + 1)}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
+                {renderPaginationControls("bottom")}
               </>
             )}
           </div>
-        </div>
+        </section>
       </div>
 
       <DeleteConfirmDialog

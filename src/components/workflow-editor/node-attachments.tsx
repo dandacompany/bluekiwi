@@ -77,7 +77,7 @@ export default function NodeAttachments({
   const [uploading, setUploading] = useState(false);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<NodeAttachment | null>(null);
-  const basePath = `/api/workflows/${workflowId}/nodes/${nodeId}/attachments`;
+  const basePath = `/api/workflows/${workflowId}/node-items/${nodeId}/attachments`;
 
   const loadAttachments = useCallback(async () => {
     setLoading(true);
