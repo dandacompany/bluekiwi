@@ -166,8 +166,9 @@ function GuidesTab() {
 
   useEffect(() => {
     if (!activeSlug) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setContent("");
-    fetch(`/api/guides/${activeSlug}`)
+    void fetch(`/api/guides/${activeSlug}`)
       .then((r) => r.json())
       .then((data: { content?: string }) => setContent(data.content ?? ""))
       .catch(() => setContent(""));
