@@ -23,6 +23,7 @@ interface NodeInput {
   instruction?: string;
   instruction_id?: number;
   credential_id?: number;
+  credential_requirement?: unknown;
   hitl?: boolean;
   visual_selection?: boolean;
   node_type?: string;
@@ -137,7 +138,7 @@ export const PUT = withAuth<Params>(
         for (let i = 0; i < nodes.length; i++) {
           const node: NodeInput = nodes[i];
           await client.query(
-            "INSERT INTO workflow_nodes (workflow_id, step_order, node_type, title, instruction, instruction_id, loop_back_to, auto_advance, credential_id, hitl, visual_selection) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+            "INSERT INTO workflow_nodes (workflow_id, step_order, node_type, title, instruction, instruction_id, loop_back_to, auto_advance, credential_id, hitl, visual_selection, credential_requirement) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)",
             [
               newWorkflowId,
               i + 1,
@@ -158,6 +159,7 @@ export const PUT = withAuth<Params>(
               node.node_type === "gate"
                 ? (node.visual_selection ?? false)
                 : false,
+              jsonbParam(node.credential_requirement),
             ],
           );
         }
@@ -198,7 +200,7 @@ export const PUT = withAuth<Params>(
         for (let i = 0; i < nodes.length; i++) {
           const node: NodeInput = nodes[i];
           await client.query(
-            "INSERT INTO workflow_nodes (workflow_id, step_order, node_type, title, instruction, instruction_id, loop_back_to, auto_advance, credential_id, hitl, visual_selection) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+            "INSERT INTO workflow_nodes (workflow_id, step_order, node_type, title, instruction, instruction_id, loop_back_to, auto_advance, credential_id, hitl, visual_selection, credential_requirement) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)",
             [
               workflowId,
               i + 1,
@@ -219,6 +221,7 @@ export const PUT = withAuth<Params>(
               node.node_type === "gate"
                 ? (node.visual_selection ?? false)
                 : false,
+              jsonbParam(node.credential_requirement),
             ],
           );
         }

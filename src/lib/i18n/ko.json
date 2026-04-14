@@ -795,7 +795,8 @@
     "conflict": "요청이 현재 상태와 충돌합니다",
     "preconditionFailed": "선행 조건이 충족되지 않았습니다",
     "myWorkspaceMissing": "My Workspace가 없습니다. 관리자에게 문의하세요.",
-    "versionInactive": "이 워크플로 버전은 비활성 상태입니다"
+    "versionInactive": "이 워크플로 버전은 비활성 상태입니다",
+    "workflowCredentialSetupRequired": "이 워크플로는 크레덴셜 설정이 완료되어야 실행할 수 있습니다"
   },
   "validationErrors": {
     "generic": "입력값이 올바르지 않습니다"

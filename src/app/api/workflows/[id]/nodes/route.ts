@@ -42,6 +42,7 @@ export const POST = withAuth<Params>(
       visual_selection,
       loop_back_to,
       credential_id,
+      credential_requirement,
       instruction_id,
     } = body;
 
@@ -77,8 +78,8 @@ export const POST = withAuth<Params>(
       const { rows } = await client.query(
         `INSERT INTO workflow_nodes
            (workflow_id, step_order, node_type, title, instruction, instruction_id,
-            loop_back_to, auto_advance, credential_id, hitl, visual_selection)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            loop_back_to, auto_advance, credential_id, hitl, visual_selection, credential_requirement)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
          RETURNING *`,
         [
           workflowId,
@@ -92,6 +93,9 @@ export const POST = withAuth<Params>(
           credential_id ?? null,
           hitl ?? false,
           resolvedNodeType === "gate" ? (visual_selection ?? false) : false,
+          credential_requirement
+            ? JSON.stringify(credential_requirement)
+            : null,
         ],
       );
       return rows[0];

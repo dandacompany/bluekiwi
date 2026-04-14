@@ -2,7 +2,14 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, MessageSquare, Repeat, X, Zap } from "lucide-react";
+import {
+  GripVertical,
+  MessageSquare,
+  Repeat,
+  TriangleAlert,
+  X,
+  Zap,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "@/lib/i18n/context";
 
@@ -17,6 +24,7 @@ interface NodeDraft {
   instruction: string;
   instruction_id: number | null;
   credential_id: number | null;
+  credential_requirement: { service_name: string } | null;
   loop_back_to: number | null;
   hitl: boolean;
   visual_selection: boolean;
@@ -127,6 +135,15 @@ export default function NodeCard({
           {node.visual_selection && (
             <Badge variant="outline" className="border-kiwi-500 text-kiwi-700">
               Visual
+            </Badge>
+          )}
+          {node.credential_requirement && (
+            <Badge
+              variant="outline"
+              className="border-[var(--destructive)] text-[var(--destructive)]"
+            >
+              <TriangleAlert className="h-3.5 w-3.5" />
+              {node.credential_requirement.service_name}
             </Badge>
           )}
         </div>

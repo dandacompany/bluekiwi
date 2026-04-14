@@ -54,6 +54,11 @@ interface CredentialOption {
   service_name: string;
 }
 
+interface CredentialRequirement {
+  service_name: string;
+  keys: Array<{ name: string; required: boolean }>;
+}
+
 interface NodeDraft {
   key: string;
   dbNodeId: number | null; // DB id — null for unsaved new nodes
@@ -63,6 +68,7 @@ interface NodeDraft {
   instruction: string;
   instruction_id: number | null;
   credential_id: number | null;
+  credential_requirement: CredentialRequirement | null;
   loop_back_to: number | null;
   hitl: boolean;
   visual_selection: boolean;
@@ -168,6 +174,7 @@ export default function WorkflowEditor({
             instruction: string;
             instruction_id: number | null;
             credential_id: number | null;
+            credential_requirement_parsed?: CredentialRequirement | null;
             loop_back_to: number | null;
             hitl: boolean;
             visual_selection: boolean;
@@ -180,6 +187,7 @@ export default function WorkflowEditor({
             instruction: n.instruction,
             instruction_id: n.instruction_id,
             credential_id: n.credential_id,
+            credential_requirement: n.credential_requirement_parsed ?? null,
             loop_back_to: n.loop_back_to,
             hitl: n.hitl ?? false,
             visual_selection: n.visual_selection ?? false,
@@ -208,6 +216,7 @@ export default function WorkflowEditor({
         instruction: "",
         instruction_id: null,
         credential_id: null,
+        credential_requirement: null,
         loop_back_to: null,
         hitl: false,
         visual_selection: false,
@@ -291,6 +300,7 @@ export default function WorkflowEditor({
       instruction: n.source === "inline" ? n.instruction : "",
       instruction_id: n.source === "reference" ? n.instruction_id : null,
       credential_id: n.credential_id,
+      credential_requirement: n.credential_requirement,
       loop_back_to: n.node_type === "loop" ? n.loop_back_to : null,
       hitl: n.hitl,
       visual_selection: n.node_type === "gate" ? n.visual_selection : false,

@@ -1,4 +1,10 @@
 import { Pool, PoolClient } from "pg";
+import {
+  evaluateCredentialRequirement,
+  parseCredentialRequirement,
+  type CredentialBindingStatus,
+  type CredentialRequirement,
+} from "./workflow-transfer";
 
 // ─── Pool 싱글톤 ───
 
@@ -150,6 +156,7 @@ export interface WorkflowNode {
   workflow_id: number;
   instruction_id: number | null;
   credential_id: number | null;
+  credential_requirement: string | null;
   step_order: number;
   node_type: NodeType;
   title: string;
@@ -164,6 +171,8 @@ export interface WorkflowNode {
 
 export interface ResolvedWorkflowNode extends WorkflowNode {
   resolved_instruction: string;
+  credential_requirement_parsed: CredentialRequirement | null;
+  credential_binding_status: CredentialBindingStatus | null;
 }
 
 export interface Task {
@@ -357,7 +366,31 @@ export async function resolveNodes(
       );
       if (inst) instruction = inst.content;
     }
-    resolved.push({ ...node, resolved_instruction: instruction });
+    const credentialRequirement = parseCredentialRequirement(
+      node.credential_requirement,
+    );
+    let credentialBindingStatus: CredentialBindingStatus | null = null;
+    if (credentialRequirement) {
+      const credential = node.credential_id
+        ? await queryOne<{
+            service_name: string;
+            secrets: string;
+          }>("SELECT service_name, secrets FROM credentials WHERE id = $1", [
+            node.credential_id,
+          ])
+        : null;
+      credentialBindingStatus = evaluateCredentialRequirement(
+        credentialRequirement,
+        credential,
+      );
+    }
+
+    resolved.push({
+      ...node,
+      resolved_instruction: instruction,
+      credential_requirement_parsed: credentialRequirement,
+      credential_binding_status: credentialBindingStatus,
+    });
   }
   return resolved;
 }

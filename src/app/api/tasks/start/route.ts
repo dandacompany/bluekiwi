@@ -12,6 +12,10 @@ import {
 } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canExecute, canUseCredential } from "@/lib/authorization";
+import {
+  evaluateCredentialRequirement,
+  parseCredentialRequirement,
+} from "@/lib/workflow-transfer";
 
 export const POST = withAuth(
   "tasks:execute",
@@ -119,26 +123,65 @@ export const POST = withAuth(
       id: number;
       step_order: number;
       credential_id: number | null;
+      credential_requirement: string | null;
       title: string;
     }>(
-      "SELECT id, step_order, credential_id, title FROM workflow_nodes WHERE workflow_id = $1",
+      "SELECT id, step_order, credential_id, credential_requirement, title FROM workflow_nodes WHERE workflow_id = $1",
       [workflow.id],
     );
     for (const node of nodesWithCreds) {
-      if (node.credential_id === null) continue;
+      const requirement = parseCredentialRequirement(
+        node.credential_requirement,
+      );
+      if (node.credential_id === null) {
+        if (requirement) {
+          const res = errorResponse(
+            "WORKFLOW_CREDENTIAL_SETUP_REQUIRED",
+            `노드 "${node.title}" (#${node.step_order})의 크레덴셜 설정이 필요합니다`,
+            409,
+            {
+              step_order: node.step_order,
+              service_name: requirement.service_name,
+              required_keys: requirement.keys.map((key) => key.name).join(", "),
+            },
+          );
+          return NextResponse.json(res.body, { status: res.status });
+        }
+        continue;
+      }
       const cred = await queryOne<{
         id: number;
         owner_id: number;
         folder_id: number;
-      }>("SELECT id, owner_id, folder_id FROM credentials WHERE id = $1", [
-        node.credential_id,
-      ]);
+        service_name: string;
+        secrets: string;
+      }>(
+        "SELECT id, owner_id, folder_id, service_name, secrets FROM credentials WHERE id = $1",
+        [node.credential_id],
+      );
       if (!cred) continue;
       if (!(await canUseCredential(user, cred))) {
         const res = errorResponse(
           "CREDENTIAL_USE_DENIED",
           `노드 "${node.title}" (#${node.step_order})의 크레덴셜에 대한 사용 권한이 없습니다`,
           403,
+        );
+        return NextResponse.json(res.body, { status: res.status });
+      }
+
+      const status = evaluateCredentialRequirement(requirement, cred);
+      if (status && status.status !== "ready") {
+        const res = errorResponse(
+          "WORKFLOW_CREDENTIAL_SETUP_REQUIRED",
+          `노드 "${node.title}" (#${node.step_order})의 크레덴셜 설정이 완전하지 않습니다`,
+          409,
+          {
+            step_order: node.step_order,
+            service_name: status.service_name,
+            required_keys: status.required_keys.join(", "),
+            missing_keys: status.missing_keys.join(", "),
+            service_mismatch: status.service_mismatch ? "true" : "false",
+          },
         );
         return NextResponse.json(res.body, { status: res.status });
       }

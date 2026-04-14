@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
   CheckCircle2,
   Clock4,
+  Download,
   FileText,
   GitBranch,
   HardDrive,
@@ -14,9 +15,12 @@ import {
   Play,
   RotateCcw,
   Search,
+  TriangleAlert,
+  Upload,
 } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { RunCommandDialog } from "@/components/workflows/run-command-dialog";
+import { WorkflowTransferDialog } from "@/components/workflows/workflow-transfer-dialog";
 import { VisibilityBadge } from "@/components/shared/visibility-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,6 +38,17 @@ interface WorkflowNode {
   title: string;
   instruction_id: number | null;
   resolved_instruction: string;
+  credential_requirement_parsed?: {
+    service_name: string;
+    keys: Array<{ name: string; required: boolean }>;
+  } | null;
+  credential_binding_status?: {
+    status: "ready" | "missing" | "incomplete";
+    service_name: string;
+    required_keys: string[];
+    missing_keys: string[];
+    service_mismatch: boolean;
+  } | null;
   hitl: boolean;
   visual_selection: boolean;
 }
@@ -201,6 +216,15 @@ function NodeCard({
                 Visual
               </Badge>
             )}
+            {node.credential_binding_status &&
+              node.credential_binding_status.status !== "ready" && (
+                <Badge
+                  variant="outline"
+                  className="border-[var(--destructive)] text-[var(--destructive)]"
+                >
+                  Setup required
+                </Badge>
+              )}
           </div>
           <Badge variant="outline">
             {t("workflows.nodeStep", { step: node.step_order })}
@@ -227,6 +251,9 @@ export default function WorkflowDetailPage() {
   const [taskStatusFilter, setTaskStatusFilter] = useState("");
   const [taskSearch, setTaskSearch] = useState("");
   const [runDialogOpen, setRunDialogOpen] = useState(false);
+  const [transferMode, setTransferMode] = useState<"export" | "import" | null>(
+    null,
+  );
   const [activeTab, setActiveTab] = useState("history");
   const historySectionRef = useRef<HTMLDivElement | null>(null);
   const [versions, setVersions] = useState<VersionsResponse | null>(null);
@@ -245,6 +272,16 @@ export default function WorkflowDetailPage() {
     !!me &&
     !!workflow &&
     (me.userId === workflow.owner_id || me.role === "superuser");
+  const credentialSetupNodes = useMemo(
+    () =>
+      workflow?.nodes.filter(
+        (node) =>
+          node.credential_binding_status &&
+          node.credential_binding_status.status !== "ready",
+      ) ?? [],
+    [workflow],
+  );
+  const hasCredentialSetupIssue = credentialSetupNodes.length > 0;
 
   const fetchWorkflow = useCallback(async () => {
     setLoading(true);
@@ -317,9 +354,7 @@ export default function WorkflowDetailPage() {
     if (!validId) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchWorkflow();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchTasks();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchVersions();
   }, [validId, workflowId, fetchWorkflow, fetchTasks, fetchVersions]);
 
@@ -433,12 +468,64 @@ export default function WorkflowDetailPage() {
               <Pencil className="mr-2 h-4 w-4" />
               {t("workflows.goEdit")}
             </Button>
-            <Button onClick={() => setRunDialogOpen(true)}>
+            <Button variant="outline" onClick={() => setTransferMode("export")}>
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+            <Button variant="outline" onClick={() => setTransferMode("import")}>
+              <Upload className="mr-2 h-4 w-4" />
+              Import
+            </Button>
+            <Button
+              onClick={() => setRunDialogOpen(true)}
+              disabled={hasCredentialSetupIssue}
+              title={
+                hasCredentialSetupIssue
+                  ? "크레덴셜 설정이 끝나기 전에는 실행할 수 없습니다"
+                  : undefined
+              }
+            >
               <Play className="mr-2 h-4 w-4" />
               {t("workflows.run")}
             </Button>
           </div>
         </div>
+        {hasCredentialSetupIssue && (
+          <div className="mb-4 rounded-2xl border border-[var(--destructive)]/30 bg-destructive/10 px-4 py-3 text-sm">
+            <div className="flex items-start gap-3">
+              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-[var(--destructive)]" />
+              <div className="grid gap-1">
+                <p className="font-medium text-[var(--destructive)]">
+                  크레덴셜 설정이 필요한 워크플로입니다
+                </p>
+                <p className="text-[var(--muted-foreground)]">
+                  {credentialSetupNodes.length}개 노드가 아직 실행 준비되지
+                  않았습니다. 필요한 크레덴셜을 연결하고 key 값을 채운 뒤 다시
+                  실행하세요.
+                </p>
+                <p className="text-[var(--muted-foreground)]">
+                  설정이 필요한 서비스:{" "}
+                  {Array.from(
+                    new Set(
+                      credentialSetupNodes.map(
+                        (node) =>
+                          node.credential_binding_status?.service_name ??
+                          node.credential_requirement_parsed?.service_name ??
+                          "unknown",
+                      ),
+                    ),
+                  ).join(", ")}
+                </p>
+                <Link
+                  href="/credentials"
+                  className="font-medium text-[var(--destructive)] underline underline-offset-4"
+                >
+                  크레덴셜 설정하러 가기
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="grid gap-2 text-xs text-[var(--muted-foreground)] md:grid-cols-3">
           <p className="inline-flex items-center gap-2">
             <HardDrive className="h-3.5 w-3.5" />
@@ -899,12 +986,27 @@ export default function WorkflowDetailPage() {
       </div>
 
       {workflow && (
-        <RunCommandDialog
-          open={runDialogOpen}
-          onClose={() => setRunDialogOpen(false)}
-          workflowId={workflow.id}
-          workflowTitle={workflow.title}
-        />
+        <>
+          <RunCommandDialog
+            open={runDialogOpen}
+            onClose={() => setRunDialogOpen(false)}
+            workflowId={workflow.id}
+            workflowTitle={workflow.title}
+          />
+          {transferMode && (
+            <WorkflowTransferDialog
+              open={!!transferMode}
+              onClose={() => setTransferMode(null)}
+              mode={transferMode}
+              workflowId={workflow.id}
+              workflowTitle={workflow.title}
+              folderId={workflow.folder_id}
+              onImported={(nextWorkflowId) =>
+                router.push(`/workflows/${nextWorkflowId}`)
+              }
+            />
+          )}
+        </>
       )}
     </main>
   );

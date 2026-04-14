@@ -71,11 +71,18 @@ interface NodeInput {
   instruction?: string;
   instruction_id?: number;
   credential_id?: number;
+  credential_requirement?: unknown;
   hitl?: boolean;
   visual_selection?: boolean;
   node_type?: string;
   loop_back_to?: number;
   auto_advance?: boolean;
+}
+
+function jsonTextParam(value: unknown): string | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value === "string") return value;
+  return JSON.stringify(value);
 }
 
 export const POST = withAuth(
@@ -172,7 +179,7 @@ export const POST = withAuth(
         for (let i = 0; i < nodes.length; i++) {
           const node: NodeInput = nodes[i];
           await client.query(
-            "INSERT INTO workflow_nodes (workflow_id, step_order, node_type, title, instruction, instruction_id, loop_back_to, auto_advance, credential_id, hitl, visual_selection) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+            "INSERT INTO workflow_nodes (workflow_id, step_order, node_type, title, instruction, instruction_id, loop_back_to, auto_advance, credential_id, hitl, visual_selection, credential_requirement) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)",
             [
               workflowId,
               i + 1,
@@ -193,6 +200,7 @@ export const POST = withAuth(
               node.node_type === "gate"
                 ? (node.visual_selection ?? false)
                 : false,
+              jsonTextParam(node.credential_requirement),
             ],
           );
         }

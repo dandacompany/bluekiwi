@@ -13,6 +13,7 @@ interface NodeDraft {
   instruction: string;
   instruction_id: number | null;
   credential_id: number | null;
+  credential_requirement?: { service_name: string } | null;
   loop_back_to: number | null;
   hitl: boolean;
   visual_selection: boolean;

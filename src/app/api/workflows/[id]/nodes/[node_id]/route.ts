@@ -62,8 +62,9 @@ export const PATCH = withAuth<Params>(
            visual_selection = COALESCE($6, visual_selection),
            instruction_id = COALESCE($7, instruction_id),
            credential_id = COALESCE($8, credential_id),
-           loop_back_to = COALESCE($9, loop_back_to)
-         WHERE id = $10`,
+           loop_back_to = COALESCE($9, loop_back_to),
+           credential_requirement = COALESCE($10, credential_requirement)
+         WHERE id = $11`,
         [
           body.title ?? null,
           body.instruction ?? null,
@@ -78,6 +79,9 @@ export const PATCH = withAuth<Params>(
           body.instruction_id ?? null,
           body.credential_id ?? null,
           body.loop_back_to ?? null,
+          body.credential_requirement
+            ? JSON.stringify(body.credential_requirement)
+            : null,
           nodeId,
         ],
       );

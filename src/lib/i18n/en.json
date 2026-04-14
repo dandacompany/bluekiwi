@@ -795,7 +795,8 @@
     "conflict": "Request conflicts with current state",
     "preconditionFailed": "Precondition failed",
     "myWorkspaceMissing": "My Workspace is missing. Contact your administrator.",
-    "versionInactive": "This workflow version is inactive"
+    "versionInactive": "This workflow version is inactive",
+    "workflowCredentialSetupRequired": "This workflow requires credential setup before it can run"
   },
   "validationErrors": {
     "generic": "Invalid input"

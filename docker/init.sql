@@ -145,6 +145,7 @@ CREATE TABLE IF NOT EXISTS workflow_nodes (
   visual_selection BOOLEAN NOT NULL DEFAULT false,
   version_note     TEXT DEFAULT NULL,
   credential_id    INTEGER REFERENCES credentials(id) ON DELETE RESTRICT,
+  credential_requirement TEXT,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
