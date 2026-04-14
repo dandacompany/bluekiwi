@@ -770,27 +770,27 @@ export default function WorkflowsPage() {
                                     <Pencil className="mr-2 h-3.5 w-3.5" />
                                     {t("common.edit")}
                                   </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => handleDuplicate(wf)}
-                                >
-                                  <Copy className="mr-2 h-3.5 w-3.5" />
-                                  {t("common.duplicate")}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    setExportTarget({
-                                      id: wf.id,
-                                      title: wf.title,
-                                      folderId: wf.folder_id ?? null,
-                                    })
-                                  }
-                                >
-                                  <Download className="mr-2 h-3.5 w-3.5" />
-                                  {t("workflows.export")}
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  className="text-[var(--destructive)]"
+                                  <DropdownMenuItem
+                                    onClick={() => handleDuplicate(wf)}
+                                  >
+                                    <Copy className="mr-2 h-3.5 w-3.5" />
+                                    {t("common.duplicate")}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      setExportTarget({
+                                        id: wf.id,
+                                        title: wf.title,
+                                        folderId: wf.folder_id ?? null,
+                                      })
+                                    }
+                                  >
+                                    <Download className="mr-2 h-3.5 w-3.5" />
+                                    {t("workflows.export")}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-[var(--destructive)]"
                                     onClick={() => setDeleteTarget(wf)}
                                   >
                                     <Trash2 className="mr-2 h-3.5 w-3.5" />
