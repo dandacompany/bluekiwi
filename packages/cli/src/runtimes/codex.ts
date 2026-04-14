@@ -54,7 +54,7 @@ export class CodexAdapter implements RuntimeAdapter {
       ? readFileSync(MCP_CONFIG, "utf8")
       : "";
     const stripped = existing.replace(
-      /\n?\[mcp_servers\.bluekiwi\][\s\S]*?(?=\n\[|$)/g,
+      /\n?\[mcp_servers\.bluekiwi[\s\S]*?(?=\n\[(?!mcp_servers\.bluekiwi)|$)/g,
       "",
     );
     writeFileSync(MCP_CONFIG, stripped + snippet);
@@ -65,7 +65,10 @@ export class CodexAdapter implements RuntimeAdapter {
       const existing = readFileSync(MCP_CONFIG, "utf8");
       writeFileSync(
         MCP_CONFIG,
-        existing.replace(/\n?\[mcp_servers\.bluekiwi\][\s\S]*?(?=\n\[|$)/g, ""),
+        existing.replace(
+          /\n?\[mcp_servers\.bluekiwi[\s\S]*?(?=\n\[(?!mcp_servers\.bluekiwi)|$)/g,
+          "",
+        ),
       );
     }
     if (existsSync(SKILLS_DIR)) {
