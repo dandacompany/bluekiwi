@@ -70,6 +70,9 @@ Build the report from the collected data:
 - **Values**: {key = value for each entry in values}
 - **Priority ranking**: {ranking as numbered list}
 - **Matrix placement**: {item -> quadrant description for each entry}
+- **Comment**: {comment if present}
+- **Field inputs**: {key = value for each entry in fields}
+- **Option comments**: {option -> note for each entry in option_comments}
 
 {if no VS responses}
 No visual selection responses recorded.

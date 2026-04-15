@@ -296,13 +296,16 @@ but agent-authored content must match the user's locale.
      open "${WEBUI_URL}/tasks/${TASK_ID}?step=${STEP_ORDER}&vs=true"
      ```
   4. Poll `get_web_response(task_id)` every 3-5 seconds until a response arrives (max 120 seconds).
-  5. The response is a **JSON object** (not a plain string). Parse it to read the user's choices:
+  5. The response is a **JSON object** (not a plain string). Parse it to read the user's choices and feedback:
 
      ```json
      {
        "selections": ["monolith"],
        "values": { "budget": 70 },
-       "ranking": ["security", "ux"]
+       "ranking": ["security", "ux"],
+       "comment": "Keep this direction but tighten rollout scope",
+       "fields": { "change_request": "Add a rollback plan" },
+       "option_comments": { "monolith": "Prefer this if we can phase deployment" }
      }
      ```
 
@@ -310,9 +313,18 @@ but agent-authored content must match the user's locale.
      - `values`: numeric inputs (from bk-slider, keyed by data-name)
      - `ranking`: ordered list (from bk-ranking)
      - `matrix`: placement coordinates (from bk-matrix)
+     - `comment`: free-form global memo from bk-textarea/bk-input with `data-response-key="comment"` (or `data-name="comment"`)
+     - `fields`: named text inputs from bk-input / bk-textarea, plus any option-level memo stored via `data-comment-name`
+     - `option_comments`: per-option free-text notes attached to selected choices
        Only populated fields appear.
 
-  6. Use the parsed response to form the gate answer and call `advance`.
+  6. When forming the gate answer, never ignore free-text feedback:
+     - If `comment` exists, summarize it in the gate output.
+     - If `fields.change_request` or similar named fields exist, treat them as authoritative revision instructions.
+     - If `option_comments` exists, preserve the mapping between the selected option and its note.
+     - A response like "select B + add changes" must not be collapsed into just `"selections": ["b"]`.
+
+  7. Use the parsed response to form the gate answer and call `advance`.
 
 - If `visual_selection: false` → present the gate question to the user via AskUserQuestion. Use the response as gate answer, call `execute_step` with the answer, then `advance`.
 
@@ -373,14 +385,14 @@ When a loop node uses `visual_selection: true`, each iteration presents a VS scr
     },
     {
       "iteration": 2,
-      "web_response": { "selections": ["b"], "values": { "confidence": 80 } },
+      "web_response": { "selections": ["b"], "values": { "confidence": 80 }, "fields": { "change_request": "Need more detail on error handling" } },
       "created_at": "..."
     }
   ]
 }
 ```
 
-Use the history to adapt subsequent VS screens - for example, pre-selecting the user's previous choice, adjusting slider defaults based on past values, or skipping already-confirmed items.
+Use the history to adapt subsequent VS screens - for example, pre-selecting the user's previous choice, adjusting slider defaults based on past values, carrying forward `fields.change_request` into the next revision prompt, or skipping already-confirmed items.
 
 ## Graceful Interruption (중단 처리)
 

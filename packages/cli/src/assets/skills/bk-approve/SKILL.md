@@ -44,9 +44,12 @@ Check `log_status` and `node_type` to determine scenario:
    - Values: budget = 70%, confidence = 85%
    - Ranking: 1. Security, 2. Performance, 3. UX
    - Matrix: auth -> high urgency / high importance
+   - Comment: [global free-form memo, if present]
+   - Field inputs: change_request = ..., constraints = ...
+   - Option comments: B -> "Need tighter scope before approval"
    ```
 
-   Map `selections` values back to the option labels shown in the VS screen. Present `values` with their units, `ranking` as a numbered list, and `matrix` positions as quadrant descriptions using high/low language for each axis.
+   Map `selections` values back to the option labels shown in the VS screen. Present `values` with their units, `ranking` as a numbered list, and `matrix` positions as quadrant descriptions using high/low language for each axis. Also surface any `comment`, `fields`, and `option_comments` so approval decisions include the user's requested changes.
 
 3. Collect decision via AskUserQuestion:
    - header: "Gate decision"

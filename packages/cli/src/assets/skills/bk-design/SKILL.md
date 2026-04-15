@@ -269,7 +269,7 @@ When designing a `visual_selection: true` gate node, specify which `bk-*` compon
 <HARD-RULE>
 - VS content shown to the user must be written in the user's language.
 - Labels, option descriptions, helper text, slider units, ranking item names, and matrix axis labels must all follow the user's language.
-- Keep component class names and JSON keys in their canonical English forms (`bk-options`, `selections`, `values`, `ranking`, `matrix`).
+- Keep component class names and JSON keys in their canonical English forms (`bk-options`, `selections`, `values`, `ranking`, `matrix`, `comment`, `fields`, `option_comments`).
 </HARD-RULE>
 
 **Dialog size directive — add as the first line of the HTML:**
@@ -298,6 +298,8 @@ Rule: choose `xl` or `full` whenever content benefits from horizontal space (sid
 | `bk-checklist`    | `sm`             | Feature toggles, multi-select from a list                      |
 | `bk-code-compare` | `lg`             | Comparing code approaches side by side                         |
 | `bk-slider`       | `sm`             | Budget allocation, confidence levels, thresholds               |
+| `bk-input`        | `sm`             | Short rationale, constraint, owner, or one-line change request |
+| `bk-textarea`     | `sm` or `md`     | Long-form feedback, revision request, reviewer memo            |
 | `bk-ranking`      | `md`             | Priority ordering (requirements, features)                     |
 | `bk-matrix`       | `xl`             | Urgency/importance mapping, risk assessment                    |
 | `bk-split`        | `xl`             | Two-option comparison (A vs B)                                 |
@@ -316,6 +318,23 @@ Present the alternatives using bk-options with data-recommended on the suggested
 Show the layout candidates using bk-cards (size=md), then add a bk-slider named "confidence" (0-100, unit "%").
 Start the HTML with: <!-- @bk size=md -->
 ```
+
+```text
+If the user may want to approve with edits, add a bk-textarea with data-name="comment" and data-response-key="comment" so they can leave a global memo.
+```
+
+```text
+If a specific option requires justification or revision notes, add data-requires-comment to that selectable item.
+Use data-comment-name="change_request" when the memo should be persisted into response.fields.change_request.
+```
+
+**Feedback-friendly gate design rules:**
+
+- For review/approval gates, default to **selection + memo**, not selection alone.
+- If one option means "approve with edits", make that option require a comment.
+- Use `bk-input` for short structured constraints (owner, budget cap, deadline).
+- Use `bk-textarea` for open-ended revision requests or free-form reviewer notes.
+- When designing downstream steps, explicitly instruct the agent to parse and honor `comment`, `fields`, and `option_comments`, not just `selections`.
 
 ```text
 Collect optional capabilities with bk-checklist and ask the user to rank the top three priorities using bk-ranking.

@@ -190,7 +190,8 @@ When improving a node with `visual_selection: true`:
 - Check whether the node still uses legacy inline HTML or full `<!DOCTYPE html>` documents. If so, migrate it to bk-\* component fragments.
 - Verify the instruction explicitly names the `bk-*` components to render, for example: `Use bk-options for the primary choice and bk-slider for confidence.`
 - Check that the instruction text and the selected components align. Do not pair a ranking task with `bk-options` only, or a numeric threshold task without `bk-slider`.
-- Check that downstream steps reading `get_web_response` parse the structured JSON object (`{selections, values, ranking, matrix}`) correctly instead of treating it as a plain string.
+- Check that downstream steps reading `get_web_response` parse the structured JSON object (`{selections, values, ranking, matrix, comment, fields, option_comments}`) correctly instead of treating it as a plain string.
+- For review gates, prefer adding `bk-textarea` or option-level required comments when the user may want to approve with edits rather than making them choose an option with no way to explain it.
 
 ## Node Modification Strategy
 
