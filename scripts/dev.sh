@@ -5,11 +5,11 @@
 # Usage: bash scripts/dev.sh [command]
 #
 # Commands:
-#   start / up    Start all services (db + redis + app)
+#   start / up    Start all services (db + ws-relay + app)
 #   stop / down   Stop all services
 #   restart       Restart all services
 #   status        Show service status
-#   logs [svc]    Tail logs (all or specific: app, db, redis)
+#   logs [svc]    Tail logs (all or specific: app, db, ws-relay)
 #   build         Rebuild app container (after dependency changes)
 #   seed          Seed database with test data
 #   reset         Stop + remove volumes (destructive)
@@ -93,7 +93,7 @@ cmd_start() {
   echo ""
 
   # 2. Start compose
-  echo "▸ Starting services (db + redis + app)..."
+  echo "▸ Starting services (db + ws-relay + app)..."
   $COMPOSE up -d --build 2>&1 | grep -v "obsolete" | while read -r line; do
     echo "  $line"
   done
@@ -112,7 +112,7 @@ cmd_start() {
   bold "═══════════════════════════════════════════"
   green "  App:    http://localhost:$port"
   echo "  DB:     localhost:5433 (bluekiwi/bluekiwi_dev_2026)"
-  echo "  Redis:  localhost:6379"
+  echo "  WS:     localhost:3001"
   bold "═══════════════════════════════════════════"
   echo ""
   echo "Commands:"
@@ -190,7 +190,7 @@ cmd_seed() {
   # Wait for DB
   if ! $COMPOSE ps --format json db 2>/dev/null | grep -q "healthy"; then
     yellow "DB not healthy. Starting services first..."
-    $COMPOSE up -d db redis 2>&1 | grep -v "obsolete"
+    $COMPOSE up -d db 2>&1 | grep -v "obsolete"
     sleep 5
   fi
 
@@ -218,7 +218,7 @@ cmd_seed() {
 }
 
 cmd_reset() {
-  red "⚠ This will destroy ALL data (DB + Redis volumes)"
+  red "⚠ This will destroy ALL data (DB volume)"
   echo -n "Continue? [y/N] "
   read -r confirm
   if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
@@ -252,14 +252,14 @@ usage() {
   echo "Usage: bash scripts/dev.sh <command>"
   echo ""
   echo "Lifecycle:"
-  echo "  start, up      Start all services (db + redis + app)"
+  echo "  start, up      Start all services (db + ws-relay + app)"
   echo "  stop, down     Stop all services"
   echo "  restart        Restart all services"
   echo "  build          Rebuild app container (after npm install)"
   echo ""
   echo "Monitoring:"
   echo "  status         Show service status + health"
-  echo "  logs [svc]     Tail logs (all, or: app / db / redis)"
+  echo "  logs [svc]     Tail logs (all, or: app / db / ws-relay)"
   echo "  port           Print current app port"
   echo ""
   echo "Data:"

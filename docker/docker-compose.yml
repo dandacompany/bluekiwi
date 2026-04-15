@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   # ─── PostgreSQL ───
   db:
@@ -20,28 +18,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # ─── Redis ───
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
-    command: redis-server --requirepass ${REDIS_PASSWORD:-bluekiwi_redis_2026}
-    volumes:
-      - redisdata:/data
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "redis-cli",
-          "-a",
-          "${REDIS_PASSWORD:-bluekiwi_redis_2026}",
-          "ping",
-        ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   # ─── Next.js App ───
   app:
     build:
@@ -52,13 +28,10 @@ services:
       - "${APP_PORT:-3000}:3000"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-bluekiwi}:${POSTGRES_PASSWORD:-bluekiwi_dev_2026}@db:5432/${POSTGRES_DB:-bluekiwi}
-      REDIS_URL: redis://:${REDIS_PASSWORD:-bluekiwi_redis_2026}@redis:6379
       NODE_ENV: production
       WS_RELAY_URL: http://ws-relay:3001
     depends_on:
       db:
-        condition: service_healthy
-      redis:
         condition: service_healthy
       ws-relay:
         condition: service_started
@@ -74,11 +47,6 @@ services:
     command: ["node", "/app/scripts/ws-relay.js"]
     environment:
       WS_PORT: 3001
-      REDIS_URL: redis://:${REDIS_PASSWORD:-bluekiwi_redis_2026}@redis:6379
-    depends_on:
-      redis:
-        condition: service_healthy
 
 volumes:
   pgdata:
-  redisdata:

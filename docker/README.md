@@ -6,13 +6,13 @@
 ┌─────────────────────────────────────────────────────┐
 │  docker-compose                                      │
 │                                                      │
-│  ┌──────────┐   ┌──────────┐   ┌──────────────────┐ │
-│  │ PostgreSQL│   │  Redis   │   │   Next.js App    │ │
-│  │  :5432    │   │  :6379   │   │   :3000          │ │
-│  │           │◄──┤          │◄──┤                  │ │
-│  │  bluekiwi │   │  cache   │   │  API routes      │ │
-│  │  database │   │  pub/sub │   │  Web UI          │ │
-│  └──────────┘   └──────────┘   └──────────────────┘ │
+│  ┌──────────┐           ┌──────────────────┐         │
+│  │ PostgreSQL│           │   Next.js App    │         │
+│  │  :5432    │           │   :3000          │         │
+│  │           │◄──────────┤                  │         │
+│  │  bluekiwi │           │  API routes      │         │
+│  │  database │           │  Web UI          │         │
+│  └──────────┘           └──────────────────┘         │
 │       ▲                              ▲               │
 │       │                              │               │
 │       │              ┌──────────────────┐            │
@@ -63,7 +63,6 @@ docker compose logs app --tail 20
 | Service    | Image              | Port | Description                        |
 | ---------- | ------------------ | ---- | ---------------------------------- |
 | `db`       | postgres:16-alpine | 5432 | PostgreSQL 데이터베이스            |
-| `redis`    | redis:7-alpine     | 6379 | 캐시/pub-sub (향후 WebSocket 중계) |
 | `app`      | custom (Next.js)   | 3000 | Web UI + API                       |
 | `ws-relay` | custom             | 3001 | WebSocket 실시간 중계              |
 
@@ -75,20 +74,17 @@ docker compose logs app --tail 20
 | `POSTGRES_USER`     | bluekiwi            | DB 사용자           |
 | `POSTGRES_PASSWORD` | bluekiwi_dev_2026   | DB 비밀번호         |
 | `DB_PORT`           | 5432                | PostgreSQL 포트     |
-| `REDIS_PASSWORD`    | bluekiwi_redis_2026 | Redis 비밀번호      |
-| `REDIS_PORT`        | 6379                | Redis 포트          |
 | `APP_PORT`          | 3000                | Next.js 앱 포트     |
 | `WS_PORT`           | 3001                | WebSocket 중계 포트 |
 | `DATABASE_URL`      | (auto)              | PostgreSQL 연결 URL |
-| `REDIS_URL`         | (auto)              | Redis 연결 URL      |
 
 ## Development Mode
 
-로컬 개발 시에는 DB와 Redis만 Docker로 실행하고, 앱은 호스트에서 실행합니다:
+로컬 개발 시에는 DB만 Docker로 실행하고, 앱은 호스트에서 실행합니다:
 
 ```bash
-# DB + Redis만 실행
-docker compose up db redis -d
+# DB만 실행
+docker compose up db -d
 
 # 호스트에서 앱 실행
 cd ..
@@ -174,8 +170,8 @@ bash scripts/seed-gstack.sh http://localhost:3000
 프로덕션에서는 반드시:
 
 1. `.env`의 비밀번호를 강력한 값으로 변경
-2. `POSTGRES_PASSWORD`, `REDIS_PASSWORD` 변경
-3. 외부 접근이 필요 없으면 `DB_PORT`, `REDIS_PORT` 매핑 제거
+2. `POSTGRES_PASSWORD` 변경
+3. 외부 접근이 필요 없으면 `DB_PORT` 매핑 제거
 4. 볼륨 백업 정책 수립
 
 ```bash

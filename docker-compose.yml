@@ -15,16 +15,12 @@ services:
       timeout: 3s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
-
   app:
     image: ghcr.io/dandacompany/bluekiwi:${BLUEKIWI_VERSION:-latest}
     ports:
       - "${APP_PORT:-3100}:3000"
     environment:
       DATABASE_URL: postgresql://bluekiwi:${DB_PASSWORD}@db:5432/bluekiwi
-      REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
       PUBLIC_URL: ${PUBLIC_URL:-}
       TEAM_NAME: ${TEAM_NAME:-}
@@ -33,8 +29,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      redis:
-        condition: service_started
       ws-relay:
         condition: service_started
 
@@ -46,9 +40,6 @@ services:
     command: ["node", "scripts/ws-relay.js"]
     environment:
       WS_PORT: "3001"
-    depends_on:
-      redis:
-        condition: service_started
 
 volumes:
   pgdata:

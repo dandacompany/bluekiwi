@@ -61,7 +61,6 @@ cmd_start() {
   (
     cd "$PROJECT_ROOT"
     nohup env \
-      REDIS_URL="redis://:bluekiwi_redis_2026@localhost:6379" \
       WS_RELAY_URL="http://localhost:3001" \
       NEXT_TELEMETRY_DISABLED=1 \
       npm run dev:raw -- --hostname 0.0.0.0 --port "$port" \
