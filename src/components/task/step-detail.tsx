@@ -360,6 +360,7 @@ function VisualSelector({
   nodeId,
   isVisualSelection,
   logStatus,
+  existingResponse,
   onSelected,
   autoOpen,
   onAutoOpened,
@@ -369,13 +370,14 @@ function VisualSelector({
   nodeId: number;
   isVisualSelection: boolean;
   logStatus: string;
+  existingResponse: string | null;
   onSelected?: () => void;
   autoOpen?: boolean;
   onAutoOpened?: () => void;
 }) {
   const { t } = useTranslation();
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState(Boolean(existingResponse));
   const [open, setOpen] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -414,11 +416,14 @@ function VisualSelector({
   // Deep link: auto-open dialog
   useEffect(() => {
     if (autoOpen && !open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOpen(true);
       onAutoOpened?.();
     }
   }, [autoOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    setSubmitted(Boolean(existingResponse));
+  }, [existingResponse]);
 
   useEffect(() => {
     if (!canSelect) return;
@@ -531,6 +536,198 @@ function VisualSelector({
   );
 }
 
+function parseWebResponse(value: string | null): unknown {
+  if (!value) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function StructuredWebResponse({
+  value,
+}: {
+  value: string | null;
+}) {
+  const { t } = useTranslation();
+  const parsed = parseWebResponse(value);
+
+  if (parsed == null) return null;
+
+  if (!isRecord(parsed)) {
+    return (
+      <div className="rounded-[var(--radius)] border border-brand-blue-600 bg-brand-blue-100 p-3">
+        <p className="mb-1 text-xs font-medium text-brand-blue-700">
+          {t("tasks.responseSubmitted")}
+        </p>
+        <p className="text-sm text-[var(--foreground)]">{String(parsed)}</p>
+      </div>
+    );
+  }
+
+  const selections = Array.isArray(parsed.selections)
+    ? parsed.selections.filter((item): item is string => typeof item === "string")
+    : [];
+  const ranking = Array.isArray(parsed.ranking)
+    ? parsed.ranking.filter((item): item is string => typeof item === "string")
+    : [];
+  const values = isRecord(parsed.values) ? parsed.values : null;
+  const fields = isRecord(parsed.fields) ? parsed.fields : null;
+  const optionComments = isRecord(parsed.option_comments)
+    ? parsed.option_comments
+    : null;
+  const matrix = isRecord(parsed.matrix) ? parsed.matrix : null;
+  const comment =
+    typeof parsed.comment === "string" && parsed.comment.trim()
+      ? parsed.comment.trim()
+      : null;
+
+  return (
+    <div className="rounded-[var(--radius)] border border-brand-blue-600 bg-brand-blue-100 p-3">
+      <p className="mb-3 text-xs font-medium text-brand-blue-700">
+        {t("tasks.responseSubmitted")}
+      </p>
+      <div className="space-y-3 text-sm text-[var(--foreground)]">
+        {selections.length > 0 && (
+          <div>
+            <p className="mb-1 text-xs font-medium text-brand-blue-700">
+              {t("tasks.responseSelections")}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {selections.map((selection) => (
+                <span
+                  key={selection}
+                  className="rounded-full border border-brand-blue-600/20 bg-white/80 px-2.5 py-1 text-xs font-medium"
+                >
+                  {selection}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {comment && (
+          <div>
+            <p className="mb-1 text-xs font-medium text-brand-blue-700">
+              {t("tasks.responseComment")}
+            </p>
+            <p className="whitespace-pre-wrap">{comment}</p>
+          </div>
+        )}
+
+        {fields && Object.keys(fields).length > 0 && (
+          <div>
+            <p className="mb-1 text-xs font-medium text-brand-blue-700">
+              {t("tasks.responseFields")}
+            </p>
+            <div className="space-y-1.5">
+              {Object.entries(fields).map(([key, fieldValue]) => (
+                <div
+                  key={key}
+                  className="rounded-[0.9rem] border border-brand-blue-600/15 bg-white/70 px-3 py-2"
+                >
+                  <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-brand-blue-700">
+                    {key}
+                  </p>
+                  <p className="mt-0.5 whitespace-pre-wrap">
+                    {String(fieldValue)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {optionComments && Object.keys(optionComments).length > 0 && (
+          <div>
+            <p className="mb-1 text-xs font-medium text-brand-blue-700">
+              {t("tasks.responseOptionComments")}
+            </p>
+            <div className="space-y-1.5">
+              {Object.entries(optionComments).map(([key, fieldValue]) => (
+                <div
+                  key={key}
+                  className="rounded-[0.9rem] border border-brand-blue-600/15 bg-white/70 px-3 py-2"
+                >
+                  <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-brand-blue-700">
+                    {key}
+                  </p>
+                  <p className="mt-0.5 whitespace-pre-wrap">
+                    {String(fieldValue)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {values && Object.keys(values).length > 0 && (
+          <div>
+            <p className="mb-1 text-xs font-medium text-brand-blue-700">
+              {t("tasks.responseValues")}
+            </p>
+            <div className="space-y-1">
+              {Object.entries(values).map(([key, fieldValue]) => (
+                <div key={key} className="flex items-center justify-between gap-3">
+                  <span className="text-[var(--muted-foreground)]">{key}</span>
+                  <span className="font-medium">{String(fieldValue)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {ranking.length > 0 && (
+          <div>
+            <p className="mb-1 text-xs font-medium text-brand-blue-700">
+              {t("tasks.responseRanking")}
+            </p>
+            <ol className="space-y-1">
+              {ranking.map((item, index) => (
+                <li key={item} className="flex items-center gap-2">
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/80 text-[11px] font-semibold text-brand-blue-700">
+                    {index + 1}
+                  </span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+
+        {matrix && Object.keys(matrix).length > 0 && (
+          <div>
+            <p className="mb-1 text-xs font-medium text-brand-blue-700">
+              {t("tasks.responseMatrix")}
+            </p>
+            <div className="space-y-1.5">
+              {Object.entries(matrix).map(([key, coords]) => {
+                const point = isRecord(coords) ? coords : {};
+                return (
+                  <div
+                    key={key}
+                    className="flex items-center justify-between gap-3 rounded-[0.9rem] border border-brand-blue-600/15 bg-white/70 px-3 py-2"
+                  >
+                    <span className="font-medium">{key}</span>
+                    <span className="text-xs text-[var(--muted-foreground)]">
+                      x: {String(point.x ?? "-")}, y: {String(point.y ?? "-")}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function WebResponseForm({
   taskId,
   nodeId,
@@ -547,20 +744,7 @@ function WebResponseForm({
   const [sending, setSending] = useState(false);
 
   if (existingResponse) {
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(existingResponse);
-    } catch {
-      parsed = existingResponse;
-    }
-    return (
-      <div className="rounded-[var(--radius)] border border-brand-blue-600 bg-brand-blue-100 p-3">
-        <p className="mb-1 text-xs font-medium text-brand-blue-700">
-          {t("tasks.responseSubmitted")}
-        </p>
-        <p className="text-sm text-[var(--foreground)]">{String(parsed)}</p>
-      </div>
-    );
+    return <StructuredWebResponse value={existingResponse} />;
   }
 
   const handleSubmit = async () => {
@@ -937,6 +1121,7 @@ function StepContent({
           nodeId={log.node_id}
           isVisualSelection={!!log.visual_selection}
           logStatus={log.status}
+          existingResponse={log.web_response}
           onSelected={() => onRefresh?.()}
           autoOpen={autoOpenVs}
           onAutoOpened={onVsOpened}
@@ -953,9 +1138,7 @@ function StepContent({
       )}
 
       {log.status !== "pending" && log.web_response && (
-        <div className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] p-2 text-xs text-[var(--muted-foreground)]">
-          Web response: {log.web_response}
-        </div>
+        <StructuredWebResponse value={log.web_response} />
       )}
     </div>
   );

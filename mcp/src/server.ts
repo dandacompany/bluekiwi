@@ -312,8 +312,15 @@ SELECTION (collect choices):
 
 INPUT (collect values):
 - bk-slider: Numeric. data-name, data-min, data-max, data-value, data-unit on .bk-slider. Contains label.
+- bk-input: Short text input. data-name, data-label, data-placeholder, optional data-required, and optional data-response-key="comment".
+- bk-textarea: Long-form memo field. data-name, data-label, data-placeholder, optional data-required, and optional data-response-key="comment".
 - bk-ranking: Drag reorder. Wrap in .bk-ranking, each .bk-rank-item with data-value.
 - bk-matrix: 2x2 placement. .bk-matrix with data-x-label, data-y-label. Each .bk-matrix-item with data-value.
+
+OPTION-LEVEL FEEDBACK:
+- Any selectable item (.bk-option, .bk-card, .bk-code-option, .bk-mockup-item, .bk-check-item) may add data-requires-comment to force a memo before submit.
+- Optional data-comment-name stores that memo into response.fields[data-comment-name].
+- Optional data-comment-label and data-comment-placeholder customize the inline memo UI.
 
 DISPLAY (no values):
 - bk-split: Side-by-side. Two .bk-split-panel inside .bk-split.
@@ -324,7 +331,7 @@ DISPLAY (no values):
 Layout: h2 for title, .bk-subtitle, .bk-section for breaks, .bk-label for category.
 
 Response format (JSON via get_web_response):
-{selections: ["a"], values: {budget: 70}, ranking: ["security","ux"], matrix: {auth: {x:0.8,y:0.9}}}
+{selections: ["a"], values: {budget: 70}, ranking: ["security","ux"], matrix: {auth: {x:0.8,y:0.9}}, comment: "Tighten the pricing section", fields: {change_request: "Add rainy-day fallback"}, option_comments: {b: "Keep this option but improve lodging details"}}
 Only populated fields are included.`,
     {
       task_id: { type: "number" },

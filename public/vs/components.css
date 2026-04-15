@@ -169,6 +169,80 @@ h2 {
   pointer-events: none;
 }
 
+/* ─── Form Inputs ─── */
+
+.bk-input,
+.bk-textarea,
+.bk-option-comment {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.bk-field-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--bk-text);
+}
+
+.bk-field-label .required {
+  color: var(--bk-danger);
+  margin-left: 0.25rem;
+}
+
+.bk-field-help {
+  font-size: 0.78rem;
+  color: var(--bk-text-muted);
+}
+
+.bk-input-control,
+.bk-textarea-control {
+  width: 100%;
+  border: 1.5px solid var(--bk-border);
+  border-radius: var(--bk-radius);
+  background: var(--bk-surface);
+  color: var(--bk-text);
+  font: inherit;
+  padding: 0.8rem 0.9rem;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    background 0.15s;
+}
+
+.bk-input-control::placeholder,
+.bk-textarea-control::placeholder {
+  color: var(--bk-text-muted);
+}
+
+.bk-input-control:focus,
+.bk-textarea-control:focus {
+  outline: none;
+  border-color: var(--bk-primary);
+  box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.15);
+}
+
+.bk-textarea-control {
+  min-height: 7rem;
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.bk-field-error {
+  font-size: 0.78rem;
+  color: var(--bk-danger);
+}
+
+.bk-option-comment[hidden] {
+  display: none;
+}
+
+.bk-option-comment {
+  border-top: 1px dashed var(--bk-border);
+  padding-top: 0.9rem;
+}
+
 /* ─── 1. bk-options (A/B/C single select) ─── */
 
 .bk-options {

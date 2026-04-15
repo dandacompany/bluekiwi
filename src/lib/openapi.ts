@@ -1517,7 +1517,16 @@ export const openApiSpec = {
                 required: ["node_id", "response"],
                 properties: {
                   node_id: { type: "integer" },
-                  response: { type: "string" },
+                  response: {
+                    oneOf: [
+                      { type: "string" },
+                      {
+                        type: "object",
+                        description:
+                          "Structured VS payload. Common keys include selections, values, ranking, matrix, comment, fields, and option_comments.",
+                      },
+                    ],
+                  },
                 },
               },
             },
