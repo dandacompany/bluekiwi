@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { okResponse, errorResponse, type TaskLog } from "@/lib/db";
 import { requireAuth } from "@/lib/with-auth";
-import type { User } from "@/lib/auth";
 import {
   advanceTaskToStep,
   completeTaskIfNoNextNode,

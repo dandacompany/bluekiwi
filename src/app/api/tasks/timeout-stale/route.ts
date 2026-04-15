@@ -15,7 +15,7 @@ import { notifyTaskUpdate } from "@/lib/notify-ws";
  */
 export const POST = withAuth(
   "tasks:execute",
-  async (request: NextRequest, _user) => {
+  async (request: NextRequest) => {
     const body = await request.json().catch(() => ({}));
     const timeoutMinutes = Number(body.timeout_minutes ?? 120);
 
@@ -72,7 +72,7 @@ export const POST = withAuth(
  */
 export const GET = withAuth(
   "tasks:read",
-  async (request: NextRequest, _user) => {
+  async (request: NextRequest) => {
     const { searchParams } = request.nextUrl;
     const timeoutMinutes = Number(searchParams.get("timeout_minutes") ?? 120);
     const cutoffIso = new Date(

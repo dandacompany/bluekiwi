@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { type Workflow, okResponse, errorResponse } from "@/lib/db";
+import { okResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canTransferOwnership } from "@/lib/authorization";
 import { findActiveUserById } from "@/lib/db/repositories/auth";

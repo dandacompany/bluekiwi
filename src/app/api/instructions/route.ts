@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Instruction, okResponse, listResponse, errorResponse } from "@/lib/db";
+import { okResponse, listResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import {
   buildResourceVisibilityFilter,

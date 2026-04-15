@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { errorResponse, execute, okResponse, query, queryOne } from "@/lib/db";
+import { errorResponse, execute, okResponse, queryOne } from "@/lib/db";
 import { hashPassword, verifyPassword, type Role, type User } from "@/lib/auth";
 import { withAuth } from "@/lib/with-auth";
 import { deleteUser, type DeleteMode } from "@/lib/delete-user";

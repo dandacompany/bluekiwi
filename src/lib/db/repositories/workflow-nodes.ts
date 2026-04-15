@@ -1,4 +1,4 @@
-import { decodeBoolean, decodeJson, decodeTimestamp } from "../value-codecs";
+import { decodeBoolean, decodeTimestamp } from "../value-codecs";
 import { insertAndReturnId, query, queryOne, withTransaction } from "@/lib/db";
 import type { WorkflowNode } from "@/lib/db";
 import type { DbTransactionClient } from "../adapter";

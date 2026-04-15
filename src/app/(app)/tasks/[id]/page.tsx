@@ -186,11 +186,17 @@ export default function TaskDetailPage() {
   const searchParams = useSearchParams();
   const { t } = useTranslation();
   const taskId = params.id as string;
+  const initialStepParam = searchParams.get("step");
+  const initialVsParam = searchParams.get("vs");
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedStep, setSelectedStep] = useState<number | null>(null);
+  const [selectedStep, setSelectedStep] = useState<number | null>(() => {
+    if (!initialStepParam) return null;
+    const parsed = Number(initialStepParam);
+    return Number.isFinite(parsed) ? parsed : null;
+  });
   const [comments, setComments] = useState<StepComment[]>([]);
-  const [autoOpenVs, setAutoOpenVs] = useState(false);
+  const [autoOpenVs, setAutoOpenVs] = useState(initialVsParam === "true");
 
   const fetchTask = useCallback(async () => {
     const res = await fetch(`/api/tasks/${taskId}`);
@@ -253,17 +259,6 @@ export default function TaskDetailPage() {
       cancelled = true;
     };
   }, [taskId]);
-
-  // Deep link: ?step=N&vs=true → auto-select step and open VS dialog
-  useEffect(() => {
-    if (!task) return;
-    const stepParam = searchParams.get("step");
-    const vsParam = searchParams.get("vs");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (stepParam) setSelectedStep(Number(stepParam));
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (vsParam === "true") setAutoOpenVs(true);
-  }, [task, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useWs((msg) => {
     if (msg.type === "task_update" && msg.task_id === Number(taskId)) {
