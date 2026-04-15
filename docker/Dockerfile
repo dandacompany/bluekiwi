@@ -40,6 +40,7 @@ RUN addgroup --system --gid 1001 nodejs && \
 COPY --from=deps /app/node_modules ./node_modules
 COPY scripts/ws-relay.ts ./scripts/ws-relay.ts
 COPY scripts/migrate.ts ./scripts/migrate.ts
+COPY src/lib/db ./src/lib/db
 RUN npx -y esbuild scripts/ws-relay.ts \
       --bundle \
       --platform=node \

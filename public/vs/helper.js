@@ -250,14 +250,9 @@
   }
 
   function makeMatrixDraggable(item, container) {
-    var startX, startY;
-
     function onStart(e) {
       e.preventDefault();
       item.classList.add("dragging");
-      var pt = e.touches ? e.touches[0] : e;
-      startX = pt.clientX;
-      startY = pt.clientY;
       document.addEventListener("mousemove", onMove);
       document.addEventListener("mouseup", onEnd);
       document.addEventListener("touchmove", onMove, { passive: false });

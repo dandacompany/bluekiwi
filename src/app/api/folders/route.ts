@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { type Folder, okResponse, listResponse, errorResponse } from "@/lib/db";
+import { okResponse, listResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import {
   buildFolderVisibilityFilter,

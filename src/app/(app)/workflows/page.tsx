@@ -256,11 +256,11 @@ export default function WorkflowsPage() {
     });
 
   const totalPages = Math.max(1, Math.ceil(workflows.length / pageSize));
-  const paged = workflows.slice((page - 1) * pageSize, page * pageSize);
-
-  useEffect(() => {
-    setPage((current) => Math.min(current, totalPages));
-  }, [totalPages]);
+  const currentPage = Math.min(page, totalPages);
+  const paged = workflows.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -281,8 +281,8 @@ export default function WorkflowsPage() {
     if (search.trim()) {
       params.set("q", search.trim());
     }
-    if (page > 1) {
-      params.set("page", String(page));
+    if (currentPage > 1) {
+      params.set("page", String(currentPage));
     }
     if (pageSize !== 10) {
       params.set("page_size", String(pageSize));
@@ -304,7 +304,7 @@ export default function WorkflowsPage() {
     searchParams,
     selectedFolder,
     search,
-    page,
+    currentPage,
     pageSize,
     viewMode,
   ]);
@@ -507,26 +507,26 @@ export default function WorkflowsPage() {
           variant="outline"
           size="icon"
           className="h-8 w-8"
-          disabled={page <= 1}
-          onClick={() => setPage((p) => p - 1)}
+          disabled={currentPage <= 1}
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
         <span className="min-w-16 text-right text-xs text-[var(--muted-foreground)]">
-          {page} / {totalPages}
+          {currentPage} / {totalPages}
         </span>
         <Button
           variant="outline"
           size="icon"
           className="h-8 w-8"
-          disabled={page >= totalPages}
-          onClick={() => setPage((p) => p + 1)}
+          disabled={currentPage >= totalPages}
+          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
     ),
-    [page, pageSize, t, totalPages],
+    [currentPage, pageSize, t, totalPages],
   );
 
   return (

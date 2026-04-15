@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { type Credential, maskSecrets, okResponse, listResponse, errorResponse } from "@/lib/db";
+import { maskSecrets, okResponse, listResponse, errorResponse } from "@/lib/db";
 import {
   buildCredentialVisibilityFilter,
   canEditFolder,

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { type Folder, okResponse, errorResponse } from "@/lib/db";
+import { okResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canTransferOwnership, loadFolder } from "@/lib/authorization";
 import { findActiveUserById } from "@/lib/db/repositories/auth";
