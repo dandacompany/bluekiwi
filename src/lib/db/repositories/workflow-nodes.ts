@@ -3,6 +3,18 @@ import { insertAndReturnId, query, queryOne, withTransaction } from "@/lib/db";
 import type { WorkflowNode } from "@/lib/db";
 import type { DbTransactionClient } from "../adapter";
 
+export class WorkflowNodeDeletionBlockedError extends Error {
+  constructor(
+    public readonly nodeId: number,
+    public readonly referenceCount: number,
+  ) {
+    super(
+      `Cannot delete workflow node ${nodeId}; ${referenceCount} task log reference(s) exist`,
+    );
+    this.name = "WorkflowNodeDeletionBlockedError";
+  }
+}
+
 interface WorkflowNodeRow
   extends Omit<
     WorkflowNode,
@@ -197,6 +209,15 @@ export async function deleteWorkflowNode(input: {
     [input.nodeId, input.workflowId],
   );
   if (!existing) return false;
+
+  const references = await queryOne<{ count: number | string }>(
+    "SELECT COUNT(*) AS count FROM task_logs WHERE node_id = $1",
+    [input.nodeId],
+  );
+  const referenceCount = Number(references?.count ?? 0);
+  if (referenceCount > 0) {
+    throw new WorkflowNodeDeletionBlockedError(input.nodeId, referenceCount);
+  }
 
   await withTransaction(async (client) => {
     await client.query("DELETE FROM workflow_nodes WHERE id = $1", [input.nodeId]);

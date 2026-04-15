@@ -10,6 +10,7 @@ import {
 import { withAuth } from "@/lib/with-auth";
 import { canEdit } from "@/lib/authorization";
 import { loadResourceOrFail } from "@/lib/api-helpers";
+import { WorkflowNodeDeletionBlockedError } from "@/lib/db/repositories/workflow-nodes";
 
 type Params = { params: Promise<{ id: string; nodeId: string }> };
 
@@ -121,6 +122,24 @@ export const DELETE = withAuth<Params>(
     );
     if (!existing) {
       const res = errorResponse("NOT_FOUND", "노드를 찾을 수 없습니다", 404);
+      return NextResponse.json(res.body, { status: res.status });
+    }
+
+    const refs = await queryOne<{ count: number | string }>(
+      "SELECT COUNT(*) AS count FROM task_logs WHERE node_id = $1",
+      [resolvedNodeId],
+    );
+    const referenceCount = Number(refs?.count ?? 0);
+    if (referenceCount > 0) {
+      const error = new WorkflowNodeDeletionBlockedError(
+        resolvedNodeId,
+        referenceCount,
+      );
+      const res = errorResponse(
+        "CONFLICT",
+        `실행 로그가 남아 있는 노드는 삭제할 수 없습니다 (task_logs: ${error.referenceCount})`,
+        409,
+      );
       return NextResponse.json(res.body, { status: res.status });
     }
 

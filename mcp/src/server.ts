@@ -967,10 +967,49 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           args,
         );
         const createdId = (created as { data?: { id?: number } })?.data?.id;
+        let nodeVerification:
+          | {
+              expected_count: number;
+              created_count: number;
+              verified_count: number;
+              mismatch: boolean;
+            }
+          | undefined;
+        if (
+          createdId !== undefined &&
+          Array.isArray((args as Record<string, unknown>).nodes)
+        ) {
+          const expectedCount = (
+            (args as Record<string, unknown>).nodes as unknown[]
+          ).length;
+          const createdCount = Array.isArray(
+            (created as { data?: { nodes?: unknown[] } })?.data?.nodes,
+          )
+            ? ((created as { data?: { nodes?: unknown[] } }).data?.nodes ?? [])
+                .length
+            : 0;
+          const verified = await client.request<{ data?: { nodes?: unknown[] } }>(
+            "GET",
+            `/api/workflows/${createdId}`,
+          );
+          const verifiedCount = Array.isArray(verified?.data?.nodes)
+            ? verified.data!.nodes!.length
+            : 0;
+          nodeVerification = {
+            expected_count: expectedCount,
+            created_count: createdCount,
+            verified_count: verifiedCount,
+            mismatch:
+              createdCount !== expectedCount || verifiedCount !== expectedCount,
+          };
+        }
         return wrap({
           ...created,
           ...(createdId !== undefined && {
             webui_url: `${apiUrl.replace(/\/$/, "")}/workflows/${createdId}`,
+          }),
+          ...(nodeVerification && {
+            node_verification: nodeVerification,
           }),
         });
       }
@@ -992,13 +1031,43 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const workflowId = requireNumberArg(args, "workflow_id");
         const body = { ...args };
         delete body.workflow_id;
-        return wrap(
-          await client.request(
-            "POST",
-            `/api/workflows/${workflowId}/nodes`,
-            body,
-          ),
+        logNodeMutationAudit("append_node.request", {
+          workflow_id: workflowId,
+          payload: sanitizeNodeMutationPayload(body),
+        });
+        const beforeNodes = await fetchWorkflowNodeSnapshot(workflowId);
+        const appended = await client.request<{ data?: { id?: number } }>(
+          "POST",
+          `/api/workflows/${workflowId}/nodes`,
+          body,
         );
+        const afterNodes = await fetchWorkflowNodeSnapshot(workflowId);
+        const verification = buildNodeMutationVerification({
+          mutation: "append_node",
+          beforeNodes,
+          afterNodes,
+          expectedDelta: 1,
+          expectedNodeId:
+            (appended as { data?: { id?: number } })?.data?.id ?? null,
+        });
+        logNodeMutationAudit("append_node.verification", {
+          workflow_id: workflowId,
+          verification,
+        });
+        if (verification.mismatch) {
+          logNodeMutationAudit("append_node.mismatch", {
+            workflow_id: workflowId,
+            payload: sanitizeNodeMutationPayload(body),
+            verification,
+          });
+          throw new Error(
+            `append_node verification failed for workflow ${workflowId}: ${JSON.stringify(verification)}`,
+          );
+        }
+        return wrap({
+          ...appended,
+          node_verification: verification,
+        });
       }
       case "insert_node": {
         const workflowId = requireNumberArg(args, "workflow_id");
@@ -1006,13 +1075,46 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const body = { ...args };
         delete body.workflow_id;
         delete body.after_step;
-        return wrap(
-          await client.request(
-            "POST",
-            `/api/workflows/${workflowId}/nodes?after=${afterStep}`,
-            body,
-          ),
+        logNodeMutationAudit("insert_node.request", {
+          workflow_id: workflowId,
+          after_step: afterStep,
+          payload: sanitizeNodeMutationPayload(body),
+        });
+        const beforeNodes = await fetchWorkflowNodeSnapshot(workflowId);
+        const inserted = await client.request<{ data?: { id?: number } }>(
+          "POST",
+          `/api/workflows/${workflowId}/nodes?after=${afterStep}`,
+          body,
         );
+        const afterNodes = await fetchWorkflowNodeSnapshot(workflowId);
+        const verification = buildNodeMutationVerification({
+          mutation: "insert_node",
+          beforeNodes,
+          afterNodes,
+          expectedDelta: 1,
+          expectedNodeId:
+            (inserted as { data?: { id?: number } })?.data?.id ?? null,
+        });
+        logNodeMutationAudit("insert_node.verification", {
+          workflow_id: workflowId,
+          after_step: afterStep,
+          verification,
+        });
+        if (verification.mismatch) {
+          logNodeMutationAudit("insert_node.mismatch", {
+            workflow_id: workflowId,
+            after_step: afterStep,
+            payload: sanitizeNodeMutationPayload(body),
+            verification,
+          });
+          throw new Error(
+            `insert_node verification failed for workflow ${workflowId}: ${JSON.stringify(verification)}`,
+          );
+        }
+        return wrap({
+          ...inserted,
+          node_verification: verification,
+        });
       }
       case "update_node": {
         const workflowId = requireNumberArg(args, "workflow_id");
@@ -1023,7 +1125,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return wrap(
           await client.request(
             "PATCH",
-            `/api/workflows/${workflowId}/node-items/${nodeId}`,
+            `/api/workflows/${workflowId}/nodes/${nodeId}`,
             body,
           ),
         );
@@ -1034,7 +1136,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return wrap(
           await client.request(
             "DELETE",
-            `/api/workflows/${workflowId}/node-items/${nodeId}`,
+            `/api/workflows/${workflowId}/nodes/${nodeId}`,
           ),
         );
       }
@@ -1333,6 +1435,103 @@ function wrapError(message: string) {
   return {
     content: [{ type: "text", text: JSON.stringify({ error: message }) }],
     isError: true,
+  };
+}
+
+function logNodeMutationAudit(event: string, data: Record<string, unknown>) {
+  const record = {
+    ts: new Date().toISOString(),
+    scope: "node-mutation-audit",
+    event,
+    ...data,
+  };
+  console.error(JSON.stringify(record));
+}
+
+function sanitizeNodeMutationPayload(payload: Record<string, unknown>) {
+  const out: Record<string, unknown> = {};
+  const allowedKeys = [
+    "title",
+    "node_type",
+    "instruction",
+    "instruction_id",
+    "credential_id",
+    "hitl",
+    "visual_selection",
+    "loop_back_to",
+  ];
+  for (const key of allowedKeys) {
+    if (key in payload) {
+      out[key] = payload[key];
+    }
+  }
+  if (typeof out["instruction"] === "string") {
+    out["instruction_preview"] = String(out["instruction"]).slice(0, 160);
+    delete out["instruction"];
+  }
+  return out;
+}
+
+type WorkflowNodeSnapshot = {
+  id: number;
+  step_order: number | null;
+  title: string | null;
+  node_type: string | null;
+};
+
+async function fetchWorkflowNodeSnapshot(
+  workflowId: number,
+): Promise<WorkflowNodeSnapshot[]> {
+  const workflow = await client.request<{
+    data?: { nodes?: Array<Record<string, unknown>> };
+  }>("GET", `/api/workflows/${workflowId}`);
+  const nodes = Array.isArray(workflow?.data?.nodes) ? workflow.data!.nodes! : [];
+  return nodes.map((node) => ({
+    id: Number(node["id"]),
+    step_order:
+      typeof node["step_order"] === "number" ? (node["step_order"] as number) : null,
+    title: typeof node["title"] === "string" ? (node["title"] as string) : null,
+    node_type:
+      typeof node["node_type"] === "string"
+        ? (node["node_type"] as string)
+        : null,
+  }));
+}
+
+function buildNodeMutationVerification(input: {
+  mutation: "append_node" | "insert_node";
+  beforeNodes: WorkflowNodeSnapshot[];
+  afterNodes: WorkflowNodeSnapshot[];
+  expectedDelta: number;
+  expectedNodeId: number | null;
+}) {
+  const beforeIds = new Set(input.beforeNodes.map((node) => node.id));
+  const addedNodes = input.afterNodes.filter((node) => !beforeIds.has(node.id));
+  const expectedCount = input.beforeNodes.length + input.expectedDelta;
+  const countDelta = input.afterNodes.length - input.beforeNodes.length;
+  const mismatch =
+    input.afterNodes.length !== expectedCount ||
+    countDelta !== input.expectedDelta ||
+    addedNodes.length !== input.expectedDelta ||
+    (input.expectedNodeId !== null &&
+      !addedNodes.some((node) => node.id === input.expectedNodeId));
+
+  return {
+    mutation: input.mutation,
+    before_count: input.beforeNodes.length,
+    after_count: input.afterNodes.length,
+    expected_count: expectedCount,
+    delta: countDelta,
+    expected_delta: input.expectedDelta,
+    expected_node_id: input.expectedNodeId,
+    added_node_ids: addedNodes.map((node) => node.id),
+    added_nodes: addedNodes.map((node) => ({
+      id: node.id,
+      step_order: node.step_order,
+      title: node.title,
+      node_type: node.node_type,
+    })),
+    mismatch,
   };
 }
 
