@@ -119,6 +119,15 @@ remove_node(workflow_id=67, node_id=115)
 When editing in place, apply each change as a separate `update_node`, `insert_node`, `append_node`, or `remove_node` call. Never use `update_workflow(nodes=[...])` for in-place edits — it replaces ALL nodes and loses node IDs.
 </HARD-RULE>
 
+<HARD-RULE>
+Before any structural edit session:
+
+- Refresh the current workflow structure from the server and use the latest node ids / step orders as the source of truth.
+- Do not rely on a stale node snapshot captured before other edits or user actions.
+- After every `append_node` or `insert_node`, inspect the returned `node_verification`.
+- If `node_verification.mismatch === true`, STOP immediately and do not continue applying edits from the current plan.
+</HARD-RULE>
+
 After all changes, report:
 
 ```
@@ -186,9 +195,12 @@ When improving a node with `visual_selection: true`:
 ## Node Modification Strategy
 
 <HARD-RULE>
+- Before any structural edit, refresh the current workflow structure from the server and use the latest node ids / step orders as the source of truth.
 - Update a single node → `update_node(workflow_id, node_id, ...only changed fields)`
 - Append a node (at the end) → `append_node(workflow_id, title, instruction, node_type, loop_back_to?, visual_selection?)`
 - Insert a node (in the middle) → `insert_node(workflow_id, after_step=N, title, instruction, node_type, loop_back_to?, visual_selection?)`
 - Delete a node → `remove_node(workflow_id, node_id)`
 - Never use `update_workflow(nodes=[...])` for full replacement unless a complete redesign is intended
+- After every `append_node` or `insert_node`, inspect the returned `node_verification`.
+- If `node_verification.mismatch === true`, STOP immediately and do not continue issuing more structural edits from the current plan snapshot.
 </HARD-RULE>
