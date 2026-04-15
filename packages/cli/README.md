@@ -3,9 +3,11 @@
 BlueKiwi CLI installs the BlueKiwi MCP client and bundled skills into supported
 agent runtimes.
 
-## Local runtime
+## Local runtime (Beta)
 
-The CLI can also manage a local BlueKiwi runtime backed by SQLite:
+The CLI can also manage a local BlueKiwi runtime backed by SQLite.
+
+Current stability level: `Beta`.
 
 - `bluekiwi start`
 - `bluekiwi stop`

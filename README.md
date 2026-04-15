@@ -102,9 +102,11 @@ Connects to the server with the given key → detects installed runtimes → inj
 
 ---
 
-## Quick Start Local Runtime
+## Quick Start Local Runtime (Beta)
 
 If you want to try BlueKiwi without Docker, PostgreSQL, or Redis, the CLI can also run a local Quick Start runtime backed by SQLite.
+
+Current stability level: `Beta`.
 
 ```bash
 npm install -g bluekiwi
@@ -125,7 +127,7 @@ Detailed guides:
 - [Quick Start CLI Guide](docs/guides/quickstart-cli.md)
 - [Global Install Smoke Flow](docs/guides/quickstart-global-smoke-flow.md)
 
-This mode is intended for local authoring, demos, and small-scale testing. For team deployment and full hosted parity, use the Docker-based setup above.
+This mode is intended for local authoring, demos, CI smoke validation, and small-scale testing. It is not positioned as full hosted/server parity yet. For team deployment and full hosted parity, use the Docker-based setup above.
 
 ---
 
