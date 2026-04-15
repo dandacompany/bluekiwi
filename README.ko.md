@@ -122,11 +122,6 @@ bluekiwi stop
 - `3102`부터 사용 가능한 포트를 자동 선택
 - CLI로 lifecycle 관리
 
-상세 가이드:
-
-- [Quick Start CLI Guide](docs/guides/quickstart-cli.md)
-- [Global Install Smoke Flow](docs/guides/quickstart-global-smoke-flow.md)
-
 이 모드는 로컬 authoring, 데모, CI smoke 검증, 소규모 테스트에 적합합니다. 아직 hosted/server 배포와 완전한 parity를 목표로 하지는 않습니다. 팀 배포와 전체 hosted parity가 필요하면 위의 Docker 기반 설치를 사용하세요.
 
 ---

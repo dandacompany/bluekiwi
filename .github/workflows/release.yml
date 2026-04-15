@@ -135,14 +135,3 @@ jobs:
           body: |
             Docker: `ghcr.io/dandacompany/bluekiwi:${{ needs.verify-version.outputs.version }}`
             NPM: `npm install -g bluekiwi@${{ needs.verify-version.outputs.version }}`
-
-            Manual Quick Start release gate:
-            1. `bluekiwi start`
-            2. `bluekiwi status`
-            3. `bash tests/4/run-hitl-vs-ui-smoke.sh`
-            4. `bash tests/4/run-admin-maintenance-sqlite-smoke.sh`
-            5. `bash tests/4/run-packaged-cli-smoke.sh`
-            6. `bluekiwi stop`
-
-            Guide:
-            - `docs/guides/quickstart-global-smoke-flow.md`

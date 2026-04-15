@@ -26,8 +26,3 @@ For packaged quickstart builds, generate the standalone app bundle first:
 ```bash
 npm run build:cli
 ```
-
-Guides:
-
-- [Quick Start CLI Guide](../../docs/guides/quickstart-cli.md)
-- [Global Install Smoke Flow](../../docs/guides/quickstart-global-smoke-flow.md)

@@ -122,11 +122,6 @@ What this mode does:
 - auto-selects a free port starting from `3102`
 - manages lifecycle through the CLI
 
-Detailed guides:
-
-- [Quick Start CLI Guide](docs/guides/quickstart-cli.md)
-- [Global Install Smoke Flow](docs/guides/quickstart-global-smoke-flow.md)
-
 This mode is intended for local authoring, demos, CI smoke validation, and small-scale testing. It is not positioned as full hosted/server parity yet. For team deployment and full hosted parity, use the Docker-based setup above.
 
 ---
