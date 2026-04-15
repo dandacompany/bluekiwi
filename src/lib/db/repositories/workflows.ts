@@ -173,7 +173,7 @@ export async function createWorkflowWithNodes(input: {
   ownerId: number;
   folderId: number;
 }): Promise<Workflow & { nodes: unknown[] }> {
-  return withTransaction(async (client) => {
+  const workflowId = await withTransaction(async (client) => {
     const workflowId = await insertAndReturnId(
       `INSERT INTO workflows (
          title, description, version, parent_workflow_id,
@@ -200,13 +200,14 @@ export async function createWorkflowWithNodes(input: {
     if (Array.isArray(input.nodes)) {
       await insertWorkflowNodes(client, workflowId, input.nodes);
     }
-
-    const workflow = await findWorkflowRowByIdWithClient(client, workflowId);
-    if (!workflow) {
-      throw new Error("Failed to load created workflow");
-    }
-    return { ...workflow, nodes: await resolveNodes(workflowId) };
+    return workflowId;
   });
+
+  const workflow = await findWorkflowById(workflowId);
+  if (!workflow) {
+    throw new Error("Failed to load created workflow");
+  }
+  return { ...workflow, nodes: await resolveNodes(workflowId) };
 }
 
 export async function updateWorkflowWithOptionalVersion(input: {
@@ -219,7 +220,7 @@ export async function updateWorkflowWithOptionalVersion(input: {
   evaluationContract?: unknown;
   createNewVersion: boolean;
 }): Promise<Workflow & { nodes: unknown[] }> {
-  return withTransaction(async (client) => {
+  const workflowId = await withTransaction(async (client) => {
     const shouldCreateNewVersion = Array.isArray(input.nodes) && input.createNewVersion;
 
     if (shouldCreateNewVersion) {
@@ -254,9 +255,7 @@ export async function updateWorkflowWithOptionalVersion(input: {
       );
 
       await insertWorkflowNodes(client, newWorkflowId, input.nodes ?? []);
-      const workflow = await findWorkflowRowByIdWithClient(client, newWorkflowId);
-      if (!workflow) throw new Error("Failed to load versioned workflow");
-      return { ...workflow, nodes: await resolveNodes(newWorkflowId) };
+      return newWorkflowId;
     }
 
     const versionValue =
@@ -286,11 +285,12 @@ export async function updateWorkflowWithOptionalVersion(input: {
       ]);
       await insertWorkflowNodes(client, input.workflowId, input.nodes);
     }
-
-    const workflow = await findWorkflowRowByIdWithClient(client, input.workflowId);
-    if (!workflow) throw new Error("Failed to load updated workflow");
-    return { ...workflow, nodes: await resolveNodes(input.workflowId) };
+    return input.workflowId;
   });
+
+  const workflow = await findWorkflowById(workflowId);
+  if (!workflow) throw new Error("Failed to load updated workflow");
+  return { ...workflow, nodes: await resolveNodes(workflowId) };
 }
 
 export async function moveWorkflowToFolder(input: {
