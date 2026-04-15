@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   query,
   queryOne,
-  insert,
+  insertAndReturnId,
   execute,
   TaskLog,
   okResponse,
@@ -46,8 +46,8 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json(res.body, { status: res.status });
   }
 
-  const logId = await insert(
-    "INSERT INTO task_logs (task_id, node_id, step_order, status, output) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+  const logId = await insertAndReturnId(
+    "INSERT INTO task_logs (task_id, node_id, step_order, status, output) VALUES ($1, $2, $3, $4, $5)",
     [
       Number(id),
       Number(node_id),
@@ -59,8 +59,8 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   // 태스크의 current_step 업데이트
   await execute(
-    "UPDATE tasks SET current_step = $1, updated_at = NOW() WHERE id = $2",
-    [Number(step_order), Number(id)],
+    "UPDATE tasks SET current_step = $1, updated_at = $2 WHERE id = $3",
+    [Number(step_order), new Date().toISOString(), Number(id)],
   );
 
   const log = await queryOne<TaskLog>("SELECT * FROM task_logs WHERE id = $1", [

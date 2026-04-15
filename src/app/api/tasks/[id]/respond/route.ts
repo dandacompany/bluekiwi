@@ -4,6 +4,33 @@ import { requireAuth } from "@/lib/with-auth";
 
 type Params = { params: Promise<{ id: string }> };
 
+function parseStoredWebResponse(value: string | null): unknown {
+  if (!value) return null;
+  let parsed: unknown = value;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return value;
+  }
+  if (typeof parsed === "string") {
+    try {
+      return JSON.parse(parsed);
+    } catch {
+      return parsed;
+    }
+  }
+  return parsed;
+}
+
+function normalizeIncomingResponse(response: unknown): unknown {
+  if (typeof response !== "string") return response;
+  try {
+    return JSON.parse(response);
+  } catch {
+    return response;
+  }
+}
+
 // MCP get_web_response — 에이전트가 사용자의 web_response를 폴링
 export async function GET(request: NextRequest, { params }: Params) {
   const authResult = await requireAuth(request, "tasks:read");
@@ -31,14 +58,9 @@ export async function GET(request: NextRequest, { params }: Params) {
     );
 
     const history = rows.map((row) => {
-      let parsed: unknown = row.web_response;
-      try {
-        parsed = JSON.parse(row.web_response!);
-      } catch {}
-
       return {
         iteration: row.iteration,
-        web_response: parsed,
+        web_response: parseStoredWebResponse(row.web_response),
         created_at: row.created_at,
       };
     });
@@ -62,16 +84,11 @@ export async function GET(request: NextRequest, { params }: Params) {
   }
 
   const row = rows[0];
-  let parsed: unknown = row.web_response;
-  try {
-    parsed = JSON.parse(row.web_response!);
-  } catch {}
-
   const res = okResponse({
     task_id: taskId,
     node_id: row.node_id,
     step_order: row.step_order,
-    web_response: parsed,
+    web_response: parseStoredWebResponse(row.web_response),
   });
   return NextResponse.json(res.body, { status: res.status });
 }
@@ -85,7 +102,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   const body = await request.json();
   const { node_id, response } = body;
 
-  if (!node_id || !response) {
+  if (!node_id || response === undefined || response === null) {
     const res = errorResponse(
       "VALIDATION_ERROR",
       "node_id and response are required",
@@ -97,7 +114,11 @@ export async function POST(request: NextRequest, { params }: Params) {
   // 해당 태스크의 해당 노드 로그에 web_response 저장
   const result = await execute(
     "UPDATE task_logs SET web_response = $1 WHERE task_id = $2 AND node_id = $3 AND status IN ('pending', 'running', 'success')",
-    [JSON.stringify(response), Number(id), Number(node_id)],
+    [
+      JSON.stringify(normalizeIncomingResponse(response)),
+      Number(id),
+      Number(node_id),
+    ],
   );
 
   if (result.rowCount === 0) {
@@ -105,8 +126,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json(res.body, { status: res.status });
   }
 
-  await execute("UPDATE tasks SET updated_at = NOW() WHERE id = $1", [
+  await execute("UPDATE tasks SET updated_at = $2 WHERE id = $1", [
     Number(id),
+    new Date().toISOString(),
   ]);
 
   const res = okResponse({

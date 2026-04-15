@@ -1,74 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  query,
-  queryOne,
-  execute,
-  WorkflowNode,
-  Task,
-  TaskLog,
-  maskSecrets,
-  okResponse,
-  errorResponse,
-} from "@/lib/db";
-import { notifyTaskUpdate } from "@/lib/notify-ws";
+import { okResponse, errorResponse, type TaskLog } from "@/lib/db";
 import { requireAuth } from "@/lib/with-auth";
-import { canUseCredential } from "@/lib/authorization";
 import type { User } from "@/lib/auth";
+import {
+  advanceTaskToStep,
+  completeTaskIfNoNextNode,
+  findLatestTaskLogForNode,
+  findTaskById,
+  findTaskPeekLog,
+  findWorkflowNodeByStep,
+  getWorkflowTaskInfo,
+  listTaskComments,
+  maybeResumeTimedOutTask,
+  resolveTaskNodeResponse,
+} from "@/lib/db/repositories/tasks";
 
 type Params = { params: Promise<{ id: string }> };
-
-async function resolveNodeResponse(node: WorkflowNode, user: User) {
-  let instruction = node.instruction;
-  if (node.instruction_id) {
-    const inst = await queryOne<{ content: string }>(
-      "SELECT content FROM instructions WHERE id = $1",
-      [node.instruction_id],
-    );
-    if (inst) instruction = inst.content;
-  }
-
-  let credentials = null;
-  if (node.credential_id) {
-    const cred = await queryOne<{
-      id: number;
-      owner_id: number;
-      folder_id: number;
-      service_name: string;
-      secrets: string;
-    }>(
-      "SELECT id, owner_id, folder_id, service_name, secrets FROM credentials WHERE id = $1",
-      [node.credential_id],
-    );
-    if (cred && (await canUseCredential(user, cred))) {
-      credentials = {
-        service: cred.service_name,
-        secrets_masked: maskSecrets(cred.secrets),
-      };
-    }
-  }
-
-  const attachments = await query<{
-    id: number;
-    filename: string;
-    mime_type: string;
-    size_bytes: number;
-  }>(
-    "SELECT id, filename, mime_type, size_bytes FROM node_attachments WHERE node_id = $1 ORDER BY created_at",
-    [node.id],
-  );
-
-  return {
-    node_id: node.id,
-    step_order: node.step_order,
-    node_type: node.node_type,
-    title: node.title,
-    instruction,
-    hitl: node.hitl,
-    loop_back_to: node.loop_back_to,
-    credentials,
-    attachments: attachments.length > 0 ? attachments : undefined,
-  };
-}
 
 export async function POST(request: NextRequest, { params }: Params) {
   const authResult = await requireAuth(request, "tasks:execute");
@@ -80,49 +27,29 @@ export async function POST(request: NextRequest, { params }: Params) {
   const body = await request.json().catch(() => ({}));
   const peek = body.peek === true;
 
-  const task = await queryOne<Task>("SELECT * FROM tasks WHERE id = $1", [
-    taskId,
-  ]);
+  let task = await findTaskById(taskId);
   if (!task) {
     const res = errorResponse("NOT_FOUND", "태스크를 찾을 수 없습니다", 404);
     return NextResponse.json(res.body, { status: res.status });
   }
 
-  // timed_out 태스크를 재개(peek)할 때 상태를 running으로 복구
-  if (peek && task.status === "timed_out") {
-    await execute(
-      "UPDATE tasks SET status = 'running', updated_at = NOW() WHERE id = $1",
-      [taskId],
-    );
-    task.status = "running";
-    void notifyTaskUpdate(taskId, "task_resumed");
+  if (peek) {
+    task = await maybeResumeTimedOutTask(task);
   }
 
-  const totalRows = await queryOne<{ count: string }>(
-    "SELECT COUNT(*) as count FROM workflow_nodes WHERE workflow_id = $1",
-    [task.workflow_id],
-  );
-  const totalSteps = Number(totalRows?.count ?? 0);
+  const wfInfo = await getWorkflowTaskInfo(task.workflow_id);
+  const totalSteps = wfInfo.node_count;
 
   // Peek mode
   if (peek) {
-    const currentNode = await queryOne<WorkflowNode>(
-      "SELECT * FROM workflow_nodes WHERE workflow_id = $1 AND step_order = $2",
-      [task.workflow_id, task.current_step],
-    );
+    const currentNode = await findWorkflowNodeByStep(task.workflow_id, task.current_step);
 
     let currentLog: TaskLog | undefined;
     if (currentNode) {
-      currentLog = await queryOne<TaskLog>(
-        "SELECT * FROM task_logs WHERE task_id = $1 AND node_id = $2 ORDER BY id DESC LIMIT 1",
-        [taskId, currentNode.id],
-      );
+      currentLog = await findTaskPeekLog(taskId, currentNode.id) ?? undefined;
     }
 
-    const comments = await query(
-      "SELECT * FROM task_comments WHERE task_id = $1 AND step_order = $2 ORDER BY created_at DESC",
-      [taskId, task.current_step],
-    );
+    const comments = await listTaskComments(taskId, task.current_step);
 
     const res = okResponse({
       task_id: taskId,
@@ -130,7 +57,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       total_steps: totalSteps,
       status: task.status,
       context: task.context,
-      node: currentNode ? await resolveNodeResponse(currentNode, user) : null,
+      node: currentNode ? await resolveTaskNodeResponse(currentNode, user) : null,
       log_status: currentLog?.status ?? null,
       web_response: currentLog?.web_response ?? null,
       comments: comments.length > 0 ? comments : null,
@@ -139,19 +66,10 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 
   // Advance mode: check current step is completed
-  const currentNode = await queryOne<WorkflowNode>(
-    "SELECT * FROM workflow_nodes WHERE workflow_id = $1 AND step_order = $2",
-    [task.workflow_id, task.current_step],
-  );
+  const currentNode = await findWorkflowNodeByStep(task.workflow_id, task.current_step);
 
   if (currentNode) {
-    const currentLog = await queryOne<{
-      status: string;
-      approved_at: string | null;
-    }>(
-      "SELECT status, approved_at FROM task_logs WHERE task_id = $1 AND node_id = $2 ORDER BY id DESC LIMIT 1",
-      [taskId, currentNode.id],
-    );
+    const currentLog = await findLatestTaskLogForNode(taskId, currentNode.id);
     const COMPLETED_STATUSES = ["completed", "success", "skipped"];
     if (!currentLog || !COMPLETED_STATUSES.includes(currentLog.status)) {
       const res = errorResponse(
@@ -175,17 +93,10 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   // Move to next step
   const nextStep = task.current_step + 1;
-  const nextNode = await queryOne<WorkflowNode>(
-    "SELECT * FROM workflow_nodes WHERE workflow_id = $1 AND step_order = $2",
-    [task.workflow_id, nextStep],
-  );
+  const nextNode = await findWorkflowNodeByStep(task.workflow_id, nextStep);
 
   if (!nextNode) {
-    await execute(
-      "UPDATE tasks SET status = 'completed', updated_at = NOW() WHERE id = $1",
-      [taskId],
-    );
-    void notifyTaskUpdate(taskId, "task_completed");
+    await completeTaskIfNoNextNode(taskId);
     const res = okResponse({
       task_id: taskId,
       finished: true,
@@ -194,34 +105,16 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json(res.body, { status: res.status });
   }
 
-  await execute(
-    "UPDATE tasks SET current_step = $1, updated_at = NOW() WHERE id = $2",
-    [nextStep, taskId],
-  );
-  void notifyTaskUpdate(taskId, "step_advanced", { current_step: nextStep });
+  await advanceTaskToStep({ taskId, nextNode });
 
-  await execute(
-    "INSERT INTO task_logs (task_id, node_id, step_order, status, node_title, node_type) VALUES ($1, $2, $3, 'pending', $4, $5)",
-    [
-      taskId,
-      nextNode.id,
-      nextNode.step_order,
-      nextNode.title,
-      nextNode.node_type,
-    ],
-  );
-
-  const comments = await query(
-    "SELECT * FROM task_comments WHERE task_id = $1 AND step_order = $2 ORDER BY created_at DESC",
-    [taskId, nextStep],
-  );
+  const comments = await listTaskComments(taskId, nextStep);
 
   const res = okResponse({
     task_id: taskId,
     finished: false,
     total_steps: totalSteps,
     context: task.context,
-    current_step: await resolveNodeResponse(nextNode, user),
+    current_step: await resolveTaskNodeResponse(nextNode, user),
     comments: comments.length > 0 ? comments : null,
   });
   return NextResponse.json(res.body, { status: res.status });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  insertAndReturnId,
   queryOne,
   withTransaction,
   okResponse,
@@ -79,19 +80,14 @@ export const POST = withAuth(
 
     try {
       const created = await withTransaction(async (client) => {
-        const idRow = await client.query(
-          "SELECT nextval(pg_get_serial_sequence('workflows', 'id')) AS id",
-        );
-        const workflowId = Number(idRow.rows[0].id);
-
-        await client.query(
+        const workflowId = await insertAndReturnId(
           `INSERT INTO workflows (
-             id, title, description, version, parent_workflow_id,
-             evaluation_contract, owner_id, folder_id, family_root_id
+             title, description, version, parent_workflow_id,
+             evaluation_contract, owner_id, folder_id
            )
-           VALUES ($1, $2, $3, $4, NULL, $5, $6, $7, $1)`,
+           VALUES ($1, $2, $3, NULL, $4, $5, $6)
+          `,
           [
-            workflowId,
             importedTitle,
             pkg.workflow.description,
             pkg.workflow.version,
@@ -99,17 +95,23 @@ export const POST = withAuth(
             user.id,
             targetFolderId,
           ],
+          client,
+        );
+
+        await client.query(
+          "UPDATE workflows SET family_root_id = $1 WHERE id = $1",
+          [workflowId],
         );
 
         for (const [index, node] of pkg.workflow.nodes.entries()) {
           let instructionId: number | null = null;
           if (node.instruction_template) {
-            const instructionRow = await client.query<{ id: number }>(
+            instructionId = await insertAndReturnId(
               `INSERT INTO instructions (
                  title, content, agent_type, tags, priority, owner_id, folder_id
                )
                VALUES ($1, $2, $3, $4, $5, $6, $7)
-               RETURNING id`,
+              `,
               [
                 node.instruction_template.title,
                 node.instruction_template.content,
@@ -119,8 +121,8 @@ export const POST = withAuth(
                 user.id,
                 targetFolderId,
               ],
+              client,
             );
-            instructionId = instructionRow.rows[0]?.id ?? null;
           }
 
           const credentialId =

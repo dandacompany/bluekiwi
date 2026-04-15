@@ -1,4 +1,9 @@
-import { query, queryOne, type Visibility } from "./db";
+import { query, queryOne, normalizeResourceRow, type Visibility } from "./db";
+import {
+  listCredentialShareLevelsForGroups,
+  listFolderShareLevelsForGroups,
+  listWorkflowShareLevelsForGroups,
+} from "@/lib/db/repositories/shares";
 import type { User } from "./auth";
 
 // ─── Resource shape (minimum fields needed by permission funcs) ───
@@ -27,10 +32,11 @@ export interface OwnedCredential {
 // ─── Loaders ───
 
 export async function loadFolder(id: number): Promise<OwnedFolder | undefined> {
-  return queryOne<OwnedFolder>(
+  const row = await queryOne<OwnedFolder>(
     "SELECT id, owner_id, parent_id, visibility, is_system FROM folders WHERE id = $1",
     [id],
   );
+  return row ? normalizeResourceRow<OwnedFolder>("folders", row) : undefined;
 }
 
 /**
@@ -75,14 +81,10 @@ export async function userFolderShareLevel(
 ): Promise<"reader" | "contributor" | null> {
   const groups = await userGroupIds(user.id);
   if (groups.length === 0) return null;
-  const rows = await query<{ access_level: "reader" | "contributor" }>(
-    `SELECT fs.access_level
-       FROM folder_shares fs
-       JOIN folders f ON f.id = $1
-       WHERE fs.folder_id IN (f.id, f.parent_id)
-         AND fs.group_id = ANY($2::int[])`,
-    [folderId, groups],
-  );
+  const rows = await listFolderShareLevelsForGroups({
+    folderId,
+    groupIds: groups,
+  });
   if (rows.length === 0) return null;
   // contributor beats reader
   return rows.some((r) => r.access_level === "contributor")
@@ -97,11 +99,10 @@ export async function userWorkflowShareLevel(
 ): Promise<"reader" | "contributor" | null> {
   const groups = await userGroupIds(user.id);
   if (groups.length === 0) return null;
-  const rows = await query<{ access_level: "reader" | "contributor" }>(
-    `SELECT access_level FROM workflow_shares
-       WHERE workflow_id = $1 AND group_id = ANY($2::int[])`,
-    [workflowId, groups],
-  );
+  const rows = await listWorkflowShareLevelsForGroups({
+    workflowId,
+    groupIds: groups,
+  });
   if (rows.length === 0) return null;
   return rows.some((r) => r.access_level === "contributor")
     ? "contributor"
@@ -114,11 +115,10 @@ export async function userCredentialShareLevel(
 ): Promise<"use" | "manage" | null> {
   const groups = await userGroupIds(user.id);
   if (groups.length === 0) return null;
-  const rows = await query<{ access_level: "use" | "manage" }>(
-    `SELECT access_level FROM credential_shares
-      WHERE credential_id = $1 AND group_id = ANY($2::int[])`,
-    [credentialId, groups],
-  );
+  const rows = await listCredentialShareLevelsForGroups({
+    credentialId,
+    groupIds: groups,
+  });
   if (rows.length === 0) return null;
   return rows.some((r) => r.access_level === "manage") ? "manage" : "use";
 }
@@ -338,9 +338,9 @@ export async function buildResourceVisibilityFilter(
   let groupClause = "FALSE";
   let directWorkflowGroupClause = "FALSE";
   if (groups.length > 0) {
-    params.push(groups);
-    const gIdx = p;
-    p += 1;
+    const groupPlaceholders = groups.map((_, index) => `$${p + index}`).join(", ");
+    params.push(...groups);
+    p += groups.length;
 
     const folderIsGroup = `(
       f.visibility = 'group'
@@ -355,7 +355,7 @@ export async function buildResourceVisibilityFilter(
         AND EXISTS (
           SELECT 1 FROM folder_shares fs
           WHERE fs.folder_id IN (f.id, f.parent_id)
-            AND fs.group_id = ANY($${gIdx}::int[])
+            AND fs.group_id IN (${groupPlaceholders})
         )
       )
     )`;
@@ -364,7 +364,7 @@ export async function buildResourceVisibilityFilter(
       AND EXISTS (
         SELECT 1 FROM workflow_shares ws
         WHERE ws.workflow_id = ${tableAlias}.id
-          AND ws.group_id = ANY($${gIdx}::int[])
+          AND ws.group_id IN (${groupPlaceholders})
       )
     )`;
   }
@@ -411,12 +411,13 @@ export async function buildFolderVisibilityFilter(
   let groupClause = "FALSE";
   let inheritGroupClause = "FALSE";
   if (groups.length > 0) {
-    params.push(groups);
+    const groupPlaceholders = groups.map((_, index) => `$${p + index}`).join(", ");
+    params.push(...groups);
     groupClause = `(
       ${tableAlias}.visibility = 'group' AND EXISTS (
         SELECT 1 FROM folder_shares fs
         WHERE fs.folder_id IN (${tableAlias}.id, ${tableAlias}.parent_id)
-          AND fs.group_id = ANY($${p}::int[])
+          AND fs.group_id IN (${groupPlaceholders})
       )
     )`;
     inheritGroupClause = `(
@@ -428,10 +429,10 @@ export async function buildFolderVisibilityFilter(
       AND EXISTS (
         SELECT 1 FROM folder_shares fs
         WHERE fs.folder_id IN (${tableAlias}.parent_id)
-          AND fs.group_id = ANY($${p}::int[])
+          AND fs.group_id IN (${groupPlaceholders})
       )
     )`;
-    p += 1;
+    p += groups.length;
   }
 
   const sql = `(
@@ -459,13 +460,14 @@ export async function buildCredentialVisibilityFilter(
 
   let groupClause = "FALSE";
   if (groups.length > 0) {
-    params.push(groups);
+    const groupPlaceholders = groups.map((_, index) => `$${p + index}`).join(", ");
+    params.push(...groups);
     groupClause = `EXISTS (
       SELECT 1 FROM credential_shares cs
       WHERE cs.credential_id = ${tableAlias}.id
-        AND cs.group_id = ANY($${p}::int[])
+        AND cs.group_id IN (${groupPlaceholders})
     )`;
-    p += 1;
+    p += groups.length;
   }
 
   const adminClause = user.role === "admin" ? "OR TRUE" : "";

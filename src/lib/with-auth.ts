@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { errorResponse, queryOne } from "./db";
+import { errorResponse } from "./db";
 import {
   authenticateRequest,
   checkPermission,
@@ -7,6 +7,7 @@ import {
   type User,
 } from "./auth";
 import { verifySession } from "./session";
+import { findActiveUserById } from "@/lib/db/repositories/auth";
 
 type Handler = (
   request: NextRequest,
@@ -54,11 +55,7 @@ export function withAuth(
       if (token) {
         const session = await verifySession(token);
         if (session) {
-          user =
-            (await queryOne<User>(
-              "SELECT * FROM users WHERE id = $1 AND is_active = true",
-              [session.userId],
-            )) ?? null;
+          user = await findActiveUserById(session.userId);
         }
       }
     }
@@ -97,11 +94,7 @@ export async function requireAuth(
     if (token) {
       const session = await verifySession(token);
       if (session) {
-        user =
-          (await queryOne<User>(
-            "SELECT * FROM users WHERE id = $1 AND is_active = true",
-            [session.userId],
-          )) ?? null;
+        user = await findActiveUserById(session.userId);
       }
     }
   }

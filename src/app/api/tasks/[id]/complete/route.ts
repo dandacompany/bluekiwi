@@ -24,8 +24,8 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 
   const result = await execute(
-    "UPDATE tasks SET status = $1, summary = $2, updated_at = NOW() WHERE id = $3",
-    [status, summary ?? "", taskId],
+    "UPDATE tasks SET status = $1, summary = $2, updated_at = $3 WHERE id = $4",
+    [status, summary ?? "", new Date().toISOString(), taskId],
   );
 
   if (result.rowCount === 0) {

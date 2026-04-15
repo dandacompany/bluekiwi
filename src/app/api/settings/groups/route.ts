@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  insertAndReturnId,
   query,
   queryOne,
   listResponse,
@@ -26,9 +27,13 @@ export const POST = withAuth("users:write", async (request) => {
     return NextResponse.json(res.body, { status: res.status });
   }
 
-  const row = await queryOne(
-    "INSERT INTO user_groups (name, description) VALUES ($1, $2) RETURNING *",
+  const id = await insertAndReturnId(
+    "INSERT INTO user_groups (name, description) VALUES ($1, $2)",
     [name.trim(), typeof description === "string" ? description : ""],
+  );
+  const row = await queryOne(
+    "SELECT * FROM user_groups WHERE id = $1",
+    [id],
   );
   const res = okResponse(row, 201);
   return NextResponse.json(res.body, { status: res.status });

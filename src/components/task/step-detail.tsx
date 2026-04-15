@@ -443,7 +443,7 @@ function VisualSelector({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             node_id: nodeId,
-            response: JSON.stringify(msg.data),
+            response: msg.data,
           }),
         })
           .then((res) => {
@@ -463,7 +463,7 @@ function VisualSelector({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             node_id: nodeId,
-            response: JSON.stringify({ selections: [msg.value ?? ""] }),
+            response: { selections: [msg.value ?? ""] },
           }),
         })
           .then((res) => {

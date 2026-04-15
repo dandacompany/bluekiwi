@@ -46,8 +46,8 @@ export const POST = withAuth<Params>(
     }
 
     await execute(
-      "UPDATE workflows SET is_active = FALSE, updated_at = NOW() WHERE id = $1",
-      [workflowId],
+      "UPDATE workflows SET is_active = FALSE, updated_at = $2 WHERE id = $1",
+      [workflowId, new Date().toISOString()],
     );
 
     const res = okResponse({

@@ -1,17 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { queryOne } from "@/lib/db";
+import { findLoginUserByEmail } from "@/lib/db/repositories/auth";
 import { verifyPassword } from "@/lib/auth";
 import { createSession } from "@/lib/session";
 import { resolveOrigin } from "@/lib/url";
-
-interface UserRow {
-  id: number;
-  username: string;
-  email: string;
-  password_hash: string;
-  role: string;
-  must_change_password: boolean;
-}
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -24,10 +15,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const user = await queryOne<UserRow>(
-    "SELECT id, username, email, password_hash, role, must_change_password FROM users WHERE email = $1",
-    [email],
-  );
+  const user = await findLoginUserByEmail(email);
 
   if (!user || !user.password_hash) {
     return NextResponse.json(
@@ -47,7 +35,7 @@ export async function POST(req: NextRequest) {
   const token = await createSession({
     userId: user.id,
     username: user.username,
-    email: user.email,
+    email: user.email ?? email,
     role: user.role,
     mustChangePassword: user.must_change_password,
   });

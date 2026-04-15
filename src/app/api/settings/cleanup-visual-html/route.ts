@@ -19,16 +19,15 @@ export async function GET(request: NextRequest) {
   const authResult = await requireSuperuser(request);
   if (authResult instanceof NextResponse) return authResult;
 
-  const row = await queryOne<{ affected: number }>(
-    `SELECT COUNT(*)::int AS affected
+  const row = await queryOne<{ affected: number | string }>(
+    `SELECT COUNT(*) AS affected
        FROM task_logs
       WHERE task_id IN (
         SELECT id FROM tasks WHERE status IN ('completed', 'failed')
       )
         AND visual_html IS NOT NULL`,
   );
-
-  return NextResponse.json({ affected: row?.affected ?? 0 });
+  return NextResponse.json({ affected: Number(row?.affected ?? 0) });
 }
 
 export async function POST(request: NextRequest) {

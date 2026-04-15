@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { queryOne, errorResponse } from "./db";
+import { queryOne, errorResponse, normalizeResourceRow } from "./db";
 import { withAuth } from "./with-auth";
 import type { User, Permission } from "./auth";
 
@@ -21,10 +21,11 @@ export interface LoadResourceOrFailOptions<T> {
 export async function loadResourceOrFail<T>(
   opts: LoadResourceOrFailOptions<T>,
 ): Promise<ResourceLoadResult<T>> {
-  const resource = await queryOne<T>(
+  const rawResource = await queryOne<T>(
     `SELECT * FROM ${opts.table} WHERE id = $1`,
     [Number(opts.id)],
   );
+  const resource = rawResource ? normalizeResourceRow<T>(opts.table, rawResource) : undefined;
   if (!resource) {
     const res = errorResponse(
       opts.notFoundCode ?? "NOT_FOUND",

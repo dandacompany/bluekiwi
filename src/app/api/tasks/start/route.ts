@@ -3,8 +3,9 @@ import {
   query,
   queryOne,
   execute,
-  insert,
+      insertAndReturnId,
   Workflow,
+  normalizeResourceRow,
   WorkflowNode,
   maskSecrets,
   okResponse,
@@ -59,10 +60,11 @@ export const POST = withAuth(
     // do not break version pinning.
     let workflow: Workflow | undefined;
     if (version) {
-      const requested = await queryOne<Workflow>(
+      const requestedRaw = await queryOne<Workflow>(
         "SELECT * FROM workflows WHERE id = $1",
         [Number(workflow_id)],
       );
+      const requested = requestedRaw ? normalizeResourceRow<Workflow>("workflows", requestedRaw) : undefined;
       if (!requested) {
         const res = errorResponse(
           "NOT_FOUND",
@@ -71,10 +73,11 @@ export const POST = withAuth(
         );
         return NextResponse.json(res.body, { status: res.status });
       }
-      workflow = await queryOne<Workflow>(
+      const matched = await queryOne<Workflow>(
         "SELECT * FROM workflows WHERE family_root_id = $1 AND version = $2",
         [requested.family_root_id, version],
       );
+      workflow = matched ? normalizeResourceRow<Workflow>("workflows", matched) : undefined;
       if (!workflow) {
         const res = errorResponse(
           "NOT_FOUND",
@@ -84,10 +87,11 @@ export const POST = withAuth(
         return NextResponse.json(res.body, { status: res.status });
       }
     } else {
-      workflow = await queryOne<Workflow>(
+      const matched = await queryOne<Workflow>(
         "SELECT * FROM workflows WHERE id = $1",
         [Number(workflow_id)],
       );
+      workflow = matched ? normalizeResourceRow<Workflow>("workflows", matched) : undefined;
       if (!workflow) {
         const res = errorResponse(
           "NOT_FOUND",
@@ -187,10 +191,11 @@ export const POST = withAuth(
       }
     }
 
-    const firstNode = await queryOne<WorkflowNode>(
+    const firstNodeRaw = await queryOne<WorkflowNode>(
       "SELECT * FROM workflow_nodes WHERE workflow_id = $1 ORDER BY step_order ASC LIMIT 1",
       [workflow.id],
     );
+    const firstNode = firstNodeRaw ? normalizeResourceRow<WorkflowNode>("workflow_nodes", firstNodeRaw) : undefined;
     if (!firstNode) {
       const res = errorResponse(
         "VALIDATION_ERROR",
@@ -207,8 +212,8 @@ export const POST = withAuth(
     const totalSteps = Number(totalRows?.count ?? 0);
 
     // Create task
-    const taskId = await insert(
-      "INSERT INTO tasks (workflow_id, status, current_step, title, context, session_meta, target_meta, provider_slug, model_slug) VALUES ($1, 'running', 1, $2, $3, $4, $5, $6, $7) RETURNING id",
+    const taskId = await insertAndReturnId(
+      "INSERT INTO tasks (workflow_id, status, current_step, title, context, session_meta, target_meta, provider_slug, model_slug) VALUES ($1, 'running', 1, $2, $3, $4, $5, $6, $7)",
       [
         workflow.id,
         title ? String(title).slice(0, 120) : null,

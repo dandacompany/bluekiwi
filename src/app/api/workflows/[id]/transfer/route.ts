@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
-import { queryOne, type Workflow, okResponse, errorResponse } from "@/lib/db";
+import { type Workflow, okResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canTransferOwnership } from "@/lib/authorization";
+import { findActiveUserById } from "@/lib/db/repositories/auth";
+import { findWorkflowById, transferWorkflowOwnership } from "@/lib/db/repositories/workflows";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -18,10 +20,7 @@ export const POST = withAuth<Params>(
       );
       return NextResponse.json(res.body, { status: res.status });
     }
-    const workflow = await queryOne<Workflow>(
-      "SELECT * FROM workflows WHERE id = $1",
-      [Number(id)],
-    );
+    const workflow = await findWorkflowById(Number(id));
     if (!workflow) {
       const res = errorResponse("NOT_FOUND", "워크플로 없음", 404);
       return NextResponse.json(res.body, { status: res.status });
@@ -30,18 +29,15 @@ export const POST = withAuth<Params>(
       const res = errorResponse("OWNERSHIP_REQUIRED", "이전 권한 없음", 403);
       return NextResponse.json(res.body, { status: res.status });
     }
-    const target = await queryOne(
-      "SELECT id FROM users WHERE id = $1 AND is_active = true",
-      [new_owner_id],
-    );
+    const target = await findActiveUserById(new_owner_id);
     if (!target) {
       const res = errorResponse("NOT_FOUND", "대상 사용자 없음", 404);
       return NextResponse.json(res.body, { status: res.status });
     }
-    const updated = await queryOne<Workflow>(
-      "UPDATE workflows SET owner_id = $1, updated_at = NOW() WHERE id = $2 RETURNING *",
-      [new_owner_id, Number(id)],
-    );
+    const updated = await transferWorkflowOwnership({
+      workflowId: Number(id),
+      newOwnerId: new_owner_id,
+    });
     const res = okResponse(updated);
     return NextResponse.json(res.body, { status: res.status });
   },

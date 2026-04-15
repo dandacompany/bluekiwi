@@ -3,6 +3,7 @@ import {
   okResponse,
   query,
   queryOne,
+  normalizeResourceRow,
   type Instruction,
   type Workflow,
   type WorkflowNode,
@@ -52,7 +53,8 @@ export const GET = withAuth<Params>(
     );
 
     const exportedNodes: WorkflowTransferNode[] = [];
-    for (const node of nodeRows) {
+    for (const rawNode of nodeRows) {
+      const node = normalizeResourceRow<WorkflowNode>("workflow_nodes", rawNode);
       const instructionTemplate = node.instruction_id
         ? await queryOne<Instruction>(
             "SELECT * FROM instructions WHERE id = $1",

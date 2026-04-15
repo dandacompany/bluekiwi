@@ -1,16 +1,9 @@
 import { NextResponse } from "next/server";
-import {
-  insert,
-  listResponse,
-  query,
-  queryOne,
-  Workflow,
-  okResponse,
-  errorResponse,
-} from "@/lib/db";
+import { Workflow, listResponse, okResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canEdit, canRead } from "@/lib/authorization";
 import { loadResourceOrFail } from "@/lib/api-helpers";
+import { createNodeAttachment, listNodeAttachments, nodeBelongsToWorkflow } from "@/lib/db/repositories/workflow-nodes";
 
 type Params = { params: Promise<{ id: string; node_id: string }> };
 
@@ -35,17 +28,6 @@ function isTextMimeType(mimeType: string): boolean {
   ].includes(mimeType);
 }
 
-async function verifyNodeBelongsToWorkflow(
-  nodeId: number,
-  workflowId: number,
-): Promise<boolean> {
-  const row = await queryOne<{ id: number }>(
-    "SELECT id FROM workflow_nodes WHERE id = $1 AND workflow_id = $2",
-    [nodeId, workflowId],
-  );
-  return !!row;
-}
-
 export const GET = withAuth<Params>(
   "workflows:read",
   async (_request, user, { params }) => {
@@ -65,24 +47,12 @@ export const GET = withAuth<Params>(
     if (errResp) return errResp;
     void workflow;
 
-    if (!(await verifyNodeBelongsToWorkflow(nodeId, workflowId))) {
+    if (!(await nodeBelongsToWorkflow(nodeId, workflowId))) {
       const res = errorResponse("NOT_FOUND", "노드를 찾을 수 없습니다", 404);
       return NextResponse.json(res.body, { status: res.status });
     }
 
-    const rows = await query<{
-      id: number;
-      filename: string;
-      mime_type: string;
-      size_bytes: number;
-      created_at: string;
-    }>(
-      `SELECT id, filename, mime_type, size_bytes, created_at
-         FROM node_attachments
-        WHERE node_id = $1
-        ORDER BY created_at`,
-      [nodeId],
-    );
+    const rows = await listNodeAttachments(nodeId);
 
     const res = listResponse(rows, rows.length);
     return NextResponse.json(res.body, { status: res.status });
@@ -108,7 +78,7 @@ export const POST = withAuth<Params>(
     if (errResp) return errResp;
     void workflow;
 
-    if (!(await verifyNodeBelongsToWorkflow(nodeId, workflowId))) {
+    if (!(await nodeBelongsToWorkflow(nodeId, workflowId))) {
       const res = errorResponse("NOT_FOUND", "노드를 찾을 수 없습니다", 404);
       return NextResponse.json(res.body, { status: res.status });
     }
@@ -135,21 +105,14 @@ export const POST = withAuth<Params>(
     const buffer = Buffer.from(await file.arrayBuffer());
     const storeAsText = isTextMimeType(mimeType);
 
-    const attachmentId = storeAsText
-      ? await insert(
-          `INSERT INTO node_attachments
-            (node_id, filename, mime_type, size_bytes, content)
-           VALUES ($1, $2, $3, $4, $5)
-           RETURNING id`,
-          [nodeId, file.name, mimeType, file.size, buffer.toString("utf-8")],
-        )
-      : await insert(
-          `INSERT INTO node_attachments
-            (node_id, filename, mime_type, size_bytes, content_binary)
-           VALUES ($1, $2, $3, $4, $5)
-           RETURNING id`,
-          [nodeId, file.name, mimeType, file.size, buffer],
-        );
+    const attachmentId = await createNodeAttachment({
+      nodeId,
+      filename: file.name,
+      mimeType,
+      sizeBytes: file.size,
+      textContent: storeAsText ? buffer.toString("utf-8") : undefined,
+      binaryContent: storeAsText ? undefined : buffer,
+    });
 
     const res = okResponse(
       {

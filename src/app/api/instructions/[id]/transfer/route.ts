@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
-import {
-  queryOne,
-  type Instruction,
-  okResponse,
-  errorResponse,
-} from "@/lib/db";
+import { type Instruction, okResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canTransferOwnership } from "@/lib/authorization";
+import { findActiveUserById } from "@/lib/db/repositories/auth";
+import { findInstructionById, transferInstructionOwnership } from "@/lib/db/repositories/instructions";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -23,10 +20,7 @@ export const POST = withAuth<Params>(
       );
       return NextResponse.json(res.body, { status: res.status });
     }
-    const inst = await queryOne<Instruction>(
-      "SELECT * FROM instructions WHERE id = $1",
-      [Number(id)],
-    );
+    const inst = await findInstructionById(Number(id));
     if (!inst) {
       const res = errorResponse("NOT_FOUND", "인스트럭션 없음", 404);
       return NextResponse.json(res.body, { status: res.status });
@@ -35,18 +29,15 @@ export const POST = withAuth<Params>(
       const res = errorResponse("OWNERSHIP_REQUIRED", "이전 권한 없음", 403);
       return NextResponse.json(res.body, { status: res.status });
     }
-    const target = await queryOne(
-      "SELECT id FROM users WHERE id = $1 AND is_active = true",
-      [new_owner_id],
-    );
+    const target = await findActiveUserById(new_owner_id);
     if (!target) {
       const res = errorResponse("NOT_FOUND", "대상 사용자 없음", 404);
       return NextResponse.json(res.body, { status: res.status });
     }
-    const updated = await queryOne<Instruction>(
-      "UPDATE instructions SET owner_id = $1, updated_at = NOW() WHERE id = $2 RETURNING *",
-      [new_owner_id, Number(id)],
-    );
+    const updated = await transferInstructionOwnership({
+      id: Number(id),
+      newOwnerId: new_owner_id,
+    });
     const res = okResponse(updated);
     return NextResponse.json(res.body, { status: res.status });
   },

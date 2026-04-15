@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   query,
   queryOne,
-  insert,
+  insertAndReturnId,
   ComplianceFinding,
   Task,
   okResponse,
@@ -128,12 +128,11 @@ export const POST = withAuth<Params>(
       const lineNumber = Number.isFinite(f.line_number)
         ? Number(f.line_number)
         : null;
-      const insertedId = await insert(
+      const insertedId = await insertAndReturnId(
         `INSERT INTO compliance_findings
           (task_id, step_order, rule_id, severity, summary, detail, fix,
            authority, file_path, line_number, source, metadata)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-         RETURNING id`,
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
         [
           taskId,
           stepOrder,

@@ -9,7 +9,6 @@ import {
 } from "@/lib/db";
 import { notifyTaskUpdate } from "@/lib/notify-ws";
 import { requireAuth } from "@/lib/with-auth";
-import { authenticateRequest } from "@/lib/auth";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -20,13 +19,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   const { id } = await params;
   const taskId = Number(id);
-
-  const auth = await authenticateRequest(request.headers.get("authorization"));
-  if (!auth) {
-    const res = errorResponse("UNAUTHORIZED", "인증이 필요합니다", 401);
-    return NextResponse.json(res.body, { status: res.status });
-  }
-  const userId = auth.user.id;
+  const userId = authResult.id;
 
   const task = await queryOne<Task>("SELECT * FROM tasks WHERE id = $1", [
     taskId,
@@ -49,7 +42,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json(res.body, { status: res.status });
   }
 
-  if (currentNode.auto_advance) {
+  if (currentNode.auto_advance && !currentNode.hitl) {
     const res = errorResponse(
       "NOT_APPLICABLE",
       "이 단계는 auto_advance가 활성화되어 있어 수동 승인이 필요하지 않습니다",
@@ -95,8 +88,8 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 
   await execute(
-    "UPDATE task_logs SET approved_at = NOW(), approved_by = $1 WHERE id = $2",
-    [userId, log.id],
+    "UPDATE task_logs SET approved_at = $2, approved_by = $1 WHERE id = $3",
+    [userId, new Date().toISOString(), log.id],
   );
 
   void notifyTaskUpdate(taskId, "step_approved", {

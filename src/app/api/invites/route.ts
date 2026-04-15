@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { authenticateRequest, hasPermission, type User } from "@/lib/auth";
-import { errorResponse, query } from "@/lib/db";
+import { errorResponse, insertAndReturnId, query, queryOne } from "@/lib/db";
 import {
   buildInviteUrl,
   generateInviteToken,
@@ -45,17 +45,17 @@ export async function POST(request: NextRequest) {
 
   const token = generateInviteToken();
   const expiresAt = inviteExpiresAt();
-  const rows = await query<{
+  const inviteId = await insertAndReturnId(
+    `INSERT INTO invites (token, email, role, created_by, expires_at)
+     VALUES ($1,$2,$3,$4,$5)`,
+    [token, email.trim(), role, user.id, expiresAt],
+  );
+  const created = await queryOne<{
     id: number;
     token: string;
     expires_at: string;
     created_at: string;
-  }>(
-    `INSERT INTO invites (token, email, role, created_by, expires_at)
-     VALUES ($1,$2,$3,$4,$5)
-     RETURNING id, token, expires_at, created_at`,
-    [token, email.trim(), role, user.id, expiresAt],
-  );
+  }>("SELECT id, token, expires_at, created_at FROM invites WHERE id = $1", [inviteId]);
 
   const publicUrl = resolveOrigin(request);
   const inviteUrl = buildInviteUrl(publicUrl, token);
@@ -66,13 +66,16 @@ export async function POST(request: NextRequest) {
     inviteUrl,
     role,
     inviterName: user.username,
-    expiresAt: new Date(rows[0].expires_at),
+    expiresAt: new Date(created?.expires_at ?? expiresAt),
     locale: typeof locale === "string" ? locale : "en",
   });
 
   return NextResponse.json({
     data: {
-      ...rows[0],
+      id: created?.id ?? inviteId,
+      token,
+      expires_at: created?.expires_at ?? expiresAt,
+      created_at: created?.created_at ?? new Date().toISOString(),
       url: inviteUrl,
       email_sent: emailResult.sent,
     },

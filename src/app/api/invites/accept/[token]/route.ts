@@ -6,7 +6,13 @@ import {
   verifyPassword,
   type Role,
 } from "@/lib/auth";
-import { errorResponse, execute, queryOne, withTransaction } from "@/lib/db";
+import {
+  errorResponse,
+  execute,
+  insertAndReturnId,
+  queryOne,
+  withTransaction,
+} from "@/lib/db";
 import { isExpired } from "@/lib/invites";
 import { seedBuiltinWorkflows } from "@/lib/seed-workflows";
 import { resolveOrigin } from "@/lib/url";
@@ -162,11 +168,15 @@ export async function POST(request: NextRequest, { params }: Params) {
   const { rawKey, prefix, keyHash } = generateApiKey();
 
   const { user: created, folderId } = await withTransaction(async (client) => {
-    const { rows: userRows } = await client.query(
+    const userId = await insertAndReturnId(
       `INSERT INTO users (username, email, password_hash, role)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, username, email, role`,
+       VALUES ($1, $2, $3, $4)`,
       [username, invite.email, passwordHash, invite.role],
+      client,
+    );
+    const { rows: userRows } = await client.query<CreatedUser>(
+      "SELECT id, username, email, role FROM users WHERE id = $1",
+      [userId],
     );
     const user = userRows[0] as CreatedUser;
 
@@ -177,19 +187,20 @@ export async function POST(request: NextRequest, { params }: Params) {
     );
 
     // Create default "My Workspace" folder for the new user
-    const { rows: folderRows } = await client.query<{ id: number }>(
+    const folderId = await insertAndReturnId(
       `INSERT INTO folders (name, description, owner_id, visibility, is_system)
        VALUES ('My Workspace', 'Your personal workspace.', $1, 'personal', true)
-       RETURNING id`,
+      `,
       [user.id],
+      client,
     );
 
     await client.query(
-      `UPDATE invites SET accepted_at = NOW(), accepted_by = $1 WHERE id = $2`,
-      [user.id, invite.id],
+      `UPDATE invites SET accepted_at = $1, accepted_by = $2 WHERE id = $3`,
+      [new Date().toISOString(), user.id, invite.id],
     );
 
-    return { user, folderId: folderRows[0].id };
+    return { user, folderId };
   });
 
   // Seed built-in workflows (best-effort, same as setup)

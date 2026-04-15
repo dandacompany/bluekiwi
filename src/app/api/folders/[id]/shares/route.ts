@@ -1,18 +1,12 @@
 import { NextResponse } from "next/server";
-import {
-  query,
-  queryOne,
-  type FolderShare,
-  okResponse,
-  listResponse,
-  errorResponse,
-} from "@/lib/db";
+import { type FolderShare, okResponse, listResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import {
   canReadFolder,
   canManageFolderShares,
   loadFolder,
 } from "@/lib/authorization";
+import { listFolderShares, upsertFolderShare } from "@/lib/db/repositories/folders";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -29,14 +23,7 @@ export const GET = withAuth<Params>(
       const res = errorResponse("OWNERSHIP_REQUIRED", "접근 거부", 403);
       return NextResponse.json(res.body, { status: res.status });
     }
-    const rows = await query<FolderShare & { group_name: string }>(
-      `SELECT fs.*, ug.name AS group_name
-         FROM folder_shares fs
-         JOIN user_groups ug ON ug.id = fs.group_id
-         WHERE fs.folder_id = $1
-         ORDER BY ug.name ASC`,
-      [Number(id)],
-    );
+    const rows = await listFolderShares(Number(id));
     const res = listResponse(rows, rows.length);
     return NextResponse.json(res.body, { status: res.status });
   },
@@ -72,14 +59,11 @@ export const POST = withAuth<Params>(
       );
       return NextResponse.json(res.body, { status: res.status });
     }
-    const row = await queryOne<FolderShare>(
-      `INSERT INTO folder_shares (folder_id, group_id, access_level)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (folder_id, group_id)
-       DO UPDATE SET access_level = EXCLUDED.access_level
-       RETURNING *`,
-      [Number(id), group_id, access_level],
-    );
+    const row = await upsertFolderShare({
+      folderId: Number(id),
+      groupId: group_id,
+      accessLevel: access_level,
+    });
     const res = okResponse(row, 201);
     return NextResponse.json(res.body, { status: res.status });
   },

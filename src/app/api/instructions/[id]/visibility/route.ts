@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  execute,
   queryOne,
   type Instruction,
   okResponse,
@@ -31,9 +32,13 @@ export const POST = withAuth<Params>(
       const res = errorResponse("OWNERSHIP_REQUIRED", "권한 없음", 403);
       return NextResponse.json(res.body, { status: res.status });
     }
+    await execute(
+      "UPDATE instructions SET visibility_override = $1, updated_at = $2 WHERE id = $3",
+      [override, new Date().toISOString(), Number(id)],
+    );
     const updated = await queryOne<Instruction>(
-      "UPDATE instructions SET visibility_override = $1, updated_at = NOW() WHERE id = $2 RETURNING *",
-      [override, Number(id)],
+      "SELECT * FROM instructions WHERE id = $1",
+      [Number(id)],
     );
     const res = okResponse(updated);
     return NextResponse.json(res.body, { status: res.status });

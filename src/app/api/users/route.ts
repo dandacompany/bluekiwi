@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  insert,
+  insertAndReturnId,
   listResponse,
   okResponse,
   query,
@@ -118,8 +118,8 @@ export const POST = withAuth("users:write", async (request: NextRequest) => {
 
   const passwordHash = await hashPassword(password);
 
-  const userId = await insert(
-    "INSERT INTO users (username, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id",
+  const userId = await insertAndReturnId(
+    "INSERT INTO users (username, email, password_hash, role) VALUES ($1, $2, $3, $4)",
     [usernameValue, emailValue, passwordHash, roleValue],
   );
 

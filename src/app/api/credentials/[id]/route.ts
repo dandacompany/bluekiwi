@@ -1,12 +1,5 @@
 import { NextResponse } from "next/server";
-import {
-  queryOne,
-  execute,
-  type Credential,
-  okResponse,
-  errorResponse,
-  maskSecrets,
-} from "@/lib/db";
+import { type Credential, okResponse, errorResponse, maskSecrets } from "@/lib/db";
 import {
   canDelete,
   canEditCredential,
@@ -14,6 +7,11 @@ import {
 } from "@/lib/authorization";
 import { withAuth } from "@/lib/with-auth";
 import { loadResourceOrFail, withResource } from "@/lib/api-helpers";
+import {
+  countCredentialNodeReferences,
+  deleteCredentialById,
+  updateCredentialById,
+} from "@/lib/db/repositories/credentials";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -51,22 +49,13 @@ export const PUT = withAuth<Params>(
     });
     if (errResp) return errResp;
 
-    const updated = await queryOne<Credential>(
-      `UPDATE credentials SET
-         service_name = COALESCE($1, service_name),
-         description = COALESCE($2, description),
-         secrets = COALESCE($3, secrets),
-         folder_id = COALESCE($4, folder_id),
-         updated_at = NOW()
-       WHERE id = $5 RETURNING *`,
-      [
-        body.service_name ?? null,
-        body.description ?? null,
-        body.secrets ?? null,
-        body.folder_id ?? null,
-        Number(id),
-      ],
-    );
+    const updated = await updateCredentialById({
+      id: Number(id),
+      serviceName: body.service_name ?? null,
+      description: body.description ?? null,
+      secrets: body.secrets ?? null,
+      folderId: body.folder_id ?? null,
+    });
     const res = okResponse({
       ...updated!,
       secrets_masked: maskSecrets(updated!.secrets),
@@ -94,11 +83,7 @@ export const DELETE = withAuth<Params>(
     // Refuse delete if any workflow_nodes still reference this credential.
     // The DB-level RESTRICT FK is the ultimate guard; the application layer
     // adds a friendly count-aware 409 on top so the UI can explain clearly.
-    const refs = await queryOne<{ c: string }>(
-      "SELECT COUNT(*)::text AS c FROM workflow_nodes WHERE credential_id = $1",
-      [Number(id)],
-    );
-    const refCount = Number(refs?.c ?? 0);
+    const refCount = await countCredentialNodeReferences(Number(id));
     if (refCount > 0) {
       const res = errorResponse(
         "CREDENTIAL_IN_USE",
@@ -109,7 +94,7 @@ export const DELETE = withAuth<Params>(
       return NextResponse.json(res.body, { status: res.status });
     }
 
-    await execute("DELETE FROM credentials WHERE id = $1", [Number(id)]);
+    await deleteCredentialById(Number(id));
     const res = okResponse({ id: Number(id), deleted: true });
     return NextResponse.json(res.body, { status: res.status });
   },

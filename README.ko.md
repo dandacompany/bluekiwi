@@ -102,6 +102,33 @@ bluekiwi init --server http://localhost:3100 --api-key bk_xxxx
 
 ---
 
+## Quick Start 로컬 런타임
+
+Docker, PostgreSQL, Redis 없이 바로 BlueKiwi를 써보고 싶다면, CLI가 SQLite 기반의 로컬 Quick Start 런타임도 실행할 수 있습니다.
+
+```bash
+npm install -g bluekiwi
+bluekiwi start
+bluekiwi status
+bluekiwi stop
+```
+
+이 모드의 특징:
+
+- BlueKiwi를 로컬 프로세스로 실행
+- 데이터를 로컬 SQLite 파일에 저장
+- `3102`부터 사용 가능한 포트를 자동 선택
+- CLI로 lifecycle 관리
+
+상세 가이드:
+
+- [Quick Start CLI Guide](docs/guides/quickstart-cli.md)
+- [Global Install Smoke Flow](docs/guides/quickstart-global-smoke-flow.md)
+
+이 모드는 로컬 authoring, 데모, 소규모 테스트에 적합합니다. 팀 배포와 전체 hosted parity가 필요하면 위의 Docker 기반 설치를 사용하세요.
+
+---
+
 ## 스킬
 
 `bluekiwi accept` 완료 후 Claude Code(및 지원 런타임)에서 아래 슬래시 커맨드를 사용할 수 있습니다:

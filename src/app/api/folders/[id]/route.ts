@@ -1,11 +1,5 @@
 import { NextResponse } from "next/server";
-import {
-  queryOne,
-  execute,
-  type Folder,
-  okResponse,
-  errorResponse,
-} from "@/lib/db";
+import { type Folder, okResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import {
   canReadFolder,
@@ -14,6 +8,7 @@ import {
   type OwnedFolder,
 } from "@/lib/authorization";
 import { loadResourceOrFail } from "@/lib/api-helpers";
+import { deleteFolderById, getFolderUsageCounts, updateFolderById } from "@/lib/db/repositories/folders";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -63,15 +58,12 @@ export const PUT = withAuth<Params>(
       return NextResponse.json(res.body, { status: res.status });
     }
 
-    const updated = await queryOne<Folder>(
-      `UPDATE folders SET
-         name = COALESCE($1, name),
-         description = COALESCE($2, description),
-         parent_id = COALESCE($3, parent_id),
-         updated_at = NOW()
-       WHERE id = $4 RETURNING *`,
-      [name ?? null, description ?? null, parent_id ?? null, Number(id)],
-    );
+    const updated = await updateFolderById({
+      id: Number(id),
+      name: name ?? null,
+      description: description ?? null,
+      parentId: parent_id ?? null,
+    });
     const res = okResponse(updated);
     return NextResponse.json(res.body, { status: res.status });
   },
@@ -92,24 +84,12 @@ export const DELETE = withAuth<Params>(
     if (errResp) return errResp;
 
     // Emptiness check — consolidated into a single round trip
-    const usage = await queryOne<{
-      workflow_count: number;
-      instruction_count: number;
-      credential_count: number;
-      child_count: number;
-    }>(
-      `SELECT
-         (SELECT COUNT(*) FROM workflows    WHERE folder_id = $1)::int AS workflow_count,
-         (SELECT COUNT(*) FROM instructions WHERE folder_id = $1)::int AS instruction_count,
-         (SELECT COUNT(*) FROM credentials  WHERE folder_id = $1)::int AS credential_count,
-         (SELECT COUNT(*) FROM folders      WHERE parent_id = $1)::int AS child_count`,
-      [Number(id)],
-    );
+    const usage = await getFolderUsageCounts(Number(id));
     const total =
-      (usage?.workflow_count ?? 0) +
-      (usage?.instruction_count ?? 0) +
-      (usage?.credential_count ?? 0) +
-      (usage?.child_count ?? 0);
+      usage.workflow_count +
+      usage.instruction_count +
+      usage.credential_count +
+      usage.child_count;
 
     if (total > 0) {
       const res = errorResponse(
@@ -120,7 +100,7 @@ export const DELETE = withAuth<Params>(
       return NextResponse.json(res.body, { status: res.status });
     }
 
-    await execute("DELETE FROM folders WHERE id = $1", [Number(id)]);
+    await deleteFolderById(Number(id));
     const res = okResponse({ id: Number(id), deleted: true });
     return NextResponse.json(res.body, { status: res.status });
   },

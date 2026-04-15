@@ -102,6 +102,33 @@ Connects to the server with the given key → detects installed runtimes → inj
 
 ---
 
+## Quick Start Local Runtime
+
+If you want to try BlueKiwi without Docker, PostgreSQL, or Redis, the CLI can also run a local Quick Start runtime backed by SQLite.
+
+```bash
+npm install -g bluekiwi
+bluekiwi start
+bluekiwi status
+bluekiwi stop
+```
+
+What this mode does:
+
+- runs BlueKiwi as a local process
+- stores data in a local SQLite file
+- auto-selects a free port starting from `3102`
+- manages lifecycle through the CLI
+
+Detailed guides:
+
+- [Quick Start CLI Guide](docs/guides/quickstart-cli.md)
+- [Global Install Smoke Flow](docs/guides/quickstart-global-smoke-flow.md)
+
+This mode is intended for local authoring, demos, and small-scale testing. For team deployment and full hosted parity, use the Docker-based setup above.
+
+---
+
 ## Skills
 
 After `bluekiwi accept`, you have these slash commands inside Claude Code (and other supported runtimes):

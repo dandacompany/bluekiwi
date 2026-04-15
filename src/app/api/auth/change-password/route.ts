@@ -72,8 +72,8 @@ export async function POST(req: NextRequest) {
   // 5. Hash new password and update DB
   const newHash = await hashPassword(new_password);
   await execute(
-    "UPDATE users SET password_hash = $1, must_change_password = false, updated_at = NOW() WHERE id = $2",
-    [newHash, user.id],
+    "UPDATE users SET password_hash = $1, must_change_password = false, updated_at = $2 WHERE id = $3",
+    [newHash, new Date().toISOString(), user.id],
   );
 
   // 6. Issue new session token with mustChangePassword = false

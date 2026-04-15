@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import {
-  insert,
+  insertAndReturnId,
   listResponse,
   query,
   queryOne,
@@ -136,18 +136,16 @@ export const POST = withAuth<Params>(
     const storeAsText = isTextMimeType(mimeType);
 
     const attachmentId = storeAsText
-      ? await insert(
+      ? await insertAndReturnId(
           `INSERT INTO node_attachments
             (node_id, filename, mime_type, size_bytes, content)
-           VALUES ($1, $2, $3, $4, $5)
-           RETURNING id`,
+           VALUES ($1, $2, $3, $4, $5)`,
           [resolvedNodeId, file.name, mimeType, file.size, buffer.toString("utf-8")],
         )
-      : await insert(
+      : await insertAndReturnId(
           `INSERT INTO node_attachments
             (node_id, filename, mime_type, size_bytes, content_binary)
-           VALUES ($1, $2, $3, $4, $5)
-           RETURNING id`,
+           VALUES ($1, $2, $3, $4, $5)`,
           [resolvedNodeId, file.name, mimeType, file.size, buffer],
         );
 

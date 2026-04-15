@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   errorResponse,
-  insert,
+  insertAndReturnId,
   listResponse,
   okResponse,
   query,
@@ -86,8 +86,8 @@ export const POST = withAuth(
 
     const { rawKey, prefix, keyHash } = generateApiKey();
 
-    const apiKeyId = await insert(
-      "INSERT INTO api_keys (user_id, key_hash, prefix, name, expires_at) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+    const apiKeyId = await insertAndReturnId(
+      "INSERT INTO api_keys (user_id, key_hash, prefix, name, expires_at) VALUES ($1, $2, $3, $4, $5)",
       [user.id, keyHash, prefix, nameValue, expiresAt],
     );
 

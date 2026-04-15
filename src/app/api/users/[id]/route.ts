@@ -194,13 +194,14 @@ export const PUT = withAuth(
     }
 
     await execute(
-      "UPDATE users SET username = $1, email = $2, role = $3, is_active = $4, password_hash = $5, updated_at = NOW() WHERE id = $6",
+      "UPDATE users SET username = $1, email = $2, role = $3, is_active = $4, password_hash = $5, updated_at = $6 WHERE id = $7",
       [
         usernameValue,
         emailValue,
         roleValue,
         isActiveValue,
         passwordHashValue,
+        new Date().toISOString(),
         userId,
       ],
     );

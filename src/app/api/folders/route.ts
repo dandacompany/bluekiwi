@@ -1,40 +1,24 @@
 import { NextResponse } from "next/server";
-import {
-  query,
-  queryOne,
-  type Folder,
-  okResponse,
-  listResponse,
-  errorResponse,
-} from "@/lib/db";
+import { type Folder, okResponse, listResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import {
   buildFolderVisibilityFilter,
   canEditFolder,
   loadFolder,
 } from "@/lib/authorization";
+import { createFolder, listFoldersForVisibilityFilter } from "@/lib/db/repositories/folders";
 
 export const GET = withAuth("workflows:read", async (request, user) => {
   const parentId = new URL(request.url).searchParams.get("parent_id");
   const filter = await buildFolderVisibilityFilter("f", user, 1);
   // Personal system folders (e.g. "My Workspace") are always owner-only,
   // even for admin/superuser — each user sees only their own.
-  const ownParam = filter.params.length + 1;
-  let sql = `SELECT f.*,
-      (f.owner_id = $${ownParam}) AS is_mine,
-      u.username AS owner_name
-    FROM folders f
-    JOIN users u ON u.id = f.owner_id
-    WHERE ${filter.sql}`;
-  const params = [...filter.params, user.id];
-  if (parentId !== null) {
-    params.push(parentId === "null" ? null : Number(parentId));
-    sql += ` AND f.parent_id ${parentId === "null" ? "IS NULL" : `= $${params.length}`}`;
-  }
-  sql += " ORDER BY f.name ASC";
-  const folders = await query<
-    Folder & { is_mine: boolean; owner_name: string }
-  >(sql, params);
+  const folders = await listFoldersForVisibilityFilter(
+    filter.sql,
+    filter.params,
+    user.id,
+    parentId === null ? undefined : parentId === "null" ? null : Number(parentId),
+  );
   const res = listResponse(folders, folders.length);
   return NextResponse.json(res.body, { status: res.status });
 });
@@ -107,11 +91,13 @@ export const POST = withAuth("workflows:create", async (request, user) => {
     }
   }
 
-  const row = await queryOne<Folder>(
-    `INSERT INTO folders (name, description, owner_id, parent_id, visibility)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [name.trim(), description, user.id, parent_id, visibility],
-  );
+  const row = await createFolder({
+    name: name.trim(),
+    description,
+    ownerId: user.id,
+    parentId: parent_id,
+    visibility,
+  });
   const res = okResponse(row, 201);
   return NextResponse.json(res.body, { status: res.status });
 });

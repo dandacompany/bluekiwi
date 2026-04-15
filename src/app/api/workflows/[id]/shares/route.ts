@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  execute,
   query,
   queryOne,
   type WorkflowShare,
@@ -81,13 +82,16 @@ export const POST = withAuth<Params>(
       );
       return NextResponse.json(res.body, { status: res.status });
     }
-    const row = await queryOne<WorkflowShare>(
+    await execute(
       `INSERT INTO workflow_shares (workflow_id, group_id, access_level)
        VALUES ($1, $2, $3)
        ON CONFLICT (workflow_id, group_id)
-       DO UPDATE SET access_level = EXCLUDED.access_level
-       RETURNING *`,
+       DO UPDATE SET access_level = EXCLUDED.access_level`,
       [Number(id), group_id, access_level],
+    );
+    const row = await queryOne<WorkflowShare>(
+      "SELECT * FROM workflow_shares WHERE workflow_id = $1 AND group_id = $2",
+      [Number(id), group_id],
     );
     const res = okResponse(row, 201);
     return NextResponse.json(res.body, { status: res.status });

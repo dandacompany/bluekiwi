@@ -38,8 +38,8 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 
   await execute(
-    "UPDATE task_logs SET approval_requested_at = NOW() WHERE id = $1",
-    [log.id],
+    "UPDATE task_logs SET approval_requested_at = $2 WHERE id = $1",
+    [log.id, new Date().toISOString()],
   );
 
   void notifyTaskUpdate(taskId, "approval_requested", {

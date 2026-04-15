@@ -48,8 +48,8 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 
   await execute(
-    "UPDATE tasks SET feedback_data = $1, updated_at = NOW() WHERE id = $2",
-    [JSON.stringify(feedback), taskId],
+    "UPDATE tasks SET feedback_data = $1, updated_at = $2 WHERE id = $3",
+    [JSON.stringify(feedback), new Date().toISOString(), taskId],
   );
 
   const res = okResponse({ task_id: taskId, feedback_saved: feedback.length });

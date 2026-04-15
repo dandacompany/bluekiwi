@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   query,
   queryOne,
-  insert,
+  insertAndReturnId,
   TaskComment,
   okResponse,
   listResponse,
@@ -48,8 +48,8 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json(res.body, { status: res.status });
   }
 
-  const commentId = await insert(
-    "INSERT INTO task_comments (task_id, step_order, comment) VALUES ($1, $2, $3) RETURNING id",
+  const commentId = await insertAndReturnId(
+    "INSERT INTO task_comments (task_id, step_order, comment) VALUES ($1, $2, $3)",
     [Number(id), Number(step_order), comment.trim()],
   );
 

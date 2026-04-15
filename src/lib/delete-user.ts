@@ -1,5 +1,5 @@
 import { withTransaction } from "@/lib/db";
-import type { PoolClient } from "pg";
+import type { DbTransactionClient } from "@/lib/db/adapter";
 
 export type DeleteMode = "transfer" | "delete_all";
 
@@ -36,7 +36,7 @@ export async function deleteUser(opts: DeleteUserOptions): Promise<void> {
 }
 
 async function transferResources(
-  client: PoolClient,
+  client: DbTransactionClient,
   fromId: number,
   toId: number,
 ): Promise<void> {
@@ -59,7 +59,7 @@ async function transferResources(
 }
 
 async function deleteResources(
-  client: PoolClient,
+  client: DbTransactionClient,
   userId: number,
 ): Promise<void> {
   // 1. Collect IDs for targeted cleanup
@@ -83,36 +83,39 @@ async function deleteResources(
 
   // 2. Delete tasks and their cascaded children (step_logs, approvals, comments, findings, artifacts)
   if (workflowIds.length > 0) {
-    await client.query("DELETE FROM tasks WHERE workflow_id = ANY($1)", [
-      workflowIds,
-    ]);
+    const placeholders = workflowIds.map((_, index) => `$${index + 1}`).join(", ");
+    await client.query(`DELETE FROM tasks WHERE workflow_id IN (${placeholders})`, workflowIds);
   }
 
   // 3. Nullify node references to user's credentials/instructions before deleting them
   if (credentialIds.length > 0) {
+    const placeholders = credentialIds.map((_, index) => `$${index + 1}`).join(", ");
     await client.query(
-      "DELETE FROM node_credential_links WHERE credential_id = ANY($1)",
-      [credentialIds],
+      `DELETE FROM node_credential_links WHERE credential_id IN (${placeholders})`,
+      credentialIds,
     );
   }
   if (instructionIds.length > 0 && workflowIds.length > 0) {
+    const placeholders = instructionIds.map((_, index) => `$${index + 1}`).join(", ");
     await client.query(
-      "UPDATE workflow_nodes SET instruction_id = NULL WHERE instruction_id = ANY($1)",
-      [instructionIds],
+      `UPDATE workflow_nodes SET instruction_id = NULL WHERE instruction_id IN (${placeholders})`,
+      instructionIds,
     );
   }
 
   // 4. Delete sharing records
   if (workflowIds.length > 0) {
+    const placeholders = workflowIds.map((_, index) => `$${index + 1}`).join(", ");
     await client.query(
-      "DELETE FROM workflow_shares WHERE workflow_id = ANY($1)",
-      [workflowIds],
+      `DELETE FROM workflow_shares WHERE workflow_id IN (${placeholders})`,
+      workflowIds,
     );
   }
   if (credentialIds.length > 0) {
+    const placeholders = credentialIds.map((_, index) => `$${index + 1}`).join(", ");
     await client.query(
-      "DELETE FROM credential_shares WHERE credential_id = ANY($1)",
-      [credentialIds],
+      `DELETE FROM credential_shares WHERE credential_id IN (${placeholders})`,
+      credentialIds,
     );
   }
 

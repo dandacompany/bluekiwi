@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { queryOne, type Folder, okResponse, errorResponse } from "@/lib/db";
+import { execute, queryOne, type Folder, okResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canChangeFolderVisibility, loadFolder } from "@/lib/authorization";
 
@@ -41,9 +41,13 @@ export const POST = withAuth<Params>(
       return NextResponse.json(res.body, { status: res.status });
     }
 
+    await execute(
+      "UPDATE folders SET visibility = $1, updated_at = $2 WHERE id = $3",
+      [visibility, new Date().toISOString(), Number(id)],
+    );
     const updated = await queryOne<Folder>(
-      "UPDATE folders SET visibility = $1, updated_at = NOW() WHERE id = $2 RETURNING *",
-      [visibility, Number(id)],
+      "SELECT * FROM folders WHERE id = $1",
+      [Number(id)],
     );
     const res = okResponse(updated);
     return NextResponse.json(res.body, { status: res.status });

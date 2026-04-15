@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
-import { queryOne, type Folder, okResponse, errorResponse } from "@/lib/db";
+import { type Folder, okResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canTransferOwnership, loadFolder } from "@/lib/authorization";
+import { findActiveUserById } from "@/lib/db/repositories/auth";
+import { transferFolderOwnership } from "@/lib/db/repositories/folders";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -35,18 +37,15 @@ export const POST = withAuth<Params>(
       const res = errorResponse("OWNERSHIP_REQUIRED", "이전 권한 없음", 403);
       return NextResponse.json(res.body, { status: res.status });
     }
-    const target = await queryOne<{ id: number }>(
-      "SELECT id FROM users WHERE id = $1 AND is_active = true",
-      [new_owner_id],
-    );
+    const target = await findActiveUserById(new_owner_id);
     if (!target) {
       const res = errorResponse("NOT_FOUND", "대상 사용자가 없습니다", 404);
       return NextResponse.json(res.body, { status: res.status });
     }
-    const updated = await queryOne<Folder>(
-      "UPDATE folders SET owner_id = $1, updated_at = NOW() WHERE id = $2 RETURNING *",
-      [new_owner_id, Number(id)],
-    );
+    const updated = await transferFolderOwnership({
+      id: Number(id),
+      newOwnerId: new_owner_id,
+    });
     const res = okResponse(updated);
     return NextResponse.json(res.body, { status: res.status });
   },

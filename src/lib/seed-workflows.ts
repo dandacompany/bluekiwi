@@ -6,7 +6,7 @@
  * Idempotent — skips if a workflow with the same title already exists.
  */
 
-import { query, queryOne, execute } from "@/lib/db";
+import { execute, insertAndReturnId, queryOne } from "@/lib/db";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -65,14 +65,14 @@ export async function seedBuiltinWorkflows(
     }
 
     // Create sub-folder
-    const rows = await query<{ id: number }>(
+    const createdFolderId = await insertAndReturnId(
       `INSERT INTO folders (name, description, owner_id, parent_id, visibility)
        VALUES ($1, '', $2, $3, 'inherit')
-       RETURNING id`,
+      `,
       [category, ownerId, folderId],
     );
-    categoryFolderIds.set(category, rows[0].id);
-    return rows[0].id;
+    categoryFolderIds.set(category, createdFolderId);
+    return createdFolderId;
   }
 
   let seeded = 0;
@@ -91,13 +91,11 @@ export async function seedBuiltinWorkflows(
     const targetFolderId = await resolveFolderId(wf.category);
 
     // Insert workflow
-    const rows = await query<{ id: number }>(
+    const workflowId = await insertAndReturnId(
       `INSERT INTO workflows (title, description, version, owner_id, folder_id, is_active)
-       VALUES ($1, $2, $3, $4, $5, true)
-       RETURNING id`,
+       VALUES ($1, $2, $3, $4, $5, true)`,
       [wf.title, wf.description, wf.version, ownerId, targetFolderId],
     );
-    const workflowId = rows[0].id;
 
     // Set family_root_id to self
     await execute("UPDATE workflows SET family_root_id = $1 WHERE id = $1", [

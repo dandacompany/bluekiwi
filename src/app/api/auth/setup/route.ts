@@ -1,24 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query, queryOne, execute } from "@/lib/db";
+import { insertAndReturnId, queryOne } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { createSession } from "@/lib/session";
 import { seedBuiltinWorkflows } from "@/lib/seed-workflows";
 
 // GET: Check if setup is needed (no users exist)
 export async function GET() {
-  const result = await queryOne<{ count: number }>(
-    "SELECT COUNT(*)::int AS count FROM users",
+  const result = await queryOne<{ count: number | string }>(
+    "SELECT COUNT(*) AS count FROM users",
   );
-  return NextResponse.json({ needsSetup: (result?.count ?? 0) === 0 });
+  return NextResponse.json({ needsSetup: Number(result?.count ?? 0) === 0 });
 }
 
 // POST: Create first superuser
 export async function POST(req: NextRequest) {
   // Check no users exist
-  const result = await queryOne<{ count: number }>(
-    "SELECT COUNT(*)::int AS count FROM users",
+  const result = await queryOne<{ count: number | string }>(
+    "SELECT COUNT(*) AS count FROM users",
   );
-  if ((result?.count ?? 0) > 0) {
+  if (Number(result?.count ?? 0) > 0) {
     return NextResponse.json(
       { error: "Setup already completed." },
       { status: 409 },
@@ -44,21 +44,18 @@ export async function POST(req: NextRequest) {
 
   const hash = await hashPassword(password);
 
-  const rows = await query<{ id: number }>(
-    "INSERT INTO users (username, email, password_hash, role) VALUES ($1, $2, $3, 'superuser') RETURNING id",
+  const userId = await insertAndReturnId(
+    "INSERT INTO users (username, email, password_hash, role) VALUES ($1, $2, $3, 'superuser')",
     [username, email, hash],
   );
 
-  const userId = rows[0].id;
-
   // Create default folder for the superuser
-  const folderRows = await query<{ id: number }>(
+  const folderId = await insertAndReturnId(
     `INSERT INTO folders (name, description, owner_id, visibility, is_system)
      VALUES ('My Workspace', 'Your personal workspace.', $1, 'personal', true)
-     RETURNING id`,
+    `,
     [userId],
   );
-  const folderId = folderRows[0].id;
 
   // Seed built-in workflows
   await seedBuiltinWorkflows(userId, folderId).catch((err) => {

@@ -35,7 +35,10 @@ export async function POST(request: NextRequest, { params }: Params) {
     ]);
   }
 
-  await execute("UPDATE tasks SET updated_at = NOW() WHERE id = $1", [taskId]);
+  await execute("UPDATE tasks SET updated_at = $2 WHERE id = $1", [
+    taskId,
+    new Date().toISOString(),
+  ]);
 
   const res = okResponse({ success: true, task_id: taskId, node_id });
   return NextResponse.json(res.body, { status: res.status });

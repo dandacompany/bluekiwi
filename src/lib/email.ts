@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import { Resend } from "resend";
-import { query } from "@/lib/db";
+import { execute, query } from "@/lib/db";
 
 export interface EmailConfig {
   provider: "smtp" | "resend" | "none";
@@ -32,9 +32,10 @@ const EMAIL_KEYS: (keyof EmailConfig)[] = [
 /** Load email config from DB, fall back to env vars */
 export async function loadEmailConfig(): Promise<EmailConfig> {
   try {
+    const placeholders = EMAIL_KEYS.map((_, index) => `$${index + 1}`).join(", ");
     const rows = await query<{ key: string; value: string }>(
-      `SELECT key, value FROM system_settings WHERE key = ANY($1)`,
-      [EMAIL_KEYS.map((k) => `email.${k}`)],
+      `SELECT key, value FROM system_settings WHERE key IN (${placeholders})`,
+      EMAIL_KEYS.map((k) => `email.${k}`),
     );
     const db: Record<string, string> = {};
     for (const row of rows) {
@@ -85,11 +86,11 @@ export async function saveEmailConfig(cfg: EmailConfig): Promise<void> {
   ];
 
   for (const [key, value] of entries) {
-    await query(
+    await execute(
       `INSERT INTO system_settings (key, value, updated_at)
-       VALUES ($1, $2, NOW())
-       ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()`,
-      [key, value],
+       VALUES ($1, $2, $3)
+       ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = $3`,
+      [key, value, new Date().toISOString()],
     );
   }
 }

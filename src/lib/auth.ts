@@ -1,6 +1,10 @@
 import { randomBytes, createHash } from "crypto";
 import bcrypt from "bcryptjs";
-import { queryOne } from "./db";
+import {
+  findActiveApiKeyByHash,
+  findActiveUserById,
+  touchApiKeyLastUsedAt,
+} from "@/lib/db/repositories/auth";
 
 // ─── Types ───
 
@@ -78,10 +82,7 @@ export async function validateApiKey(
   rawKey: string,
 ): Promise<{ user: User; apiKey: ApiKey } | null> {
   const keyHash = hashApiKey(rawKey);
-  const apiKey = await queryOne<ApiKey>(
-    `SELECT * FROM api_keys WHERE key_hash = $1 AND is_revoked = false`,
-    [keyHash],
-  );
+  const apiKey = await findActiveApiKeyByHash(keyHash);
   if (!apiKey) return null;
 
   // Check expiration
@@ -89,16 +90,11 @@ export async function validateApiKey(
     return null;
   }
 
-  const user = await queryOne<User>(
-    `SELECT * FROM users WHERE id = $1 AND is_active = true`,
-    [apiKey.user_id],
-  );
+  const user = await findActiveUserById(apiKey.user_id);
   if (!user) return null;
 
   // Update last_used_at (fire-and-forget)
-  queryOne(`UPDATE api_keys SET last_used_at = NOW() WHERE id = $1`, [
-    apiKey.id,
-  ]).catch(() => {});
+  touchApiKeyLastUsedAt(apiKey.id).catch(() => {});
 
   return { user, apiKey };
 }

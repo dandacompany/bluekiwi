@@ -1,17 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  query,
-  queryOne,
-  insert,
-  Task,
-  TaskLog,
-  Workflow,
-  okResponse,
-  listResponse,
-  errorResponse,
-} from "@/lib/db";
+import { Workflow, okResponse, listResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { buildResourceVisibilityFilter, canExecute } from "@/lib/authorization";
+import { createTaskForWorkflow, findWorkflowByIdForTask, listTasksForVisibilityFilter } from "@/lib/db/repositories/tasks";
 
 export const GET = withAuth(
   "tasks:read",
@@ -22,54 +13,16 @@ export const GET = withAuth(
 
     const filter = await buildResourceVisibilityFilter("w", user, 1);
 
-    let sql = `SELECT t.* FROM tasks t
-      JOIN workflows w ON w.id = t.workflow_id
-      WHERE ${filter.sql}`;
-    const params: unknown[] = [...filter.params];
-
-    if (workflowId) {
-      params.push(Number(workflowId));
-      sql += ` AND t.workflow_id = $${params.length}`;
-    }
-    if (status) {
-      params.push(status);
-      sql += ` AND t.status = $${params.length}`;
-    }
-
     const q = searchParams.get("q");
-    if (q) {
-      params.push(`%${q}%`);
-      sql += ` AND t.context LIKE $${params.length}`;
-    }
+    const tasks = await listTasksForVisibilityFilter({
+      filterSql: filter.sql,
+      filterParams: filter.params,
+      workflowId: workflowId ? Number(workflowId) : undefined,
+      status: status ?? undefined,
+      q: q ?? undefined,
+    });
 
-    sql += " ORDER BY t.created_at DESC";
-
-    const tasks = await query<Task>(sql, params);
-
-    const tasksWithLogs = await Promise.all(
-      tasks.map(async (task) => {
-        const logs = await query<TaskLog>(
-          "SELECT * FROM task_logs WHERE task_id = $1 ORDER BY step_order ASC",
-          [task.id],
-        );
-        const workflow = await queryOne<{ title: string; node_count: number }>(
-          `SELECT w.title, COUNT(wn.id)::int AS node_count
-           FROM workflows w
-           LEFT JOIN workflow_nodes wn ON wn.workflow_id = w.id
-           WHERE w.id = $1
-           GROUP BY w.id`,
-          [task.workflow_id],
-        );
-        return {
-          ...task,
-          workflow_title: workflow?.title ?? null,
-          total_steps: workflow?.node_count ?? 0,
-          logs,
-        };
-      }),
-    );
-
-    const res = listResponse(tasksWithLogs, tasksWithLogs.length);
+    const res = listResponse(tasks, tasks.length);
     return NextResponse.json(res.body, { status: res.status });
   },
 );
@@ -87,10 +40,7 @@ export const POST = withAuth("tasks:execute", async (request, user) => {
     return NextResponse.json(res.body, { status: res.status });
   }
 
-  const workflow = await queryOne<Workflow>(
-    "SELECT * FROM workflows WHERE id = $1",
-    [Number(workflow_id)],
-  );
+  const workflow = await findWorkflowByIdForTask(Number(workflow_id));
   if (!workflow) {
     const res = errorResponse("NOT_FOUND", "워크플로를 찾을 수 없습니다", 404);
     return NextResponse.json(res.body, { status: res.status });
@@ -105,14 +55,7 @@ export const POST = withAuth("tasks:execute", async (request, user) => {
     return NextResponse.json(res.body, { status: res.status });
   }
 
-  const taskId = await insert(
-    "INSERT INTO tasks (workflow_id, status, current_step) VALUES ($1, 'running', 1) RETURNING id",
-    [Number(workflow_id)],
-  );
-
-  const task = await queryOne<Task>("SELECT * FROM tasks WHERE id = $1", [
-    taskId,
-  ]);
+  const task = await createTaskForWorkflow(Number(workflow_id));
   const res = okResponse(task, 201);
   return NextResponse.json(res.body, { status: res.status });
 });

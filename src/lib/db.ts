@@ -1,33 +1,43 @@
-import { Pool, PoolClient } from "pg";
+import { Pool } from "pg";
 import {
   evaluateCredentialRequirement,
   parseCredentialRequirement,
   type CredentialBindingStatus,
   type CredentialRequirement,
 } from "./workflow-transfer";
+import type { DbTransactionClient } from "./db/adapter";
+import { getDatabaseConfig } from "./db/config";
+import { decodeBoolean, decodeTimestamp } from "./db/value-codecs";
+import { ensureDatabaseBootstrapped } from "./db/bootstrap";
+import { postgresAdapter, getPostgresPool } from "./db/adapters/postgres";
+import { sqliteAdapter } from "./db/adapters/sqlite";
 
-// ─── Pool 싱글톤 ───
-
-const DATABASE_URL =
-  process.env.DATABASE_URL ??
-  "postgresql://bluekiwi:bluekiwi_dev_2026@localhost:5433/bluekiwi";
-
-let pool: Pool | null = null;
+const databaseConfig = getDatabaseConfig();
+const activeAdapter =
+  databaseConfig.type === "sqlite" ? sqliteAdapter : postgresAdapter;
 
 export function getPool(): Pool {
-  if (!pool) {
-    pool = new Pool({ connectionString: DATABASE_URL, max: 20 });
+  if (databaseConfig.type !== "postgres") {
+    throw new Error("getPool() is only available in postgres mode");
   }
-  return pool;
+  return getPostgresPool();
 }
 
-// 간편 쿼리 헬퍼
+export function getDbAdapter() {
+  return activeAdapter;
+}
+
+export function getDbDialect() {
+  return activeAdapter.dialect;
+}
+
 export async function query<T = Record<string, unknown>>(
   text: string,
   params?: unknown[],
 ): Promise<T[]> {
-  const { rows } = await getPool().query(text, params);
-  return rows as T[];
+  await ensureDatabaseBootstrapped();
+  const result = await activeAdapter.query<T>(text, params);
+  return result.rows;
 }
 
 export async function queryOne<T = Record<string, unknown>>(
@@ -41,36 +51,55 @@ export async function queryOne<T = Record<string, unknown>>(
 export async function execute(
   text: string,
   params?: unknown[],
-): Promise<{ rowCount: number }> {
-  const result = await getPool().query(text, params);
-  return { rowCount: result.rowCount ?? 0 };
+): Promise<{ rowCount: number; lastInsertId?: number }> {
+  await ensureDatabaseBootstrapped();
+  return activeAdapter.execute(text, params);
 }
 
 export async function insert(
   text: string,
   params?: unknown[],
 ): Promise<number> {
-  // PostgreSQL에서 INSERT ... RETURNING id
-  const { rows } = await getPool().query(text, params);
-  return rows[0]?.id as number;
+  await ensureDatabaseBootstrapped();
+  const result = await activeAdapter.query<{ id?: number }>(text, params);
+  const id = result.rows[0]?.id;
+  if (typeof id !== "number") {
+    throw new Error("insert() expected a numeric id from the database result");
+  }
+  return id;
 }
 
-// 트랜잭션 헬퍼
-export async function withTransaction<T>(
-  fn: (client: PoolClient) => Promise<T>,
-): Promise<T> {
-  const client = await getPool().connect();
-  try {
-    await client.query("BEGIN");
-    const result = await fn(client);
-    await client.query("COMMIT");
-    return result;
-  } catch (e) {
-    await client.query("ROLLBACK");
-    throw e;
-  } finally {
-    client.release();
+export async function insertAndReturnId(
+  text: string,
+  params?: unknown[],
+  client?: DbTransactionClient,
+): Promise<number> {
+  await ensureDatabaseBootstrapped();
+  if (activeAdapter.dialect === "postgres") {
+    const result = client
+      ? await client.query<{ id?: number }>(`${text} RETURNING id`, params)
+      : await activeAdapter.query<{ id?: number }>(`${text} RETURNING id`, params);
+    const id = result.rows[0]?.id;
+    if (typeof id !== "number") {
+      throw new Error("insertAndReturnId() expected a numeric id from postgres");
+    }
+    return id;
   }
+
+  const result = client
+    ? await client.execute(text, params)
+    : await activeAdapter.execute(text, params);
+  if (typeof result.lastInsertId !== "number") {
+    throw new Error("insertAndReturnId() expected a numeric lastInsertId from sqlite");
+  }
+  return result.lastInsertId;
+}
+
+export async function withTransaction<T>(
+  fn: (client: DbTransactionClient) => Promise<T>,
+): Promise<T> {
+  await ensureDatabaseBootstrapped();
+  return activeAdapter.transaction(fn);
 }
 
 // ─── Types ───
@@ -82,7 +111,7 @@ export interface Instruction {
   agent_type: string;
   tags: string;
   priority: number;
-  is_active: number;
+  is_active: boolean;
   owner_id: number;
   folder_id: number;
   visibility_override: Visibility | null;
@@ -162,7 +191,7 @@ export interface WorkflowNode {
   title: string;
   instruction: string;
   loop_back_to: number | null;
-  auto_advance: number;
+  auto_advance: boolean;
   hitl: boolean;
   version_note: string | null;
   visual_selection: boolean;
@@ -308,6 +337,70 @@ export interface CredentialShare {
   created_at: string;
 }
 
+function normalizeInstruction(row: Record<string, unknown>): Instruction {
+  return {
+    ...(row as unknown as Instruction),
+    is_active: decodeBoolean(row.is_active),
+    created_at: decodeTimestamp(row.created_at) ?? new Date(0).toISOString(),
+    updated_at: decodeTimestamp(row.updated_at) ?? new Date(0).toISOString(),
+  };
+}
+
+function normalizeWorkflow(row: Record<string, unknown>): Workflow {
+  return {
+    ...(row as unknown as Workflow),
+    is_active: decodeBoolean(row.is_active),
+    created_at: decodeTimestamp(row.created_at) ?? new Date(0).toISOString(),
+    updated_at: decodeTimestamp(row.updated_at) ?? new Date(0).toISOString(),
+  };
+}
+
+function normalizeFolder(row: Record<string, unknown>): Folder {
+  return {
+    ...(row as unknown as Folder),
+    is_system: decodeBoolean(row.is_system),
+    created_at: decodeTimestamp(row.created_at) ?? new Date(0).toISOString(),
+    updated_at: decodeTimestamp(row.updated_at) ?? new Date(0).toISOString(),
+  };
+}
+
+function normalizeCredential(row: Record<string, unknown>): Credential {
+  return {
+    ...(row as unknown as Credential),
+    created_at: decodeTimestamp(row.created_at) ?? new Date(0).toISOString(),
+    updated_at: decodeTimestamp(row.updated_at) ?? new Date(0).toISOString(),
+  };
+}
+
+function normalizeWorkflowNode(row: Record<string, unknown>): WorkflowNode {
+  return {
+    ...(row as unknown as WorkflowNode),
+    auto_advance: decodeBoolean(row.auto_advance),
+    hitl: decodeBoolean(row.hitl),
+    visual_selection: decodeBoolean(row.visual_selection),
+    created_at: decodeTimestamp(row.created_at) ?? new Date(0).toISOString(),
+  };
+}
+
+export function normalizeResourceRow<T>(table: string, row: T): T {
+  if (!row || typeof row !== 'object') return row;
+  const record = row as Record<string, unknown>;
+  switch (table) {
+    case 'folders':
+      return normalizeFolder(record) as T;
+    case 'instructions':
+      return normalizeInstruction(record) as T;
+    case 'workflows':
+      return normalizeWorkflow(record) as T;
+    case 'credentials':
+      return normalizeCredential(record) as T;
+    case 'workflow_nodes':
+      return normalizeWorkflowNode(record) as T;
+    default:
+      return row;
+  }
+}
+
 export function maskSecrets(secretsJson: string): Record<string, string> {
   try {
     const parsed = JSON.parse(secretsJson) as Record<string, string>;
@@ -351,9 +444,13 @@ export async function resolveNodesSlim(
 export async function resolveNodes(
   workflowId: number,
 ): Promise<ResolvedWorkflowNode[]> {
-  const nodes = await query<WorkflowNode>(
+  const nodeRows = await query<Record<string, unknown>>(
     "SELECT * FROM workflow_nodes WHERE workflow_id = $1 ORDER BY step_order ASC",
     [workflowId],
+  );
+  const nodes = nodeRows.map(
+    (row) =>
+      normalizeResourceRow("workflow_nodes", row) as unknown as WorkflowNode,
   );
 
   const resolved: ResolvedWorkflowNode[] = [];

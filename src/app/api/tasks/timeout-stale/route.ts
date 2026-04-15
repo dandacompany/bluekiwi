@@ -28,12 +28,15 @@ export const POST = withAuth(
       return NextResponse.json(res.body, { status: res.status });
     }
 
+    const now = Date.now();
+    const cutoffIso = new Date(now - timeoutMinutes * 60 * 1000).toISOString();
+
     // updated_at 기준으로 비활성 running 태스크 조회
     const staleTasks = await query<{ id: number }>(
       `SELECT id FROM tasks
        WHERE status = 'running'
-         AND updated_at < NOW() - ($1 || ' minutes')::INTERVAL`,
-      [timeoutMinutes],
+         AND updated_at < $1`,
+      [cutoffIso],
     );
 
     if (staleTasks.length === 0) {
@@ -44,10 +47,11 @@ export const POST = withAuth(
     const ids = staleTasks.map((t) => t.id);
 
     // timed_out으로 일괄 전환
+    const placeholders = ids.map((_, index) => `$${index + 2}`).join(", ");
     await execute(
-      `UPDATE tasks SET status = 'timed_out', updated_at = NOW()
-       WHERE id = ANY($1::int[])`,
-      [ids],
+      `UPDATE tasks SET status = 'timed_out', updated_at = $1
+       WHERE id IN (${placeholders})`,
+      [new Date(now).toISOString(), ...ids],
     );
 
     // 각 태스크에 WS 알림 발송
@@ -71,6 +75,9 @@ export const GET = withAuth(
   async (request: NextRequest, _user) => {
     const { searchParams } = request.nextUrl;
     const timeoutMinutes = Number(searchParams.get("timeout_minutes") ?? 120);
+    const cutoffIso = new Date(
+      Date.now() - timeoutMinutes * 60 * 1000,
+    ).toISOString();
 
     const staleTasks = await query<{
       id: number;
@@ -82,9 +89,9 @@ export const GET = withAuth(
       `SELECT t.id, t.workflow_id, t.current_step, t.status, t.updated_at
        FROM tasks t
        WHERE t.status IN ('running', 'timed_out')
-         AND t.updated_at < NOW() - ($1 || ' minutes')::INTERVAL
+         AND t.updated_at < $1
        ORDER BY t.updated_at DESC`,
-      [timeoutMinutes],
+      [cutoffIso],
     );
 
     const res = okResponse(staleTasks);

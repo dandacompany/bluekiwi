@@ -1,26 +1,20 @@
 import { NextResponse } from "next/server";
-import {
-  query,
-  queryOne,
-  type Credential,
-  maskSecrets,
-  okResponse,
-  listResponse,
-  errorResponse,
-} from "@/lib/db";
+import { type Credential, maskSecrets, okResponse, listResponse, errorResponse } from "@/lib/db";
 import {
   buildCredentialVisibilityFilter,
   canEditFolder,
   loadFolder,
 } from "@/lib/authorization";
 import { withAuth } from "@/lib/with-auth";
+import {
+  createCredential,
+  findPersonalWorkspaceByOwnerId,
+  listCredentialsForVisibilityFilter,
+} from "@/lib/db/repositories/credentials";
 
 export const GET = withAuth("credentials:read", async (request, user) => {
   const filter = await buildCredentialVisibilityFilter("c", user, 1);
-  const rows = await query<Credential>(
-    `SELECT c.* FROM credentials c WHERE ${filter.sql} ORDER BY c.updated_at DESC`,
-    filter.params,
-  );
+  const rows = await listCredentialsForVisibilityFilter(filter.sql, filter.params);
   // Always mask secrets in list responses. Reveal is a separate endpoint.
   const masked = rows.map((c) => ({
     ...c,
@@ -60,18 +54,17 @@ export const POST = withAuth("credentials:write", async (request, user) => {
     }
     targetFolderId = f.id;
   } else {
-    const mw = await queryOne<{ id: number }>(
-      "SELECT id FROM folders WHERE owner_id = $1 AND is_system = true AND name = 'My Workspace' LIMIT 1",
-      [user.id],
-    );
-    targetFolderId = mw!.id;
+    const workspaceId = await findPersonalWorkspaceByOwnerId(user.id);
+    targetFolderId = workspaceId!;
   }
 
-  const row = await queryOne<Credential>(
-    `INSERT INTO credentials (service_name, description, secrets, owner_id, folder_id)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [service_name, description, secrets, user.id, targetFolderId],
-  );
+  const row = await createCredential({
+    serviceName: service_name,
+    description,
+    secrets,
+    ownerId: user.id,
+    folderId: targetFolderId,
+  });
   // Return masked in response
   const res = okResponse({
     ...row!,

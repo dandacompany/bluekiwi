@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { queryOne, type Workflow, okResponse, errorResponse } from "@/lib/db";
+import { execute, queryOne, type Workflow, okResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canEdit } from "@/lib/authorization";
 
@@ -33,9 +33,13 @@ export const POST = withAuth<Params>(
       const res = errorResponse("OWNERSHIP_REQUIRED", "권한 없음", 403);
       return NextResponse.json(res.body, { status: res.status });
     }
+    await execute(
+      "UPDATE workflows SET visibility_override = $1, updated_at = $2 WHERE id = $3",
+      [override, new Date().toISOString(), Number(id)],
+    );
     const updated = await queryOne<Workflow>(
-      "UPDATE workflows SET visibility_override = $1, updated_at = NOW() WHERE id = $2 RETURNING *",
-      [override, Number(id)],
+      "SELECT * FROM workflows WHERE id = $1",
+      [Number(id)],
     );
     const res = okResponse(updated);
     return NextResponse.json(res.body, { status: res.status });

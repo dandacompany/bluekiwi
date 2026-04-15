@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  queryOne,
-  execute,
-  Instruction,
-  okResponse,
-  errorResponse,
-} from "@/lib/db";
+import { Instruction, okResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canDelete, canEdit, canRead } from "@/lib/authorization";
 import { loadResourceOrFail, withResource } from "@/lib/api-helpers";
+import {
+  countInstructionNodeReferences,
+  deleteInstructionById,
+  updateInstructionById,
+} from "@/lib/db/repositories/instructions";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -49,25 +48,15 @@ export const PUT = withAuth<Params>(
           )
         : existing.tags;
 
-    await execute(
-      `UPDATE instructions
-     SET title = $1, content = $2, agent_type = $3, tags = $4, priority = $5, is_active = $6, updated_at = NOW()
-     WHERE id = $7`,
-      [
-        (title ?? existing.title).trim(),
-        (content ?? existing.content).trim(),
-        (agent_type ?? existing.agent_type).trim(),
-        newTags,
-        typeof priority === "number" ? priority : existing.priority,
-        is_active !== undefined ? (is_active ? 1 : 0) : existing.is_active,
-        Number(id),
-      ],
-    );
-
-    const updated = await queryOne<Instruction>(
-      "SELECT * FROM instructions WHERE id = $1",
-      [Number(id)],
-    );
+    const updated = await updateInstructionById({
+      id: Number(id),
+      title: (title ?? existing.title).trim(),
+      content: (content ?? existing.content).trim(),
+      agentType: (agent_type ?? existing.agent_type).trim(),
+      tagsJson: newTags,
+      priority: typeof priority === "number" ? priority : existing.priority,
+      isActive: is_active !== undefined ? (is_active ? 1 : 0) : existing.is_active ? 1 : 0,
+    });
 
     const res = okResponse(updated);
     return NextResponse.json(res.body, { status: res.status });
@@ -92,11 +81,7 @@ export const DELETE = withAuth<Params>(
     // Refuse delete if any workflow_nodes still reference this instruction.
     // The DB-level RESTRICT FK is the ultimate guard, but we front-load a
     // friendly count-aware error so the UI can show something meaningful.
-    const refs = await queryOne<{ c: string }>(
-      "SELECT COUNT(*)::text AS c FROM workflow_nodes WHERE instruction_id = $1",
-      [Number(id)],
-    );
-    const refCount = Number(refs?.c ?? 0);
+    const refCount = await countInstructionNodeReferences(Number(id));
     if (refCount > 0) {
       const res = errorResponse(
         "INSTRUCTION_IN_USE",
@@ -107,11 +92,9 @@ export const DELETE = withAuth<Params>(
       return NextResponse.json(res.body, { status: res.status });
     }
 
-    const result = await execute("DELETE FROM instructions WHERE id = $1", [
-      Number(id),
-    ]);
+    const deletedCount = await deleteInstructionById(Number(id));
 
-    if (result.rowCount === 0) {
+    if (deletedCount === 0) {
       const res = errorResponse("NOT_FOUND", "지침을 찾을 수 없습니다", 404);
       return NextResponse.json(res.body, { status: res.status });
     }
