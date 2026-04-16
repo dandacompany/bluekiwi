@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { okResponse, errorResponse } from "@/lib/db";
 import { requireAuth } from "@/lib/with-auth";
-import {
-  cancelTask,
-  findTaskById,
-  loadTaskWithWorkflow,
-} from "@/lib/db/repositories/tasks";
+import { cancelTask, loadTaskWithWorkflow } from "@/lib/db/repositories/tasks";
 import { canExecute } from "@/lib/authorization";
 import type { OwnedResource } from "@/lib/authorization";
 

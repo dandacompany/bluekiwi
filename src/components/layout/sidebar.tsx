@@ -63,6 +63,7 @@ export function Sidebar({ user, teamName }: SidebarProps) {
 
   useEffect(() => {
     const saved = window.localStorage.getItem("sidebar-collapsed");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (saved !== null) setCollapsed(JSON.parse(saved));
   }, []);
 
