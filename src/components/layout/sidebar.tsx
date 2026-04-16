@@ -11,6 +11,7 @@ import {
   FileText,
   BookOpen,
   FileCode,
+  Store,
   Settings,
   Globe,
   LogOut,
@@ -23,6 +24,7 @@ import {
   ArrowUpCircle,
 } from "lucide-react";
 
+const MARKETPLACE_URL = "https://bluekiwi.work";
 const GITHUB_URL = "https://github.com/dandacompany/bluekiwi";
 const LICENSE_URL =
   "https://github.com/dandacompany/bluekiwi/blob/main/LICENSE.md";
@@ -99,6 +101,12 @@ export function Sidebar({ user, teamName }: SidebarProps) {
     () => [
       { href: "/tutorial", icon: BookOpen, label: t("nav.tutorial") },
       { href: "/docs", icon: FileCode, label: t("nav.apiDocs") },
+      {
+        href: MARKETPLACE_URL,
+        icon: Store,
+        label: t("nav.marketplace"),
+        external: true,
+      },
     ],
     [t],
   );
@@ -182,7 +190,12 @@ export function Sidebar({ user, teamName }: SidebarProps) {
           {collapsed && <Separator className="my-2" />}
           <nav className="flex flex-col gap-0.5">
             {RESOURCE_ITEMS.map((item) => (
-              <SidebarItem key={item.href} {...item} collapsed={collapsed} />
+              <SidebarItem
+                key={item.href}
+                {...item}
+                collapsed={collapsed}
+                external={item.external}
+              />
             ))}
           </nav>
         </div>
@@ -345,19 +358,21 @@ export function Sidebar({ user, teamName }: SidebarProps) {
               <div>
                 <p className="font-medium">{t("nav.updateMethodCliTitle")}</p>
                 <pre className="mt-1 overflow-x-auto rounded-xl border border-border bg-muted/30 px-3 py-2 font-mono text-xs">
-bluekiwi upgrade
+                  bluekiwi upgrade
                 </pre>
               </div>
               <div>
                 <p className="font-medium">{t("nav.updateMethodNpmTitle")}</p>
                 <pre className="mt-1 overflow-x-auto rounded-xl border border-border bg-muted/30 px-3 py-2 font-mono text-xs">
-npm install -g bluekiwi@latest
+                  npm install -g bluekiwi@latest
                 </pre>
               </div>
               <div>
-                <p className="font-medium">{t("nav.updateMethodDockerTitle")}</p>
+                <p className="font-medium">
+                  {t("nav.updateMethodDockerTitle")}
+                </p>
                 <pre className="mt-1 overflow-x-auto rounded-xl border border-border bg-muted/30 px-3 py-2 font-mono text-xs">
-docker compose pull && docker compose up -d
+                  docker compose pull && docker compose up -d
                 </pre>
               </div>
             </div>

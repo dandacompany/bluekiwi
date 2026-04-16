@@ -17,6 +17,7 @@ interface SidebarItemProps {
   label: string;
   collapsed: boolean;
   badge?: number;
+  external?: boolean;
 }
 
 export function SidebarItem({
@@ -25,20 +26,21 @@ export function SidebarItem({
   label,
   collapsed,
   badge,
+  external,
 }: SidebarItemProps) {
   const pathname = usePathname();
-  const isActive = pathname === href || pathname.startsWith(href + "/");
+  const isActive =
+    !external && (pathname === href || pathname.startsWith(href + "/"));
 
-  const content = (
-    <Link
-      href={href}
-      className={cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
-        isActive
-          ? "bg-[var(--sidebar-accent)] text-[var(--sidebar-accent-foreground)] font-medium"
-          : "text-[var(--sidebar-foreground)]/70 hover:bg-[var(--sidebar-accent)]/50 hover:text-[var(--sidebar-foreground)]",
-      )}
-    >
+  const className = cn(
+    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+    isActive
+      ? "bg-[var(--sidebar-accent)] text-[var(--sidebar-accent-foreground)] font-medium"
+      : "text-[var(--sidebar-foreground)]/70 hover:bg-[var(--sidebar-accent)]/50 hover:text-[var(--sidebar-foreground)]",
+  );
+
+  const inner = (
+    <>
       <Icon className="h-4 w-4 shrink-0" />
       {!collapsed && (
         <>
@@ -53,6 +55,21 @@ export function SidebarItem({
           )}
         </>
       )}
+    </>
+  );
+
+  const content = external ? (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={className}
+    >
+      {inner}
+    </a>
+  ) : (
+    <Link href={href} className={className}>
+      {inner}
     </Link>
   );
 
