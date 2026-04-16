@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query, execute, okResponse, errorResponse } from "@/lib/db";
 import { requireAuth } from "@/lib/with-auth";
+import { notifyTaskUpdate } from "@/lib/notify-ws";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -131,6 +132,10 @@ export async function POST(request: NextRequest, { params }: Params) {
     Number(id),
     new Date().toISOString(),
   ]);
+
+  void notifyTaskUpdate(Number(id), "web_response", {
+    node_id: Number(node_id),
+  });
 
   const res = okResponse({
     task_id: Number(id),
