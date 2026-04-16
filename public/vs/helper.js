@@ -587,10 +587,19 @@
     if (!btn || btn.classList.contains("submitted")) return;
     var status = document.querySelector(".bk-vs-status");
     var validationError = getValidationError();
+    var hasRequiredFields = !!document.querySelector(
+      ".bk-input[data-required], .bk-textarea[data-required]",
+    );
     var hasInteractable = document.querySelector(
       ".bk-options, .bk-cards, .bk-checklist, .bk-code-compare, .bk-slider, .bk-ranking, .bk-matrix, .bk-mockup-gallery, .bk-mockup-item, .bk-textarea, .bk-input",
     );
-    btn.disabled = !(hasInteractable && hasInteracted) || !!validationError;
+    // Required fields present → validation error alone gates the button.
+    // No required fields → require at least one interaction before enabling.
+    if (hasRequiredFields) {
+      btn.disabled = !!validationError;
+    } else {
+      btn.disabled = !(hasInteractable && hasInteracted);
+    }
     if (status) status.textContent = validationError;
   }
 
