@@ -49,6 +49,8 @@ services:
     environment:
       DATABASE_URL: postgresql://bluekiwi:bluekiwi_dev_2026@db:5432/bluekiwi
       WS_RELAY_URL: http://ws-relay:3001
+      # Browser connects directly to ws-relay port (Next.js rewrites cannot proxy WebSocket)
+      NEXT_PUBLIC_WS_URL: http://localhost:3001
       TEAM_NAME: ${TEAM_NAME:-}
       NODE_ENV: development
       NEXT_TELEMETRY_DISABLED: "1"
