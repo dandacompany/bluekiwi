@@ -28,7 +28,15 @@ export const PUT = withAuth<Params>(
   async (request: NextRequest, user, { params }: Params) => {
     const { id } = await params;
     const body = await request.json();
-    const { title, content, agent_type, tags, priority, is_active } = body;
+    const {
+      title,
+      content,
+      agent_type,
+      tags,
+      priority,
+      is_active,
+      credential_id,
+    } = body;
 
     const { resource: existing, response: errResp } =
       await loadResourceOrFail<Instruction>({
@@ -63,6 +71,12 @@ export const PUT = withAuth<Params>(
           : existing.is_active
             ? 1
             : 0,
+      credentialId:
+        credential_id !== undefined
+          ? typeof credential_id === "number"
+            ? credential_id
+            : null
+          : existing.credential_id,
     });
 
     const res = okResponse(updated);

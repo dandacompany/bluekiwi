@@ -868,7 +868,9 @@
     "toggleEnable": "활성화",
     "updatedAt": "수정: {value}",
     "deleteConfirm": "정말 삭제하시겠습니까?",
-    "actionMenu": "지침 {title} 액션 메뉴"
+    "actionMenu": "지침 {title} 액션 메뉴",
+    "credentialPlaceholder": "크리덴셜 선택",
+    "noCredential": "크리덴셜 없음"
   },
   "commandPalette": {
     "search": "명령어 검색...",

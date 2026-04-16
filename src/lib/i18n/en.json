@@ -868,7 +868,9 @@
     "toggleEnable": "Enable",
     "updatedAt": "Updated: {value}",
     "deleteConfirm": "Delete this instruction?",
-    "actionMenu": "Instruction {title} action menu"
+    "actionMenu": "Instruction {title} action menu",
+    "credentialPlaceholder": "Select credential",
+    "noCredential": "No credential"
   },
   "commandPalette": {
     "search": "Search commands...",

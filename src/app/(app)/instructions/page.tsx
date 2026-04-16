@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -57,10 +57,16 @@ interface Instruction {
   tags: string;
   priority: number;
   is_active: number;
+  credential_id: number | null;
   owner_id?: number;
   visibility_override?: "personal" | null;
   created_at: string;
   updated_at: string;
+}
+
+interface CredentialOption {
+  id: number;
+  service_name: string;
 }
 
 const AGENT_TYPES = [
@@ -103,8 +109,10 @@ export default function InstructionsPage() {
     agent_type: "general",
     tags: [] as string[],
     priority: 0,
+    credential_id: null as number | null,
   });
   const [search, setSearch] = useState("");
+  const [credentials, setCredentials] = useState<CredentialOption[]>([]);
 
   const {
     data: instructions,
@@ -115,6 +123,17 @@ export default function InstructionsPage() {
     if (search) params.set("q", search);
     return `/api/instructions?${params}`;
   }, [search]);
+
+  // Fetch credentials for dropdown
+  useEffect(() => {
+    fetch("/api/credentials")
+      .then((r) => r.json())
+      .then((json) => {
+        const list = (json.data ?? []) as CredentialOption[];
+        setCredentials(list);
+      })
+      .catch(() => {});
+  }, []);
 
   const { deleteTarget, setDeleteTarget, handleDelete } =
     useDeleteHandler<Instruction>({
@@ -130,6 +149,7 @@ export default function InstructionsPage() {
       agent_type: "general",
       tags: [],
       priority: 0,
+      credential_id: null,
     });
     setEditing(null);
     setDraftTag("");
@@ -156,6 +176,7 @@ export default function InstructionsPage() {
       agent_type: form.agent_type,
       tags: form.tags,
       priority: form.priority,
+      credential_id: form.credential_id,
     };
 
     if (editing) {
@@ -185,6 +206,7 @@ export default function InstructionsPage() {
       agent_type: inst.agent_type,
       tags,
       priority: inst.priority,
+      credential_id: inst.credential_id,
     });
     setDraftTag("");
     setEditorOpen(true);
@@ -305,6 +327,36 @@ export default function InstructionsPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <Select
+                value={
+                  form.credential_id !== null
+                    ? String(form.credential_id)
+                    : "__none__"
+                }
+                onValueChange={(value) =>
+                  setForm({
+                    ...form,
+                    credential_id:
+                      value === "__none__" ? null : Number(value),
+                  })
+                }
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue
+                    placeholder={t("instructionsPage.credentialPlaceholder")}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">
+                    {t("instructionsPage.noCredential")}
+                  </SelectItem>
+                  {credentials.map((c) => (
+                    <SelectItem key={c.id} value={String(c.id)}>
+                      {c.service_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <BlocknoteEditor
                 key={editorKey}
                 initialContent={form.content}

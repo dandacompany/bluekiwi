@@ -121,6 +121,7 @@ export interface Instruction {
   is_active: boolean;
   owner_id: number;
   folder_id: number;
+  credential_id: number | null;
   visibility_override: Visibility | null;
   created_at: string;
   updated_at: string;

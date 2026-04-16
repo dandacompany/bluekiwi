@@ -29,7 +29,7 @@ export const POST = withAuth(
   "workflows:create",
   async (request: NextRequest, user) => {
     const body = await request.json();
-    const { title, content, agent_type, tags, priority } = body;
+    const { title, content, agent_type, tags, priority, credential_id } = body;
 
     if (!title || typeof title !== "string" || !title.trim()) {
       const res = errorResponse("VALIDATION_ERROR", "title is required", 400);
@@ -78,6 +78,7 @@ export const POST = withAuth(
       priority: typeof priority === "number" ? priority : 0,
       ownerId: user.id,
       folderId: targetFolderId,
+      credentialId: typeof credential_id === "number" ? credential_id : null,
     });
 
     const res = okResponse(created, 201);

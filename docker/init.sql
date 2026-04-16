@@ -91,6 +91,7 @@ CREATE TABLE IF NOT EXISTS instructions (
   is_active           INTEGER NOT NULL DEFAULT 1,
   owner_id            INTEGER REFERENCES users(id) ON DELETE RESTRICT,
   folder_id           INTEGER REFERENCES folders(id) ON DELETE RESTRICT,
+  credential_id       INTEGER,
   visibility_override TEXT
     CHECK (visibility_override IN ('personal','group','public')),
   created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -109,6 +110,11 @@ CREATE TABLE IF NOT EXISTS credentials (
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- FK: instructions.credential_id → credentials (deferred because credentials defined after instructions)
+ALTER TABLE instructions ADD CONSTRAINT instructions_credential_id_fkey
+  FOREIGN KEY (credential_id) REFERENCES credentials(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_instructions_credential ON instructions(credential_id);
 
 -- ─── Workflows ────────────────────────────────────────────────
 

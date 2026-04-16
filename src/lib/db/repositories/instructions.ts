@@ -56,10 +56,11 @@ export async function createInstruction(input: {
   priority: number;
   ownerId: number;
   folderId: number;
+  credentialId?: number | null;
 }): Promise<Instruction | null> {
   const id = await insertAndReturnId(
-    `INSERT INTO instructions (title, content, agent_type, tags, priority, owner_id, folder_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    `INSERT INTO instructions (title, content, agent_type, tags, priority, owner_id, folder_id, credential_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
     [
       input.title,
       input.content,
@@ -68,6 +69,7 @@ export async function createInstruction(input: {
       input.priority,
       input.ownerId,
       input.folderId,
+      input.credentialId ?? null,
     ],
   );
   return findInstructionById(id);
@@ -91,11 +93,12 @@ export async function updateInstructionById(input: {
   tagsJson: string;
   priority: number;
   isActive: number;
+  credentialId?: number | null;
 }): Promise<Instruction | null> {
   await execute(
     `UPDATE instructions
-     SET title = $1, content = $2, agent_type = $3, tags = $4, priority = $5, is_active = $6, updated_at = $7
-     WHERE id = $8`,
+     SET title = $1, content = $2, agent_type = $3, tags = $4, priority = $5, is_active = $6, updated_at = $7, credential_id = $8
+     WHERE id = $9`,
     [
       input.title,
       input.content,
@@ -104,6 +107,7 @@ export async function updateInstructionById(input: {
       input.priority,
       input.isActive,
       new Date().toISOString(),
+      input.credentialId ?? null,
       input.id,
     ],
   );
