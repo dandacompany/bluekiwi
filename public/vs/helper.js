@@ -132,9 +132,9 @@
       textarea.name = container.dataset.name || "";
       textarea.placeholder = container.dataset.placeholder || "";
       textarea.rows = Number(container.dataset.rows || 4);
-      textarea.maxLength = container.dataset.maxlength
-        ? Number(container.dataset.maxlength)
-        : -1;
+      if (container.dataset.maxlength) {
+        textarea.maxLength = Number(container.dataset.maxlength);
+      }
       mountField(container, textarea);
     });
 
@@ -145,9 +145,9 @@
       input.name = container.dataset.name || "";
       input.type = container.dataset.type || "text";
       input.placeholder = container.dataset.placeholder || "";
-      input.maxLength = container.dataset.maxlength
-        ? Number(container.dataset.maxlength)
-        : -1;
+      if (container.dataset.maxlength) {
+        input.maxLength = Number(container.dataset.maxlength);
+      }
       mountField(container, input);
     });
   }
