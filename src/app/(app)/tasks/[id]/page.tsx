@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useWs } from "@/lib/use-ws";
@@ -202,19 +202,35 @@ export default function TaskDetailPage() {
   });
   const [comments, setComments] = useState<StepComment[]>([]);
   const [autoOpenVs, setAutoOpenVs] = useState(initialVsParam === "true");
+  // 이전 current_step 기억 — WS 업데이트 시 "사용자가 활성 스텝을 보고 있었는지" 판정용
+  const prevCurrentStepRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    prevCurrentStepRef.current = task?.current_step ?? null;
+  }, [task?.current_step]);
 
   const fetchTask = useCallback(async () => {
     const res = await fetch(`/api/tasks/${taskId}`);
     if (res.ok) {
       const json = await res.json();
-      setTask(json.data);
-      // Auto-select current_step on first load
-      if (selectedStep === null && json.data) {
-        setSelectedStep(json.data.current_step);
+      const newTask = json.data as TaskDetail | null;
+      const prevActive = prevCurrentStepRef.current;
+      setTask(newTask);
+      if (newTask) {
+        setSelectedStep((currentSelected) => {
+          // 최초 로드 — 활성 스텝 선택
+          if (currentSelected === null) return newTask.current_step;
+          // 활성 스텝을 보고 있었다면 새 활성 스텝으로 이동 (WS 실시간 추적)
+          if (prevActive !== null && currentSelected === prevActive) {
+            return newTask.current_step;
+          }
+          // 사용자가 다른 스텝을 수동 선택했으면 유지
+          return currentSelected;
+        });
       }
     }
     setLoading(false);
-  }, [taskId, selectedStep]);
+  }, [taskId]);
 
   const fetchComments = useCallback(async () => {
     const res = await fetch(`/api/tasks/${taskId}/comments`);
