@@ -327,6 +327,19 @@ export async function completeTaskIfNoNextNode(taskId: number): Promise<void> {
   void notifyTaskUpdate(taskId, "task_completed");
 }
 
+export async function cancelTask(taskId: number): Promise<Task | null> {
+  await execute(
+    "UPDATE tasks SET status = 'cancelled', updated_at = $2 WHERE id = $1",
+    [taskId, new Date().toISOString()],
+  );
+  await execute(
+    "UPDATE task_logs SET status = 'cancelled' WHERE task_id = $1 AND status IN ('running', 'pending')",
+    [taskId],
+  );
+  void notifyTaskUpdate(taskId, "task_cancelled");
+  return findTaskById(taskId);
+}
+
 export async function advanceTaskToStep(input: {
   taskId: number;
   nextNode: WorkflowNode;

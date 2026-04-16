@@ -400,6 +400,25 @@ When a loop node uses `visual_selection: true`, each iteration presents a VS scr
 
 Use the history to adapt subsequent VS screens - for example, pre-selecting the user's previous choice, adjusting slider defaults based on past values, carrying forward `fields.change_request` into the next revision prompt, or skipping already-confirmed items.
 
+## Remote Cancellation (웹 UI에서 중지된 경우)
+
+<HARD-RULE>
+If any of the following signals indicate the task was cancelled externally (from the web UI):
+
+- `advance(peek=true)` returns `status: "cancelled"`
+- `heartbeat(...)` returns `cancelled: true`
+
+You MUST immediately stop all execution, make no further MCP calls, and notify the user:
+
+```
+⚠️ 태스크가 웹 UI에서 중지되었습니다.
+Task #{id} — Step {N}에서 사용자에 의해 중단되었습니다.
+다시 시작하려면 /bk-start를 실행하세요.
+```
+
+Do NOT call `complete_task`, `execute_step`, or `advance` after receiving a cancellation signal.
+</HARD-RULE>
+
 ## Graceful Interruption (중단 처리)
 
 <HARD-RULE>

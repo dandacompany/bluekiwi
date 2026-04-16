@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { queryOne, execute, okResponse, errorResponse } from "@/lib/db";
 import { requireAuth } from "@/lib/with-auth";
+import { findTaskById } from "@/lib/db/repositories/tasks";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -33,6 +34,17 @@ export async function POST(request: NextRequest, { params }: Params) {
       updated,
       log.id,
     ]);
+  }
+
+  const task = await findTaskById(taskId);
+  if (task?.status === "cancelled") {
+    const res = okResponse({
+      success: true,
+      task_id: taskId,
+      node_id,
+      cancelled: true,
+    });
+    return NextResponse.json(res.body, { status: res.status });
   }
 
   await execute("UPDATE tasks SET updated_at = $2 WHERE id = $1", [

@@ -310,6 +310,11 @@ export default function TaskDetailPage() {
     fetchTask();
   };
 
+  const handleCancel = async () => {
+    await fetch(`/api/tasks/${taskId}/cancel`, { method: "POST" });
+    fetchTask();
+  };
+
   const handleAddComment = async (body: string) => {
     if (!task) return;
     const stepOrder = selectedStep ?? task.current_step;
@@ -374,6 +379,7 @@ export default function TaskDetailPage() {
         selectedStep={selectedStep ?? task.current_step}
         onSelectStep={setSelectedStep}
         onRewind={task.status === "running" ? handleRewind : undefined}
+        onCancel={task.status === "running" ? handleCancel : undefined}
       />
 
       {/* Right: Step detail */}
