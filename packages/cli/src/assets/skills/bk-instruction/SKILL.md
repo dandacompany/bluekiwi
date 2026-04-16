@@ -19,9 +19,7 @@ Create, update, and delete agent instruction templates. Optionally link credenti
 An instruction is an **execution directive** that a workflow node delivers to the agent at runtime.
 
 - Well-written instructions control agent behavior precisely.
-- **Credential binding happens at the workflow node level**, not at the instruction level.
-  To reference a credential in an instruction, include the service name in the `content` text.
-  Then link the `credential_id` to the node when designing the workflow in `/bk-design` or `/bk-improve`.
+- Instructions can optionally bind a **default credential** via `credential_id`. When a workflow node references this instruction, the credential is available automatically at runtime.
 
 ## Execution Steps
 
@@ -114,7 +112,7 @@ Write the directive in concrete terms. Specify:
 - which items must appear in rankings, checklists, or matrix plots
 - the user's language for all visible text
 
-**Credential linking (natural language)**:
+**Credential binding**:
 
 Ask: "Does this instruction use an external service?" via AskUserQuestion:
 
@@ -131,16 +129,10 @@ If "Yes":
 Matched credentials for "GitHub":
   → ID 2: github (GitHub PAT)
 
-Add this credential reference to the instruction content?
+Bind this credential to the instruction?
 ```
 
-If matched: append the following block to the content automatically:
-
-```
-## Required Credentials
-- service: github (credential_id: 2)
-  purpose: GitHub API authentication
-```
+If matched: set `credential_id` in the `create_instruction` call (see below).
 
 If no match: "Could not find a matching credential. Register it first with `/bk-credential add`."
 
@@ -157,6 +149,7 @@ Call `create_instruction`:
   "agent_type": "<agent type>",
   "tags": ["tag1", "tag2"],
   "priority": 0,
+  "credential_id": <credential id or omit>,
   "folder_id": <folder id>
 }
 ```
@@ -166,6 +159,7 @@ On success:
 ```
 ✅ Instruction registered
 Title: <title> (ID: <id>)
+Credential: <service_name> (ID: <credential_id>) — or "없음"
 
 To use this instruction in a workflow node, set instruction_id: <id>
 when designing nodes with `/bk-design`.
@@ -179,7 +173,9 @@ Call `list_instructions` → select target via AskUserQuestion.
 
 Ask what to change (AskUserQuestion):
 
-- options: ["Change title", "Edit content", "Change agent type", "Activate/Deactivate", "Cancel"]
+- options: ["Change title", "Edit content", "Change agent type", "Change credential", "Activate/Deactivate", "Cancel"]
+
+If "Change credential": call `list_credentials`, show options, then call `update_instruction` with `credential_id` (or `null` to unbind).
 
 Call `update_instruction` with only the changed fields.
 
