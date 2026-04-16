@@ -336,8 +336,7 @@ export default function InstructionsPage() {
                 onValueChange={(value) =>
                   setForm({
                     ...form,
-                    credential_id:
-                      value === "__none__" ? null : Number(value),
+                    credential_id: value === "__none__" ? null : Number(value),
                   })
                 }
               >
