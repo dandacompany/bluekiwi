@@ -16,11 +16,13 @@
   },
   "files": [
     "dist",
+    "scripts",
     "README.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/bundle-assets.mjs",
-    "dev": "tsc -p tsconfig.json --watch"
+    "dev": "tsc -p tsconfig.json --watch",
+    "postinstall": "node scripts/rebuild-native.mjs"
   },
   "dependencies": {
     "commander": "^12.0.0",
