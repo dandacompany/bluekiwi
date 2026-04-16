@@ -54,6 +54,7 @@ export function TopBar() {
               id: number;
               workflow_id: number;
               workflow_title: string | null;
+              title: string | null;
               context: string;
             }
           | undefined;
@@ -68,7 +69,10 @@ export function TopBar() {
               href: `/workflows/${task.workflow_id}`,
             },
             {
-              label: task.context?.trim() || `Task #${task.id}`,
+              label:
+                task.title?.trim() ||
+                task.context?.trim() ||
+                `Task #${task.id}`,
             },
           ],
           actionHref: "/tasks",
@@ -169,21 +173,25 @@ export function TopBar() {
 
   return (
     <header className="flex h-12 items-center justify-between border-b border-[var(--border)] bg-[var(--background)] px-4">
-      <nav className="flex items-center gap-1 text-sm">
+      <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden text-sm">
         {breadcrumbs.map((crumb, i) => (
-          <span key={i} className="flex items-center gap-1">
+          <span key={i} className="flex min-w-0 shrink items-center gap-1">
             {i > 0 && (
-              <ChevronRight className="h-3.5 w-3.5 text-[var(--muted-foreground)]/40" />
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[var(--muted-foreground)]/40" />
             )}
             {crumb.href ? (
               <Link
                 href={crumb.href}
-                className="text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
+                className="max-w-[12rem] truncate text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
+                title={crumb.label}
               >
                 {crumb.label}
               </Link>
             ) : (
-              <span className="font-medium text-[var(--foreground)]">
+              <span
+                className="max-w-[24rem] truncate font-medium text-[var(--foreground)]"
+                title={crumb.label}
+              >
                 {crumb.label}
               </span>
             )}
