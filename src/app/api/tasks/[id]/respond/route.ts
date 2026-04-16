@@ -112,8 +112,9 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 
   // 해당 태스크의 해당 노드 로그에 web_response 저장
+  // visual_selection 스텝은 completed 상태에서도 응답 가능 (에이전트가 먼저 completed로 표시한 경우)
   const result = await execute(
-    "UPDATE task_logs SET web_response = $1 WHERE task_id = $2 AND node_id = $3 AND status IN ('pending', 'running', 'success')",
+    "UPDATE task_logs SET web_response = $1 WHERE task_id = $2 AND node_id = $3 AND status IN ('pending', 'running', 'completed')",
     [
       JSON.stringify(normalizeIncomingResponse(response)),
       Number(id),

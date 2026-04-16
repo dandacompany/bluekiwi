@@ -381,9 +381,12 @@ function VisualSelector({
   const [open, setOpen] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  // completed 상태에서도 web_response가 없으면 선택 허용 (에이전트가 먼저 completed로 표시한 경우)
   const canSelect =
     isVisualSelection &&
-    (logStatus === "pending" || logStatus === "running") &&
+    (logStatus === "pending" ||
+      logStatus === "running" ||
+      logStatus === "completed") &&
     !submitted;
 
   const dialogSize = useMemo(() => parseDialogSize(html), [html]);
