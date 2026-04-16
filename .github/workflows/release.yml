@@ -27,6 +27,26 @@ jobs:
           fi
           echo "version=$TAG" >> "$GITHUB_OUTPUT"
 
+  build-cli-artifact:
+    needs: verify-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - name: Build app bundle for CLI runtime
+        run: npm run build
+      - name: Build CLI package bundle
+        run: npm --workspace packages/cli run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli-dist-${{ needs.verify-version.outputs.version }}
+          path: packages/cli/dist
+          if-no-files-found: error
+
   docker-publish:
     needs: verify-version
     runs-on: ubuntu-latest
@@ -60,7 +80,7 @@ jobs:
           cache-to: type=gha,mode=min
 
   npm-publish:
-    needs: verify-version
+    needs: [verify-version, build-cli-artifact]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -68,14 +88,10 @@ jobs:
         with:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
-      - run: npm ci
-      - name: Build MCP
-        run: |
-          cd mcp
-          npm ci
-          npm run build
-      - name: Build CLI
-        run: npm run build:cli
+      - uses: actions/download-artifact@v5
+        with:
+          name: cli-dist-${{ needs.verify-version.outputs.version }}
+          path: packages/cli/dist
       - name: Sync CLI version
         env:
           RELEASE_VERSION: ${{ needs.verify-version.outputs.version }}

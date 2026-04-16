@@ -22,7 +22,7 @@ jobs:
           npm ci
           npm run build
       - name: Build CLI
-        run: npm run build:cli
+        run: npm --workspace packages/cli run build
       - name: Run MCP unit tests
         run: cd mcp && npx vitest run tests/api-client.test.ts
       - name: Run root unit tests
