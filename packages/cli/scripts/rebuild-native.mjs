@@ -24,12 +24,14 @@ const sqliteDir = join(
 );
 
 if (!existsSync(sqliteDir)) {
-  // No app-runtime bundled (e.g. MCP-only install) — nothing to do
   process.exit(0);
 }
 
-// Ensure build/Release directory exists
 mkdirSync(join(sqliteDir, "build", "Release"), { recursive: true });
+
+const isWin = process.platform === "win32";
+// On Windows, execFileSync cannot resolve .cmd extensions without shell
+const execOpts = { cwd: sqliteDir, stdio: "inherit", shell: isWin };
 
 console.log(
   `[bluekiwi] Installing better-sqlite3 for ${process.platform}-${process.arch}...`,
@@ -37,18 +39,15 @@ console.log(
 
 try {
   execFileSync("npx", ["-y", "prebuild-install"], {
-    cwd: sqliteDir,
-    stdio: "inherit",
+    ...execOpts,
     timeout: 60_000,
   });
   console.log("[bluekiwi] better-sqlite3 native binary ready.");
 } catch {
-  // prebuild-install failed — try node-gyp as fallback
   try {
     console.log("[bluekiwi] Prebuilt not available, compiling from source...");
     execFileSync("npx", ["-y", "node-gyp", "rebuild", "--release"], {
-      cwd: sqliteDir,
-      stdio: "inherit",
+      ...execOpts,
       timeout: 120_000,
     });
     console.log("[bluekiwi] better-sqlite3 compiled successfully.");
@@ -59,6 +58,5 @@ try {
     console.warn("  'bluekiwi start' (local SQLite mode) will not work.");
     console.warn("  Docker mode is unaffected.");
     console.warn(`  Error: ${e.message ?? e}`);
-    // Don't fail the install — CLI commands other than `start` still work
   }
 }
