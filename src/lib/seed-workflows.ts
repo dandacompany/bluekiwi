@@ -2,7 +2,7 @@
  * Seed built-in workflows on first setup.
  *
  * Reads JSON files from docker/seed-workflows/ and inserts them
- * as workflows owned by the given user in the given folder.
+ * as workflows owned by the given user in the [Example] sub-folder.
  * Idempotent — skips if a workflow with the same title already exists.
  */
 
@@ -32,6 +32,12 @@ export async function seedBuiltinWorkflows(
   ownerId: number,
   folderId: number,
 ): Promise<number> {
+  const INCLUDED_SEED_FILES = new Set([
+    "content-pipeline.json",
+    "superpowers-brainstorm-to-ship.json",
+    "gstack-sprint-pipeline.json",
+  ]);
+
   // Resolve seed directory — works both in dev (project root) and production (standalone)
   const candidates = [
     path.resolve(process.cwd(), "docker/seed-workflows"),
@@ -42,38 +48,25 @@ export async function seedBuiltinWorkflows(
 
   const files = fs
     .readdirSync(seedDir)
-    .filter((f) => f.endsWith(".json"))
+    .filter((f) => f.endsWith(".json") && INCLUDED_SEED_FILES.has(f))
     .sort();
 
-  // Resolve or create category sub-folders under the parent folder
-  const categoryFolderIds = new Map<string, number>();
-
-  async function resolveFolderId(category?: string): Promise<number> {
-    if (!category) return folderId;
-
-    const cached = categoryFolderIds.get(category);
-    if (cached) return cached;
-
-    // Re-use existing sub-folder if present
-    const existing = await queryOne<{ id: number }>(
-      `SELECT id FROM folders WHERE name = $1 AND parent_id = $2 AND owner_id = $3 LIMIT 1`,
-      [category, folderId, ownerId],
-    );
-    if (existing) {
-      categoryFolderIds.set(category, existing.id);
-      return existing.id;
-    }
-
-    // Create sub-folder
-    const createdFolderId = await insertAndReturnId(
+  const exampleFolder = await queryOne<{ id: number }>(
+    `SELECT id FROM folders WHERE name = $1 AND parent_id = $2 AND owner_id = $3 LIMIT 1`,
+    ["[Example]", folderId, ownerId],
+  );
+  const exampleFolderId =
+    exampleFolder?.id ??
+    (await insertAndReturnId(
       `INSERT INTO folders (name, description, owner_id, parent_id, visibility)
-       VALUES ($1, '', $2, $3, 'inherit')
-      `,
-      [category, ownerId, folderId],
-    );
-    categoryFolderIds.set(category, createdFolderId);
-    return createdFolderId;
-  }
+       VALUES ($1, $2, $3, $4, 'inherit')`,
+      [
+        "[Example]",
+        "Example workflows seeded during first-time setup.",
+        ownerId,
+        folderId,
+      ],
+    ));
 
   let seeded = 0;
 
@@ -88,13 +81,11 @@ export async function seedBuiltinWorkflows(
     );
     if (existing) continue;
 
-    const targetFolderId = await resolveFolderId(wf.category);
-
     // Insert workflow
     const workflowId = await insertAndReturnId(
       `INSERT INTO workflows (title, description, version, owner_id, folder_id, is_active)
        VALUES ($1, $2, $3, $4, $5, true)`,
-      [wf.title, wf.description, wf.version, ownerId, targetFolderId],
+      [wf.title, wf.description, wf.version, ownerId, exampleFolderId],
     );
 
     // Set family_root_id to self
