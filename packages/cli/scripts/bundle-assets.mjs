@@ -38,6 +38,20 @@ if (existsSync(join(standaloneDist, "server.js"))) {
   if (existsSync(publicDir)) {
     cpSync(publicDir, join(appRuntimeDist, "public"), { recursive: true });
   }
+
+  // Remove platform-specific native binaries — postinstall downloads the correct one
+  const sqliteBuild = join(
+    appRuntimeDist,
+    "node_modules",
+    "better-sqlite3",
+    "build",
+  );
+  if (existsSync(sqliteBuild)) {
+    rmSync(sqliteBuild, { recursive: true, force: true });
+    console.log(
+      "  Stripped better-sqlite3 native binary (postinstall will rebuild)",
+    );
+  }
 }
 
 console.log("Assets bundled → dist/assets");

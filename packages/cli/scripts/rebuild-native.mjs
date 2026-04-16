@@ -1,15 +1,14 @@
 /**
  * rebuild-native.mjs
- * Runs after `npm install -g bluekiwi` to rebuild better-sqlite3
- * for the user's current platform (macOS/Linux/Windows).
+ * Runs after `npm install -g bluekiwi` to download the correct
+ * better-sqlite3 prebuilt binary for the user's platform.
  *
- * The npm tarball ships Next.js standalone which includes better-sqlite3
- * JS files but the .node binary may be missing or for the wrong platform.
- * This script downloads the correct prebuilt binary via prebuild-install,
- * falling back to node-gyp if no prebuilt is available.
+ * The npm tarball intentionally excludes the .node binary
+ * (stripped by bundle-assets.mjs) so every platform gets
+ * the right one via prebuild-install at install time.
  */
 import { execFileSync } from "child_process";
-import { existsSync } from "fs";
+import { existsSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -29,45 +28,35 @@ if (!existsSync(sqliteDir)) {
   process.exit(0);
 }
 
-const binaryPath = join(sqliteDir, "build", "Release", "better_sqlite3.node");
+// Ensure build/Release directory exists
+mkdirSync(join(sqliteDir, "build", "Release"), { recursive: true });
 
-// Check if a valid binary already exists for this platform
-if (existsSync(binaryPath)) {
-  try {
-    // Quick sanity: try to dlopen it
-    process.dlopen({ exports: {} }, binaryPath);
-    // Binary loads fine — skip rebuild
-    process.exit(0);
-  } catch {
-    // Binary exists but wrong platform — rebuild
-  }
-}
-
-console.log("[bluekiwi] Rebuilding better-sqlite3 for your platform...");
+console.log(
+  `[bluekiwi] Installing better-sqlite3 for ${process.platform}-${process.arch}...`,
+);
 
 try {
   execFileSync("npx", ["-y", "prebuild-install"], {
     cwd: sqliteDir,
-    stdio: "pipe",
+    stdio: "inherit",
     timeout: 60_000,
   });
-  console.log("[bluekiwi] better-sqlite3 native binary installed.");
+  console.log("[bluekiwi] better-sqlite3 native binary ready.");
 } catch {
   // prebuild-install failed — try node-gyp as fallback
   try {
-    execFileSync("npx", ["node-gyp", "rebuild", "--release"], {
+    console.log("[bluekiwi] Prebuilt not available, compiling from source...");
+    execFileSync("npx", ["-y", "node-gyp", "rebuild", "--release"], {
       cwd: sqliteDir,
-      stdio: "pipe",
+      stdio: "inherit",
       timeout: 120_000,
     });
-    console.log("[bluekiwi] better-sqlite3 built from source.");
+    console.log("[bluekiwi] better-sqlite3 compiled successfully.");
   } catch (e) {
     console.warn(
       "[bluekiwi] Warning: Could not build better-sqlite3 native module.",
     );
-    console.warn(
-      "  The 'bluekiwi start' command (local SQLite mode) may not work.",
-    );
+    console.warn("  'bluekiwi start' (local SQLite mode) will not work.");
     console.warn("  Docker mode is unaffected.");
     console.warn(`  Error: ${e.message ?? e}`);
     // Don't fail the install — CLI commands other than `start` still work
