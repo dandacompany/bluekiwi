@@ -1,6 +1,6 @@
 {
   "name": "blue-kiwi",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "workspaces": [
     "packages/*"
