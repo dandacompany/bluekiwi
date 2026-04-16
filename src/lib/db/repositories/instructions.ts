@@ -2,7 +2,10 @@ import { decodeTimestamp } from "../value-codecs";
 import { execute, insertAndReturnId, query, queryOne } from "@/lib/db";
 import type { Instruction } from "@/lib/db";
 
-interface InstructionRow extends Omit<Instruction, "created_at" | "updated_at"> {
+interface InstructionRow extends Omit<
+  Instruction,
+  "created_at" | "updated_at"
+> {
   created_at: string | Date;
   updated_at: string | Date;
 }
@@ -70,7 +73,9 @@ export async function createInstruction(input: {
   return findInstructionById(id);
 }
 
-export async function findInstructionById(id: number): Promise<Instruction | null> {
+export async function findInstructionById(
+  id: number,
+): Promise<Instruction | null> {
   const row = await queryOne<InstructionRow>(
     "SELECT * FROM instructions WHERE id = $1",
     [id],
@@ -105,7 +110,9 @@ export async function updateInstructionById(input: {
   return findInstructionById(input.id);
 }
 
-export async function countInstructionNodeReferences(id: number): Promise<number> {
+export async function countInstructionNodeReferences(
+  id: number,
+): Promise<number> {
   const row = await queryOne<{ c: string | number }>(
     "SELECT COUNT(*) AS c FROM workflow_nodes WHERE instruction_id = $1",
     [id],

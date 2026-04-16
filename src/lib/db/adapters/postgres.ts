@@ -56,13 +56,17 @@ export const postgresAdapter: DbAdapter = {
   async execute(text: string, params?: unknown[]): Promise<DbMutationResult> {
     return executeWithClient(getPostgresPool(), text, params);
   },
-  async transaction<T>(fn: (client: DbTransactionClient) => Promise<T>): Promise<T> {
+  async transaction<T>(
+    fn: (client: DbTransactionClient) => Promise<T>,
+  ): Promise<T> {
     const client = await getPostgresPool().connect();
     try {
       await client.query("BEGIN");
       const txClient: DbTransactionClient = {
-        query: <R = Record<string, unknown>>(text: string, params?: unknown[]) =>
-          queryWithClient<R>(client, text, params),
+        query: <R = Record<string, unknown>>(
+          text: string,
+          params?: unknown[],
+        ) => queryWithClient<R>(client, text, params),
         execute: (text: string, params?: unknown[]) =>
           executeWithClient(client, text, params),
       };

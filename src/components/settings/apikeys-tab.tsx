@@ -112,7 +112,7 @@ export function ApiKeysTab() {
         const origin =
           typeof window !== "undefined"
             ? window.location.origin
-            : process.env.NEXT_PUBLIC_APP_URL ?? "";
+            : (process.env.NEXT_PUBLIC_APP_URL ?? "");
         setCliInitCommand(
           `npm i -g bluekiwi && bluekiwi init --server ${origin} --api-key ${rawKey}`,
         );

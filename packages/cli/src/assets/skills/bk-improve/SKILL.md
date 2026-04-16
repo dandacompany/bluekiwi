@@ -126,7 +126,7 @@ Before any structural edit session:
 - Do not rely on a stale node snapshot captured before other edits or user actions.
 - After every `append_node` or `insert_node`, inspect the returned `node_verification`.
 - If `node_verification.mismatch === true`, STOP immediately and do not continue applying edits from the current plan.
-</HARD-RULE>
+  </HARD-RULE>
 
 After all changes, report:
 

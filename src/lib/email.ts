@@ -32,7 +32,9 @@ const EMAIL_KEYS: (keyof EmailConfig)[] = [
 /** Load email config from DB, fall back to env vars */
 export async function loadEmailConfig(): Promise<EmailConfig> {
   try {
-    const placeholders = EMAIL_KEYS.map((_, index) => `$${index + 1}`).join(", ");
+    const placeholders = EMAIL_KEYS.map((_, index) => `$${index + 1}`).join(
+      ", ",
+    );
     const rows = await query<{ key: string; value: string }>(
       `SELECT key, value FROM system_settings WHERE key IN (${placeholders})`,
       EMAIL_KEYS.map((k) => `email.${k}`),

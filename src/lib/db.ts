@@ -78,10 +78,15 @@ export async function insertAndReturnId(
   if (activeAdapter.dialect === "postgres") {
     const result = client
       ? await client.query<{ id?: number }>(`${text} RETURNING id`, params)
-      : await activeAdapter.query<{ id?: number }>(`${text} RETURNING id`, params);
+      : await activeAdapter.query<{ id?: number }>(
+          `${text} RETURNING id`,
+          params,
+        );
     const id = result.rows[0]?.id;
     if (typeof id !== "number") {
-      throw new Error("insertAndReturnId() expected a numeric id from postgres");
+      throw new Error(
+        "insertAndReturnId() expected a numeric id from postgres",
+      );
     }
     return id;
   }
@@ -90,7 +95,9 @@ export async function insertAndReturnId(
     ? await client.execute(text, params)
     : await activeAdapter.execute(text, params);
   if (typeof result.lastInsertId !== "number") {
-    throw new Error("insertAndReturnId() expected a numeric lastInsertId from sqlite");
+    throw new Error(
+      "insertAndReturnId() expected a numeric lastInsertId from sqlite",
+    );
   }
   return result.lastInsertId;
 }
@@ -383,18 +390,18 @@ function normalizeWorkflowNode(row: Record<string, unknown>): WorkflowNode {
 }
 
 export function normalizeResourceRow<T>(table: string, row: T): T {
-  if (!row || typeof row !== 'object') return row;
+  if (!row || typeof row !== "object") return row;
   const record = row as Record<string, unknown>;
   switch (table) {
-    case 'folders':
+    case "folders":
       return normalizeFolder(record) as T;
-    case 'instructions':
+    case "instructions":
       return normalizeInstruction(record) as T;
-    case 'workflows':
+    case "workflows":
       return normalizeWorkflow(record) as T;
-    case 'credentials':
+    case "credentials":
       return normalizeCredential(record) as T;
-    case 'workflow_nodes':
+    case "workflow_nodes":
       return normalizeWorkflowNode(record) as T;
     default:
       return row;

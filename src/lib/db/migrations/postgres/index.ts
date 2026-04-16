@@ -24,7 +24,9 @@ export async function runPostgresMigrations(options: {
     const appliedSet = new Set(applied.map((row) => row.filename));
 
     if (!fs.existsSync(migrationsDir)) {
-      console.log("[migrate] No postgres migrations directory found, skipping.");
+      console.log(
+        "[migrate] No postgres migrations directory found, skipping.",
+      );
       return;
     }
 
@@ -60,7 +62,9 @@ export async function runPostgresMigrations(options: {
     }
 
     if (count === 0) {
-      console.log(`[migrate] postgres up to date (${files.length} migrations tracked)`);
+      console.log(
+        `[migrate] postgres up to date (${files.length} migrations tracked)`,
+      );
     } else {
       console.log(`[migrate] applied ${count} postgres migration(s)`);
     }

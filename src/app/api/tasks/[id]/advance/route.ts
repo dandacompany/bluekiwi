@@ -41,11 +41,14 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   // Peek mode
   if (peek) {
-    const currentNode = await findWorkflowNodeByStep(task.workflow_id, task.current_step);
+    const currentNode = await findWorkflowNodeByStep(
+      task.workflow_id,
+      task.current_step,
+    );
 
     let currentLog: TaskLog | undefined;
     if (currentNode) {
-      currentLog = await findTaskPeekLog(taskId, currentNode.id) ?? undefined;
+      currentLog = (await findTaskPeekLog(taskId, currentNode.id)) ?? undefined;
     }
 
     const comments = await listTaskComments(taskId, task.current_step);
@@ -56,7 +59,9 @@ export async function POST(request: NextRequest, { params }: Params) {
       total_steps: totalSteps,
       status: task.status,
       context: task.context,
-      node: currentNode ? await resolveTaskNodeResponse(currentNode, user) : null,
+      node: currentNode
+        ? await resolveTaskNodeResponse(currentNode, user)
+        : null,
       log_status: currentLog?.status ?? null,
       web_response: currentLog?.web_response ?? null,
       comments: comments.length > 0 ? comments : null,
@@ -65,7 +70,10 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 
   // Advance mode: check current step is completed
-  const currentNode = await findWorkflowNodeByStep(task.workflow_id, task.current_step);
+  const currentNode = await findWorkflowNodeByStep(
+    task.workflow_id,
+    task.current_step,
+  );
 
   if (currentNode) {
     const currentLog = await findLatestTaskLogForNode(taskId, currentNode.id);

@@ -6,7 +6,10 @@ import {
   canManageFolderShares,
   loadFolder,
 } from "@/lib/authorization";
-import { listFolderShares, upsertFolderShare } from "@/lib/db/repositories/folders";
+import {
+  listFolderShares,
+  upsertFolderShare,
+} from "@/lib/db/repositories/folders";
 
 type Params = { params: Promise<{ id: string }> };
 

@@ -995,10 +995,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             ? ((created as { data?: { nodes?: unknown[] } }).data?.nodes ?? [])
                 .length
             : 0;
-          const verified = await client.request<{ data?: { nodes?: unknown[] } }>(
-            "GET",
-            `/api/workflows/${createdId}`,
-          );
+          const verified = await client.request<{
+            data?: { nodes?: unknown[] };
+          }>("GET", `/api/workflows/${createdId}`);
           const verifiedCount = Array.isArray(verified?.data?.nodes)
             ? verified.data!.nodes!.length
             : 0;
@@ -1492,11 +1491,15 @@ async function fetchWorkflowNodeSnapshot(
   const workflow = await client.request<{
     data?: { nodes?: Array<Record<string, unknown>> };
   }>("GET", `/api/workflows/${workflowId}`);
-  const nodes = Array.isArray(workflow?.data?.nodes) ? workflow.data!.nodes! : [];
+  const nodes = Array.isArray(workflow?.data?.nodes)
+    ? workflow.data!.nodes!
+    : [];
   return nodes.map((node) => ({
     id: Number(node["id"]),
     step_order:
-      typeof node["step_order"] === "number" ? (node["step_order"] as number) : null,
+      typeof node["step_order"] === "number"
+        ? (node["step_order"] as number)
+        : null,
     title: typeof node["title"] === "string" ? (node["title"] as string) : null,
     node_type:
       typeof node["node_type"] === "string"

@@ -6,7 +6,10 @@ import {
   canEditFolder,
   loadFolder,
 } from "@/lib/authorization";
-import { createFolder, listFoldersForVisibilityFilter } from "@/lib/db/repositories/folders";
+import {
+  createFolder,
+  listFoldersForVisibilityFilter,
+} from "@/lib/db/repositories/folders";
 
 export const GET = withAuth("workflows:read", async (request, user) => {
   const parentId = new URL(request.url).searchParams.get("parent_id");
@@ -17,7 +20,11 @@ export const GET = withAuth("workflows:read", async (request, user) => {
     filter.sql,
     filter.params,
     user.id,
-    parentId === null ? undefined : parentId === "null" ? null : Number(parentId),
+    parentId === null
+      ? undefined
+      : parentId === "null"
+        ? null
+        : Number(parentId),
   );
   const res = listResponse(folders, folders.length);
   return NextResponse.json(res.body, { status: res.status });

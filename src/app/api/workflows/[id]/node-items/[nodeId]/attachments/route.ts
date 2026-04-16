@@ -140,7 +140,13 @@ export const POST = withAuth<Params>(
           `INSERT INTO node_attachments
             (node_id, filename, mime_type, size_bytes, content)
            VALUES ($1, $2, $3, $4, $5)`,
-          [resolvedNodeId, file.name, mimeType, file.size, buffer.toString("utf-8")],
+          [
+            resolvedNodeId,
+            file.name,
+            mimeType,
+            file.size,
+            buffer.toString("utf-8"),
+          ],
         )
       : await insertAndReturnId(
           `INSERT INTO node_attachments

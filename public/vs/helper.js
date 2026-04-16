@@ -189,7 +189,8 @@
   function bindOptionComments() {
     document.querySelectorAll(COMMENTABLE_SELECTOR).forEach(function (item) {
       var needsComment =
-        item.hasAttribute("data-requires-comment") || !!item.dataset.commentName;
+        item.hasAttribute("data-requires-comment") ||
+        !!item.dataset.commentName;
       if (!needsComment || item.querySelector(".bk-option-comment")) return;
 
       var wrapper = document.createElement("div");
@@ -232,7 +233,8 @@
       var comment = item.querySelector(".bk-option-comment");
       if (!comment) return;
       var selected =
-        item.classList.contains("selected") || item.classList.contains("checked");
+        item.classList.contains("selected") ||
+        item.classList.contains("checked");
       comment.hidden = !selected;
     });
   }
@@ -271,7 +273,8 @@
 
     document.querySelectorAll(COMMENTABLE_SELECTOR).forEach(function (item) {
       var selected =
-        item.classList.contains("selected") || item.classList.contains("checked");
+        item.classList.contains("selected") ||
+        item.classList.contains("checked");
       if (!selected) return;
       var commentWrap = item.querySelector(".bk-option-comment");
       if (!commentWrap) return;
@@ -303,7 +306,8 @@
     var requiredCommentMissing = false;
     document.querySelectorAll(COMMENTABLE_SELECTOR).forEach(function (item) {
       var selected =
-        item.classList.contains("selected") || item.classList.contains("checked");
+        item.classList.contains("selected") ||
+        item.classList.contains("checked");
       if (!selected || !item.hasAttribute("data-requires-comment")) return;
       var commentWrap = item.querySelector(".bk-option-comment");
       if (!commentWrap || !readControlValue(commentWrap)) {

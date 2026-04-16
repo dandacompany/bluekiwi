@@ -3,7 +3,11 @@ import { Workflow, listResponse, okResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canEdit, canRead } from "@/lib/authorization";
 import { loadResourceOrFail } from "@/lib/api-helpers";
-import { createNodeAttachment, listNodeAttachments, nodeBelongsToWorkflow } from "@/lib/db/repositories/workflow-nodes";
+import {
+  createNodeAttachment,
+  listNodeAttachments,
+  nodeBelongsToWorkflow,
+} from "@/lib/db/repositories/workflow-nodes";
 
 type Params = { params: Promise<{ id: string; node_id: string }> };
 

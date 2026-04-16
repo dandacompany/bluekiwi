@@ -25,7 +25,9 @@ export async function loadResourceOrFail<T>(
     `SELECT * FROM ${opts.table} WHERE id = $1`,
     [Number(opts.id)],
   );
-  const resource = rawResource ? normalizeResourceRow<T>(opts.table, rawResource) : undefined;
+  const resource = rawResource
+    ? normalizeResourceRow<T>(opts.table, rawResource)
+    : undefined;
   if (!resource) {
     const res = errorResponse(
       opts.notFoundCode ?? "NOT_FOUND",

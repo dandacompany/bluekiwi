@@ -55,7 +55,9 @@ export async function POST(request: NextRequest) {
     token: string;
     expires_at: string;
     created_at: string;
-  }>("SELECT id, token, expires_at, created_at FROM invites WHERE id = $1", [inviteId]);
+  }>("SELECT id, token, expires_at, created_at FROM invites WHERE id = $1", [
+    inviteId,
+  ]);
 
   const publicUrl = resolveOrigin(request);
   const inviteUrl = buildInviteUrl(publicUrl, token);

@@ -13,56 +13,53 @@ import { notifyTaskUpdate } from "@/lib/notify-ws";
  * bk-start 스킬이 워크플로 실행 전 이 엔드포인트를 호출하여
  * 좀비 태스크를 정리하고, 재개 여부를 사용자에게 물을 수 있다.
  */
-export const POST = withAuth(
-  "tasks:execute",
-  async (request: NextRequest) => {
-    const body = await request.json().catch(() => ({}));
-    const timeoutMinutes = Number(body.timeout_minutes ?? 120);
+export const POST = withAuth("tasks:execute", async (request: NextRequest) => {
+  const body = await request.json().catch(() => ({}));
+  const timeoutMinutes = Number(body.timeout_minutes ?? 120);
 
-    if (isNaN(timeoutMinutes) || timeoutMinutes < 1) {
-      const res = errorResponse(
-        "VALIDATION_ERROR",
-        "timeout_minutes must be a positive number",
-        400,
-      );
-      return NextResponse.json(res.body, { status: res.status });
-    }
+  if (isNaN(timeoutMinutes) || timeoutMinutes < 1) {
+    const res = errorResponse(
+      "VALIDATION_ERROR",
+      "timeout_minutes must be a positive number",
+      400,
+    );
+    return NextResponse.json(res.body, { status: res.status });
+  }
 
-    const now = Date.now();
-    const cutoffIso = new Date(now - timeoutMinutes * 60 * 1000).toISOString();
+  const now = Date.now();
+  const cutoffIso = new Date(now - timeoutMinutes * 60 * 1000).toISOString();
 
-    // updated_at 기준으로 비활성 running 태스크 조회
-    const staleTasks = await query<{ id: number }>(
-      `SELECT id FROM tasks
+  // updated_at 기준으로 비활성 running 태스크 조회
+  const staleTasks = await query<{ id: number }>(
+    `SELECT id FROM tasks
        WHERE status = 'running'
          AND updated_at < $1`,
-      [cutoffIso],
-    );
+    [cutoffIso],
+  );
 
-    if (staleTasks.length === 0) {
-      const res = okResponse({ timed_out_count: 0, task_ids: [] });
-      return NextResponse.json(res.body, { status: res.status });
-    }
-
-    const ids = staleTasks.map((t) => t.id);
-
-    // timed_out으로 일괄 전환
-    const placeholders = ids.map((_, index) => `$${index + 2}`).join(", ");
-    await execute(
-      `UPDATE tasks SET status = 'timed_out', updated_at = $1
-       WHERE id IN (${placeholders})`,
-      [new Date(now).toISOString(), ...ids],
-    );
-
-    // 각 태스크에 WS 알림 발송
-    for (const id of ids) {
-      void notifyTaskUpdate(id, "task_timed_out");
-    }
-
-    const res = okResponse({ timed_out_count: ids.length, task_ids: ids });
+  if (staleTasks.length === 0) {
+    const res = okResponse({ timed_out_count: 0, task_ids: [] });
     return NextResponse.json(res.body, { status: res.status });
-  },
-);
+  }
+
+  const ids = staleTasks.map((t) => t.id);
+
+  // timed_out으로 일괄 전환
+  const placeholders = ids.map((_, index) => `$${index + 2}`).join(", ");
+  await execute(
+    `UPDATE tasks SET status = 'timed_out', updated_at = $1
+       WHERE id IN (${placeholders})`,
+    [new Date(now).toISOString(), ...ids],
+  );
+
+  // 각 태스크에 WS 알림 발송
+  for (const id of ids) {
+    void notifyTaskUpdate(id, "task_timed_out");
+  }
+
+  const res = okResponse({ timed_out_count: ids.length, task_ids: ids });
+  return NextResponse.json(res.body, { status: res.status });
+});
 
 /**
  * GET /api/tasks/timeout-stale
@@ -70,31 +67,28 @@ export const POST = withAuth(
  * 현재 비활성(running) 태스크 목록을 반환한다. (dry-run 조회)
  * bk-start 스킬이 사용자에게 재개 여부를 묻기 전 조회에 사용.
  */
-export const GET = withAuth(
-  "tasks:read",
-  async (request: NextRequest) => {
-    const { searchParams } = request.nextUrl;
-    const timeoutMinutes = Number(searchParams.get("timeout_minutes") ?? 120);
-    const cutoffIso = new Date(
-      Date.now() - timeoutMinutes * 60 * 1000,
-    ).toISOString();
+export const GET = withAuth("tasks:read", async (request: NextRequest) => {
+  const { searchParams } = request.nextUrl;
+  const timeoutMinutes = Number(searchParams.get("timeout_minutes") ?? 120);
+  const cutoffIso = new Date(
+    Date.now() - timeoutMinutes * 60 * 1000,
+  ).toISOString();
 
-    const staleTasks = await query<{
-      id: number;
-      workflow_id: number;
-      current_step: number;
-      status: string;
-      updated_at: string;
-    }>(
-      `SELECT t.id, t.workflow_id, t.current_step, t.status, t.updated_at
+  const staleTasks = await query<{
+    id: number;
+    workflow_id: number;
+    current_step: number;
+    status: string;
+    updated_at: string;
+  }>(
+    `SELECT t.id, t.workflow_id, t.current_step, t.status, t.updated_at
        FROM tasks t
        WHERE t.status IN ('running', 'timed_out')
          AND t.updated_at < $1
        ORDER BY t.updated_at DESC`,
-      [cutoffIso],
-    );
+    [cutoffIso],
+  );
 
-    const res = okResponse(staleTasks);
-    return NextResponse.json(res.body, { status: res.status });
-  },
-);
+  const res = okResponse(staleTasks);
+  return NextResponse.json(res.body, { status: res.status });
+});

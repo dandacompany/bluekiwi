@@ -15,11 +15,10 @@ export class WorkflowNodeDeletionBlockedError extends Error {
   }
 }
 
-interface WorkflowNodeRow
-  extends Omit<
-    WorkflowNode,
-    "hitl" | "visual_selection" | "created_at" | "credential_requirement_parsed"
-  > {
+interface WorkflowNodeRow extends Omit<
+  WorkflowNode,
+  "hitl" | "visual_selection" | "created_at" | "credential_requirement_parsed"
+> {
   hitl: boolean | number | string;
   visual_selection: boolean | number | string;
   created_at: string | Date;
@@ -138,7 +137,9 @@ export async function createWorkflowNode(input: {
         autoAdvance,
         input.node.credential_id ?? null,
         input.node.hitl ?? false,
-        resolvedNodeType === "gate" ? (input.node.visual_selection ?? false) : false,
+        resolvedNodeType === "gate"
+          ? (input.node.visual_selection ?? false)
+          : false,
         jsonTextParam(input.node.credential_requirement),
       ],
       client,
@@ -220,7 +221,9 @@ export async function deleteWorkflowNode(input: {
   }
 
   await withTransaction(async (client) => {
-    await client.query("DELETE FROM workflow_nodes WHERE id = $1", [input.nodeId]);
+    await client.query("DELETE FROM workflow_nodes WHERE id = $1", [
+      input.nodeId,
+    ]);
     await client.query(
       "UPDATE workflow_nodes SET step_order = step_order - 1 WHERE workflow_id = $1 AND step_order > $2",
       [input.workflowId, existing.step_order],
@@ -241,7 +244,9 @@ export async function nodeBelongsToWorkflow(
   return Boolean(row);
 }
 
-export async function listNodeAttachments(nodeId: number): Promise<NodeAttachmentRow[]> {
+export async function listNodeAttachments(
+  nodeId: number,
+): Promise<NodeAttachmentRow[]> {
   const rows = await query<NodeAttachmentRow>(
     `SELECT id, filename, mime_type, size_bytes, created_at
        FROM node_attachments
@@ -265,7 +270,13 @@ export async function createNodeAttachment(input: {
       `INSERT INTO node_attachments
         (node_id, filename, mime_type, size_bytes, content)
        VALUES ($1, $2, $3, $4, $5)`,
-      [input.nodeId, input.filename, input.mimeType, input.sizeBytes, input.textContent],
+      [
+        input.nodeId,
+        input.filename,
+        input.mimeType,
+        input.sizeBytes,
+        input.textContent,
+      ],
     );
   }
 
@@ -273,6 +284,12 @@ export async function createNodeAttachment(input: {
     `INSERT INTO node_attachments
       (node_id, filename, mime_type, size_bytes, content_binary)
      VALUES ($1, $2, $3, $4, $5)`,
-    [input.nodeId, input.filename, input.mimeType, input.sizeBytes, input.binaryContent ?? null],
+    [
+      input.nodeId,
+      input.filename,
+      input.mimeType,
+      input.sizeBytes,
+      input.binaryContent ?? null,
+    ],
   );
 }

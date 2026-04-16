@@ -18,12 +18,16 @@ export async function statusCommand(profileName?: string): Promise<void> {
     console.log(`${pc.bold("Local SQLite:")}  ${local.record.sqlitePath}`);
     console.log(`${pc.bold("Local data dir:")} ${local.record.dataDir}`);
     if (local.stale) {
-      console.log(`${pc.bold("Local record:")}  ${pc.yellow("stale pid cleaned up")}`);
+      console.log(
+        `${pc.bold("Local record:")}  ${pc.yellow("stale pid cleaned up")}`,
+      );
     } else {
       console.log(
         `${pc.bold("Local health:")}  ${
           local.healthy
-            ? pc.green(`ok${local.healthStatus ? ` (${local.healthStatus})` : ""}`)
+            ? pc.green(
+                `ok${local.healthStatus ? ` (${local.healthStatus})` : ""}`,
+              )
             : pc.red(
                 local.healthStatus
                   ? `unhealthy (${local.healthStatus})`

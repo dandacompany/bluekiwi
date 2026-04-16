@@ -108,11 +108,15 @@ export const sqliteAdapter: DbAdapter = {
   async execute(text: string, params?: unknown[]): Promise<DbMutationResult> {
     return runMutation(ensureDb(), text, params);
   },
-  async transaction<T>(fn: (client: DbTransactionClient) => Promise<T>): Promise<T> {
+  async transaction<T>(
+    fn: (client: DbTransactionClient) => Promise<T>,
+  ): Promise<T> {
     const database = ensureDb();
     const txClient: DbTransactionClient = {
-      query: async <R = Record<string, unknown>>(text: string, params?: unknown[]) =>
-        runQuery<R>(database, text, params),
+      query: async <R = Record<string, unknown>>(
+        text: string,
+        params?: unknown[],
+      ) => runQuery<R>(database, text, params),
       execute: async (text: string, params?: unknown[]) =>
         runMutation(database, text, params),
     };

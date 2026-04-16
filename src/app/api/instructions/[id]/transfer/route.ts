@@ -3,7 +3,10 @@ import { okResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canTransferOwnership } from "@/lib/authorization";
 import { findActiveUserById } from "@/lib/db/repositories/auth";
-import { findInstructionById, transferInstructionOwnership } from "@/lib/db/repositories/instructions";
+import {
+  findInstructionById,
+  transferInstructionOwnership,
+} from "@/lib/db/repositories/instructions";
 
 type Params = { params: Promise<{ id: string }> };
 

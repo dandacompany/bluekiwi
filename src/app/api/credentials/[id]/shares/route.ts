@@ -5,7 +5,11 @@ import {
   canListCredential,
   canManageCredentialShares,
 } from "@/lib/authorization";
-import { findCredentialById, listCredentialShares, upsertCredentialShare } from "@/lib/db/repositories/credentials";
+import {
+  findCredentialById,
+  listCredentialShares,
+  upsertCredentialShare,
+} from "@/lib/db/repositories/credentials";
 
 type Params = { params: Promise<{ id: string }> };
 

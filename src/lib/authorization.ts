@@ -338,7 +338,9 @@ export async function buildResourceVisibilityFilter(
   let groupClause = "FALSE";
   let directWorkflowGroupClause = "FALSE";
   if (groups.length > 0) {
-    const groupPlaceholders = groups.map((_, index) => `$${p + index}`).join(", ");
+    const groupPlaceholders = groups
+      .map((_, index) => `$${p + index}`)
+      .join(", ");
     params.push(...groups);
     p += groups.length;
 
@@ -411,7 +413,9 @@ export async function buildFolderVisibilityFilter(
   let groupClause = "FALSE";
   let inheritGroupClause = "FALSE";
   if (groups.length > 0) {
-    const groupPlaceholders = groups.map((_, index) => `$${p + index}`).join(", ");
+    const groupPlaceholders = groups
+      .map((_, index) => `$${p + index}`)
+      .join(", ");
     params.push(...groups);
     groupClause = `(
       ${tableAlias}.visibility = 'group' AND EXISTS (
@@ -460,7 +464,9 @@ export async function buildCredentialVisibilityFilter(
 
   let groupClause = "FALSE";
   if (groups.length > 0) {
-    const groupPlaceholders = groups.map((_, index) => `$${p + index}`).join(", ");
+    const groupPlaceholders = groups
+      .map((_, index) => `$${p + index}`)
+      .join(", ");
     params.push(...groups);
     groupClause = `EXISTS (
       SELECT 1 FROM credential_shares cs

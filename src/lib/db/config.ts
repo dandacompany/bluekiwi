@@ -10,10 +10,15 @@ export interface DatabaseConfig {
 
 const DEFAULT_POSTGRES_URL =
   "postgresql://bluekiwi:bluekiwi_dev_2026@localhost:5433/bluekiwi";
-const DEFAULT_SQLITE_PATH = path.resolve(process.cwd(), ".data/bluekiwi.sqlite");
+const DEFAULT_SQLITE_PATH = path.resolve(
+  process.cwd(),
+  ".data/bluekiwi.sqlite",
+);
 
 export function getDatabaseConfig(): DatabaseConfig {
-  const type = (process.env.DB_TYPE?.toLowerCase() as DatabaseType | undefined) ?? "postgres";
+  const type =
+    (process.env.DB_TYPE?.toLowerCase() as DatabaseType | undefined) ??
+    "postgres";
 
   if (type === "sqlite") {
     return {

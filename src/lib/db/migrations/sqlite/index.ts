@@ -59,7 +59,9 @@ export async function runSqliteMigrations(options: {
     }
 
     if (count === 0) {
-      console.log(`[migrate] sqlite up to date (${files.length} migrations tracked)`);
+      console.log(
+        `[migrate] sqlite up to date (${files.length} migrations tracked)`,
+      );
     } else {
       console.log(`[migrate] applied ${count} sqlite migration(s)`);
     }

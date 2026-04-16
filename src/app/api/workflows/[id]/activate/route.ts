@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { okResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canEdit } from "@/lib/authorization";
-import { activateWorkflowVersion, findWorkflowById } from "@/lib/db/repositories/workflows";
+import {
+  activateWorkflowVersion,
+  findWorkflowById,
+} from "@/lib/db/repositories/workflows";
 
 type Params = { params: Promise<{ id: string }> };
 

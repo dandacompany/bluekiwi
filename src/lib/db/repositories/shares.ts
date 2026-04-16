@@ -1,6 +1,9 @@
 import { query } from "@/lib/db";
 
-function buildInClause(startIndex: number, values: number[]): {
+function buildInClause(
+  startIndex: number,
+  values: number[],
+): {
   clause: string;
   params: number[];
 } {

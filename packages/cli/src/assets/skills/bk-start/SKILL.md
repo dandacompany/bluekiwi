@@ -305,7 +305,9 @@ but agent-authored content must match the user's locale.
        "ranking": ["security", "ux"],
        "comment": "Keep this direction but tighten rollout scope",
        "fields": { "change_request": "Add a rollback plan" },
-       "option_comments": { "monolith": "Prefer this if we can phase deployment" }
+       "option_comments": {
+         "monolith": "Prefer this if we can phase deployment"
+       }
      }
      ```
 
@@ -385,7 +387,11 @@ When a loop node uses `visual_selection: true`, each iteration presents a VS scr
     },
     {
       "iteration": 2,
-      "web_response": { "selections": ["b"], "values": { "confidence": 80 }, "fields": { "change_request": "Need more detail on error handling" } },
+      "web_response": {
+        "selections": ["b"],
+        "values": { "confidence": 80 },
+        "fields": { "change_request": "Need more detail on error handling" }
+      },
       "created_at": "..."
     }
   ]

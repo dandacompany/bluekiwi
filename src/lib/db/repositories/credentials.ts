@@ -7,8 +7,7 @@ interface CredentialRow extends Omit<Credential, "created_at" | "updated_at"> {
   updated_at: string | Date;
 }
 
-interface CredentialShareRow
-  extends Omit<CredentialShare, "created_at"> {
+interface CredentialShareRow extends Omit<CredentialShare, "created_at"> {
   created_at: string | Date;
 }
 
@@ -69,7 +68,9 @@ export async function createCredential(input: {
   return findCredentialById(id);
 }
 
-export async function findCredentialById(id: number): Promise<Credential | null> {
+export async function findCredentialById(
+  id: number,
+): Promise<Credential | null> {
   const row = await queryOne<CredentialRow>(
     "SELECT * FROM credentials WHERE id = $1",
     [id],
@@ -104,7 +105,9 @@ export async function updateCredentialById(input: {
   return findCredentialById(input.id);
 }
 
-export async function countCredentialNodeReferences(id: number): Promise<number> {
+export async function countCredentialNodeReferences(
+  id: number,
+): Promise<number> {
   const row = await queryOne<{ c: string | number }>(
     "SELECT COUNT(*) AS c FROM workflow_nodes WHERE credential_id = $1",
     [id],
@@ -130,7 +133,7 @@ export async function transferCredentialOwnership(input: {
 export async function listCredentialShares(
   credentialId: number,
 ): Promise<Array<CredentialShare & { group_name: string }>> {
-  const rows = await query<(CredentialShareRow & { group_name: string })>(
+  const rows = await query<CredentialShareRow & { group_name: string }>(
     `SELECT cs.*, ug.name AS group_name
        FROM credential_shares cs
        JOIN user_groups ug ON ug.id = cs.group_id

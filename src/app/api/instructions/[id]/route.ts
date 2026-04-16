@@ -55,7 +55,14 @@ export const PUT = withAuth<Params>(
       agentType: (agent_type ?? existing.agent_type).trim(),
       tagsJson: newTags,
       priority: typeof priority === "number" ? priority : existing.priority,
-      isActive: is_active !== undefined ? (is_active ? 1 : 0) : existing.is_active ? 1 : 0,
+      isActive:
+        is_active !== undefined
+          ? is_active
+            ? 1
+            : 0
+          : existing.is_active
+            ? 1
+            : 0,
     });
 
     const res = okResponse(updated);

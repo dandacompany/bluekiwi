@@ -3,7 +3,7 @@ import {
   query,
   queryOne,
   execute,
-      insertAndReturnId,
+  insertAndReturnId,
   Workflow,
   normalizeResourceRow,
   WorkflowNode,
@@ -64,7 +64,9 @@ export const POST = withAuth(
         "SELECT * FROM workflows WHERE id = $1",
         [Number(workflow_id)],
       );
-      const requested = requestedRaw ? normalizeResourceRow<Workflow>("workflows", requestedRaw) : undefined;
+      const requested = requestedRaw
+        ? normalizeResourceRow<Workflow>("workflows", requestedRaw)
+        : undefined;
       if (!requested) {
         const res = errorResponse(
           "NOT_FOUND",
@@ -77,7 +79,9 @@ export const POST = withAuth(
         "SELECT * FROM workflows WHERE family_root_id = $1 AND version = $2",
         [requested.family_root_id, version],
       );
-      workflow = matched ? normalizeResourceRow<Workflow>("workflows", matched) : undefined;
+      workflow = matched
+        ? normalizeResourceRow<Workflow>("workflows", matched)
+        : undefined;
       if (!workflow) {
         const res = errorResponse(
           "NOT_FOUND",
@@ -91,7 +95,9 @@ export const POST = withAuth(
         "SELECT * FROM workflows WHERE id = $1",
         [Number(workflow_id)],
       );
-      workflow = matched ? normalizeResourceRow<Workflow>("workflows", matched) : undefined;
+      workflow = matched
+        ? normalizeResourceRow<Workflow>("workflows", matched)
+        : undefined;
       if (!workflow) {
         const res = errorResponse(
           "NOT_FOUND",
@@ -195,7 +201,9 @@ export const POST = withAuth(
       "SELECT * FROM workflow_nodes WHERE workflow_id = $1 ORDER BY step_order ASC LIMIT 1",
       [workflow.id],
     );
-    const firstNode = firstNodeRaw ? normalizeResourceRow<WorkflowNode>("workflow_nodes", firstNodeRaw) : undefined;
+    const firstNode = firstNodeRaw
+      ? normalizeResourceRow<WorkflowNode>("workflow_nodes", firstNodeRaw)
+      : undefined;
     if (!firstNode) {
       const res = errorResponse(
         "VALIDATION_ERROR",

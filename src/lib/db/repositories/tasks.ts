@@ -6,25 +6,27 @@ import type { User } from "@/lib/auth";
 import { canUseCredential } from "@/lib/authorization";
 import { notifyTaskUpdate } from "@/lib/notify-ws";
 
-interface TaskRow extends Omit<Task, "feedback_data" | "target_meta" | "created_at" | "updated_at"> {
+interface TaskRow extends Omit<
+  Task,
+  "feedback_data" | "target_meta" | "created_at" | "updated_at"
+> {
   feedback_data: string | Array<{ question: string; answer: string }> | null;
   target_meta: string | Record<string, unknown> | null;
   created_at: string | Date;
   updated_at: string | Date;
 }
 
-interface TaskLogRow
-  extends Omit<
-    TaskLog,
-    | "visual_selection"
-    | "structured_output"
-    | "created_at"
-    | "updated_at"
-    | "started_at"
-    | "completed_at"
-    | "approval_requested_at"
-    | "approved_at"
-  > {
+interface TaskLogRow extends Omit<
+  TaskLog,
+  | "visual_selection"
+  | "structured_output"
+  | "created_at"
+  | "updated_at"
+  | "started_at"
+  | "completed_at"
+  | "approval_requested_at"
+  | "approved_at"
+> {
   visual_selection: boolean | number | string | null;
   structured_output: string | null;
   started_at: string | Date;
@@ -33,13 +35,19 @@ interface TaskLogRow
   approved_at: string | Date | null;
 }
 
-interface WorkflowRow extends Omit<Workflow, "is_active" | "created_at" | "updated_at"> {
+interface WorkflowRow extends Omit<
+  Workflow,
+  "is_active" | "created_at" | "updated_at"
+> {
   is_active: boolean | number | string;
   created_at: string | Date;
   updated_at: string | Date;
 }
 
-interface WorkflowNodeRow extends Omit<WorkflowNode, "hitl" | "visual_selection" | "created_at"> {
+interface WorkflowNodeRow extends Omit<
+  WorkflowNode,
+  "hitl" | "visual_selection" | "created_at"
+> {
   hitl: boolean | number | string;
   visual_selection: boolean | number | string;
   created_at: string | Date;
@@ -50,7 +58,9 @@ function normalizeTask(row: TaskRow): Task {
     ...row,
     feedback_data:
       typeof row.feedback_data === "string"
-        ? decodeJson<Array<{ question: string; answer: string }>>(row.feedback_data)
+        ? decodeJson<Array<{ question: string; answer: string }>>(
+            row.feedback_data,
+          )
         : row.feedback_data,
     target_meta:
       typeof row.target_meta === "string"
@@ -93,11 +103,15 @@ function normalizeWorkflowNode(row: WorkflowNodeRow): WorkflowNode {
 }
 
 export async function findTaskById(taskId: number): Promise<Task | null> {
-  const row = await queryOne<TaskRow>("SELECT * FROM tasks WHERE id = $1", [taskId]);
+  const row = await queryOne<TaskRow>("SELECT * FROM tasks WHERE id = $1", [
+    taskId,
+  ]);
   return row ? normalizeTask(row) : null;
 }
 
-export async function findWorkflowByIdForTask(workflowId: number): Promise<Workflow | null> {
+export async function findWorkflowByIdForTask(
+  workflowId: number,
+): Promise<Workflow | null> {
   const row = await queryOne<WorkflowRow>(
     "SELECT * FROM workflows WHERE id = $1",
     [workflowId],
@@ -121,7 +135,15 @@ export async function listTasksForVisibilityFilter(input: {
   workflowId?: number;
   status?: string;
   q?: string;
-}): Promise<Array<Task & { workflow_title: string | null; total_steps: number; logs: TaskLog[] }>> {
+}): Promise<
+  Array<
+    Task & {
+      workflow_title: string | null;
+      total_steps: number;
+      logs: TaskLog[];
+    }
+  >
+> {
   let sql = `SELECT t.* FROM tasks t
       JOIN workflows w ON w.id = t.workflow_id
       WHERE ${input.filterSql}`;
@@ -148,7 +170,10 @@ export async function listTasksForVisibilityFilter(input: {
   return Promise.all(
     tasks.map(async (task) => {
       const logs = await listTaskLogs(task.id);
-      const workflow = await queryOne<{ title: string; node_count: string | number }>(
+      const workflow = await queryOne<{
+        title: string;
+        node_count: string | number;
+      }>(
         `SELECT w.title, COUNT(wn.id) AS node_count
          FROM workflows w
          LEFT JOIN workflow_nodes wn ON wn.workflow_id = w.id
@@ -166,7 +191,9 @@ export async function listTasksForVisibilityFilter(input: {
   );
 }
 
-export async function createTaskForWorkflow(workflowId: number): Promise<Task | null> {
+export async function createTaskForWorkflow(
+  workflowId: number,
+): Promise<Task | null> {
   const taskId = await insertAndReturnId(
     "INSERT INTO tasks (workflow_id, status, current_step) VALUES ($1, 'running', 1)",
     [workflowId],
@@ -185,7 +212,7 @@ export async function listTaskLogs(taskId: number): Promise<TaskLog[]> {
 export async function listTaskLogsWithCredentialService(
   taskId: number,
 ): Promise<Array<TaskLog & { credential_service: string | null }>> {
-  const rows = await query<(TaskLogRow & { credential_service: string | null })>(
+  const rows = await query<TaskLogRow & { credential_service: string | null }>(
     `SELECT tl.*, wn.visual_selection, wn.hitl, (
        SELECT c.service_name FROM credentials c
        JOIN workflow_nodes cn2 ON cn2.credential_id = c.id
@@ -220,7 +247,10 @@ export async function getWorkflowTaskInfo(workflowId: number): Promise<{
   };
 }
 
-export async function updateTaskStatus(taskId: number, status: string): Promise<Task | null> {
+export async function updateTaskStatus(
+  taskId: number,
+  status: string,
+): Promise<Task | null> {
   await execute("UPDATE tasks SET status = $1, updated_at = $2 WHERE id = $3", [
     status,
     new Date().toISOString(),
@@ -335,7 +365,13 @@ export async function rewindTaskToStep(input: {
   );
   await execute(
     "INSERT INTO task_logs (task_id, node_id, step_order, status, node_title, node_type) VALUES ($1, $2, $3, 'pending', $4, $5)",
-    [input.task.id, input.targetNode.id, input.toStep, input.targetNode.title, input.targetNode.node_type],
+    [
+      input.task.id,
+      input.targetNode.id,
+      input.toStep,
+      input.targetNode.title,
+      input.targetNode.node_type,
+    ],
   );
 }
 
@@ -417,7 +453,9 @@ export async function getTaskRegistryMap(task: Task, logs: TaskLog[]) {
   return registry;
 }
 
-export async function resolveTaskProvider(taskId: number): Promise<string | null> {
+export async function resolveTaskProvider(
+  taskId: number,
+): Promise<string | null> {
   const row = await queryOne<{ provider_slug: string | null }>(
     "SELECT provider_slug FROM tasks WHERE id = $1",
     [taskId],
@@ -494,7 +532,9 @@ export async function mergeTaskRunningContext(input: {
     "SELECT running_context FROM tasks WHERE id = $1",
     [input.taskId],
   );
-  const existing = task?.running_context ? JSON.parse(task.running_context) : {};
+  const existing = task?.running_context
+    ? JSON.parse(task.running_context)
+    : {};
   const snapshot =
     typeof input.contextSnapshot === "string"
       ? JSON.parse(input.contextSnapshot)

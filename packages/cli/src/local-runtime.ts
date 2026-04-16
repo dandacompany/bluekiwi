@@ -1,4 +1,10 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { spawn } from "node:child_process";
@@ -41,7 +47,12 @@ function normalizeProfileName(name?: string): string {
 }
 
 function quickstartRoot(profile?: string): string {
-  return join(homedir(), ".bluekiwi", "quickstart", normalizeProfileName(profile));
+  return join(
+    homedir(),
+    ".bluekiwi",
+    "quickstart",
+    normalizeProfileName(profile),
+  );
 }
 
 function quickstartRunDir(profile?: string): string {
@@ -71,14 +82,21 @@ async function isPortFree(port: number, host: string): Promise<boolean> {
   });
 }
 
-export async function findFreePort(startPort = DEFAULT_PORT, host = DEFAULT_HOST): Promise<number> {
+export async function findFreePort(
+  startPort = DEFAULT_PORT,
+  host = DEFAULT_HOST,
+): Promise<number> {
   for (let port = startPort; port < startPort + MAX_PORT_SCAN; port += 1) {
     if (await isPortFree(port, host)) return port;
   }
-  throw new Error(`No free port found from ${startPort} to ${startPort + MAX_PORT_SCAN - 1}`);
+  throw new Error(
+    `No free port found from ${startPort} to ${startPort + MAX_PORT_SCAN - 1}`,
+  );
 }
 
-export function readLocalRuntimeRecord(profile?: string): LocalRuntimeRecord | null {
+export function readLocalRuntimeRecord(
+  profile?: string,
+): LocalRuntimeRecord | null {
   const recordPath = runtimeRecordPath(profile);
   if (!existsSync(recordPath)) return null;
   try {
@@ -120,7 +138,9 @@ export async function checkLocalRuntimeHealth(
   }
 }
 
-export async function startLocalRuntime(options: LocalRuntimeOptions = {}): Promise<LocalRuntimeRecord> {
+export async function startLocalRuntime(
+  options: LocalRuntimeOptions = {},
+): Promise<LocalRuntimeRecord> {
   const profile = normalizeProfileName(options.profile);
   const existing = readLocalRuntimeRecord(profile);
   if (existing && isLocalRuntimeRunning(profile)) {
@@ -129,7 +149,9 @@ export async function startLocalRuntime(options: LocalRuntimeOptions = {}): Prom
 
   const runtime = resolveAppRuntime();
   const appRoot = runtime.root;
-  const root = options.dataDir ? resolve(options.dataDir) : quickstartRoot(profile);
+  const root = options.dataDir
+    ? resolve(options.dataDir)
+    : quickstartRoot(profile);
   const runDir = quickstartRunDir(profile);
   const logDir = quickstartLogDir(profile);
   ensureDir(root);
@@ -161,11 +183,23 @@ export async function startLocalRuntime(options: LocalRuntimeOptions = {}): Prom
             env,
             stdio: "inherit",
           })
-        : spawn("npm", ["run", "dev:raw", "--", "--hostname", host, "--port", String(port)], {
-            cwd: appRoot,
-            env,
-            stdio: "inherit",
-          });
+        : spawn(
+            "npm",
+            [
+              "run",
+              "dev:raw",
+              "--",
+              "--hostname",
+              host,
+              "--port",
+              String(port),
+            ],
+            {
+              cwd: appRoot,
+              env,
+              stdio: "inherit",
+            },
+          );
     const record: LocalRuntimeRecord = {
       profile,
       pid: child.pid ?? process.pid,

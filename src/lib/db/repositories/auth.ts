@@ -77,7 +77,9 @@ export async function findActiveUserById(userId: number): Promise<User | null> {
   return row ? normalizeUser(row) : null;
 }
 
-export async function findLoginUserByEmail(email: string): Promise<LoginUser | null> {
+export async function findLoginUserByEmail(
+  email: string,
+): Promise<LoginUser | null> {
   const row = await queryOne<LoginUserRow>(
     "SELECT id, username, email, password_hash, role, must_change_password FROM users WHERE email = $1",
     [email],
@@ -85,7 +87,9 @@ export async function findLoginUserByEmail(email: string): Promise<LoginUser | n
   return row ? normalizeLoginUser(row) : null;
 }
 
-export async function findActiveApiKeyByHash(keyHash: string): Promise<ApiKey | null> {
+export async function findActiveApiKeyByHash(
+  keyHash: string,
+): Promise<ApiKey | null> {
   const row = await queryOne<ApiKeyRow>(
     "SELECT * FROM api_keys WHERE key_hash = $1 AND is_revoked = false",
     [keyHash],

@@ -83,20 +83,29 @@ async function deleteResources(
 
   // 2. Delete tasks and their cascaded children (step_logs, approvals, comments, findings, artifacts)
   if (workflowIds.length > 0) {
-    const placeholders = workflowIds.map((_, index) => `$${index + 1}`).join(", ");
-    await client.query(`DELETE FROM tasks WHERE workflow_id IN (${placeholders})`, workflowIds);
+    const placeholders = workflowIds
+      .map((_, index) => `$${index + 1}`)
+      .join(", ");
+    await client.query(
+      `DELETE FROM tasks WHERE workflow_id IN (${placeholders})`,
+      workflowIds,
+    );
   }
 
   // 3. Nullify node references to user's credentials/instructions before deleting them
   if (credentialIds.length > 0) {
-    const placeholders = credentialIds.map((_, index) => `$${index + 1}`).join(", ");
+    const placeholders = credentialIds
+      .map((_, index) => `$${index + 1}`)
+      .join(", ");
     await client.query(
       `DELETE FROM node_credential_links WHERE credential_id IN (${placeholders})`,
       credentialIds,
     );
   }
   if (instructionIds.length > 0 && workflowIds.length > 0) {
-    const placeholders = instructionIds.map((_, index) => `$${index + 1}`).join(", ");
+    const placeholders = instructionIds
+      .map((_, index) => `$${index + 1}`)
+      .join(", ");
     await client.query(
       `UPDATE workflow_nodes SET instruction_id = NULL WHERE instruction_id IN (${placeholders})`,
       instructionIds,
@@ -105,14 +114,18 @@ async function deleteResources(
 
   // 4. Delete sharing records
   if (workflowIds.length > 0) {
-    const placeholders = workflowIds.map((_, index) => `$${index + 1}`).join(", ");
+    const placeholders = workflowIds
+      .map((_, index) => `$${index + 1}`)
+      .join(", ");
     await client.query(
       `DELETE FROM workflow_shares WHERE workflow_id IN (${placeholders})`,
       workflowIds,
     );
   }
   if (credentialIds.length > 0) {
-    const placeholders = credentialIds.map((_, index) => `$${index + 1}`).join(", ");
+    const placeholders = credentialIds
+      .map((_, index) => `$${index + 1}`)
+      .join(", ");
     await client.query(
       `DELETE FROM credential_shares WHERE credential_id IN (${placeholders})`,
       credentialIds,

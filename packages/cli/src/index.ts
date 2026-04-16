@@ -46,22 +46,35 @@ program
 
 program
   .command("start")
-  .option("-p, --profile <name>", "Local runtime profile name (default: default)")
+  .option(
+    "-p, --profile <name>",
+    "Local runtime profile name (default: default)",
+  )
   .option("--host <host>", "Bind host (default: 127.0.0.1)")
-  .option("--port <port>", "Preferred port (default: 3102)", (value) => Number(value))
+  .option("--port <port>", "Preferred port (default: 3102)", (value) =>
+    Number(value),
+  )
   .option("--data-dir <path>", "Local runtime data directory")
   .option("--open", "Open the app in a browser after start")
   .option("--foreground", "Run attached in the foreground")
   .action(startCommand);
 program
   .command("stop")
-  .option("-p, --profile <name>", "Local runtime profile name (default: default)")
+  .option(
+    "-p, --profile <name>",
+    "Local runtime profile name (default: default)",
+  )
   .action((opts: { profile?: string }) => stopCommand(opts.profile));
 program
   .command("restart")
-  .option("-p, --profile <name>", "Local runtime profile name (default: default)")
+  .option(
+    "-p, --profile <name>",
+    "Local runtime profile name (default: default)",
+  )
   .option("--host <host>", "Bind host (default: 127.0.0.1)")
-  .option("--port <port>", "Preferred port (default: 3102)", (value) => Number(value))
+  .option("--port <port>", "Preferred port (default: 3102)", (value) =>
+    Number(value),
+  )
   .option("--data-dir <path>", "Local runtime data directory")
   .option("--open", "Open the app in a browser after restart")
   .option("--foreground", "Run attached in the foreground")

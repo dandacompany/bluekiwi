@@ -13,7 +13,9 @@ export function decodeBoolean(value: unknown): boolean {
 }
 
 export function encodeTimestamp(value: Date | string): string {
-  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+  return value instanceof Date
+    ? value.toISOString()
+    : new Date(value).toISOString();
 }
 
 export function decodeTimestamp(value: unknown): string | null {

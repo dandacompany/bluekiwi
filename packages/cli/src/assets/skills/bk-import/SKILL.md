@@ -198,7 +198,7 @@ Immediately validate the `create_workflow` result:
 - If `nodes` were supplied to `create_workflow`, do not follow with `append_node` for the same imported step set.
 - Never treat an older `data.nodes=[]` response shape as evidence that the initial nodes were not created.
 - If verification fails, STOP and investigate instead of patching the workflow incrementally.
-</HARD-RULE>
+  </HARD-RULE>
 
 ## Step 8: Report Result + Open in Browser
 

@@ -115,7 +115,7 @@ Immediately validate the `create_workflow` result before doing anything else:
 - If `nodes` were supplied to `create_workflow`, treat that call as the only allowed initial node creation step.
 - Never append the same planned nodes after `create_workflow(nodes=[...])` because an older server response showed `data.nodes=[]`.
 - If verification fails, STOP and investigate. Do not continue with `append_node` or `insert_node`.
-</HARD-RULE>
+  </HARD-RULE>
 
 ### Step 6: Report Result + Open in Browser
 

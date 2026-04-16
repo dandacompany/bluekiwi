@@ -8,7 +8,11 @@ import {
   type OwnedFolder,
 } from "@/lib/authorization";
 import { loadResourceOrFail } from "@/lib/api-helpers";
-import { deleteFolderById, getFolderUsageCounts, updateFolderById } from "@/lib/db/repositories/folders";
+import {
+  deleteFolderById,
+  getFolderUsageCounts,
+  updateFolderById,
+} from "@/lib/db/repositories/folders";
 
 type Params = { params: Promise<{ id: string }> };
 

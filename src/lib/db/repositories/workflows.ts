@@ -11,7 +11,10 @@ import {
 import type { Workflow } from "@/lib/db";
 import type { DbTransactionClient } from "../adapter";
 
-interface WorkflowRow extends Omit<Workflow, "is_active" | "created_at" | "updated_at"> {
+interface WorkflowRow extends Omit<
+  Workflow,
+  "is_active" | "created_at" | "updated_at"
+> {
   is_active: boolean | number | string;
   created_at: string | Date;
   updated_at: string | Date;
@@ -221,7 +224,8 @@ export async function updateWorkflowWithOptionalVersion(input: {
   createNewVersion: boolean;
 }): Promise<Workflow & { nodes: unknown[] }> {
   const workflowId = await withTransaction(async (client) => {
-    const shouldCreateNewVersion = Array.isArray(input.nodes) && input.createNewVersion;
+    const shouldCreateNewVersion =
+      Array.isArray(input.nodes) && input.createNewVersion;
 
     if (shouldCreateNewVersion) {
       const newVersion = incrementWorkflowVersion(input.existing.version);
@@ -315,7 +319,9 @@ export async function findWorkflowById(id: number): Promise<Workflow | null> {
   return row ? normalizeWorkflow(row) : null;
 }
 
-export async function activateWorkflowVersion(target: Workflow): Promise<Workflow> {
+export async function activateWorkflowVersion(
+  target: Workflow,
+): Promise<Workflow> {
   return withTransaction(async (client) => {
     await client.query(
       `UPDATE workflows SET is_active = FALSE, updated_at = $2
@@ -340,8 +346,9 @@ export async function transferWorkflowOwnership(input: {
     "UPDATE workflows SET owner_id = $1, updated_at = $2 WHERE id = $3",
     [input.newOwnerId, new Date().toISOString(), input.workflowId],
   );
-  const row = await queryOne<WorkflowRow>("SELECT * FROM workflows WHERE id = $1", [
-    input.workflowId,
-  ]);
+  const row = await queryOne<WorkflowRow>(
+    "SELECT * FROM workflows WHERE id = $1",
+    [input.workflowId],
+  );
   return row ? normalizeWorkflow(row) : null;
 }

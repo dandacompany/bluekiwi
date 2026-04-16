@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { type Credential, okResponse, errorResponse, maskSecrets } from "@/lib/db";
+import {
+  type Credential,
+  okResponse,
+  errorResponse,
+  maskSecrets,
+} from "@/lib/db";
 import {
   canDelete,
   canEditCredential,

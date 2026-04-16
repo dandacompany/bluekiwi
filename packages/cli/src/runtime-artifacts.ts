@@ -8,7 +8,11 @@ export interface AppRuntimeResolution {
   kind: AppRuntimeKind;
   root: string;
   entry: string;
-  source: "env-app-root" | "env-runtime-path" | "bundled-runtime" | "workspace-source";
+  source:
+    | "env-app-root"
+    | "env-runtime-path"
+    | "bundled-runtime"
+    | "workspace-source";
 }
 
 const here = dirname(fileURLToPath(import.meta.url));

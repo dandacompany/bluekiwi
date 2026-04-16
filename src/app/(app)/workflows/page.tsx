@@ -201,10 +201,7 @@ export default function WorkflowsPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(
-      FOLDER_PANE_WIDTH_KEY,
-      String(folderPaneWidth),
-    );
+    window.localStorage.setItem(FOLDER_PANE_WIDTH_KEY, String(folderPaneWidth));
   }, [folderPaneWidth]);
 
   useEffect(() => {
@@ -767,14 +764,16 @@ export default function WorkflowsPage() {
                     <span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[var(--muted-foreground)]">
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     </span>
-                  ) : search && (
-                    <button
-                      type="button"
-                      onClick={clearSearch}
-                      className="absolute top-1/2 right-2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+                  ) : (
+                    search && (
+                      <button
+                        type="button"
+                        onClick={clearSearch}
+                        className="absolute top-1/2 right-2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )
                   )}
                 </div>
                 <div className="shrink-0">

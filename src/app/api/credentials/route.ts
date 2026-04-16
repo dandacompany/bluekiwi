@@ -14,7 +14,10 @@ import {
 
 export const GET = withAuth("credentials:read", async (request, user) => {
   const filter = await buildCredentialVisibilityFilter("c", user, 1);
-  const rows = await listCredentialsForVisibilityFilter(filter.sql, filter.params);
+  const rows = await listCredentialsForVisibilityFilter(
+    filter.sql,
+    filter.params,
+  );
   // Always mask secrets in list responses. Reveal is a separate endpoint.
   const masked = rows.map((c) => ({
     ...c,

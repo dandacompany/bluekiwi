@@ -60,23 +60,23 @@ docker compose logs app --tail 20
 
 ## Services
 
-| Service    | Image              | Port | Description                        |
-| ---------- | ------------------ | ---- | ---------------------------------- |
-| `db`       | postgres:16-alpine | 5432 | PostgreSQL 데이터베이스            |
-| `app`      | custom (Next.js)   | 3000 | Web UI + API                       |
-| `ws-relay` | custom             | 3001 | WebSocket 실시간 중계              |
+| Service    | Image              | Port | Description             |
+| ---------- | ------------------ | ---- | ----------------------- |
+| `db`       | postgres:16-alpine | 5432 | PostgreSQL 데이터베이스 |
+| `app`      | custom (Next.js)   | 3000 | Web UI + API            |
+| `ws-relay` | custom             | 3001 | WebSocket 실시간 중계   |
 
 ## Environment Variables
 
-| Variable            | Default             | Description         |
-| ------------------- | ------------------- | ------------------- |
-| `POSTGRES_DB`       | bluekiwi            | DB 이름             |
-| `POSTGRES_USER`     | bluekiwi            | DB 사용자           |
-| `POSTGRES_PASSWORD` | bluekiwi_dev_2026   | DB 비밀번호         |
-| `DB_PORT`           | 5432                | PostgreSQL 포트     |
-| `APP_PORT`          | 3000                | Next.js 앱 포트     |
-| `WS_PORT`           | 3001                | WebSocket 중계 포트 |
-| `DATABASE_URL`      | (auto)              | PostgreSQL 연결 URL |
+| Variable            | Default           | Description         |
+| ------------------- | ----------------- | ------------------- |
+| `POSTGRES_DB`       | bluekiwi          | DB 이름             |
+| `POSTGRES_USER`     | bluekiwi          | DB 사용자           |
+| `POSTGRES_PASSWORD` | bluekiwi_dev_2026 | DB 비밀번호         |
+| `DB_PORT`           | 5432              | PostgreSQL 포트     |
+| `APP_PORT`          | 3000              | Next.js 앱 포트     |
+| `WS_PORT`           | 3001              | WebSocket 중계 포트 |
+| `DATABASE_URL`      | (auto)            | PostgreSQL 연결 URL |
 
 ## Development Mode
 

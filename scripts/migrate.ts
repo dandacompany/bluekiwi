@@ -37,7 +37,8 @@ async function migrate() {
   await runPostgresMigrations({
     connectionString: config.connectionString,
     migrationsDir:
-      process.env.MIGRATIONS_DIR ?? path.resolve(__dirname, "../docker/migrations"),
+      process.env.MIGRATIONS_DIR ??
+      path.resolve(__dirname, "../docker/migrations"),
   });
 }
 

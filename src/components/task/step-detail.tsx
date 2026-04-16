@@ -549,11 +549,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
-function StructuredWebResponse({
-  value,
-}: {
-  value: string | null;
-}) {
+function StructuredWebResponse({ value }: { value: string | null }) {
   const { t } = useTranslation();
   const parsed = parseWebResponse(value);
 
@@ -571,7 +567,9 @@ function StructuredWebResponse({
   }
 
   const selections = Array.isArray(parsed.selections)
-    ? parsed.selections.filter((item): item is string => typeof item === "string")
+    ? parsed.selections.filter(
+        (item): item is string => typeof item === "string",
+      )
     : [];
   const ranking = Array.isArray(parsed.ranking)
     ? parsed.ranking.filter((item): item is string => typeof item === "string")
@@ -673,7 +671,10 @@ function StructuredWebResponse({
             </p>
             <div className="space-y-1">
               {Object.entries(values).map(([key, fieldValue]) => (
-                <div key={key} className="flex items-center justify-between gap-3">
+                <div
+                  key={key}
+                  className="flex items-center justify-between gap-3"
+                >
                   <span className="text-[var(--muted-foreground)]">{key}</span>
                   <span className="font-medium">{String(fieldValue)}</span>
                 </div>

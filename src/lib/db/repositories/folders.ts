@@ -2,7 +2,10 @@ import { decodeBoolean, decodeTimestamp } from "../value-codecs";
 import { execute, insertAndReturnId, query, queryOne } from "@/lib/db";
 import type { Folder, FolderShare } from "@/lib/db";
 
-interface FolderRow extends Omit<Folder, "is_system" | "created_at" | "updated_at"> {
+interface FolderRow extends Omit<
+  Folder,
+  "is_system" | "created_at" | "updated_at"
+> {
   is_system: boolean | number | string;
   created_at: string | Date;
   updated_at: string | Date;
@@ -41,7 +44,9 @@ function normalizeFolderShare(row: FolderShareRow): FolderShare {
 }
 
 async function findFolderById(id: number): Promise<Folder | null> {
-  const row = await queryOne<FolderRow>("SELECT * FROM folders WHERE id = $1", [id]);
+  const row = await queryOne<FolderRow>("SELECT * FROM folders WHERE id = $1", [
+    id,
+  ]);
   return row ? normalizeFolder(row) : null;
 }
 
@@ -57,7 +62,10 @@ export async function listFoldersForVisibilityFilter(
 
   if (parentId !== undefined) {
     params.push(parentId);
-    sql += parentId === null ? " AND f.parent_id IS NULL" : ` AND f.parent_id = $${params.length}`;
+    sql +=
+      parentId === null
+        ? " AND f.parent_id IS NULL"
+        : ` AND f.parent_id = $${params.length}`;
   }
 
   sql += " ORDER BY f.name ASC";
@@ -79,7 +87,13 @@ export async function createFolder(input: {
 }): Promise<Folder | null> {
   const id = await insertAndReturnId(
     `INSERT INTO folders (name, description, owner_id, parent_id, visibility)\n     VALUES ($1, $2, $3, $4, $5)`,
-    [input.name, input.description, input.ownerId, input.parentId, input.visibility],
+    [
+      input.name,
+      input.description,
+      input.ownerId,
+      input.parentId,
+      input.visibility,
+    ],
   );
   return findFolderById(id);
 }
@@ -92,7 +106,13 @@ export async function updateFolderById(input: {
 }): Promise<Folder | null> {
   await execute(
     `UPDATE folders SET\n       name = COALESCE($1, name),\n       description = COALESCE($2, description),\n       parent_id = COALESCE($3, parent_id),\n       updated_at = $4\n     WHERE id = $5`,
-    [input.name, input.description, input.parentId, new Date().toISOString(), input.id],
+    [
+      input.name,
+      input.description,
+      input.parentId,
+      new Date().toISOString(),
+      input.id,
+    ],
   );
   return findFolderById(input.id);
 }
@@ -131,12 +151,17 @@ export async function deleteFolderById(folderId: number): Promise<void> {
   await execute("DELETE FROM folders WHERE id = $1", [folderId]);
 }
 
-export async function listFolderShares(folderId: number): Promise<Array<FolderShare & { group_name: string }>> {
-  const rows = await query<(FolderShareRow & { group_name: string })>(
+export async function listFolderShares(
+  folderId: number,
+): Promise<Array<FolderShare & { group_name: string }>> {
+  const rows = await query<FolderShareRow & { group_name: string }>(
     `SELECT fs.*, ug.name AS group_name\n       FROM folder_shares fs\n       JOIN user_groups ug ON ug.id = fs.group_id\n       WHERE fs.folder_id = $1\n       ORDER BY ug.name ASC`,
     [folderId],
   );
-  return rows.map((row) => ({ ...normalizeFolderShare(row), group_name: row.group_name }));
+  return rows.map((row) => ({
+    ...normalizeFolderShare(row),
+    group_name: row.group_name,
+  }));
 }
 
 export async function upsertFolderShare(input: {
