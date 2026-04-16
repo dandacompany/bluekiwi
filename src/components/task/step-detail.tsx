@@ -878,6 +878,8 @@ export function StepDetail({
                   "border-[color:var(--destructive)] bg-destructive/10 text-[var(--destructive)]",
                 primary.status === "running" &&
                   "border-brand-blue-600/20 bg-brand-blue-100 text-brand-blue-700",
+                primary.status === "cancelled" &&
+                  "border-slate-300 bg-slate-100 text-slate-500",
                 primary.status === "pending" &&
                   "border-[var(--border)] bg-transparent text-[var(--muted-foreground)]",
               )}
@@ -889,7 +891,9 @@ export function StepDetail({
                   ? t("tasks.failed")
                   : primary.status === "running"
                     ? t("tasks.running")
-                    : t("tasks.pending")}
+                    : primary.status === "cancelled"
+                      ? t("tasks.cancelled")
+                      : t("tasks.pending")}
             </Badge>
           </div>
 

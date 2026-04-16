@@ -13,6 +13,8 @@ import {
   upsertAgentRegistrySlug,
 } from "@/lib/db/repositories/tasks";
 import { requireAuth } from "@/lib/with-auth";
+import { queryOne as dbQueryOne } from "@/lib/db";
+import { findTaskById } from "@/lib/db/repositories/tasks";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -61,6 +63,20 @@ export async function POST(request: NextRequest, { params }: Params) {
   // Find pending/running log
   const log = await findPendingOrRunningTaskLog({ taskId, nodeId: node_id });
   if (!log) {
+    // 되감기로 인해 해당 로그가 cancelled됐는지 확인
+    const cancelledLog = await dbQueryOne<{ id: number }>(
+      "SELECT id FROM task_logs WHERE task_id = $1 AND node_id = $2 AND status = 'cancelled' ORDER BY id DESC LIMIT 1",
+      [taskId, node_id],
+    );
+    if (cancelledLog) {
+      const task = await findTaskById(taskId);
+      const res = errorResponse(
+        "STEP_REWOUND",
+        `이 스텝은 웹 UI에서 되감기되어 취소되었습니다. advance(peek=true)로 현재 스텝(${task?.current_step ?? "?"}으로 이동)을 확인하고 재실행하세요.`,
+        409,
+      );
+      return NextResponse.json(res.body, { status: res.status });
+    }
     const res = errorResponse(
       "NOT_FOUND",
       `task_id=${taskId}, node_id=${node_id}에 대한 실행 중인 로그를 찾을 수 없습니다`,

@@ -133,7 +133,10 @@ function formatStepDuration(start: string, end: string | null): string {
 }
 
 /** Group logs by step_order and derive timeline steps */
-function buildTimelineSteps(logs: TaskLog[]): TimelineStep[] {
+function buildTimelineSteps(
+  logs: TaskLog[],
+  currentStep: number,
+): TimelineStep[] {
   const grouped = new Map<number, TaskLog[]>();
   for (const log of logs) {
     const arr = grouped.get(log.step_order) || [];
@@ -144,6 +147,8 @@ function buildTimelineSteps(logs: TaskLog[]): TimelineStep[] {
   const steps: TimelineStep[] = [];
   for (const [stepOrder, group] of grouped) {
     const last = group[group.length - 1];
+    // 되감기로 인해 cancelled된 스텝(현재 스텝 초과)은 타임라인에서 제외
+    if (stepOrder > currentStep && last.status === "cancelled") continue;
     // Duration: sum of all iterations or just the latest completed
     const totalDuration = group.reduce((sum, l) => {
       if (l.completed_at) {
@@ -268,7 +273,7 @@ export default function TaskDetailPage() {
 
   // Derived data
   const timelineSteps = useMemo(
-    () => (task ? buildTimelineSteps(task.logs) : []),
+    () => (task ? buildTimelineSteps(task.logs, task.current_step) : []),
     [task],
   );
   const totalSteps = task?.total_steps || 0;
@@ -312,6 +317,27 @@ export default function TaskDetailPage() {
 
   const handleCancel = async () => {
     await fetch(`/api/tasks/${taskId}/cancel`, { method: "POST" });
+    fetchTask();
+  };
+
+  const handleClose = async () => {
+    await fetch(`/api/tasks/${taskId}/complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: "completed",
+        summary: "사용자 요청으로 종료됨",
+      }),
+    });
+    fetchTask();
+  };
+
+  const handleResume = async () => {
+    await fetch(`/api/tasks/${taskId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "running" }),
+    });
     fetchTask();
   };
 
@@ -378,8 +404,18 @@ export default function TaskDetailPage() {
         totalSteps={totalSteps}
         selectedStep={selectedStep ?? task.current_step}
         onSelectStep={setSelectedStep}
-        onRewind={task.status === "running" ? handleRewind : undefined}
+        onRewind={
+          task.status === "running" || task.status === "cancelled"
+            ? handleRewind
+            : undefined
+        }
         onCancel={task.status === "running" ? handleCancel : undefined}
+        onClose={
+          task.status === "running" || task.status === "cancelled"
+            ? handleClose
+            : undefined
+        }
+        onResume={task.status === "cancelled" ? handleResume : undefined}
       />
 
       {/* Right: Step detail */}

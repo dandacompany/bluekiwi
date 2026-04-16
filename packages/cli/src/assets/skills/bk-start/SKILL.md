@@ -400,24 +400,59 @@ When a loop node uses `visual_selection: true`, each iteration presents a VS scr
 
 Use the history to adapt subsequent VS screens - for example, pre-selecting the user's previous choice, adjusting slider defaults based on past values, carrying forward `fields.change_request` into the next revision prompt, or skipping already-confirmed items.
 
-## Remote Cancellation (웹 UI에서 중지된 경우)
+## Web UI State Synchronization (웹 UI 상태 동기화)
 
 <HARD-RULE>
-If any of the following signals indicate the task was cancelled externally (from the web UI):
+The web UI can change task/step state at any time. You MUST check every heartbeat and execute_step response for the following signals and react immediately:
 
-- `advance(peek=true)` returns `status: "cancelled"`
-- `heartbeat(...)` returns `cancelled: true`
+### 1. Task cancelled — `cancelled: true`
 
-You MUST immediately stop all execution, make no further MCP calls, and notify the user:
+Triggered by: `heartbeat` response OR `advance(peek=true)` returning `status: "cancelled"`
 
-```
-⚠️ 태스크가 웹 UI에서 중지되었습니다.
-Task #{id} — Step {N}에서 사용자에 의해 중단되었습니다.
-다시 시작하려면 /bk-start를 실행하세요.
-```
+Action:
 
-Do NOT call `complete_task`, `execute_step`, or `advance` after receiving a cancellation signal.
-</HARD-RULE>
+- Stop all execution immediately. Make no further MCP calls.
+- Notify the user:
+  ```
+  ⚠️ 태스크가 웹 UI에서 중지되었습니다.
+  Task #{id} — Step {N}에서 사용자에 의해 중단되었습니다.
+  다시 시작하려면 /bk-start를 실행하세요.
+  ```
+- Do NOT call `complete_task`, `execute_step`, or `advance`.
+
+### 2. Step rewound — `rewound: true` or error code `STEP_REWOUND`
+
+Triggered by:
+
+- `heartbeat` response contains `rewound: true` (web UI rewound while step was running)
+- `execute_step` returns HTTP 409 with `error_code: "STEP_REWOUND"` (tried to save a cancelled step)
+
+Action:
+
+- Stop executing the current step immediately.
+- Call `advance(task_id, peek=true)` to get the new current step.
+- Notify the user briefly:
+  ```
+  🔄 웹 UI에서 되감기가 실행되었습니다. Step {new_step}부터 재개합니다.
+  ```
+- Re-execute from the new current step as if it was just assigned.
+- The new step's `log_status` will be `"pending"` — treat it normally.
+
+### 3. Step log cancelled but task still running — `log_status: "cancelled"` + `status: "running"`
+
+Triggered by: `advance(peek=true)` at the start of a step loop
+
+This means the step was reset by a rewind. Action:
+
+- Re-execute this step from scratch. Do not skip it.
+- Do not treat this as a terminal error.
+
+### Polling cadence
+
+- Call `heartbeat` at least every 30 seconds during long-running steps.
+- Always check the response — never fire-and-forget heartbeats.
+- At the start of each new step (before executing), verify `advance(peek=true)` reflects the expected step. If `current_step` differs from what you expected, follow the server's value.
+  </HARD-RULE>
 
 ## Graceful Interruption (중단 처리)
 

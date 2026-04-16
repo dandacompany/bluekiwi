@@ -59,11 +59,12 @@ interface SidebarProps {
 export function Sidebar({ user, teamName }: SidebarProps) {
   const router = useRouter();
   const { t, locale, setLocale } = useTranslation();
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
+  const [collapsed, setCollapsed] = useState<boolean>(false);
+
+  useEffect(() => {
     const saved = window.localStorage.getItem("sidebar-collapsed");
-    return saved !== null ? JSON.parse(saved) : false;
-  });
+    if (saved !== null) setCollapsed(JSON.parse(saved));
+  }, []);
 
   const [updateInfo, setUpdateInfo] = useState<{
     current: string;

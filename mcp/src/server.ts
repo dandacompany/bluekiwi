@@ -193,7 +193,9 @@ const tools: Tool[] = [
     "execute_step",
     "Submit the result for the current workflow step. " +
       "IMPORTANT: If the response contains next_action='wait_for_human_approval', " +
-      "you MUST call request_approval next and then STOP — do NOT call advance until a human approves.",
+      "you MUST call request_approval next and then STOP — do NOT call advance until a human approves. " +
+      "If the response error_code is 'STEP_REWOUND' (HTTP 409), the web UI rewound this step — " +
+      "immediately call advance(peek=true) to get the new current step and re-execute from there.",
     {
       task_id: { type: "number" },
       node_id: { type: "number" },
@@ -245,7 +247,11 @@ const tools: Tool[] = [
   ),
   tool(
     "heartbeat",
-    "Append progress information for a running task step",
+    "Append progress information for a running task step. " +
+      "Check the response after every call: " +
+      "if 'cancelled' is true, the task was stopped from the web UI — stop all execution immediately. " +
+      "If 'rewound' is true, the web UI rewound the current step — stop executing this step, " +
+      "call advance(peek=true) to get the new current_step, and re-execute from there.",
     {
       task_id: { type: "number" },
       node_id: { type: "number" },

@@ -28,6 +28,12 @@ export async function POST(request: NextRequest, { params }: Params) {
     [status, summary ?? "", new Date().toISOString(), taskId],
   );
 
+  // 미완료 로그 정리
+  await execute(
+    "UPDATE task_logs SET status = 'cancelled', completed_at = $2 WHERE task_id = $1 AND status IN ('pending', 'running')",
+    [taskId, new Date().toISOString()],
+  );
+
   if (result.rowCount === 0) {
     const res = errorResponse("NOT_FOUND", "태스크를 찾을 수 없습니다", 404);
     return NextResponse.json(res.body, { status: res.status });

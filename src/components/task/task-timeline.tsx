@@ -1,6 +1,14 @@
 "use client";
 
-import { Check, Loader2, XCircle, Rewind, Ban } from "lucide-react";
+import {
+  Check,
+  Loader2,
+  XCircle,
+  Rewind,
+  Ban,
+  StopCircle,
+  Play,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -32,6 +40,8 @@ interface TaskTimelineProps {
   onSelectStep: (step: number) => void;
   onRewind?: () => void;
   onCancel?: () => void;
+  onClose?: () => void;
+  onResume?: () => void;
 }
 
 function nodeTypeLabel(nodeType: string, translate: (key: string) => string) {
@@ -64,6 +74,8 @@ export function TaskTimeline({
   onSelectStep,
   onRewind,
   onCancel,
+  onClose,
+  onResume,
 }: TaskTimelineProps) {
   const { t } = useTranslation();
   const completedCount = steps.filter((s) => s.status === "completed").length;
@@ -213,8 +225,8 @@ export function TaskTimeline({
         </div>
       </ScrollArea>
 
-      {/* Footer actions */}
-      {taskStatus === "running" && (onRewind || onCancel) && (
+      {/* Footer actions — running */}
+      {taskStatus === "running" && (onRewind || onCancel || onClose) && (
         <div className="shrink-0 border-t border-[var(--border)] px-4 py-3 flex gap-2">
           {onRewind && (
             <Button
@@ -231,11 +243,61 @@ export function TaskTimeline({
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 gap-1.5 text-[var(--destructive)]"
+              className="flex-1 gap-1.5 text-amber-600 border-amber-300 hover:bg-amber-50 hover:text-amber-700"
               onClick={onCancel}
             >
+              <StopCircle className="h-3.5 w-3.5" />
+              {t("tasks.stopTask")}
+            </Button>
+          )}
+          {onClose && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-1.5 text-[var(--destructive)] hover:bg-destructive/10"
+              onClick={onClose}
+            >
               <Ban className="h-3.5 w-3.5" />
-              {t("tasks.cancelTask")}
+              {t("tasks.closeTask")}
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Footer actions — cancelled */}
+      {taskStatus === "cancelled" && (onRewind || onResume || onClose) && (
+        <div className="shrink-0 border-t border-[var(--border)] px-4 py-3 flex gap-2">
+          {onRewind && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-1.5"
+              onClick={onRewind}
+            >
+              <Rewind className="h-3.5 w-3.5" />
+              {t("tasks.rewind")}
+            </Button>
+          )}
+          {onResume && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-1.5 text-brand-blue-600 border-brand-blue-300 hover:bg-brand-blue-50 hover:text-brand-blue-700"
+              onClick={onResume}
+            >
+              <Play className="h-3.5 w-3.5" />
+              {t("tasks.resumeTask")}
+            </Button>
+          )}
+          {onClose && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-1.5 text-[var(--destructive)] hover:bg-destructive/10"
+              onClick={onClose}
+            >
+              <Ban className="h-3.5 w-3.5" />
+              {t("tasks.closeTask")}
             </Button>
           )}
         </div>
@@ -252,6 +314,8 @@ function StatusBadge({ status }: { status: string }) {
       "border-[color:var(--destructive)] bg-destructive/10 text-[var(--destructive)]",
     timed_out:
       "border-amber-400/40 bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400",
+    cancelled:
+      "border-slate-300 bg-slate-100 text-slate-500 dark:bg-slate-800/40 dark:text-slate-400",
     pending:
       "border-[var(--border)] bg-transparent text-[var(--muted-foreground)]",
   };
@@ -265,6 +329,8 @@ function StatusBadge({ status }: { status: string }) {
           ? t("tasks.running")
           : status === "timed_out"
             ? t("tasks.timedOut")
-            : t("tasks.pending");
+            : status === "cancelled"
+              ? t("tasks.cancelled")
+              : t("tasks.pending");
   return <Badge className={map[status] || map.pending}>{label}</Badge>;
 }
