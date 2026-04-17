@@ -2,6 +2,7 @@ import prompts from "prompts";
 import pc from "picocolors";
 
 import { BlueKiwiClient } from "../api-client.js";
+import { printLogo } from "../branding.js";
 import {
   createEmptyConfig,
   getProfile,
@@ -56,6 +57,7 @@ function maskApiKey(key: string): string {
 
 export async function initCommand(options: InitOptions = {}): Promise<void> {
   const isNonInteractive = options.yes === true || process.stdin.isTTY !== true;
+  if (!isNonInteractive) printLogo({ subtitle: "Connect your agent runtime" });
   let profileName = normalizeProfileName(options.profile);
 
   // Load existing config for pre-filling prompts

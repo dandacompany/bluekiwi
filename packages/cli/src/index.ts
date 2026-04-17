@@ -2,6 +2,7 @@
 import { Command } from "commander";
 import { createRequire } from "node:module";
 
+import { renderLogo } from "./branding.js";
 import { acceptCommand } from "./commands/accept.js";
 import { startCommand } from "./commands/start.js";
 import { stopCommand } from "./commands/stop.js";
@@ -178,6 +179,10 @@ program.command("help [command]").action((command?: string) => {
   }
   target.outputHelp();
 });
+
+program.addHelpText("beforeAll", () =>
+  process.stdout.isTTY ? renderLogo() : "",
+);
 
 program.parseAsync(process.argv).catch((err) => {
   console.error(err.message);

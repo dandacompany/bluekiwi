@@ -2,6 +2,7 @@ import prompts from "prompts";
 import pc from "picocolors";
 
 import { BlueKiwiClient } from "../api-client.js";
+import { printLogo } from "../branding.js";
 import {
   createEmptyConfig,
   loadConfig,
@@ -22,6 +23,7 @@ export async function acceptCommand(
     profile?: string;
   },
 ): Promise<void> {
+  if (process.stdin.isTTY) printLogo({ subtitle: "Accepting invite" });
   let profileName = normalizeProfileName(opts.profile);
   const currentConfig = loadConfig() ?? createEmptyConfig();
 
