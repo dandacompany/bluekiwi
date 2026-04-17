@@ -8,6 +8,12 @@ user_invocable: true
 
 Analyze an external resource, extract its process logic, convert it into a structured BlueKiwi workflow, and register it directly via MCP.
 
+**Which creation skill to use?**
+
+- **`/bk-import`** (this one) — user has a GitHub repo, URL, local skill, or pasted text to convert.
+- **`/bk-design`** — start from a natural-language goal without an existing resource.
+- **`/bk-improve`** — an already-registered workflow needs a better version.
+
 ## Argument Handling
 
 - `/bk-import` → Ask for the resource via AskUserQuestion.

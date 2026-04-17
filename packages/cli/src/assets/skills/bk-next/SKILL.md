@@ -6,7 +6,10 @@ user_invocable: true
 
 # BlueKiwi Next Step
 
-Find the active task and resume execution from the current step. Works even in a fresh session with no prior context.
+Find a running task and resume execution from the current step — designed to absorb natural-language continuation intents ("이어서", "계속", "next", "proceed") without forcing the user to remember the slash command.
+
+**Use `/bk-next`** when: there is at least one `running` task and the user wants to continue it.
+**Use `/bk-start`** when: starting a new workflow, picking from multiple candidates, or resuming a **specific** task by ID (`/bk-start #123`).
 
 ## Core Principles
 

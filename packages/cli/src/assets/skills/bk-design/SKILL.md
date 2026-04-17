@@ -8,6 +8,12 @@ user_invocable: true
 
 Design a structured workflow from a natural language goal and register it on the BlueKiwi server.
 
+**Which creation skill to use?**
+
+- **`/bk-design`** (this one) — start from a natural-language goal, design the node structure from scratch.
+- **`/bk-import`** — the user already has an external resource (GitHub repo, URL, local skill, pasted text) to convert into a workflow.
+- **`/bk-improve`** — there's already a registered workflow that needs a better version.
+
 ## Argument Handling
 
 - `/bk-design` → Ask for the goal via AskUserQuestion.

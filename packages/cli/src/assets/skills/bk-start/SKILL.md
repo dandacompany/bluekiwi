@@ -125,55 +125,23 @@ When calling `execute_step`:
 - Git commit: `{artifact_type: "git_commit", title: "Implementation", git_ref: "<hash>"}`
 - URL: `{artifact_type: "url", title: "PR", url: "https://..."}`
 
-## Session Metadata Collection
+## Session Metadata
 
-<HARD-RULE>
-Before calling `start_workflow`, collect session metadata and pass it as `session_meta`.
-Run the following via Bash:
-
-```bash
-echo "PROJECT_DIR: $(pwd)"
-echo "GIT_REMOTE: $(git remote get-url origin 2>/dev/null || echo 'none')"
-echo "GIT_BRANCH: $(git branch --show-current 2>/dev/null || echo 'unknown')"
-echo "USER: $(whoami 2>/dev/null || echo 'unknown')"
-echo "OS: $(uname -s 2>/dev/null || echo 'unknown') $(uname -m 2>/dev/null)"
-# Detect CLI tool by walking up the process tree (up to 4 levels)
-_AGENT=unknown; _PID=$PPID
-for _L in 1 2 3 4; do
-  _C=$(ps -o comm= -p $_PID 2>/dev/null | tr '[:upper:]' '[:lower:]')
-  case "$_C" in
-    *claude*)   _AGENT=claude-code; break ;;
-    *gemini*)   _AGENT=gemini-cli;  break ;;
-    *codex*)    _AGENT=codex-cli;   break ;;
-    *cursor*)   _AGENT=cursor;      break ;;
-    *windsurf*) _AGENT=windsurf;    break ;;
-    *opencode*) _AGENT=opencode;    break ;;
-  esac
-  _PID=$(ps -o ppid= -p $_PID 2>/dev/null | tr -d ' ')
-  [ -z "$_PID" ] || [ "$_PID" = "0" ] || [ "$_PID" = "1" ] && break
-done
-echo "AGENT: $_AGENT"
-```
-
-Build a JSON object:
+When calling `start_workflow`, pass a `session_meta` JSON string carrying project context the server can't otherwise see. The MCP server auto-fills `provider_slug` from the client handshake, so you only need to supply what the agent knows:
 
 ```json
 {
-  "agent": "claude-code",
   "project_dir": "/Users/dante/workspace/project",
   "user_name": "dante",
   "model_id": "claude-opus-4-6",
   "git_remote": "git@github.com:user/repo.git",
   "git_branch": "main",
   "os": "Darwin arm64",
-  "started_at": "2026-04-08T12:00:00Z"
+  "started_at": "<current UTC ISO timestamp>"
 }
 ```
 
-- `agent`: detected CLI tool name (from AGENT output above)
-- `model_id`: current model ID (check system prompt)
-- `started_at`: current UTC time
-  </HARD-RULE>
+Collect `git_remote` / `git_branch` / `os` via short shell calls (`git remote get-url origin`, `git branch --show-current`, `uname -s -m`). `model_id` comes from your system prompt; `user_name` from `whoami` if unknown; `started_at` is the current UTC time. **Do not walk the process tree to guess the agent name** — the MCP handshake tells the server which client is connected.
 
 ## Credential Handling (API Service Nodes)
 
@@ -212,22 +180,9 @@ If the user selects "Create new workflow" from the selection UI → invoke `bk-d
 
 Call `start_workflow`. Pass any argument as `context`.
 
-<HARD-RULE>
-Always derive a short `title` (max 60 chars) from the user's goal or argument and pass it alongside `context`.
-- If the argument is short (≤60 chars): use it as-is.
-- If longer: distill the core topic into a concise noun phrase (e.g. "Hermes AI 아티클 생성" not the full paragraph).
-- Never pass the raw prompt verbatim when it exceeds 60 characters.
-</HARD-RULE>
+Derive a short `title` (≤60 chars) from the user's goal and pass it alongside `context`. If the argument is already short, use it; otherwise distill it to a noun phrase (e.g. "Hermes AI 아티클 생성", not the full paragraph). The raw prompt becomes `context`; only the short label goes into `title`.
 
-<HARD-RULE>
-After `start_workflow` returns the task_id, immediately open the task monitoring page in the user's browser:
-
-```bash
-open "${WEBUI_URL}/tasks/${TASK_ID}"
-```
-
-`WEBUI_URL` = the `webui_url` field returned by `start_workflow`. Use `open` on macOS, `xdg-open` on Linux.
-</HARD-RULE>
+After `start_workflow` returns the `task_id`, open the monitoring page in the user's browser (`open "${WEBUI_URL}/tasks/${TASK_ID}"` on macOS, `xdg-open` on Linux — `WEBUI_URL` is the `webui_url` field in the response).
 
 ### 3. Execute First Step + Auto-Advance Loop
 
@@ -246,13 +201,7 @@ Starting: {workflow title} ({n} steps)
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Auto-advance loop**: If execute_step returns no `next_action`, continue executing the next step without pausing.
-
-<HARD-RULE>
-After executing a step with no next_action, always proceed to the next step automatically.
-Show a brief inline update: "✅ [{title}] done → continuing to next step..."
-Repeat the loop until reaching a gate step or a hitl=true action step.
-</HARD-RULE>
+**Auto-advance loop**: if `execute_step` returns no `next_action`, proceed to the next step automatically. Show a brief inline update (`✅ [{title}] done → continuing to next step…`). Repeat until a gate step or `hitl=true` action step is reached — do not pause to ask the user to type `/bk-next`.
 
 ### 4. When Pausing
 
@@ -264,11 +213,7 @@ Call `request_approval`, then immediately show the HITL approval AskUserQuestion
 
 #### Gate step (no next_action, node_type=gate)
 
-<HARD-RULE>
-Write all VS content text (titles, descriptions, option labels, button text)
-in the user's language. The frame UI (Submit button, status) is auto-localized,
-but agent-authored content must match the user's locale.
-</HARD-RULE>
+Write VS content text (titles, descriptions, option labels) in the user's language. The frame UI (Submit button, status) is auto-localized; only agent-authored content needs matching locale.
 
 - If `visual_selection: true`:
   1. Compose a VS content **fragment** (inner HTML only — no `<html>`/`<head>`/`<body>`, the frame is injected automatically). Component classes: `bk-options`, `bk-cards`, `bk-checklist`, `bk-code-compare` (selection); `bk-slider`, `bk-input`, `bk-textarea`, `bk-ranking`, `bk-matrix` (input); `bk-split`, `bk-pros-cons`, `bk-mockup`, `bk-timeline` (display). Every selectable/input element needs `data-value` or `data-name`. **Full catalog with attributes, sizing, and template patterns: see `bk-design § VS Component Selection Guide`.**
@@ -459,32 +404,15 @@ This means the step was reset by a rewind. Action:
 - At the start of each new step (before executing), verify `advance(peek=true)` reflects the expected step. If `current_step` differs from what you expected, follow the server's value.
   </HARD-RULE>
 
-## Graceful Interruption (중단 처리)
+## Graceful Interruption
 
-<HARD-RULE>
-Whenever the user requests a stop mid-workflow — phrases like "stop", "pause", "cancel", "잠깐", "중단", "그만", "멈춰", or presses Ctrl+C — you MUST ask before exiting:
+When the user explicitly asks to stop mid-workflow, ask how to handle it (don't silently abort):
 
-Ask via AskUserQuestion:
+- **Pause (resume later)** — save a brief `context_snapshot` via `execute_step` so state is preserved, leave task as `running`. The server will auto-`timed_out` after 2 hours; `/bk-start` can resume it.
+- **Cancel** — call `cancel_task(task_id, reason)`. Task is marked `cancelled`; no further `execute_step`/`advance` calls.
+- **Keep going** — dismiss the prompt and continue the current step.
 
-- header: "작업 중단"
-- "현재 Step {N}에서 중단합니다. 어떻게 처리할까요?"
-- options:
-  - "일시 중지 (나중에 이어서)" — leave task as `running`; it will auto-timeout after 2 hours of inactivity, and can be resumed next session
-  - "태스크 종료 (완전히 닫기)" — call `complete_task(task_id, summary="사용자 요청으로 중단됨")` to mark the task finished
-  - "계속 진행" — dismiss and continue the current step
-
-If "일시 중지":
-
-- Save the current progress to `context_snapshot` via `execute_step` (mark output as "작업이 일시 중지되었습니다. 다음 세션에서 이어서 진행 가능합니다.")
-- Remind the user: "Task #{id}은 Step {N}에서 일시 중지되었습니다. 다음에 `/bk-start`를 실행하면 이어서 진행할 수 있습니다."
-
-If "태스크 종료":
-
-- Call `complete_task(task_id, summary="사용자 요청으로 중단됨. 마지막 완료 스텝: {N}")`.
-- Remind the user: "태스크가 종료되었습니다. 처음부터 다시 시작하려면 `/bk-start`를 실행하세요."
-
-**When not to prompt**: If ALL steps are already completed and `complete_task` is about to be called, skip this dialog — the workflow is naturally finishing.
-</HARD-RULE>
+Skip this prompt if all steps are already complete and you're about to call `complete_task` anyway — the workflow is finishing naturally, not being interrupted.
 
 ## Feedback Survey (before calling complete_task)
 
