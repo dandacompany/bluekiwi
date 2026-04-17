@@ -817,6 +817,19 @@ export default function WorkflowEditor({
                 <Rocket className="mr-2 h-4 w-4" />
                 {saving ? t("editor.saving") : t("workflows.publishNewVersion")}
               </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleSaveInPlace}
+                disabled={!title.trim() || saving || readOnly}
+                title={
+                  readOnly
+                    ? t("ownership.cantEdit")
+                    : t("workflows.saveToThisVersionHint")
+                }
+              >
+                {saving ? t("editor.saving") : t("workflows.saveToThisVersion")}
+              </Button>
               <Badge
                 variant="outline"
                 className="inline-flex items-center self-center text-[11px]"
