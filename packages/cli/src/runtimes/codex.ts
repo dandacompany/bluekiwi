@@ -1,19 +1,20 @@
-import {
-  existsSync,
-  mkdirSync,
-  writeFileSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-} from "fs";
+import { existsSync, mkdirSync, writeFileSync, readFileSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
 
 import type { RuntimeAdapter, SkillBundle, McpServerConfig } from "./base.js";
+import {
+  installSkills,
+  pruneSkills,
+  uninstallSkills,
+} from "./skills-helper.js";
 
 const BASE = join(homedir(), ".codex");
 const SKILLS_DIR = join(BASE, "skills");
 const MCP_CONFIG = join(BASE, "config.toml");
+
+const SECTION_REGEX =
+  /\n?\[mcp_servers\.bluekiwi[\s\S]*?(?=\n\[(?!mcp_servers\.bluekiwi)|$)/g;
 
 export class CodexAdapter implements RuntimeAdapter {
   readonly name = "codex";
@@ -32,21 +33,11 @@ export class CodexAdapter implements RuntimeAdapter {
   }
 
   installSkills(skills: SkillBundle[]): void {
-    mkdirSync(SKILLS_DIR, { recursive: true });
-    for (const skill of skills) {
-      const dir = join(SKILLS_DIR, skill.name);
-      mkdirSync(dir, { recursive: true });
-      writeFileSync(join(dir, "SKILL.md"), skill.content);
-    }
+    installSkills(SKILLS_DIR, skills);
   }
 
   pruneSkills(keep: Set<string>): void {
-    if (!existsSync(SKILLS_DIR)) return;
-    for (const entry of readdirSync(SKILLS_DIR)) {
-      if (entry.startsWith("bk-") && !keep.has(entry)) {
-        rmSync(join(SKILLS_DIR, entry), { recursive: true, force: true });
-      }
-    }
+    pruneSkills(SKILLS_DIR, keep);
   }
 
   installMcp(config: McpServerConfig): void {
@@ -62,30 +53,14 @@ export class CodexAdapter implements RuntimeAdapter {
     const existing = existsSync(MCP_CONFIG)
       ? readFileSync(MCP_CONFIG, "utf8")
       : "";
-    const stripped = existing.replace(
-      /\n?\[mcp_servers\.bluekiwi[\s\S]*?(?=\n\[(?!mcp_servers\.bluekiwi)|$)/g,
-      "",
-    );
-    writeFileSync(MCP_CONFIG, stripped + snippet);
+    writeFileSync(MCP_CONFIG, existing.replace(SECTION_REGEX, "") + snippet);
   }
 
   uninstall(): void {
     if (existsSync(MCP_CONFIG)) {
       const existing = readFileSync(MCP_CONFIG, "utf8");
-      writeFileSync(
-        MCP_CONFIG,
-        existing.replace(
-          /\n?\[mcp_servers\.bluekiwi[\s\S]*?(?=\n\[(?!mcp_servers\.bluekiwi)|$)/g,
-          "",
-        ),
-      );
+      writeFileSync(MCP_CONFIG, existing.replace(SECTION_REGEX, ""));
     }
-    if (existsSync(SKILLS_DIR)) {
-      for (const entry of readdirSync(SKILLS_DIR)) {
-        if (entry.startsWith("bk-")) {
-          rmSync(join(SKILLS_DIR, entry), { recursive: true, force: true });
-        }
-      }
-    }
+    uninstallSkills(SKILLS_DIR);
   }
 }
