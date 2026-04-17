@@ -403,8 +403,6 @@
     "publishNewVersion": "새 버전 발행",
     "publishedVersion": "발행 완료: {version}",
     "publishFailed": "새 버전 발행에 실패했습니다.",
-    "saveToThisVersion": "이 버전에 저장",
-    "saveToThisVersionHint": "현재 활성 버전을 덮어씁니다. 실행 중인 태스크에 영향을 줄 수 있습니다.",
     "activeBadge": "활성",
     "inactiveBadge": "보관됨",
     "draftBadge": "드래프트",

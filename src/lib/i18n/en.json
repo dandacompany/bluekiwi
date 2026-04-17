@@ -403,8 +403,6 @@
     "publishNewVersion": "Publish new version",
     "publishedVersion": "Published: {version}",
     "publishFailed": "Failed to publish a new version.",
-    "saveToThisVersion": "Save to this version",
-    "saveToThisVersionHint": "Overwrites the active version in place. Running tasks may be affected.",
     "activeBadge": "Active",
     "inactiveBadge": "Archived",
     "draftBadge": "Draft",
