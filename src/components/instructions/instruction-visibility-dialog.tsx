@@ -16,6 +16,9 @@ interface Props {
   instructionId: number | null;
   instructionTitle: string;
   currentOverride: string | null;
+  /** Optional folder context: shown when override = null so the user understands what "follow folder" resolves to. */
+  folderName?: string | null;
+  folderVisibility?: "personal" | "group" | "public" | "inherit" | null;
   open: boolean;
   onClose: () => void;
   onUpdate: () => void;
@@ -42,6 +45,8 @@ export function InstructionVisibilityDialog({
   instructionId,
   instructionTitle,
   currentOverride,
+  folderName,
+  folderVisibility,
   open,
   onClose,
   onUpdate,
@@ -96,6 +101,15 @@ export function InstructionVisibilityDialog({
           <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
             {t("visibility.scope")}
           </p>
+          {folderName && folderVisibility && (
+            <p className="mb-2 text-[11px] text-[var(--muted-foreground)]">
+              Folder:{" "}
+              <span className="font-medium text-[var(--foreground)]">
+                {folderName}
+              </span>{" "}
+              ({folderVisibility})
+            </p>
+          )}
           <div className="grid grid-cols-2 gap-2">
             {VISIBILITY_OPTIONS.map(({ value, Icon, labelKey, descKey }) => {
               const isActive = pendingOverride === value;

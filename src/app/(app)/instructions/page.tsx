@@ -181,6 +181,7 @@ export default function InstructionsPage() {
     id: number;
     title: string;
     override: string | null;
+    folderId?: number;
   } | null>(null);
 
   // Editor dialog state
@@ -943,6 +944,7 @@ export default function InstructionsPage() {
                             id: inst.id,
                             title: inst.title,
                             override: inst.visibility_override ?? null,
+                            folderId: inst.folder_id,
                           });
                         }}
                         className="rounded opacity-60 hover:opacity-100"
@@ -1270,6 +1272,21 @@ export default function InstructionsPage() {
         instructionId={visibilityTarget?.id ?? null}
         instructionTitle={visibilityTarget?.title ?? ""}
         currentOverride={visibilityTarget?.override ?? null}
+        folderName={(() => {
+          if (!visibilityTarget?.folderId) return null;
+          const f = folderList.find(
+            (folder) => folder.id === visibilityTarget.folderId,
+          );
+          if (!f) return null;
+          return f.is_system ? t("folders.myWorkspace") : f.name;
+        })()}
+        folderVisibility={(() => {
+          if (!visibilityTarget?.folderId) return null;
+          const f = folderList.find(
+            (folder) => folder.id === visibilityTarget.folderId,
+          );
+          return f?.visibility ?? null;
+        })()}
         open={visibilityTarget !== null}
         onClose={() => setVisibilityTarget(null)}
         onUpdate={fetchInstructions}

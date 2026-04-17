@@ -45,6 +45,20 @@ export const PUT = withAuth<Params>(
       credential_id,
     } = body;
 
+    // PUT updates content fields only. Folder moves go through PATCH so the
+    // server can validate edit permission on the destination folder. Reject
+    // a stale client that still tries to move via PUT instead of silently
+    // ignoring the field — silent ignore would make the move appear to
+    // succeed while the row never actually changed folders.
+    if ("folder_id" in body) {
+      const res = errorResponse(
+        "USE_PATCH_FOR_FOLDER_MOVE",
+        "PUT does not move instructions between folders. Use PATCH /api/instructions/:id with {folder_id} (MCP: move_instruction).",
+        400,
+      );
+      return NextResponse.json(res.body, { status: res.status });
+    }
+
     const { resource: existing, response: errResp } =
       await loadResourceOrFail<Instruction>({
         table: "instructions",

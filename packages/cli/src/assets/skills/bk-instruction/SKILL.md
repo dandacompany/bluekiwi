@@ -204,6 +204,8 @@ The server validates that the caller has edit access on the target folder
 can see/edit the instruction because visibility is inherited from the
 folder unless the instruction has an explicit `visibility_override`.
 
+**On 403**: tell the user "이 폴더로 이동할 권한이 없습니다. 다른 폴더를 선택하거나, 폴더 소유자에게 contributor 권한을 요청하세요." Offer to retry with a different folder via AskUserQuestion. Do not silently swallow the error.
+
 ---
 
 ### Action: Delete

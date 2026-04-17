@@ -57,6 +57,12 @@ ID  Service Name      Description
 
 **Service name**: Ask via AskUserQuestion.
 
+**Duplicate check**: Call `list_credentials` and look for any existing entry with the same `service_name` (case-insensitive). The server doesn't enforce uniqueness, so duplicates are technically allowed but make later `credential_id` selection ambiguous (e.g. when `bk-instruction` binds a credential by service name). If a duplicate exists, ask via AskUserQuestion:
+
+- header: "Duplicate"
+- "A credential named '<service_name>' already exists (ID: <existing id>). Continue?"
+- options: ["Use a different name", "Update the existing one (switch to Edit)", "Create anyway (allow duplicate)"]
+
 **Secrets input**: Ask the user for key-value pairs:
 
 ```

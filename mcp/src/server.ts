@@ -677,7 +677,7 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
     "Override an instruction's effective visibility. Pass override='personal' to make it owner-only regardless of its folder, or null to follow the folder again. Other values are rejected — instruction-level group/public sharing is handled by the parent folder.",
     {
       instruction_id: { type: "number" },
-      override: { type: "string" },
+      override: { type: ["string", "null"], enum: ["personal", null] },
     },
     ["instruction_id"],
   ),
@@ -1359,9 +1359,12 @@ tools must stay thin proxies — do not replicate this pattern elsewhere.
       }
       case "update_instruction_visibility": {
         const instructionId = requireNumberArg(args, "instruction_id");
-        // override: 'personal' or null (server rejects other values).
-        const override =
-          typeof args.override === "string" ? args.override : null;
+        // Server accepts only 'personal' or null. Anything else (including
+        // 'group'/'public') is rejected with 400 — those visibility levels
+        // belong on the parent folder, not on the instruction itself.
+        // Coerce here so the agent gets a clear failure rather than a stray
+        // server-side error if it sends an invalid value.
+        const override = args.override === "personal" ? "personal" : null;
         return wrap(
           await client.request(
             "POST",
@@ -1412,7 +1415,10 @@ await server.connect(transport);
 type InputSchemaProperties = Record<
   string,
   {
-    type: string;
+    // JSON Schema allows a union via array of type names (e.g. ["string","null"])
+    // for nullable fields. Most tools use a single type string.
+    type: string | string[];
+    enum?: Array<string | number | boolean | null>;
   }
 >;
 
