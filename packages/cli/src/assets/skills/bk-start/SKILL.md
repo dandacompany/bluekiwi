@@ -216,7 +216,15 @@ Call `request_approval`, then immediately show the HITL approval AskUserQuestion
 Write VS content text (titles, descriptions, option labels) in the user's language. The frame UI (Submit button, status) is auto-localized; only agent-authored content needs matching locale.
 
 - If `visual_selection: true`:
-  1. Compose a VS content **fragment** (inner HTML only — no `<html>`/`<head>`/`<body>`, the frame is injected automatically). Component classes: `bk-options`, `bk-cards`, `bk-checklist`, `bk-code-compare` (selection); `bk-slider`, `bk-input`, `bk-textarea`, `bk-ranking`, `bk-matrix` (input); `bk-split`, `bk-pros-cons`, `bk-mockup`, `bk-timeline` (display). Every selectable/input element needs `data-value` or `data-name`. **Full catalog with attributes, sizing, and template patterns: see `bk-design § VS Component Selection Guide`.**
+  1. Compose a VS content **fragment** (inner HTML only — no `<html>`/`<head>`/`<body>`, the frame is injected automatically). Component classes: `bk-options`, `bk-cards`, `bk-checklist`, `bk-code-compare` (selection); `bk-slider`, `bk-input`, `bk-textarea`, `bk-ranking`, `bk-matrix` (input); `bk-split`, `bk-pros-cons`, `bk-mockup`, `bk-timeline` (display).
+
+     **Required attributes** (server validates these):
+     - Selection items (`.bk-option`, `.bk-card`, `.bk-check-item`, `.bk-code-option`): `data-value="<id>"` on each item. Optional `data-recommended` on the suggested choice.
+     - Input components: `data-name="<id>"` for keying the response. `bk-slider` also needs `data-min`, `data-max`, `data-value`, optional `data-unit`. `bk-input`/`bk-textarea` accept `data-label`, `data-placeholder`, optional `data-required` and `data-response-key="comment"` (stores into top-level `comment`).
+     - Per-item memo: add `data-requires-comment` to force a memo before submit. Optional `data-comment-name="<key>"` stores it into `response.fields[<key>]`.
+     - Optional first line: `<!-- @bk size=sm|md|lg|xl|full -->` (default `sm`).
+
+     **Full catalog with template patterns and per-component examples: see `bk-design § VS Component Selection Guide`.**
 
      Minimal example:
 
@@ -406,7 +414,9 @@ This means the step was reset by a rewind. Action:
 
 ## Graceful Interruption
 
-When the user explicitly asks to stop mid-workflow, ask how to handle it (don't silently abort):
+**Trigger phrases**: stop, pause, cancel, abort, hold on, 잠깐, 중단, 그만, 멈춰, 정지, Ctrl+C. Treat any of these mid-workflow as a request to interrupt — do not silently abort, follow this prompt.
+
+When the user explicitly asks to stop mid-workflow, ask how to handle it:
 
 - **Pause (resume later)** — save a brief `context_snapshot` via `execute_step` so state is preserved, leave task as `running`. The server will auto-`timed_out` after 2 hours; `/bk-start` can resume it.
 - **Cancel** — call `cancel_task(task_id, reason)`. Task is marked `cancelled`; no further `execute_step`/`advance` calls.

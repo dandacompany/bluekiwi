@@ -281,7 +281,7 @@ const tools: Tool[] = [
   ),
   tool(
     "sweep_stale_tasks",
-    "Convert every 'running' task idle for longer than timeout_minutes (default 120) to 'timed_out'. Called by bk-start at session start so zombie tasks surface for resume or cleanup. Returns the list of tasks that were swept.",
+    "Convert every 'running' task idle for longer than timeout_minutes (default 120) to 'timed_out'. Called by bk-start once at session start so zombie tasks surface for resume or cleanup. Safe to call at most once per session — do not invoke repeatedly during a workflow. Returns the list of tasks that were swept.",
     {
       timeout_minutes: { type: "number" },
     },

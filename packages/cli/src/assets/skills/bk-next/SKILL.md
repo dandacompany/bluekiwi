@@ -230,13 +230,22 @@ Selected "Personal task management" — proceeding as a personal productivity ta
 ## Web UI State Synchronization
 
 <HARD-RULE>
-The full specification lives in **bk-start § Web UI State Synchronization** — read it there. Summary of the three signals you must react to on every `heartbeat` / `execute_step` / `advance(peek=true)` response:
+Check every `heartbeat` / `execute_step` / `advance(peek=true)` response for these three signals — the web UI can mutate task state at any time.
 
-1. `cancelled: true` → stop all MCP calls. Do NOT call `complete_task`, `execute_step`, or `advance`. Tell the user the task was stopped from the web UI.
-2. `rewound: true` or HTTP 409 `error_code: "STEP_REWOUND"` → stop executing, call `advance(peek=true)` for the new current step, re-execute from there.
-3. `log_status: "cancelled"` while `status: "running"` on `advance(peek=true)` → the step was reset by a rewind. Re-execute from scratch; this is not a terminal error.
+**1. `cancelled: true`** (heartbeat or `advance(peek=true)` returning `status: "cancelled"`)
+Stop all execution immediately. Make no further `complete_task` / `execute_step` / `advance` calls. Tell the user:
 
-Call `heartbeat` at least every 30 seconds during long steps and always inspect the response. Verify `advance(peek=true)` at the start of each step — if `current_step` disagrees with what you expect, the server is authoritative.
+> ⚠️ 태스크가 웹 UI에서 중지되었습니다. Task #{id} — Step {N}에서 사용자에 의해 중단되었습니다. 다시 시작하려면 `/bk-next`로 재개하거나 `/bk-start`로 새 워크플로를 시작하세요.
+
+**2. `rewound: true` or HTTP 409 `error_code: "STEP_REWOUND"`**
+Stop executing the current step, call `advance(task_id, peek=true)` for the new current step, then re-execute from there. The new step's `log_status` will be `"pending"` — treat it normally. Tell the user:
+
+> 🔄 웹 UI에서 되감기가 실행되었습니다. Step {new_step}부터 재개합니다.
+
+**3. `log_status: "cancelled"` while `status: "running"`** (on `advance(peek=true)` at the start of a step loop)
+The step was reset by a rewind. Re-execute from scratch — this is not a terminal error.
+
+**Polling cadence**: call `heartbeat` at least every 30 seconds during long-running steps and always inspect the response. At the start of each new step, verify `advance(peek=true)` reflects the expected step — if `current_step` disagrees with what you expected, the server's value is authoritative.
 </HARD-RULE>
 
 ## Comment Check
