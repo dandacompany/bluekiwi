@@ -270,6 +270,22 @@ const tools: Tool[] = [
     ["task_id", "status"],
   ),
   tool(
+    "cancel_task",
+    "Cancel a running task. Use when the user asks to stop mid-workflow. Leaves the task in 'cancelled' status; the agent must stop all further execute_step/advance calls. Prefer this over complete_task(status='failed') when the intent is user-requested abort.",
+    {
+      task_id: { type: "number" },
+      reason: { type: "string" },
+    },
+    ["task_id"],
+  ),
+  tool(
+    "sweep_stale_tasks",
+    "Convert every 'running' task idle for longer than timeout_minutes (default 120) to 'timed_out'. Called by bk-start at session start so zombie tasks surface for resume or cleanup. Returns the list of tasks that were swept.",
+    {
+      timeout_minutes: { type: "number" },
+    },
+  ),
+  tool(
     "rewind",
     "Rewind a task to a previous step",
     {
@@ -661,6 +677,42 @@ Only populated fields are included.`,
     },
     ["workflow_id", "new_owner_id"],
   ),
+  tool(
+    "transfer_instruction",
+    "Transfer ownership of an instruction template to another user. Owner, admin, or superuser only.",
+    {
+      instruction_id: { type: "number" },
+      new_owner_id: { type: "number" },
+    },
+    ["instruction_id", "new_owner_id"],
+  ),
+  tool(
+    "transfer_folder",
+    "Transfer ownership of a folder to another user. Owner, admin, or superuser only. The folder's contents move with it (same owner_id relationship).",
+    {
+      folder_id: { type: "number" },
+      new_owner_id: { type: "number" },
+    },
+    ["folder_id", "new_owner_id"],
+  ),
+  tool(
+    "update_folder_visibility",
+    "Change a folder's visibility. Values: 'personal' | 'group' | 'public' | 'inherit'. 'public' requires admin/superuser. Sub-folders can use 'inherit' to follow the parent. Root folders cannot use 'inherit'.",
+    {
+      folder_id: { type: "number" },
+      visibility: { type: "string" },
+    },
+    ["folder_id", "visibility"],
+  ),
+  tool(
+    "update_instruction_visibility",
+    "Override an instruction's effective visibility. Pass override='personal' to make it owner-only regardless of its folder, or null to follow the folder again. Other values are rejected — instruction-level group/public sharing is handled by the parent folder.",
+    {
+      instruction_id: { type: "number" },
+      override: { type: "string" },
+    },
+    ["instruction_id"],
+  ),
   tool("list_my_groups", "List user groups the current user belongs to."),
   tool(
     "submit_report",
@@ -845,6 +897,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         delete body.task_id;
         return wrap(
           await client.request("POST", `/api/tasks/${taskId}/complete`, body),
+        );
+      }
+      case "cancel_task": {
+        const taskId = requireNumberArg(args, "task_id");
+        const body: Record<string, unknown> = {};
+        if (typeof args.reason === "string") body.reason = args.reason;
+        return wrap(
+          await client.request("POST", `/api/tasks/${taskId}/cancel`, body),
+        );
+      }
+      case "sweep_stale_tasks": {
+        const body: Record<string, unknown> = {};
+        if (typeof args.timeout_minutes === "number") {
+          body.timeout_minutes = args.timeout_minutes;
+        }
+        return wrap(
+          await client.request("POST", "/api/tasks/timeout-stale", body),
         );
       }
       case "rewind": {
@@ -1296,6 +1365,48 @@ tools must stay thin proxies — do not replicate this pattern elsewhere.
             "POST",
             `/api/workflows/${workflowId}/transfer`,
             { new_owner_id: newOwnerId },
+          ),
+        );
+      }
+      case "transfer_instruction": {
+        const instructionId = requireNumberArg(args, "instruction_id");
+        const newOwnerId = requireNumberArg(args, "new_owner_id");
+        return wrap(
+          await client.request(
+            "POST",
+            `/api/instructions/${instructionId}/transfer`,
+            { new_owner_id: newOwnerId },
+          ),
+        );
+      }
+      case "transfer_folder": {
+        const folderId = requireNumberArg(args, "folder_id");
+        const newOwnerId = requireNumberArg(args, "new_owner_id");
+        return wrap(
+          await client.request("POST", `/api/folders/${folderId}/transfer`, {
+            new_owner_id: newOwnerId,
+          }),
+        );
+      }
+      case "update_folder_visibility": {
+        const folderId = requireNumberArg(args, "folder_id");
+        const visibility = requireStringArg(args, "visibility");
+        return wrap(
+          await client.request("POST", `/api/folders/${folderId}/visibility`, {
+            visibility,
+          }),
+        );
+      }
+      case "update_instruction_visibility": {
+        const instructionId = requireNumberArg(args, "instruction_id");
+        // override: 'personal' or null (server rejects other values).
+        const override =
+          typeof args.override === "string" ? args.override : null;
+        return wrap(
+          await client.request(
+            "POST",
+            `/api/instructions/${instructionId}/visibility`,
+            { override },
           ),
         );
       }

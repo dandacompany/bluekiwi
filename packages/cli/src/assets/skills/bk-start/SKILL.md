@@ -43,8 +43,7 @@ Follow all steps in order before proceeding to workflow selection.
 
 ### Step A — Mark zombie tasks
 
-Call `POST /api/tasks/timeout-stale` with `{"timeout_minutes": 120}`.
-This converts any `running` tasks idle for over 2 hours to `timed_out`.
+Call the `sweep_stale_tasks` MCP tool (defaults to `timeout_minutes=120`). This converts any `running` tasks idle for over 2 hours to `timed_out` so they can be surfaced for resume/cleanup in Step B.
 
 ### Step B — Fetch existing tasks
 
