@@ -46,7 +46,8 @@ export interface StepLog {
   structured_output: {
     user_input?: string;
     thinking?: string;
-    assistant_output: string;
+    assistant_output?: string;
+    [key: string]: unknown;
   } | null;
   visual_html: string | null;
   visual_selection: boolean | null;
@@ -155,7 +156,8 @@ function HitlApprovalBanner({
 const proseClass =
   "prose prose-sm dark:prose-invert prose-headings:text-base prose-headings:font-semibold prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-li:my-0.5 prose-table:my-3 prose-pre:bg-gray-800 prose-pre:text-gray-200 prose-strong:text-[var(--foreground)] max-w-none";
 
-function preprocessOutput(text: string): string {
+function preprocessOutput(text: string | null | undefined): string {
+  if (!text) return "";
   let processed = text.replace(/\\n/g, "\n");
   processed = processed.replace(
     /(?<=^|\s|`)([\w./-]+\/[\w./-]+\.\w{1,5})(?=\s|$|`|[),;:])/gm,
@@ -256,8 +258,25 @@ function StructuredOutputView({
   const { t } = useTranslation();
   const [showThinking, setShowThinking] = useState(defaultOpen);
 
+  const hasStandardField =
+    so.user_input != null || so.thinking != null || so.assistant_output != null;
+  const domainKeys = Object.keys(so).filter(
+    (k) => k !== "user_input" && k !== "thinking" && k !== "assistant_output",
+  );
+  const domainOnly = !hasStandardField && domainKeys.length > 0;
+
   return (
     <div className="text-sm text-[var(--foreground)] bg-[var(--card)] rounded-[var(--radius)] border border-[var(--border)] overflow-hidden">
+      {domainOnly && (
+        <div className="px-5 py-4">
+          <div className="text-[10px] font-medium uppercase tracking-wider text-[var(--muted-foreground)] mb-2">
+            {"\uD83D\uDCE4"} {t("tasks.output")}
+          </div>
+          <pre className="max-h-[32rem] overflow-auto rounded-[var(--radius-sm)] bg-[var(--muted)] p-3 text-xs leading-relaxed text-[var(--foreground)]">
+            {JSON.stringify(so, null, 2)}
+          </pre>
+        </div>
+      )}
       {so.user_input && (
         <div className="px-5 pt-4 pb-3 bg-kiwi-100 border-b border-[var(--border)]">
           <div className="text-[10px] font-medium uppercase tracking-wider text-[var(--muted-foreground)] mb-1.5">
@@ -295,18 +314,20 @@ function StructuredOutputView({
         </div>
       )}
 
-      <div className="px-5 py-4">
-        {(so.user_input || so.thinking) && (
-          <div className="text-[10px] font-medium uppercase tracking-wider text-[var(--muted-foreground)] mb-2">
-            {"\uD83D\uDCE4"} {t("tasks.output")}
+      {so.assistant_output && (
+        <div className="px-5 py-4">
+          {(so.user_input || so.thinking) && (
+            <div className="text-[10px] font-medium uppercase tracking-wider text-[var(--muted-foreground)] mb-2">
+              {"\uD83D\uDCE4"} {t("tasks.output")}
+            </div>
+          )}
+          <div className={`${proseClass} max-h-[32rem] overflow-y-auto`}>
+            <Markdown remarkPlugins={[remarkGfm]}>
+              {preprocessOutput(so.assistant_output)}
+            </Markdown>
           </div>
-        )}
-        <div className={`${proseClass} max-h-[32rem] overflow-y-auto`}>
-          <Markdown remarkPlugins={[remarkGfm]}>
-            {preprocessOutput(so.assistant_output)}
-          </Markdown>
         </div>
-      </div>
+      )}
     </div>
   );
 }
