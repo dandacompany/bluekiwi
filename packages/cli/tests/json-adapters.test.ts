@@ -233,3 +233,46 @@ describe.each(SPECS)("$name adapter", (spec) => {
     expect(existsSync(join(adapter.getSkillsDir(), "bk-b"))).toBe(false);
   });
 });
+
+// Regression for Codex finding bfdvg840k: JsonMcpAdapter.readJson used to
+// swallow JSON.parse failures and return `{}`. installMcp/uninstall would
+// then rewrite `{}` back to disk, silently erasing every other key (theme,
+// unrelated MCP servers, editor preferences) in malformed config files.
+// The fail-closed behavior is verified against one representative adapter
+// because the logic lives in the shared base class.
+describe("JsonMcpAdapter.readJson — fail-closed on parse errors", () => {
+  const adapter = new CursorAdapter();
+  const cfg = adapter.getMcpConfigPath();
+  const corrupt = '{"mcpServers": { "other": { "command": "x",}\n// cut off';
+
+  beforeEach(() => {
+    mkdirSync(join(cfg, ".."), { recursive: true });
+    writeFileSync(cfg, corrupt);
+  });
+
+  it("installMcp throws when the existing config is malformed JSON", () => {
+    expect(() =>
+      adapter.installMcp({
+        command: "node",
+        args: [],
+        env: {},
+      }),
+    ).toThrow(/cannot parse existing MCP config/);
+  });
+
+  it("installMcp leaves the malformed file byte-identical", () => {
+    try {
+      adapter.installMcp({ command: "node", args: [], env: {} });
+    } catch {
+      /* expected */
+    }
+    expect(readFileSync(cfg, "utf8")).toBe(corrupt);
+  });
+
+  it("uninstall throws and preserves the file rather than erasing it", () => {
+    expect(() => adapter.uninstall()).toThrow(
+      /cannot parse existing MCP config/,
+    );
+    expect(readFileSync(cfg, "utf8")).toBe(corrupt);
+  });
+});

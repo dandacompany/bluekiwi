@@ -107,12 +107,23 @@ export class JsonMcpAdapter implements RuntimeAdapter {
     }
   }
 
+  // Reads the target config file as JSON. If the file is missing, returns
+  // an empty object so install/uninstall can create it. If the file exists
+  // but cannot be parsed, fails closed by throwing — otherwise install
+  // would rewrite `{}` back and silently erase the user's unrelated
+  // settings (theme, other MCP servers, editor preferences, etc.).
   private readJson(path: string): Record<string, unknown> {
     if (!existsSync(path)) return {};
+    const raw = readFileSync(path, "utf8");
     try {
-      return JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
-    } catch {
-      return {};
+      return JSON.parse(raw) as Record<string, unknown>;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `BlueKiwi CLI cannot parse existing MCP config at ${path}: ${message}. ` +
+          `The file has been left untouched. Fix the JSON manually or remove the file ` +
+          `and retry.`,
+      );
     }
   }
 }
