@@ -10,8 +10,17 @@ Select a registered workflow, create a task, and immediately execute the first s
 
 ## Argument Handling
 
-- `/bk-start` → Fetch workflow list, ask user to select via AskUserQuestion.
-- `/bk-start security review` → Propose the best-matching workflow as Recommended.
+Parse the argument string with this precedence (first match wins):
+
+| Pattern                                     | Meaning                            | Action                                                                                           |
+| ------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------ |
+| _(none)_                                    | No argument                        | Fetch workflow list, ask user to select via AskUserQuestion. Also run Session Restore first.     |
+| `#<taskID>` (starts with `#`, rest numeric) | Resume a specific task             | Skip workflow selection, jump straight to `advance(task_id=N, peek=true)` and continue that task |
+| `<digits>` only                             | Workflow numeric ID                | Skip the list UI, call `start_workflow(workflow_id=N)` directly                                  |
+| `<name> :: <prompt>`                        | Workflow name/ID + initial context | Match workflow by name or ID, pass everything after `::` as `context`                            |
+| `<name>`                                    | Workflow name match                | Fuzzy-match the workflow list, propose the best match as Recommended                             |
+
+The `::` separator can combine with `#<taskID>` or `<ID>` forms too (e.g. `/bk-start 42 :: review PR #77`).
 
 ## Core Principles
 
@@ -95,21 +104,27 @@ Confirm: "기존 태스크를 종료했습니다. 새 워크플로를 선택하�
 Proceed to workflow selection without touching existing tasks.
 </HARD-RULE>
 
-## execute_step Required Parameters
+## execute_step Parameters
 
-<HARD-RULE>
-Always populate these parameters when calling execute_step:
-- `context_snapshot`: JSON string. Store decisions made, key findings, and hints for the next step.
-- `model_id`: Current LLM model ID (e.g., "claude-opus-4-6"). Check your system prompt.
-- `user_name`: User name (omit if unknown)
+When calling `execute_step`:
 
-Note: `provider_slug` (coding tool identity) is auto-injected by the MCP server from the connection handshake. Do not send it manually.
+**Always provide**:
 
-If files were created or modified, record them in the `artifacts` array:
+- `context_snapshot` (object): decisions made, key findings, next-step hints. The only reliable way to carry state across steps.
+- `model_id` (string): current LLM model (e.g. `claude-opus-4-6`). Read from your system prompt.
+
+**Provide when known**:
+
+- `user_name` (string)
+- `session_id`, `agent_id` (strings): optional identifiers, server stores them for audit.
+
+**Do NOT send manually**: `provider_slug` — the MCP server injects it from the connection handshake.
+
+**Record file/commit outputs** in the `artifacts` array on the same call:
 
 - File created: `{artifact_type: "file", title: "Design Doc", file_path: "docs/specs/design.md"}`
 - Git commit: `{artifact_type: "git_commit", title: "Implementation", git_ref: "<hash>"}`
-  </HARD-RULE>
+- URL: `{artifact_type: "url", title: "PR", url: "https://..."}`
 
 ## Session Metadata Collection
 

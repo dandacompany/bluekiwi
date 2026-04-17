@@ -47,23 +47,25 @@ The `advance` response includes `task_context`. Use it to resume seamlessly in a
 
 When resuming in a new session (no prior conversation context), use `task_context` to reconstruct the situation before proceeding.
 
-## execute_step Required Parameters
+## execute_step Parameters
 
-<HARD-RULE>
-Always populate these parameters when calling execute_step:
-- `context_snapshot`: JSON string. Store decisions made, key findings, and hints for the next step.
+Same contract as bk-start. When calling `execute_step`:
+
+**Always provide**:
+
+- `context_snapshot` (object): decisions, key findings, next-step hints.
   Example: `{"decisions":[{"question":"tech stack","chosen":"Next.js","reason":"team experience"}],"key_findings":["RLS required"],"next_step_hint":"write implementation plan"}`
-- `session_id`: Current session ID (omit if unknown)
-- `agent_id`: Agent identifier (e.g., "claude-code")
-- `model_id`: Current LLM model ID (e.g., "claude-opus-4-6", "gpt-5.2"). Check system prompt.
-- `user_name`: User name (omit if unknown)
+- `model_id` (string): current LLM model (e.g. `claude-opus-4-6`, `gpt-5.2`). Read from system prompt.
 
-If files were created or modified, record in the `artifacts` array:
+**Provide when known**: `user_name`, `session_id`, `agent_id`.
+
+**Do NOT send manually**: `provider_slug` — auto-injected by MCP handshake.
+
+**Record file/commit/URL outputs** in the `artifacts` array on the same call:
 
 - File created: `{artifact_type: "file", title: "Design Doc", file_path: "docs/specs/design.md"}`
 - Git commit: `{artifact_type: "git_commit", title: "Phase 1 Implementation", git_ref: "<hash>"}`
 - URL: `{artifact_type: "url", title: "PR", url: "https://..."}`
-  </HARD-RULE>
 
 ## Credential Handling (API Service Nodes)
 
