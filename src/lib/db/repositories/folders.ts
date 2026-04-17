@@ -19,7 +19,6 @@ interface FolderWithOwnerRow extends FolderRow {
 interface FolderUsageRow {
   workflow_count: number | string;
   instruction_count: number | string;
-  credential_count: number | string;
   child_count: number | string;
 }
 
@@ -131,18 +130,16 @@ export async function transferFolderOwnership(input: {
 export async function getFolderUsageCounts(folderId: number): Promise<{
   workflow_count: number;
   instruction_count: number;
-  credential_count: number;
   child_count: number;
 }> {
   const row = await queryOne<FolderUsageRow>(
-    `SELECT\n       (SELECT COUNT(*) FROM workflows    WHERE folder_id = $1) AS workflow_count,\n       (SELECT COUNT(*) FROM instructions WHERE folder_id = $1) AS instruction_count,\n       (SELECT COUNT(*) FROM credentials  WHERE folder_id = $1) AS credential_count,\n       (SELECT COUNT(*) FROM folders      WHERE parent_id = $1) AS child_count`,
+    `SELECT\n       (SELECT COUNT(*) FROM workflows    WHERE folder_id = $1) AS workflow_count,\n       (SELECT COUNT(*) FROM instructions WHERE folder_id = $1) AS instruction_count,\n       (SELECT COUNT(*) FROM folders      WHERE parent_id = $1) AS child_count`,
     [folderId],
   );
 
   return {
     workflow_count: Number(row?.workflow_count ?? 0),
     instruction_count: Number(row?.instruction_count ?? 0),
-    credential_count: Number(row?.credential_count ?? 0),
     child_count: Number(row?.child_count ?? 0),
   };
 }

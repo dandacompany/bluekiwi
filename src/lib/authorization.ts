@@ -26,7 +26,6 @@ export interface OwnedFolder {
 export interface OwnedCredential {
   id: number;
   owner_id: number;
-  folder_id: number;
 }
 
 // ─── Loaders ───

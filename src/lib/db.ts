@@ -310,7 +310,6 @@ export interface Credential {
   description: string;
   secrets: string;
   owner_id: number;
-  folder_id: number;
   created_at: string;
   updated_at: string;
 }

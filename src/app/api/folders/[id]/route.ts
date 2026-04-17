@@ -90,10 +90,7 @@ export const DELETE = withAuth<Params>(
     // Emptiness check — consolidated into a single round trip
     const usage = await getFolderUsageCounts(Number(id));
     const total =
-      usage.workflow_count +
-      usage.instruction_count +
-      usage.credential_count +
-      usage.child_count;
+      usage.workflow_count + usage.instruction_count + usage.child_count;
 
     if (total > 0) {
       const res = errorResponse(

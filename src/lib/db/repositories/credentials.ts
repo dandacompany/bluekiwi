@@ -37,33 +37,16 @@ export async function listCredentialsForVisibilityFilter(
   return rows.map(normalizeCredential);
 }
 
-export async function findPersonalWorkspaceByOwnerId(
-  ownerId: number,
-): Promise<number | null> {
-  const row = await queryOne<{ id: number }>(
-    "SELECT id FROM folders WHERE owner_id = $1 AND is_system = true AND name = 'My Workspace' LIMIT 1",
-    [ownerId],
-  );
-  return row?.id ?? null;
-}
-
 export async function createCredential(input: {
   serviceName: string;
   description: string;
   secrets: string;
   ownerId: number;
-  folderId: number;
 }): Promise<Credential | null> {
   const id = await insertAndReturnId(
-    `INSERT INTO credentials (service_name, description, secrets, owner_id, folder_id)
-     VALUES ($1, $2, $3, $4, $5)`,
-    [
-      input.serviceName,
-      input.description,
-      input.secrets,
-      input.ownerId,
-      input.folderId,
-    ],
+    `INSERT INTO credentials (service_name, description, secrets, owner_id)
+     VALUES ($1, $2, $3, $4)`,
+    [input.serviceName, input.description, input.secrets, input.ownerId],
   );
   return findCredentialById(id);
 }
@@ -83,21 +66,18 @@ export async function updateCredentialById(input: {
   serviceName: string | null;
   description: string | null;
   secrets: string | null;
-  folderId: number | null;
 }): Promise<Credential | null> {
   await execute(
     `UPDATE credentials SET
        service_name = COALESCE($1, service_name),
        description = COALESCE($2, description),
        secrets = COALESCE($3, secrets),
-       folder_id = COALESCE($4, folder_id),
-       updated_at = $5
-     WHERE id = $6`,
+       updated_at = $4
+     WHERE id = $5`,
     [
       input.serviceName,
       input.description,
       input.secrets,
-      input.folderId,
       new Date().toISOString(),
       input.id,
     ],

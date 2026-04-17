@@ -813,7 +813,6 @@
     "credentialRevealDenied": "You cannot reveal this credential",
     "folderDepthExceeded": "Folder nesting is limited to 2 levels",
     "folderVisibilityInvalid": "Child folder cannot be more visible than its parent",
-    "credentialInPublicFolder": "Credentials cannot be placed in public folders",
     "folderShareDenied": "Not allowed to manage shares",
     "folderNotEmpty": "Cannot delete a non-empty folder",
     "instructionInUse": "This instruction is referenced by {count} workflow node(s) and cannot be deleted. Detach it from those workflows first.",

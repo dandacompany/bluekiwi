@@ -3448,7 +3448,6 @@ export const openApiSpec = {
             additionalProperties: { type: "string" },
             example: { ACCESS_TOKEN: "ghp_..." },
           },
-          folder_id: { type: "integer", nullable: true },
         },
       },
       CredentialUpdate: {
@@ -3460,7 +3459,6 @@ export const openApiSpec = {
             type: "object",
             additionalProperties: { type: "string" },
           },
-          folder_id: { type: "integer", nullable: true },
         },
       },
       TaskStart: {

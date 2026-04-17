@@ -403,11 +403,10 @@ export async function resolveTaskNodeResponse(node: WorkflowNode, user: User) {
     const cred = await queryOne<{
       id: number;
       owner_id: number;
-      folder_id: number;
       service_name: string;
       secrets: string;
     }>(
-      "SELECT id, owner_id, folder_id, service_name, secrets FROM credentials WHERE id = $1",
+      "SELECT id, owner_id, service_name, secrets FROM credentials WHERE id = $1",
       [node.credential_id],
     );
     if (cred && (await canUseCredential(user, cred))) {

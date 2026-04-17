@@ -59,7 +59,6 @@ export const PUT = withAuth<Params>(
       serviceName: body.service_name ?? null,
       description: body.description ?? null,
       secrets: body.secrets ?? null,
-      folderId: body.folder_id ?? null,
     });
     const res = okResponse({
       ...updated!,

@@ -23,7 +23,6 @@ const CODE_TO_I18N_KEY: Record<string, string> = {
   CREDENTIAL_REVEAL_DENIED: "rbacErrors.credentialRevealDenied",
   FOLDER_DEPTH_EXCEEDED: "rbacErrors.folderDepthExceeded",
   FOLDER_VISIBILITY_INVALID: "rbacErrors.folderVisibilityInvalid",
-  CREDENTIAL_IN_PUBLIC_FOLDER: "rbacErrors.credentialInPublicFolder",
   FOLDER_SHARE_DENIED: "rbacErrors.folderShareDenied",
   FOLDER_NOT_EMPTY: "rbacErrors.folderNotEmpty",
   INSTRUCTION_IN_USE: "rbacErrors.instructionInUse",

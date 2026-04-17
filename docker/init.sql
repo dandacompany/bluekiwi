@@ -106,7 +106,6 @@ CREATE TABLE IF NOT EXISTS credentials (
   description  TEXT NOT NULL DEFAULT '',
   secrets      TEXT NOT NULL DEFAULT '{}',
   owner_id     INTEGER REFERENCES users(id) ON DELETE RESTRICT,
-  folder_id    INTEGER REFERENCES folders(id) ON DELETE RESTRICT,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -358,24 +357,6 @@ CREATE TRIGGER trg_folder_depth
 BEFORE INSERT OR UPDATE ON folders
 FOR EACH ROW EXECUTE FUNCTION enforce_folder_depth();
 
-CREATE OR REPLACE FUNCTION enforce_credential_not_public()
-RETURNS TRIGGER AS $$
-DECLARE
-  fv TEXT;
-BEGIN
-  SELECT visibility INTO fv FROM folders WHERE id = NEW.folder_id;
-  IF fv = 'public' THEN
-    RAISE EXCEPTION 'Credentials cannot be placed in public folders';
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS trg_credential_not_public ON credentials;
-CREATE TRIGGER trg_credential_not_public
-BEFORE INSERT OR UPDATE ON credentials
-FOR EACH ROW EXECUTE FUNCTION enforce_credential_not_public();
-
 -- ─── Indexes ──────────────────────────────────────────────────
 
 CREATE INDEX IF NOT EXISTS idx_workflow_nodes_workflow_id   ON workflow_nodes(workflow_id);
@@ -414,7 +395,6 @@ CREATE INDEX IF NOT EXISTS idx_credential_shares_group      ON credential_shares
 CREATE INDEX IF NOT EXISTS idx_instructions_owner           ON instructions(owner_id);
 CREATE INDEX IF NOT EXISTS idx_instructions_folder          ON instructions(folder_id);
 CREATE INDEX IF NOT EXISTS idx_credentials_owner            ON credentials(owner_id);
-CREATE INDEX IF NOT EXISTS idx_credentials_folder           ON credentials(folder_id);
 CREATE INDEX IF NOT EXISTS idx_invites_token                ON invites(token);
 CREATE INDEX IF NOT EXISTS idx_invites_email                ON invites(email);
 CREATE INDEX IF NOT EXISTS idx_invites_pending              ON invites(expires_at) WHERE accepted_at IS NULL;
@@ -440,5 +420,6 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 INSERT INTO schema_migrations (filename) VALUES
   ('001_initial_schema.sql'),
   ('002_system_settings.sql'),
-  ('009_task_title.sql')
+  ('009_task_title.sql'),
+  ('012_credentials_drop_folder.sql')
 ON CONFLICT (filename) DO NOTHING;
