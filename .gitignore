@@ -82,3 +82,6 @@ docs/
 tests/
 local/
 mcp/.next/
+# Exception: the published CLI package ships its own Vitest suite.
+!packages/cli/tests/
+!packages/cli/tests/**
