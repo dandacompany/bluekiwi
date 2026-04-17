@@ -293,17 +293,31 @@ npm install -g bluekiwi
 | `bluekiwi logout`                              | 로그아웃 및 모든 크리덴셜 삭제                |
 | `bluekiwi upgrade`                             | CLI 업그레이드 및 모든 런타임의 MCP 에셋 갱신 |
 
-**지원 런타임:**
+**지원 런타임 (17종):**
 
-| 런타임      | 주입되는 설정 파일        |
-| ----------- | ------------------------- |
-| Claude Code | `~/.claude/mcp.json`      |
-| Codex CLI   | `~/.codex/config.toml`    |
-| Gemini CLI  | `~/.gemini/settings.json` |
-| OpenCode    | `~/.opencode/mcp.json`    |
-| OpenClaw    | `~/.openclaw/mcp.json`    |
+| #   | 런타임                  | Runtime id       | 주입 파일 경로                                                                                                              | 포맷                                  |
+| --- | ----------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| 1   | Claude Code             | `claude-code`    | `~/.claude.json`                                                                                                            | JSON (`mcpServers`)                   |
+| 2   | Claude Desktop          | `claude-desktop` | `~/Library/Application Support/Claude/claude_desktop_config.json` _(macOS)_                                                 | JSON (`mcpServers`)                   |
+| 3   | Codex CLI               | `codex`          | `~/.codex/config.toml`                                                                                                      | TOML 섹션                             |
+| 4   | Gemini CLI              | `gemini-cli`     | `~/.gemini/settings.json`                                                                                                   | JSON (`mcpServers`)                   |
+| 5   | OpenCode                | `opencode`       | `~/.opencode/mcp.json`                                                                                                      | JSON (`mcpServers`)                   |
+| 6   | OpenClaw                | `openclaw`       | `~/.openclaw/mcp.json`                                                                                                      | JSON (`mcpServers`)                   |
+| 7   | Cursor                  | `cursor`         | `~/.cursor/mcp.json`                                                                                                        | JSON (`mcpServers`)                   |
+| 8   | Antigravity             | `antigravity`    | `~/.antigravity/mcp.json`                                                                                                   | JSON (`mcpServers`)                   |
+| 9   | Windsurf                | `windsurf`       | `~/.codeium/windsurf/mcp_config.json`                                                                                       | JSON (`mcpServers`)                   |
+| 10  | Cline (VS Code 확장)    | `cline`          | VS Code `globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`                                             | JSON (`mcpServers`)                   |
+| 11  | Roo Code (VS Code 확장) | `roo-code`       | VS Code `globalStorage/rooveterinaryinc.roo-cline/settings/mcp_settings.json`                                               | JSON (`mcpServers`)                   |
+| 12  | VS Code (Copilot)       | `vscode`         | `<VS Code User dir>/mcp.json`                                                                                               | JSON (`servers` 키 + `type: "stdio"`) |
+| 13  | Continue.dev            | `continue`       | `~/.continue/mcpServers/bluekiwi.yaml`                                                                                      | YAML (독립 파일)                      |
+| 14  | Zed                     | `zed`            | `~/.config/zed/settings.json`                                                                                               | JSON (`context_servers` 키)           |
+| 15  | Goose                   | `goose`          | `~/.config/goose/config.yaml`                                                                                               | YAML (`extensions:` + sentinel 블록)  |
+| 16  | JetBrains AI            | `jetbrains`      | `<JetBrains>/<ide-version>/mcp.json` — 설치된 IntelliJ / PyCharm / WebStorm / Rider 등 **모든 IDE 디렉토리에 fan-out 기록** | JSON (`mcpServers`)                   |
+| 17  | Trae                    | `trae`           | `~/Library/Application Support/Trae/User/mcp.json` _(Trae 글로벌 경로는 공식 문서화 전 — best-effort)_                      | JSON (`mcpServers`)                   |
 
-연결 완료 후 BlueKiwi는 내장 스킬을 각 런타임의 스킬 디렉토리에 복사하여 슬래시 커맨드를 즉시 사용할 수 있게 합니다.
+연결 완료 후 BlueKiwi는 내장 스킬을 각 런타임의 스킬 디렉토리에 복사합니다. 네이티브로 스킬을 자동 스캔하는 런타임(Claude Code, Claude Desktop, Codex, Gemini, OpenCode, OpenClaw)에서는 슬래시 커맨드가 즉시 활성화되고, 네이티브 지원이 없는 IDE에서는 `<base>/skills/` 경로에 파일만 기록(향후 호환용).
+
+특정 런타임만 지정: `bluekiwi init --runtime cursor` 와 같이 `--runtime <id>` 플래그 사용.
 
 ---
 

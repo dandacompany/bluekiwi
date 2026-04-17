@@ -294,17 +294,31 @@ npm install -g bluekiwi
 | `bluekiwi logout`                              | Log out and remove all credentials                   |
 | `bluekiwi upgrade`                             | Upgrade CLI and refresh MCP assets in all runtimes   |
 
-**Supported runtimes:**
+**Supported runtimes (17):**
 
-| Runtime     | Config injected           |
-| ----------- | ------------------------- |
-| Claude Code | `~/.claude/mcp.json`      |
-| Codex CLI   | `~/.codex/config.toml`    |
-| Gemini CLI  | `~/.gemini/settings.json` |
-| OpenCode    | `~/.opencode/mcp.json`    |
-| OpenClaw    | `~/.openclaw/mcp.json`    |
+| #   | Runtime            | Runtime id       | Config file                                                                                                              | Format                                           |
+| --- | ------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| 1   | Claude Code        | `claude-code`    | `~/.claude.json`                                                                                                         | JSON (`mcpServers`)                              |
+| 2   | Claude Desktop     | `claude-desktop` | `~/Library/Application Support/Claude/claude_desktop_config.json` _(macOS)_                                              | JSON (`mcpServers`)                              |
+| 3   | Codex CLI          | `codex`          | `~/.codex/config.toml`                                                                                                   | TOML section                                     |
+| 4   | Gemini CLI         | `gemini-cli`     | `~/.gemini/settings.json`                                                                                                | JSON (`mcpServers`)                              |
+| 5   | OpenCode           | `opencode`       | `~/.opencode/mcp.json`                                                                                                   | JSON (`mcpServers`)                              |
+| 6   | OpenClaw           | `openclaw`       | `~/.openclaw/mcp.json`                                                                                                   | JSON (`mcpServers`)                              |
+| 7   | Cursor             | `cursor`         | `~/.cursor/mcp.json`                                                                                                     | JSON (`mcpServers`)                              |
+| 8   | Antigravity        | `antigravity`    | `~/.antigravity/mcp.json`                                                                                                | JSON (`mcpServers`)                              |
+| 9   | Windsurf           | `windsurf`       | `~/.codeium/windsurf/mcp_config.json`                                                                                    | JSON (`mcpServers`)                              |
+| 10  | Cline (VS Code)    | `cline`          | VS Code `globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`                                          | JSON (`mcpServers`)                              |
+| 11  | Roo Code (VS Code) | `roo-code`       | VS Code `globalStorage/rooveterinaryinc.roo-cline/settings/mcp_settings.json`                                            | JSON (`mcpServers`)                              |
+| 12  | VS Code (Copilot)  | `vscode`         | `<VS Code User dir>/mcp.json`                                                                                            | JSON (`servers` + `type: "stdio"`)               |
+| 13  | Continue.dev       | `continue`       | `~/.continue/mcpServers/bluekiwi.yaml`                                                                                   | YAML (standalone file)                           |
+| 14  | Zed                | `zed`            | `~/.config/zed/settings.json`                                                                                            | JSON (`context_servers`)                         |
+| 15  | Goose              | `goose`          | `~/.config/goose/config.yaml`                                                                                            | YAML (`extensions:` with managed sentinel block) |
+| 16  | JetBrains AI       | `jetbrains`      | `<JetBrains>/<each-ide-version>/mcp.json` (fans out across every IntelliJ / PyCharm / WebStorm / Rider / … installation) | JSON (`mcpServers`)                              |
+| 17  | Trae               | `trae`           | `~/Library/Application Support/Trae/User/mcp.json` _(best-effort; Trae global path is not officially documented)_        | JSON (`mcpServers`)                              |
 
-After connecting, BlueKiwi also copies its built-in skills into each runtime's skills directory so slash commands are immediately available.
+After connecting, BlueKiwi also copies its built-in skills into each runtime's skills directory. Slash commands are available natively in runtimes that scan a skills directory (Claude Code, Claude Desktop, Codex, Gemini, OpenCode, OpenClaw). In runtimes without native skills support, skill files are still written (at `<base>/skills/`) for future compatibility but are not auto-loaded today.
+
+Target a single runtime with `--runtime <id>`, e.g. `bluekiwi init --runtime cursor`.
 
 ---
 
