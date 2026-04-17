@@ -374,12 +374,11 @@ Only populated fields are included.`,
   tool("list_credentials", "List credentials available to the current user"),
   tool(
     "create_credential",
-    "Create a new credential set (API key, token, etc.). Credentials must be placed in a private folder; they cannot live in public folders. Defaults to the caller's My Workspace if folder_id is omitted. Pass secrets as a JSON-serialisable object.",
+    "Create a new credential set (API key, token, etc.). The credential is owned by the caller; sharing with other users is done via credential_shares (manage through the UI or share APIs). Pass secrets as a JSON-serialisable object.",
     {
       service_name: { type: "string" },
       description: { type: "string" },
       secrets: { type: "object" },
-      folder_id: { type: "number" },
     },
     ["service_name"],
   ),
@@ -391,7 +390,6 @@ Only populated fields are included.`,
       service_name: { type: "string" },
       description: { type: "string" },
       secrets: { type: "object" },
-      folder_id: { type: "number" },
     },
     ["credential_id"],
   ),
@@ -412,7 +410,7 @@ Only populated fields are included.`,
   ),
   tool(
     "create_instruction",
-    "Create a new instruction template. agent_type defaults to 'general'. priority is an integer (higher = more important). Pass credential_id (from list_credentials) to bind a default credential — when a workflow node references this instruction, the credential is used automatically.",
+    "Create a new instruction template. agent_type defaults to 'general'. priority is an integer (higher = more important). Pass credential_id (from list_credentials) to bind a default credential — when a workflow node references this instruction, the credential is used automatically. Pass folder_id to place the instruction in a specific folder (defaults to the caller's My Workspace); use list_folders to discover folder ids.",
     {
       title: { type: "string" },
       content: { type: "string" },
@@ -426,7 +424,7 @@ Only populated fields are included.`,
   ),
   tool(
     "update_instruction",
-    "Update an existing instruction template. Pass only the fields you want to change. Set is_active=false to soft-disable without deleting. Pass credential_id to bind a default credential (null to unbind).",
+    "Update an existing instruction template. Pass only the fields you want to change. Set is_active=false to soft-disable without deleting. Pass credential_id to bind a default credential (null to unbind). To move the instruction between folders, use move_instruction instead.",
     {
       instruction_id: { type: "number" },
       title: { type: "string" },
@@ -1325,7 +1323,7 @@ tools must stay thin proxies — do not replicate this pattern elsewhere.
         const workflowId = requireNumberArg(args, "workflow_id");
         const folderId = requireNumberArg(args, "folder_id");
         return wrap(
-          await client.request("PUT", `/api/workflows/${workflowId}`, {
+          await client.request("PATCH", `/api/workflows/${workflowId}`, {
             folder_id: folderId,
           }),
         );
@@ -1334,7 +1332,7 @@ tools must stay thin proxies — do not replicate this pattern elsewhere.
         const instructionId = requireNumberArg(args, "instruction_id");
         const folderId = requireNumberArg(args, "folder_id");
         return wrap(
-          await client.request("PUT", `/api/instructions/${instructionId}`, {
+          await client.request("PATCH", `/api/instructions/${instructionId}`, {
             folder_id: folderId,
           }),
         );

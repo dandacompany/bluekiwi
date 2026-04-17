@@ -19,8 +19,11 @@ Securely manage external service credentials (API keys, tokens) on the BlueKiwi 
 <HARD-RULE>
 - Never print credential secret values to the user.
 - When editing, never display existing secrets. Accept new values and replace entirely.
-- Credentials must be stored in **private (personal) folders only**. Never store in public folders.
 </HARD-RULE>
+
+Credentials are scoped to the caller only by default. To share with a group,
+use the credential shares API or the credential management UI — credentials
+are no longer organised into folders.
 
 ## Execution Steps
 
@@ -54,12 +57,6 @@ ID  Service Name      Description
 
 **Service name**: Ask via AskUserQuestion.
 
-**Folder selection**: Call `list_folders`, filter for private folders only, then ask via AskUserQuestion:
-
-- header: "Save folder"
-- "Which folder should this be stored in? (Only private folders shown)"
-- options: private folder list + "My Workspace (default)"
-
 **Secrets input**: Ask the user for key-value pairs:
 
 ```
@@ -86,8 +83,7 @@ Call `create_credential`:
 {
   "service_name": "<service name>",
   "description": "<description>",
-  "secrets": { "KEY": "value", ... },
-  "folder_id": <folder id or omit>
+  "secrets": { "KEY": "value", ... }
 }
 ```
 

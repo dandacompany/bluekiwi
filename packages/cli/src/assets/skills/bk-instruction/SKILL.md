@@ -13,6 +13,7 @@ Create, update, and delete agent instruction templates. Optionally link credenti
 - `/bk-instruction` → Show action selection menu.
 - `/bk-instruction add <title>` → Start creating a new instruction.
 - `/bk-instruction list` → Show instruction list.
+- `/bk-instruction move <id> <folder id>` → Move an instruction between folders.
 
 ## What is an Instruction?
 
@@ -28,7 +29,7 @@ An instruction is an **execution directive** that a workflow node delivers to th
 If no argument, ask via AskUserQuestion:
 
 - header: "Instructions"
-- options: ["List", "Create new", "Edit", "Delete"]
+- options: ["List", "Create new", "Edit", "Move", "Delete"]
 
 ---
 
@@ -136,7 +137,9 @@ If matched: set `credential_id` in the `create_instruction` call (see below).
 
 If no match: "Could not find a matching credential. Register it first with `/bk-credential add`."
 
-**Select folder**: Call `list_folders`, then ask via AskUserQuestion.
+**Select folder**: Call `list_folders`, show the tree to the user, then ask via AskUserQuestion which folder the new instruction should live in. If the user picks nothing, omit `folder_id` — the server drops the instruction into the caller's **My Workspace**.
+
+Folders control who else can see/edit this instruction: group-shared folders expose the instruction to the members of those groups; personal folders keep it caller-only. To change visibility later, either move the instruction with `move_instruction` or change the folder's sharing with the folder share APIs.
 
 **Register**:
 
@@ -150,7 +153,7 @@ Call `create_instruction`:
   "tags": ["tag1", "tag2"],
   "priority": 0,
   "credential_id": <credential id or omit>,
-  "folder_id": <folder id>
+  "folder_id": <folder id or omit>
 }
 ```
 
@@ -178,6 +181,28 @@ Ask what to change (AskUserQuestion):
 If "Change credential": call `list_credentials`, show options, then call `update_instruction` with `credential_id` (or `null` to unbind).
 
 Call `update_instruction` with only the changed fields.
+
+---
+
+### Action: Move
+
+Call `list_instructions` → select the instruction to move via AskUserQuestion.
+
+Call `list_folders` → display the folder tree and ask which folder to move into (AskUserQuestion).
+
+Call `move_instruction`:
+
+```json
+{
+  "instruction_id": <id>,
+  "folder_id": <target folder id>
+}
+```
+
+The server validates that the caller has edit access on the target folder
+(otherwise returns 403). Moving between group-shared folders changes who
+can see/edit the instruction because visibility is inherited from the
+folder unless the instruction has an explicit `visibility_override`.
 
 ---
 
