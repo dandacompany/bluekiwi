@@ -305,46 +305,13 @@ const tools: Tool[] = [
   ),
   tool(
     "set_visual_html",
-    `Submit a VS content fragment for a visual_selection=true gate node. Write HTML fragments using bk-* component classes — the frame (CSS, JS, submit button) is added automatically. Do NOT include <html>, <head>, or <body> tags.
+    `Submit a VS content fragment for a visual_selection=true gate node. The frame (CSS, JS, submit button) is injected automatically — write only inner HTML, no <html>/<head>/<body>.
 
-DIALOG SIZE DIRECTIVE (optional, add as first line):
-<!-- @bk size=sm -->   default (448px) — simple options, checklist
-<!-- @bk size=md -->   medium (672px)  — cards, code-compare
-<!-- @bk size=lg -->   large (896px)   — pros-cons, ranking, timeline
-<!-- @bk size=xl -->   wide (1152px)   — mockups, matrix, side-by-side wireframes
-<!-- @bk size=full --> fullscreen (95vw) — dashboard previews, complex layouts
-If omitted, defaults to sm. Use xl or full for any content that benefits from horizontal space.
+Optional first-line size directive: <!-- @bk size=sm|md|lg|xl|full --> (default sm).
 
-Built-in components (use class names directly):
-SELECTION (collect choices):
-- bk-options: A/B/C cards. Wrap in .bk-options, each .bk-option with data-value. Optional data-recommended badge. Contains .bk-option-letter + .bk-option-body with h3+p.
-- bk-cards: Visual cards. Wrap in .bk-cards, each .bk-card with data-value. Contains .bk-card-image + .bk-card-body.
-- bk-checklist: Multi-select. Wrap in .bk-checklist, each .bk-check-item with data-value. Optional data-checked for defaults.
-- bk-code-compare: Code selection. Wrap in .bk-code-compare, each .bk-code-option with data-value. Contains .bk-code-label + pre.bk-code.
+Components (use class names directly): bk-options, bk-cards, bk-checklist, bk-code-compare (selection); bk-slider, bk-input, bk-textarea, bk-ranking, bk-matrix (input); bk-split, bk-pros-cons, bk-mockup, bk-timeline (display). Every selectable/input element needs data-value or data-name. Full catalog, attribute reference, and sizing rules live in the bk-design / bk-start skills.
 
-INPUT (collect values):
-- bk-slider: Numeric. data-name, data-min, data-max, data-value, data-unit on .bk-slider. Contains label.
-- bk-input: Short text input. data-name, data-label, data-placeholder, optional data-required, and optional data-response-key="comment".
-- bk-textarea: Long-form memo field. data-name, data-label, data-placeholder, optional data-required, and optional data-response-key="comment".
-- bk-ranking: Drag reorder. Wrap in .bk-ranking, each .bk-rank-item with data-value.
-- bk-matrix: 2x2 placement. .bk-matrix with data-x-label, data-y-label. Each .bk-matrix-item with data-value.
-
-OPTION-LEVEL FEEDBACK:
-- Any selectable item (.bk-option, .bk-card, .bk-code-option, .bk-mockup-item, .bk-check-item) may add data-requires-comment to force a memo before submit.
-- Optional data-comment-name stores that memo into response.fields[data-comment-name].
-- Optional data-comment-label and data-comment-placeholder customize the inline memo UI.
-
-DISPLAY (no values):
-- bk-split: Side-by-side. Two .bk-split-panel inside .bk-split.
-- bk-pros-cons: .bk-pros + .bk-cons inside .bk-pros-cons.
-- bk-mockup: .bk-mockup-header + .bk-mockup-body inside .bk-mockup.
-- bk-timeline: .bk-timeline-item with data-status="done|current|pending".
-
-Layout: h2 for title, .bk-subtitle, .bk-section for breaks, .bk-label for category.
-
-Response format (JSON via get_web_response):
-{selections: ["a"], values: {budget: 70}, ranking: ["security","ux"], matrix: {auth: {x:0.8,y:0.9}}, comment: "Tighten the pricing section", fields: {change_request: "Add rainy-day fallback"}, option_comments: {b: "Keep this option but improve lodging details"}}
-Only populated fields are included.`,
+Response format (JSON from get_web_response): {selections, values, ranking, matrix, comment, fields, option_comments} — only populated keys appear.`,
     {
       task_id: { type: "number" },
       node_id: { type: "number" },
@@ -716,13 +683,7 @@ Only populated fields are included.`,
   tool("list_my_groups", "List user groups the current user belongs to."),
   tool(
     "submit_report",
-    "Send a developer feedback report to the BlueKiwi developer (dante@dante-labs.com). " +
-      "Use this when the user has experienced a bug, unexpected behavior, or wants to suggest an improvement. " +
-      "PII (emails, phone numbers, API keys, file paths) is automatically stripped server-side before sending. " +
-      "type: 'bug' | 'feedback' | 'improvement' | 'other'. " +
-      "title: short summary (max 200 chars). " +
-      "message: the user's description of the issue or suggestion (max 10000 chars). " +
-      "context: optional sanitized session context such as workflow name, step number, error text (max 5000 chars).",
+    "Send a bug/feedback/improvement report to the BlueKiwi maintainer. Use when the user hits unexpected behavior or suggests a change. PII (emails, phone numbers, API keys, file paths) is stripped server-side. type: 'bug'|'feedback'|'improvement'|'other'. title ≤200 chars, message ≤10000, optional context ≤5000.",
     {
       type: { type: "string" },
       title: { type: "string" },

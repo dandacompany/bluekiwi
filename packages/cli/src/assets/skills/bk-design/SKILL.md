@@ -272,22 +272,7 @@ When designing a `visual_selection: true` gate node, specify which `bk-*` compon
 - Keep component class names and JSON keys in their canonical English forms (`bk-options`, `selections`, `values`, `ranking`, `matrix`, `comment`, `fields`, `option_comments`).
 </HARD-RULE>
 
-**Dialog size directive — add as the first line of the HTML:**
-
-```html
-<!-- @bk size=sm -->
-<!-- default 448px: simple options, checklist -->
-<!-- @bk size=md -->
-<!-- 672px: cards, code-compare -->
-<!-- @bk size=lg -->
-<!-- 896px: pros-cons, ranking, timeline -->
-<!-- @bk size=xl -->
-<!-- 1152px: mockups, matrix, side-by-side wireframes -->
-<!-- @bk size=full -->
-<!-- 95vw: dashboard previews, complex layouts -->
-```
-
-Rule: choose `xl` or `full` whenever content benefits from horizontal space (side-by-side comparisons, wireframe mockups, multi-column layouts). Omit or use `sm` for simple single-column choices.
+**Dialog size directive** — optional first line of the HTML: `<!-- @bk size=sm|md|lg|xl|full -->`. Default is `sm` (single-column choices). Step up to `md` (cards, code-compare), `lg` (pros-cons, ranking, timeline), `xl` (mockups, matrix, side-by-side wireframes), or `full` (dashboard previews, complex layouts) whenever content benefits from horizontal space.
 
 **Component → Use Case mapping:**
 

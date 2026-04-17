@@ -271,21 +271,12 @@ but agent-authored content must match the user's locale.
 </HARD-RULE>
 
 - If `visual_selection: true`:
-  1. Compose a VS content **fragment** using `bk-*` component classes. Write **only the inner HTML** - do not include `<html>`, `<head>`, or `<body>` tags. The frame (CSS, JS, submit button) is injected automatically by the web UI.
+  1. Compose a VS content **fragment** (inner HTML only — no `<html>`/`<head>`/`<body>`, the frame is injected automatically). Component classes: `bk-options`, `bk-cards`, `bk-checklist`, `bk-code-compare` (selection); `bk-slider`, `bk-input`, `bk-textarea`, `bk-ranking`, `bk-matrix` (input); `bk-split`, `bk-pros-cons`, `bk-mockup`, `bk-timeline` (display). Every selectable/input element needs `data-value` or `data-name`. **Full catalog with attributes, sizing, and template patterns: see `bk-design § VS Component Selection Guide`.**
 
-     **Component quick reference:**
-     - Selection: `bk-options` (A/B/C cards, single), `bk-cards` (visual cards, single), `bk-checklist` (multi-select), `bk-code-compare` (code blocks, single)
-     - Input: `bk-slider` (numeric range), `bk-ranking` (drag reorder), `bk-matrix` (2x2 drag placement)
-     - Display: `bk-split`, `bk-pros-cons`, `bk-mockup`, `bk-timeline`
-     - Layout: `h2`, `.bk-subtitle`, `.bk-section`, `.bk-label`
-
-     Every selection/input element needs a `data-value` attribute. Example fragment:
+     Minimal example:
 
      ```html
      <h2>Choose an approach</h2>
-     <p class="bk-subtitle">
-       Select the architecture that best fits your needs
-     </p>
      <div class="bk-options">
        <div class="bk-option" data-value="monolith" data-recommended>
          <div class="bk-option-letter">A</div>
