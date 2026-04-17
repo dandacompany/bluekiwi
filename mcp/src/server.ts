@@ -288,16 +288,6 @@ const tools: Tool[] = [
     ["task_id"],
   ),
   tool(
-    "submit_visual",
-    "Submit visual HTML for a task step",
-    {
-      task_id: { type: "number" },
-      node_id: { type: "number" },
-      visual_html: { type: "string" },
-    },
-    ["task_id", "node_id", "visual_html"],
-  ),
-  tool(
     "set_visual_html",
     `Submit a VS content fragment for a visual_selection=true gate node. Write HTML fragments using bk-* component classes — the frame (CSS, JS, submit button) is added automatically. Do NOT include <html>, <head>, or <body> tags.
 
@@ -345,23 +335,6 @@ Only populated fields are included.`,
       html: { type: "string" },
     },
     ["task_id", "node_id", "html"],
-  ),
-  tool(
-    "save_artifacts",
-    "Save artifacts for a task step",
-    {
-      task_id: { type: "number" },
-      artifacts: { type: "array" },
-    },
-    ["task_id", "artifacts"],
-  ),
-  tool(
-    "load_artifacts",
-    "Load artifacts for a task",
-    {
-      task_id: { type: "number" },
-    },
-    ["task_id"],
   ),
   tool(
     "get_comments",
@@ -655,7 +628,7 @@ Only populated fields are included.`,
   ),
   tool(
     "delete_folder",
-    "Delete an empty folder. Returns an error if the folder contains any workflows, instructions, credentials, or child folders.",
+    "Delete an empty folder. Returns an error if the folder contains any workflows, instructions, or child folders. Credentials are no longer filed in folders (as of migration 012), so they do not affect folder deletion.",
     {
       folder_id: { type: "number" },
     },
@@ -890,14 +863,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           : `/api/tasks/${taskId}/respond`;
         return wrap(await client.request("GET", url));
       }
-      case "submit_visual": {
-        const taskId = requireNumberArg(args, "task_id");
-        const body = { ...args };
-        delete body.task_id;
-        return wrap(
-          await client.request("POST", `/api/tasks/${taskId}/visual`, body),
-        );
-      }
       case "set_visual_html": {
         const taskId = requireNumberArg(args, "task_id");
         const nodeId = requireNumberArg(args, "node_id");
@@ -906,20 +871,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             node_id: nodeId,
             html: args.html,
           }),
-        );
-      }
-      case "save_artifacts": {
-        const taskId = requireNumberArg(args, "task_id");
-        const body = { ...args };
-        delete body.task_id;
-        return wrap(
-          await client.request("POST", `/api/tasks/${taskId}/artifacts`, body),
-        );
-      }
-      case "load_artifacts": {
-        const taskId = requireNumberArg(args, "task_id");
-        return wrap(
-          await client.request("GET", `/api/tasks/${taskId}/artifacts`),
         );
       }
       case "get_comments": {

@@ -432,4 +432,4 @@ Call `delete_folder`:
 { "folder_id": <id> }
 ```
 
-> Note: `delete_folder` fails with `FOLDER_NOT_EMPTY` if the folder contains any workflows, instructions, credentials, or sub-folders. Empty the folder first.
+> Note: `delete_folder` fails with `FOLDER_NOT_EMPTY` if the folder contains any workflows, instructions, or sub-folders. Empty the folder first. Credentials are not filed in folders and do not affect this check.

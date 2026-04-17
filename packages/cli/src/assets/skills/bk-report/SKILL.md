@@ -21,11 +21,11 @@ Call `advance` with `peek: true` to get the current task state and `task_context
 
 If a specific task_id is provided, use it directly.
 
-### Step 2: Load Artifacts and Findings
+`task_context.artifacts` already contains the full artifact list for the task (file paths, git refs, URLs that were recorded via `execute_step`'s `artifacts[]` array). No separate load call is needed.
 
-Call `load_artifacts` to retrieve all artifacts for the task.
+### Step 2: Load Findings
 
-If the workflow includes compliance steps, call `list_findings` to retrieve compliance findings.
+If the workflow includes compliance steps, call `list_findings` to retrieve compliance findings. Otherwise skip this step.
 
 ### Step 3: Generate Report
 
