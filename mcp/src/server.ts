@@ -11,6 +11,7 @@ import {
   BlueKiwiAuthError,
   BlueKiwiNetworkError,
 } from "./errors.js";
+import { MODEL_NAME_RE } from "./model-patterns.js";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -765,10 +766,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         );
       }
       case "start_workflow": {
-        // Slugs that look like model names (e.g. "claude-sonnet-4-6", "gpt-5.2")
         // Claude Code sends its model name as clientInfo.name, not the CLI tool name.
-        const MODEL_NAME_RE =
-          /^(claude|gpt|gemini|o\d|llama|mistral|qwen|deepseek)[-/.]/i;
+        // MODEL_NAME_RE lives in ./model-patterns.ts — add new model families there.
         const clientName = server.getClientVersion()?.name ?? null;
         let providerSlug: string | null = null;
         let modelSlug: string | null = null;
