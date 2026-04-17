@@ -133,11 +133,9 @@ export const POST = withAuth(
             const credential = await queryOne<{
               id: number;
               owner_id: number;
-              folder_id: number;
-            }>(
-              "SELECT id, owner_id, folder_id FROM credentials WHERE id = $1",
-              [credentialId],
-            );
+            }>("SELECT id, owner_id FROM credentials WHERE id = $1", [
+              credentialId,
+            ]);
             if (!credential || !(await canUseCredential(user, credential))) {
               throw new Error(
                 `step ${node.step_order} credential binding is not accessible`,
