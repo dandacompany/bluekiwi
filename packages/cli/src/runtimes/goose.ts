@@ -56,10 +56,39 @@ function buildBlock(config: McpServerConfig): string {
   ].join("\n");
 }
 
+// Block-style `extensions:` header: "extensions:" alone on a line, optionally
+// followed by whitespace and/or a trailing `# comment`. Children may appear
+// on subsequent lines — this only matches the header itself.
+const BLOCK_HEADER_REGEX = /^extensions:[ \t]*(?:#[^\n]*)?$/m;
+// Flow-style header: `extensions: {...}` or `extensions: [...]`. We cannot
+// merge into these safely without a YAML parser.
+const FLOW_HEADER_REGEX = /^extensions:[ \t]*[[{]/m;
+// Catch-all: any top-of-line `extensions:`, used to detect headers our
+// block-style regex missed so we fail closed instead of appending a
+// duplicate top-level key.
+const ANY_HEADER_REGEX = /^extensions:/m;
+
 function injectBlock(existing: string, block: string): string {
   const stripped = existing.replace(SENTINEL_REGEX, "\n");
-  if (/^extensions:\s*$/m.test(stripped)) {
-    return stripped.replace(/^extensions:\s*$/m, `extensions:\n${block}`);
+  const blockMatch = stripped.match(BLOCK_HEADER_REGEX);
+  if (blockMatch && blockMatch.index !== undefined) {
+    // Insert our sentinel block as the first child so existing entries below
+    // stay intact. Preserving the trailing comment (if any) means the line
+    // stays byte-for-byte as the user wrote it.
+    const insertAt = blockMatch.index + blockMatch[0].length;
+    return (
+      stripped.slice(0, insertAt) +
+      "\n" +
+      block.replace(/\n$/, "") +
+      stripped.slice(insertAt)
+    );
+  }
+  if (FLOW_HEADER_REGEX.test(stripped) || ANY_HEADER_REGEX.test(stripped)) {
+    throw new Error(
+      "Goose config has an `extensions:` mapping that BlueKiwi cannot merge safely. " +
+        "Convert it to block style (e.g. `extensions:` on its own line) or remove " +
+        "it before running this command.",
+    );
   }
   const separator = stripped.length > 0 && !stripped.endsWith("\n") ? "\n" : "";
   return `${stripped}${separator}extensions:\n${block}`;

@@ -232,6 +232,49 @@ describe("GooseAdapter (YAML sentinel)", () => {
     const yaml = readFileSync(CFG, "utf8");
     expect(yaml).toContain("GOOSE_PROVIDER: openai");
   });
+
+  // Regression for Codex finding bfdvg840k: real Goose configs with
+  // children under `extensions:` used to fall through to the append path
+  // when the header line had a trailing comment, producing a duplicate
+  // top-level `extensions:` key.
+  it("install detects `extensions:` header even with a trailing comment", () => {
+    mkdirSync(join(TMP_HOME, ".config", "goose"), { recursive: true });
+    writeFileSync(
+      CFG,
+      [
+        "extensions: # user note",
+        "  developer:",
+        "    enabled: true",
+        "    type: builtin",
+        "",
+      ].join("\n"),
+    );
+    adapter.installMcp(SAMPLE);
+    const yaml = readFileSync(CFG, "utf8");
+    // Exactly one `extensions:` header — no duplicate top-level key.
+    const headerMatches = yaml.match(/^extensions:/gm) ?? [];
+    expect(headerMatches).toHaveLength(1);
+    // Trailing comment preserved.
+    expect(yaml).toContain("extensions: # user note");
+    // Existing child stays, our block is injected under the same mapping.
+    expect(yaml).toContain("developer:");
+    expect(yaml).toContain("# bluekiwi:begin");
+    // Our block appears between the header and the existing `developer`
+    // entry (first child position, preserving the user's structure).
+    expect(yaml.indexOf("# bluekiwi:begin")).toBeLessThan(
+      yaml.indexOf("developer:"),
+    );
+  });
+
+  it("install throws on a flow-style `extensions:` mapping instead of corrupting it", () => {
+    mkdirSync(join(TMP_HOME, ".config", "goose"), { recursive: true });
+    writeFileSync(CFG, "extensions: {developer: {enabled: true}}\n");
+    expect(() => adapter.installMcp(SAMPLE)).toThrow(/BlueKiwi cannot merge/);
+    // File preserved exactly as the user wrote it.
+    expect(readFileSync(CFG, "utf8")).toBe(
+      "extensions: {developer: {enabled: true}}\n",
+    );
+  });
 });
 
 // -------- JetBrains (multi-path fan-out) --------
