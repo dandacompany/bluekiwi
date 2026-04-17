@@ -869,7 +869,10 @@
     "deleteConfirm": "정말 삭제하시겠습니까?",
     "actionMenu": "지침 {title} 액션 메뉴",
     "credentialPlaceholder": "크리덴셜 선택",
-    "noCredential": "크리덴셜 없음"
+    "noCredential": "크리덴셜 없음",
+    "allInstructions": "전체 지침",
+    "results": "개의 결과",
+    "movedToFolder": "지침을 폴더로 이동했습니다."
   },
   "commandPalette": {
     "search": "명령어 검색...",

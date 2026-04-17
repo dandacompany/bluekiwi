@@ -139,3 +139,13 @@ export async function transferInstructionOwnership(input: {
   );
   return findInstructionById(input.id);
 }
+
+export async function moveInstructionToFolder(input: {
+  instructionId: number;
+  folderId: number;
+}): Promise<void> {
+  await execute(
+    "UPDATE instructions SET folder_id = $1, updated_at = $2 WHERE id = $3",
+    [input.folderId, new Date().toISOString(), input.instructionId],
+  );
+}

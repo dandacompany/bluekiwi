@@ -57,6 +57,8 @@ interface Props {
   onFoldersChange?: (folders: FolderItem[]) => void;
   /** Fired when a workflow card is dropped onto a folder */
   onWorkflowDrop?: (workflowId: number, folderId: number) => void;
+  /** Fired when an instruction card is dropped onto a folder */
+  onInstructionDrop?: (instructionId: number, folderId: number) => void;
   /** Increment to trigger refetch from parent */
   refreshKey?: number;
   /** Ref-like callback to expose createRootFolder trigger to parent */
@@ -139,6 +141,7 @@ export function FolderTree({
   onSelect,
   onFoldersChange,
   onWorkflowDrop,
+  onInstructionDrop,
   refreshKey,
   onCreateRootRef,
 }: Props) {
@@ -354,6 +357,8 @@ export function FolderTree({
             e.preventDefault();
             const wfId = Number(e.dataTransfer.getData("workflowId"));
             if (wfId) onWorkflowDrop?.(wfId, folder.id);
+            const instId = Number(e.dataTransfer.getData("instructionId"));
+            if (instId) onInstructionDrop?.(instId, folder.id);
             setDropTarget(null);
           }}
         >

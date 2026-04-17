@@ -869,7 +869,10 @@
     "deleteConfirm": "Delete this instruction?",
     "actionMenu": "Instruction {title} action menu",
     "credentialPlaceholder": "Select credential",
-    "noCredential": "No credential"
+    "noCredential": "No credential",
+    "allInstructions": "All instructions",
+    "results": " results",
+    "movedToFolder": "Instruction moved to folder."
   },
   "commandPalette": {
     "search": "Search commands...",
