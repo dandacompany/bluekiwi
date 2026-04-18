@@ -295,6 +295,11 @@ export default function WorkflowEditor({
     description,
     ...(folderId ? { folder_id: folderId } : {}),
     nodes: nodes.map((n) => ({
+      // Carry the existing workflow_nodes.id so the backend can UPDATE
+      // the row in place instead of DELETE+INSERT, preserving task_logs
+      // references. Omitted for newly-added nodes (dbNodeId === null)
+      // so the backend treats them as INSERTs.
+      ...(n.dbNodeId !== null ? { id: n.dbNodeId } : {}),
       title: n.title,
       node_type: n.node_type,
       instruction: n.source === "inline" ? n.instruction : "",
@@ -340,7 +345,17 @@ export default function WorkflowEditor({
         body: JSON.stringify(buildPayload()),
       });
       if (!res.ok) {
-        toast.error(t("workflows.publishFailed"));
+        // 409 WORKFLOW_NODE_IN_USE: removing a node that still has
+        // task_logs. Surface the backend message so the user knows to
+        // either publish a new version or restore the removed node.
+        const payload = (await res.json().catch(() => null)) as {
+          error?: { code?: string; message?: string };
+        } | null;
+        if (res.status === 409 && payload?.error?.message) {
+          toast.error(payload.error.message);
+        } else {
+          toast.error(t("workflows.publishFailed"));
+        }
         return;
       }
       toast.success(t("workflows.saved"));

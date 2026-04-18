@@ -21,6 +21,12 @@ interface WorkflowRow extends Omit<
 }
 
 interface NodeInput {
+  /**
+   * Database id of an existing workflow_node. When present, the node is
+   * updated in place so that task_logs.node_id references remain valid.
+   * When absent, the node is treated as newly added and INSERTed.
+   */
+  id?: number;
   title: string;
   instruction?: string;
   instruction_id?: number;
@@ -31,6 +37,29 @@ interface NodeInput {
   node_type?: string;
   loop_back_to?: number;
   auto_advance?: boolean;
+}
+
+/**
+ * Thrown when an in-place workflow update would delete a workflow_node
+ * that still has task_logs referencing it. The caller should either
+ * force a new version (`create_new_version: true`) or keep the node.
+ */
+export class WorkflowNodeInUseError extends Error {
+  readonly code = "WORKFLOW_NODE_IN_USE";
+  readonly referencedNodeIds: number[];
+  constructor(referencedNodeIds: number[]) {
+    super(
+      `Cannot remove workflow node(s) ${referencedNodeIds.join(", ")} because task history still references them. Publish a new version instead, or restore the removed node(s).`,
+    );
+    this.referencedNodeIds = referencedNodeIds;
+  }
+}
+
+function computeAutoAdvance(node: NodeInput): number {
+  const nodeType = (node.node_type ?? "action").trim();
+  if (nodeType === "action") return 1;
+  if (nodeType === "gate") return 0;
+  return node.auto_advance ? 1 : 0;
 }
 
 function normalizeWorkflow(row: WorkflowRow): Workflow {
@@ -81,18 +110,118 @@ async function insertWorkflowNodes(
         (node.instruction ?? "").trim(),
         node.instruction_id ?? null,
         node.loop_back_to ?? null,
-        (node.node_type ?? "action") === "action"
-          ? 1
-          : node.node_type === "gate"
-            ? 0
-            : node.auto_advance
-              ? 1
-              : 0,
+        computeAutoAdvance(node),
         node.credential_id ?? null,
         node.hitl ?? false,
         node.node_type === "gate" ? (node.visual_selection ?? false) : false,
         jsonTextParam(node.credential_requirement),
       ],
+    );
+  }
+}
+
+/**
+ * Safe replacement of a workflow's node list that preserves the ids of
+ * kept nodes so task_logs.node_id references remain valid after an
+ * in-place update. Throws WorkflowNodeInUseError if the caller's new
+ * node list removes any node that still has task_logs pointing at it.
+ */
+async function replaceWorkflowNodesPreservingIds(
+  client: DbTransactionClient,
+  workflowId: number,
+  incoming: NodeInput[],
+): Promise<void> {
+  const existingRows = await client.query<{ id: number }>(
+    "SELECT id FROM workflow_nodes WHERE workflow_id = $1",
+    [workflowId],
+  );
+  const existingIds = new Set(existingRows.rows.map((row) => row.id));
+
+  const incomingIds = new Set<number>();
+  for (const node of incoming) {
+    if (typeof node.id === "number" && existingIds.has(node.id)) {
+      incomingIds.add(node.id);
+    }
+  }
+
+  const removedIds = Array.from(existingIds).filter(
+    (id) => !incomingIds.has(id),
+  );
+
+  if (removedIds.length > 0) {
+    const placeholders = removedIds.map((_, i) => `$${i + 1}`).join(",");
+    const refRows = await client.query<{ node_id: number }>(
+      `SELECT DISTINCT node_id FROM task_logs WHERE node_id IN (${placeholders})`,
+      removedIds,
+    );
+    if (refRows.rows.length > 0) {
+      throw new WorkflowNodeInUseError(
+        refRows.rows.map((row) => Number(row.node_id)),
+      );
+    }
+  }
+
+  for (let i = 0; i < incoming.length; i += 1) {
+    const node = incoming[i];
+    const stepOrder = i + 1;
+    const fields = {
+      node_type: (node.node_type ?? "action").trim(),
+      title: (node.title ?? "").trim(),
+      instruction: (node.instruction ?? "").trim(),
+      instruction_id: node.instruction_id ?? null,
+      loop_back_to: node.loop_back_to ?? null,
+      auto_advance: computeAutoAdvance(node),
+      credential_id: node.credential_id ?? null,
+      hitl: node.hitl ?? false,
+      visual_selection:
+        node.node_type === "gate" ? (node.visual_selection ?? false) : false,
+      credential_requirement: jsonTextParam(node.credential_requirement),
+    };
+
+    if (typeof node.id === "number" && existingIds.has(node.id)) {
+      await client.query(
+        "UPDATE workflow_nodes SET step_order = $1, node_type = $2, title = $3, instruction = $4, instruction_id = $5, loop_back_to = $6, auto_advance = $7, credential_id = $8, hitl = $9, visual_selection = $10, credential_requirement = $11 WHERE id = $12",
+        [
+          stepOrder,
+          fields.node_type,
+          fields.title,
+          fields.instruction,
+          fields.instruction_id,
+          fields.loop_back_to,
+          fields.auto_advance,
+          fields.credential_id,
+          fields.hitl,
+          fields.visual_selection,
+          fields.credential_requirement,
+          node.id,
+        ],
+      );
+    } else {
+      await client.query(
+        "INSERT INTO workflow_nodes (workflow_id, step_order, node_type, title, instruction, instruction_id, loop_back_to, auto_advance, credential_id, hitl, visual_selection, credential_requirement) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)",
+        [
+          workflowId,
+          stepOrder,
+          fields.node_type,
+          fields.title,
+          fields.instruction,
+          fields.instruction_id,
+          fields.loop_back_to,
+          fields.auto_advance,
+          fields.credential_id,
+          fields.hitl,
+          fields.visual_selection,
+          fields.credential_requirement,
+        ],
+      );
+    }
+  }
+
+  if (removedIds.length > 0) {
+    const placeholders = removedIds.map((_, i) => `$${i + 1}`).join(",");
+    await client.query(
+      `DELETE FROM workflow_nodes WHERE id IN (${placeholders})`,
+      removedIds,
     );
   }
 }
@@ -284,10 +413,15 @@ export async function updateWorkflowWithOptionalVersion(input: {
     );
 
     if (Array.isArray(input.nodes)) {
-      await client.query("DELETE FROM workflow_nodes WHERE workflow_id = $1", [
+      // Preserve ids of kept nodes so task_logs references stay valid.
+      // Removing a node that still has task_logs throws
+      // WorkflowNodeInUseError, which the API layer should surface as a
+      // clear "publish new version" prompt to the caller.
+      await replaceWorkflowNodesPreservingIds(
+        client,
         input.workflowId,
-      ]);
-      await insertWorkflowNodes(client, input.workflowId, input.nodes);
+        input.nodes,
+      );
     }
     return input.workflowId;
   });

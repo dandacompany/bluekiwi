@@ -13,6 +13,7 @@ import {
   deleteWorkflowById,
   moveWorkflowToFolder,
   updateWorkflowWithOptionalVersion,
+  WorkflowNodeInUseError,
 } from "@/lib/db/repositories/workflows";
 
 type Params = { params: Promise<{ id: string }> };
@@ -58,19 +59,35 @@ export const PUT = withAuth<Params>(
       });
     if (errResp) return errResp;
 
-    const updated = await updateWorkflowWithOptionalVersion({
-      existing,
-      workflowId,
-      title,
-      description,
-      nodes: Array.isArray(nodes) ? nodes : undefined,
-      version,
-      evaluationContract: evaluation_contract,
-      createNewVersion: create_new_version === true,
-    });
+    try {
+      const updated = await updateWorkflowWithOptionalVersion({
+        existing,
+        workflowId,
+        title,
+        description,
+        nodes: Array.isArray(nodes) ? nodes : undefined,
+        version,
+        evaluationContract: evaluation_contract,
+        createNewVersion: create_new_version === true,
+      });
 
-    const res = okResponse(updated);
-    return NextResponse.json(res.body, { status: res.status });
+      const res = okResponse(updated);
+      return NextResponse.json(res.body, { status: res.status });
+    } catch (err) {
+      if (err instanceof WorkflowNodeInUseError) {
+        return NextResponse.json(
+          {
+            error: {
+              code: err.code,
+              message: err.message,
+              referenced_node_ids: err.referencedNodeIds,
+            },
+          },
+          { status: 409 },
+        );
+      }
+      throw err;
+    }
   },
 );
 
