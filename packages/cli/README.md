@@ -74,12 +74,16 @@ For packaged quickstart builds, generate the standalone app bundle first:
 npm run build:cli
 ```
 
+### Troubleshooting
+
+If `bluekiwi start` reports success but the app fails to respond (`/setup` shows "Cannot connect to server" or `bluekiwi status` reports `health: unhealthy`), inspect `~/.bluekiwi/quickstart/<profile>/logs/app.log`. The most common cause is a failed `better-sqlite3` native-binary install during `npm install -g bluekiwi` — rebuild with `cd $(npm root -g)/bluekiwi && node scripts/rebuild-native.mjs`.
+
 ## Development
 
 ```bash
 npm install     # installs vitest + typescript
 npm run build   # tsc + asset bundling
-npm test        # runs the 115-test Vitest suite
+npm test        # runs the 120-test Vitest suite
 ```
 
 The test suite covers every adapter's install/uninstall round-trip and

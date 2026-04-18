@@ -1,6 +1,7 @@
 import {
   existsSync,
   mkdirSync,
+  openSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -206,7 +207,7 @@ export async function startLocalRuntime(
       host,
       port,
       url: `http://${host}:${port}`,
-      healthUrl: `http://${host}:${port}/login`,
+      healthUrl: `http://${host}:${port}/api/auth/setup`,
       appRoot,
       runtimeKind: runtime.kind,
       runtimeSource: runtime.source,
@@ -219,13 +220,14 @@ export async function startLocalRuntime(
     return record;
   }
 
+  const logFd = openSync(logFile, "a");
   const child =
     runtime.kind === "bundle"
       ? spawn("node", [join(appRoot, "server.js")], {
           cwd: appRoot,
           env,
           detached: true,
-          stdio: ["ignore", "ignore", "ignore"],
+          stdio: ["ignore", logFd, logFd],
         })
       : spawn(
           "npm",
@@ -234,7 +236,7 @@ export async function startLocalRuntime(
             cwd: appRoot,
             env,
             detached: true,
-            stdio: ["ignore", "ignore", "ignore"],
+            stdio: ["ignore", logFd, logFd],
           },
         );
   child.unref();
@@ -248,7 +250,7 @@ export async function startLocalRuntime(
     host,
     port,
     url: `http://${host}:${port}`,
-    healthUrl: `http://${host}:${port}/login`,
+    healthUrl: `http://${host}:${port}/api/auth/setup`,
     appRoot,
     runtimeKind: runtime.kind,
     runtimeSource: runtime.source,

@@ -283,7 +283,8 @@
     "superuserNote": "이 계정은 superuser 권한으로 생성됩니다",
     "passwordMinLength": "비밀번호는 6자 이상이어야 합니다.",
     "passwordMismatch": "비밀번호가 일치하지 않습니다.",
-    "setupFailed": "설정에 실패했습니다."
+    "setupFailed": "설정에 실패했습니다.",
+    "serverError": "서버 오류 ({status}). 로그 확인: ~/.bluekiwi/quickstart/<profile>/logs/app.log"
   },
   "changePassword": {
     "title": "비밀번호를 변경해주세요",

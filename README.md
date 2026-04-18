@@ -124,6 +124,8 @@ What this mode does:
 
 This mode is intended for local authoring, demos, CI smoke validation, and small-scale testing. It is not positioned as full hosted/server parity yet. For team deployment and full hosted parity, use the Docker-based setup above.
 
+If `bluekiwi start` reports success but `/setup` shows "Cannot connect to server" or `bluekiwi status` reports `health: unhealthy`, check the runtime log at `~/.bluekiwi/quickstart/<profile>/logs/app.log`. The most common cause is a failed native-binary install — rebuild with `cd $(npm root -g)/bluekiwi && node scripts/rebuild-native.mjs`.
+
 ---
 
 ## Skills

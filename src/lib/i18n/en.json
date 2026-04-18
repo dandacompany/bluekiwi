@@ -283,7 +283,8 @@
     "superuserNote": "This account will have superuser privileges",
     "passwordMinLength": "Password must be at least 6 characters.",
     "passwordMismatch": "Passwords do not match.",
-    "setupFailed": "Setup failed."
+    "setupFailed": "Setup failed.",
+    "serverError": "Server error ({status}). Check logs: ~/.bluekiwi/quickstart/<profile>/logs/app.log"
   },
   "changePassword": {
     "title": "Please change your password",

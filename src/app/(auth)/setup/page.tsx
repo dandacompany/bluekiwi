@@ -44,23 +44,45 @@ export default function SetupPage() {
     }
 
     setLoading(true);
+    let res: Response;
     try {
-      const res = await fetch("/api/auth/setup", {
+      res = await fetch("/api/auth/setup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, email, password }),
       });
-      const data = await res.json();
+    } catch {
+      setError(t("auth.connectionError"));
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const data = (await res.json().catch(() => null)) as {
+        error?: string;
+        success?: boolean;
+      } | null;
 
       if (!res.ok) {
-        setError(data.error || t("setup.setupFailed"));
+        if (data?.error) {
+          setError(data.error);
+        } else {
+          setError(
+            t("setup.serverError").replace("{status}", String(res.status)),
+          );
+        }
+        return;
+      }
+
+      if (!data) {
+        setError(
+          t("setup.serverError").replace("{status}", String(res.status)),
+        );
         return;
       }
 
       router.push("/");
       router.refresh();
-    } catch {
-      setError(t("auth.connectionError"));
     } finally {
       setLoading(false);
     }

@@ -124,6 +124,8 @@ bluekiwi stop
 
 이 모드는 로컬 authoring, 데모, CI smoke 검증, 소규모 테스트에 적합합니다. 아직 hosted/server 배포와 완전한 parity를 목표로 하지는 않습니다. 팀 배포와 전체 hosted parity가 필요하면 위의 Docker 기반 설치를 사용하세요.
 
+`bluekiwi start`가 성공 메시지를 띄웠는데 `/setup`에서 "서버에 연결할 수 없습니다"가 뜨거나 `bluekiwi status`가 `health: unhealthy`로 보이면, `~/.bluekiwi/quickstart/<profile>/logs/app.log`를 먼저 확인하세요. 가장 흔한 원인은 네이티브 바이너리 설치 실패이며, `cd $(npm root -g)/bluekiwi && node scripts/rebuild-native.mjs`로 재빌드하면 됩니다.
+
 ---
 
 ## 스킬

@@ -52,11 +52,15 @@ try {
     });
     console.log("[bluekiwi] better-sqlite3 compiled successfully.");
   } catch (e) {
-    console.warn(
-      "[bluekiwi] Warning: Could not build better-sqlite3 native module.",
+    console.error(
+      "[bluekiwi] ERROR: Could not build better-sqlite3 native module.",
     );
-    console.warn("  'bluekiwi start' (local SQLite mode) will not work.");
-    console.warn("  Docker mode is unaffected.");
-    console.warn(`  Error: ${e.message ?? e}`);
+    console.error("  'bluekiwi start' (local SQLite mode) will not work.");
+    console.error(
+      "  Retry with: cd $(npm root -g)/bluekiwi && node scripts/rebuild-native.mjs",
+    );
+    console.error("  Docker mode is unaffected.");
+    console.error(`  Error: ${e.message ?? e}`);
+    process.exit(1);
   }
 }
