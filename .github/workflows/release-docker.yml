@@ -1,0 +1,133 @@
+name: Release Docker Image (multi-arch)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Image version (e.g. 1.2.3)"
+        required: true
+        type: string
+      tag_latest:
+        description: "Also tag as :latest"
+        type: boolean
+        default: true
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  build:
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+            arch: amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve version
+        id: ver
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          REF_NAME: ${{ github.ref_name }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "push" ]; then
+            VERSION="${REF_NAME#v}"
+          else
+            VERSION="$INPUT_VERSION"
+          fi
+          # Strict allow-list: digits, dots, dashes, alphanum
+          case "$VERSION" in
+            *[!A-Za-z0-9.-]*) echo "Invalid version: $VERSION" >&2; exit 1 ;;
+          esac
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push (${{ matrix.arch }})
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: ${{ matrix.platform }}
+          push: true
+          provenance: false
+          tags: ${{ env.IMAGE }}:${{ steps.ver.outputs.version }}-${{ matrix.arch }}
+          cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache-${{ matrix.arch }}
+          cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache-${{ matrix.arch }},mode=max
+
+  merge:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve version + latest decision
+        id: ver
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_TAG_LATEST: ${{ inputs.tag_latest }}
+          REF_NAME: ${{ github.ref_name }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "push" ]; then
+            VERSION="${REF_NAME#v}"
+            LATEST=true
+          else
+            VERSION="$INPUT_VERSION"
+            LATEST="$INPUT_TAG_LATEST"
+          fi
+          case "$VERSION" in
+            *[!A-Za-z0-9.-]*) echo "Invalid version: $VERSION" >&2; exit 1 ;;
+          esac
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "latest=$LATEST" >> "$GITHUB_OUTPUT"
+
+      - name: Create multi-arch manifest
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+          LATEST: ${{ steps.ver.outputs.latest }}
+          REPO: ${{ env.IMAGE }}
+        run: |
+          set -euo pipefail
+          TAGS=( -t "$REPO:$VERSION" )
+          if [ "$LATEST" = "true" ]; then
+            TAGS+=( -t "$REPO:latest" )
+          fi
+          docker buildx imagetools create "${TAGS[@]}" \
+            "$REPO:$VERSION-amd64" "$REPO:$VERSION-arm64"
+
+      - name: Inspect resulting manifest
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+          REPO: ${{ env.IMAGE }}
+        run: |
+          docker buildx imagetools inspect "$REPO:$VERSION"
