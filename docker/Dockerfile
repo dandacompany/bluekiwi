@@ -8,10 +8,15 @@ RUN npm ci --ignore-scripts --prefer-offline --no-audit --progress=false
 # Ensure esbuild binary is installed for the container platform
 RUN npx esbuild --version > /dev/null
 
+# MCP has its own lockfile (not part of the root npm workspace)
+COPY mcp/package.json mcp/package-lock.json ./mcp/
+RUN cd mcp && npm ci --ignore-scripts --omit=dev --prefer-offline --no-audit --progress=false
+
 # ─── Builder ───
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/mcp/node_modules ./mcp/node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 
