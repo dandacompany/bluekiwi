@@ -116,7 +116,7 @@ npm run ws
 
 ### Schema
 
-`init.sql`이 PostgreSQL 컨테이너 첫 실행 시 자동으로 실행됩니다.
+앱 컨테이너 시작 시 `scripts/migrate.js`가 `docker/migrations/*.sql`을 순서대로 적용합니다 (`schema_migrations` 테이블로 추적).
 
 7개 테이블:
 
@@ -152,7 +152,7 @@ cat backup.sql | docker compose exec -T db psql -U bluekiwi -d bluekiwi
 
 ```bash
 docker compose down -v   # 볼륨 포함 삭제
-docker compose up -d     # 재생성 (init.sql 재실행)
+docker compose up -d     # 재생성 (migrate.js가 모든 마이그레이션 재실행)
 ```
 
 ## Seed Data
@@ -193,14 +193,11 @@ docker compose logs db --tail 50
 
 ### 마이그레이션 문제
 
-init.sql은 첫 실행 시에만 적용됩니다. 스키마를 변경한 경우:
+새 스키마 변경은 `docker/migrations/NNN_*.sql` 파일로 추가하고 앱을 재시작하면 자동 적용됩니다. 볼륨을 초기화해 처음부터 다시 돌리려면:
 
 ```bash
 # 볼륨 삭제 후 재생성 (데이터 손실!)
 docker compose down -v && docker compose up -d
-
-# 또는 수동으로 ALTER TABLE 실행
-docker compose exec db psql -U bluekiwi -d bluekiwi -c "ALTER TABLE ..."
 ```
 
 ### 앱 빌드 실패

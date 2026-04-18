@@ -47,7 +47,7 @@ docker compose -f docker/docker-compose.dev.yml ps
 
 - 프로덕션: app 시작 시 `scripts/migrate.js`가 자동 실행 (`schema_migrations` 테이블로 추적)
 - 로컬 dev: `npx tsx scripts/migrate.ts` 수동 실행
-- 새 마이그레이션: `docker/migrations/NNN_name.sql` 추가 후 `docker/init.sql`에도 반영
+- 새 마이그레이션: `docker/migrations/NNN_name.sql` 추가 — 앱 시작 시 `scripts/migrate.js`가 `schema_migrations`로 추적하며 순서대로 자동 적용
 
 ### ⚠️ SQL 마이그레이션 작성 주의사항
 

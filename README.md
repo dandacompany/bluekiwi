@@ -351,7 +351,7 @@ Target a single runtime with `--runtime <id>`, e.g. `bluekiwi init --runtime cur
 
 ### Database migrations
 
-The app runs migrations automatically on startup. For a fresh install, Docker loads `docker/init.sql` which creates the complete schema and marks the initial migration as applied — no manual steps needed.
+The app runs migrations automatically on startup. For a fresh install, `scripts/migrate.js` applies every SQL file in `docker/migrations/` in order (tracked via `schema_migrations`) — no manual steps needed.
 
 To run migrations manually (e.g., in a CI pipeline):
 

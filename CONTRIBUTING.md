@@ -90,8 +90,7 @@ blue-kiwi/
 │   ├── docker-compose.yml       # production stack
 │   ├── Dockerfile.dev
 │   ├── Dockerfile               # multi-stage production build
-│   ├── init.sql                 # schema: 18 tables
-│   └── migrations/
+│   └── migrations/              # versioned SQL, applied by scripts/migrate.js
 ├── scripts/
 │   ├── dev.sh               # dev stack manager
 │   ├── e2e-oss.sh           # full E2E test runner (S1–S6)
@@ -123,7 +122,7 @@ blue-kiwi/
 
 ## Database
 
-18 tables — see `docker/init.sql` and `docker/migrations/`:
+18 tables — see `docker/migrations/` (applied in order by `scripts/migrate.js`):
 
 ```
 workflows             # workflow definitions (versioned)

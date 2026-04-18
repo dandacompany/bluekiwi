@@ -10,9 +10,6 @@
 -- The migration runner applies this file once and tracks it in
 -- schema_migrations. Subsequent schema changes add new numbered
 -- files (002_*.sql, etc.).
---
--- Docker users: docker/init.sql runs this schema automatically
--- and pre-marks it as applied so this file is never re-run.
 -- ============================================================
 
 BEGIN;
