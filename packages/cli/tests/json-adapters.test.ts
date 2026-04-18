@@ -1,5 +1,4 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
-import { tmpdir } from "os";
 import { join } from "path";
 import {
   afterAll,
@@ -14,11 +13,13 @@ import {
 // The adapter modules capture homedir() at import-time for module-level
 // constants (e.g. `const BASE = join(homedir(), ".claude")`). We therefore
 // mock `os.homedir` BEFORE importing any adapter, so every BASE resolves to
-// our tmp home.
+// our tmp home. vi.hoisted runs before ESM imports resolve, which is why
+// we fall back to synchronous CommonJS `require` for path/os here.
 const { TMP_HOME } = vi.hoisted(() => {
-  // Require inside hoisted so it runs before ESM imports.
+  /* eslint-disable @typescript-eslint/no-require-imports */
   const path: typeof import("path") = require("path");
   const osLib: typeof import("os") = require("os");
+  /* eslint-enable @typescript-eslint/no-require-imports */
   return {
     TMP_HOME: path.join(
       osLib.tmpdir(),
