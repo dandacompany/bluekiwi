@@ -7,7 +7,7 @@ A GitHub repo, a local skill, an external URL — one `/bk-import` command is al
 1. **Deeply analyze** the resource with repomix or WebFetch
 2. **Translate** its process logic into action / gate / loop nodes
 3. **Register** a workflow with detailed, executable instructions on the server
-4. Open it in the browser and run it immediately with `/bk-run`
+4. Open it in the browser and run it immediately with `/bk-start`
 
 ---
 
@@ -114,7 +114,7 @@ Select "Paste text or JSON" when prompted for the input type, then paste the JSO
 Once registered, run it immediately:
 
 ```text
-/bk-run
+/bk-start
 ```
 
 Or click the **Run** button on the workflow page that opens in your browser.

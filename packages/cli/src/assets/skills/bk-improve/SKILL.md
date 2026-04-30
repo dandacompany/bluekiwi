@@ -180,7 +180,7 @@ Ask via AskUserQuestion:
 - "Run the updated workflow now to verify changes?"
 - options: ["Run now", "Run later"]
 
-If "Run now" → switch to `/bk-run` flow.
+If "Run now" → switch to `/bk-start` flow.
 
 ## Attachment Management
 
@@ -203,9 +203,9 @@ When improving a node with `visual_selection: true`:
 
 <HARD-RULE>
 - Before any structural edit, refresh the current workflow structure from the server and use the latest node ids / step orders as the source of truth.
-- Update a single node → `update_node(workflow_id, node_id, ...only changed fields)`
-- Append a node (at the end) → `append_node(workflow_id, title, instruction, node_type, loop_back_to?, visual_selection?)`
-- Insert a node (in the middle) → `insert_node(workflow_id, after_step=N, title, instruction, node_type, loop_back_to?, visual_selection?)`
+- Update a single node → `update_node(workflow_id, node_id, ...only changed fields such as title, instruction, node_type, hitl, visual_selection, loop_back_to, credential_id, instruction_id)`
+- Append a node (at the end) → `append_node(workflow_id, title, instruction, node_type, hitl?, visual_selection?, loop_back_to?, credential_id?, instruction_id?)`
+- Insert a node (in the middle) → `insert_node(workflow_id, after_step=N, title, instruction, node_type, hitl?, visual_selection?, loop_back_to?, credential_id?, instruction_id?)`
 - Delete a node → `remove_node(workflow_id, node_id)`
 - Never use `update_workflow(nodes=[...])` for full replacement unless a complete redesign is intended
 - After every `append_node` or `insert_node`, inspect the returned `node_verification`.

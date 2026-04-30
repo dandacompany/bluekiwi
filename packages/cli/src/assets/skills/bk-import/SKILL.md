@@ -35,7 +35,7 @@ If no argument, ask via AskUserQuestion:
 
 - header: "Import from where?"
 - "Which resource do you want to convert into a BlueKiwi workflow?"
-- options: ["GitHub repo URL or owner/repo", "Local skill (e.g. bk-run)", "External URL", "Paste text or JSON"]
+- options: ["GitHub repo URL or owner/repo", "Local skill (e.g. bk-start)", "External URL", "Paste text or JSON"]
 
 ## Step 2: Fetch & Analyze Content
 
@@ -60,7 +60,7 @@ Clean up when done: `rm /tmp/bk-import-<repo-name>.xml`
 
 Resolve path:
 
-- Bare name (e.g. `bk-run`) → `~/.claude/skills/bk-run/SKILL.md`
+- Bare name (e.g. `bk-start`) → `~/.claude/skills/bk-start/SKILL.md`
 - Full path → read directly
 
 Read `SKILL.md` completely. Also read any files under `scripts/` if present.
@@ -225,7 +225,7 @@ Source: <resource>
 Steps:  <n>
 🔗 ${WEBUI_URL}/workflows/${WORKFLOW_ID}
 
-Type /bk-run to execute it now.
+Type /bk-start to execute it now.
 ```
 
 ## Node Type Quick Reference

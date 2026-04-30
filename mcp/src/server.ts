@@ -404,7 +404,7 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
   ),
   tool(
     "create_workflow",
-    "Create a new workflow. Optionally place it in a specific folder_id (defaults to the caller's My Workspace).",
+    "Create a new workflow. Optionally place it in a specific folder_id (defaults to the caller's My Workspace). Pass nodes to create the initial workflow structure in the same call; when nodes are supplied, the response includes node_verification and callers must verify mismatch=false before making further structural edits.",
     {
       title: { type: "string" },
       description: { type: "string" },
@@ -473,7 +473,7 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
   ),
   tool(
     "update_node",
-    "Partially update a single node. Only provided fields are changed. If node_type changes, auto_advance is re-enforced automatically.",
+    "Partially update a single node. Only provided fields are changed. If node_type changes, auto_advance is re-enforced automatically. visual_selection is only retained for gate nodes.",
     {
       workflow_id: { type: "number" },
       node_id: { type: "number" },
@@ -481,6 +481,7 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
       instruction: { type: "string" },
       node_type: { type: "string" },
       hitl: { type: "boolean" },
+      visual_selection: { type: "boolean" },
       credential_id: { type: "number" },
       instruction_id: { type: "number" },
       loop_back_to: { type: "number" },
