@@ -151,8 +151,12 @@ export const DELETE = withResource<Workflow>({
   notFoundMessage: "워크플로를 찾을 수 없습니다",
   forbiddenMessage: "삭제 권한 없음",
   handler: async ({ resource: existing }) => {
-    await deleteWorkflowById(existing.id);
-    const res = okResponse({ id: existing.id, deleted: true });
+    const { deletedTaskCount } = await deleteWorkflowById(existing.id);
+    const res = okResponse({
+      id: existing.id,
+      deleted: true,
+      deleted_task_count: deletedTaskCount,
+    });
     return NextResponse.json(res.body, { status: res.status });
   },
 });

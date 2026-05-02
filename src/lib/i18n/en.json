@@ -394,7 +394,7 @@
     "empty": "No workflows",
     "emptyDesc": "Create your first workflow",
     "deleteConfirm": "Delete Workflow",
-    "deleteDesc": "Are you sure you want to delete this? This action cannot be undone.",
+    "deleteDesc": "\"{title}\" and all linked execution history will be deleted. This action cannot be undone.",
     "deleted": "Workflow has been deleted.",
     "duplicated": "Workflow has been duplicated.",
     "nodes": "nodes",

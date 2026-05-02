@@ -441,8 +441,23 @@ export async function moveWorkflowToFolder(input: {
   );
 }
 
-export async function deleteWorkflowById(workflowId: number): Promise<void> {
-  await execute("DELETE FROM workflows WHERE id = $1", [workflowId]);
+export async function deleteWorkflowById(workflowId: number): Promise<{
+  deletedTaskCount: number;
+}> {
+  return withTransaction(async (client) => {
+    const taskCountResult = await client.query<{ count: string | number }>(
+      "SELECT COUNT(*) AS count FROM tasks WHERE workflow_id = $1",
+      [workflowId],
+    );
+    const deletedTaskCount = Number(taskCountResult.rows[0]?.count ?? 0);
+
+    await client.query("DELETE FROM tasks WHERE workflow_id = $1", [
+      workflowId,
+    ]);
+    await client.query("DELETE FROM workflows WHERE id = $1", [workflowId]);
+
+    return { deletedTaskCount };
+  });
 }
 
 export async function findWorkflowById(id: number): Promise<Workflow | null> {

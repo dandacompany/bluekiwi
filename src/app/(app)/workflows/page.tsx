@@ -1084,7 +1084,9 @@ export default function WorkflowsPage() {
       <DeleteConfirmDialog
         target={deleteTarget}
         title={t("workflows.deleteConfirm")}
-        description={`"${deleteTarget?.title ?? ""}"${t("workflows.deleteDesc")}`}
+        description={t("workflows.deleteDesc", {
+          title: deleteTarget?.title ?? "",
+        })}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
       />
