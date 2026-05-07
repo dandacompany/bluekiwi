@@ -39,6 +39,57 @@ describe("skills-helper", () => {
     expect(readFileSync(join(dir, "bk-b", "SKILL.md"), "utf8")).toBe("# B");
   });
 
+  it("installSkills writes bundled reference files", () => {
+    installSkills(dir, [
+      {
+        name: "bk-design",
+        content: "# Design",
+        files: [
+          { path: "SKILL.md", content: "# Design" },
+          {
+            path: "references/hifi-design-playbook.md",
+            content: "# Playbook",
+          },
+        ],
+      },
+    ]);
+    expect(readFileSync(join(dir, "bk-design", "SKILL.md"), "utf8")).toBe(
+      "# Design",
+    );
+    expect(
+      readFileSync(
+        join(dir, "bk-design", "references", "hifi-design-playbook.md"),
+        "utf8",
+      ),
+    ).toBe("# Playbook");
+  });
+
+  it("installSkills replaces stale managed skill files", () => {
+    installSkills(dir, [
+      {
+        name: "bk-design",
+        content: "# Old",
+        files: [
+          { path: "SKILL.md", content: "# Old" },
+          { path: "references/old.md", content: "old" },
+        ],
+      },
+    ]);
+    installSkills(dir, [
+      {
+        name: "bk-design",
+        content: "# New",
+        files: [{ path: "SKILL.md", content: "# New" }],
+      },
+    ]);
+    expect(readFileSync(join(dir, "bk-design", "SKILL.md"), "utf8")).toBe(
+      "# New",
+    );
+    expect(existsSync(join(dir, "bk-design", "references", "old.md"))).toBe(
+      false,
+    );
+  });
+
   it("installSkills creates missing parent directory", () => {
     expect(existsSync(dir)).toBe(false);
     installSkills(dir, [{ name: "bk-a", content: "x" }]);

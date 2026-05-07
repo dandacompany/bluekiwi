@@ -233,6 +233,25 @@ describe.each(SPECS)("$name adapter", (spec) => {
     expect(existsSync(join(adapter.getSkillsDir(), "bk-a"))).toBe(true);
     expect(existsSync(join(adapter.getSkillsDir(), "bk-b"))).toBe(false);
   });
+
+  it("skills install preserves bundled supporting files", () => {
+    adapter.installSkills([
+      {
+        name: "bk-design",
+        content: "Design",
+        files: [
+          { path: "SKILL.md", content: "Design" },
+          { path: "references/craft-rules.md", content: "Rules" },
+        ],
+      },
+    ]);
+
+    expect(
+      existsSync(
+        join(adapter.getSkillsDir(), "bk-design", "references", "craft-rules.md"),
+      ),
+    ).toBe(true);
+  });
 });
 
 // Regression for Codex finding bfdvg840k: JsonMcpAdapter.readJson used to

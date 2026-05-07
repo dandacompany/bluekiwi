@@ -39,6 +39,77 @@ Use `AskUserQuestion` for selection and confirmation steps whenever the next
 action would create, update, or delete registry data. Do not infer destructive
 intent from vague wording.
 
+### Non-Negotiable Operation Protocol
+
+Follow this order for every `bk-design` invocation:
+
+1. Determine intent: create, update, delete, load, export, seed, or apply.
+2. If intent is missing or ambiguous, ask `AskUserQuestion` and stop until the
+   user answers.
+3. For create/update/delete, call `list_design_systems` before choosing a
+   target or deciding whether the registry is empty.
+4. For create, compare the request with existing title, slug, category,
+   surface, description, and version family. If any system is plausibly
+   related, ask whether to create a new system or create a new version.
+5. For update/delete, ask the user to choose the target system from the loaded
+   list before any mutation.
+6. Ask whether the operation applies to the whole system or a category/entry.
+7. Show the selected target and intended tool call in plain language, then ask
+   for confirmation before destructive or broad replacement operations.
+8. Run `lint_design_system` after substantial create/update work. Resolve
+   errors before saying the system is ready.
+
+Do not call `create_design_system`, `update_design_system`,
+`create_design_system_version`, `delete_design_system`,
+`update_design_system_section`, `delete_design_system_section`,
+`upsert_design_system_section_entry`, `delete_design_system_section_entry`,
+`upsert_design_component`, `delete_design_component`,
+`add_design_system_asset`, or `delete_design_system_asset` until the required
+selection gates above are satisfied.
+
+### AskUserQuestion Templates
+
+Use short, concrete choices. Prefer three to five options. Always include a
+free-form custom option when design direction is involved.
+
+Intent question:
+
+- "What do you want to do with BlueKiwi design systems?"
+- Options: Create, Update, Delete, Load/Export
+
+Create relationship question after `list_design_systems`:
+
+- "I found related design systems. Should I create a new version or a separate
+  system?"
+- Options: New Version, Separate System, Show Details
+
+Target question for update/delete:
+
+- "Which design system should I modify?"
+- Options should include title, slug, version, category, surface, and active
+  marker when available.
+
+Scope question:
+
+- "What scope should this operation affect?"
+- Options: Whole System, Colors, Typography, Components, One Component,
+  Guidelines/Skill, Assets
+
+Depth question for create or material visual update:
+
+- "How detailed should the design-system process be?"
+- Options: LoFi Fast Draft, HiFi Recommended Directions
+
+Generation mode question:
+
+- "How should I generate the system?"
+- Options: Guided Category Loop, Automatic Draft
+
+Confirmation question:
+
+- "Confirm this change before I write to BlueKiwi."
+- Options: Apply Change, Revise Plan, Cancel
+
 ### Design Depth Gate
 
 Before creating or materially updating design tokens, typography, or
@@ -88,6 +159,29 @@ component specs. Offer a practical checklist such as:
 
 For automatic drafts, generate a complete first pass, summarize the design
 system by category, then ask for feedback before final registry mutation.
+
+### Design Direction Synthesis
+
+For HiFi recommendations, do not paste external skill instructions into the
+answer or the registry. Use `references/hifi-design-playbook.md` and
+`references/craft-rules.md` to synthesize BlueKiwi-native recommendations.
+The recommendations must be tailored to the product context and should not
+sound like generic theme names.
+
+Each direction must include:
+
+- target user and product fit
+- palette with semantic roles, not only color names
+- typography roles and rationale
+- component coverage preset or custom component plan
+- density, radius, motion, and accessibility stance
+- known tradeoff
+
+If the user chooses automatic generation, select one direction yourself based
+on the request, state the assumptions, generate a full draft, and ask for
+feedback before writing. If the user explicitly says to write automatically
+without another approval round, still run lint after writing and summarize any
+warnings.
 
 ### Create Gate
 
@@ -271,6 +365,48 @@ system:
 - one component: `get_design_component` with the component `name`
 - guidelines: `get_design_system_section` with `section: "guidelines"`
 - portable agent docs: `export_design_system` with `format: "design"`
+
+## Category Operation Matrix
+
+Use the narrowest MCP tool that matches the user's scope:
+
+| User scope | Read tool | Create/update tool | Delete tool |
+| --- | --- | --- | --- |
+| Whole system metadata | `get_design_system` | `update_design_system` | `delete_design_system` |
+| New version | `get_design_system` | `create_design_system_version` | `delete_design_system` |
+| Colors/palette | `get_design_system_section` | `upsert_design_system_section_entry` or `update_design_system_section` | `delete_design_system_section_entry` or `delete_design_system_section` |
+| Typography/fonts | `get_design_system_section` | `upsert_design_system_section_entry` or `update_design_system_section` | `delete_design_system_section_entry` or `delete_design_system_section` |
+| Foundations/tokens | `get_design_system_section` | `upsert_design_system_section_entry` or `update_design_system_section` | `delete_design_system_section_entry` or `delete_design_system_section` |
+| Component catalog | `get_design_system_section` | `update_design_system_section` with `mode: "merge"` | `delete_design_system_section` |
+| One component | `get_design_component` | `upsert_design_component` | `delete_design_component` |
+| Guidelines | `get_design_system_section` | `update_design_system_section` | `delete_design_system_section` |
+| Skill instructions | `get_design_system_section` | `update_design_system_section` | `delete_design_system_section` |
+| Assets | `get_design_system_section` | `add_design_system_asset` | `delete_design_system_asset` |
+
+Use full `update_design_system` only for metadata edits or when the user has
+confirmed a whole-system replacement. For all category work, load the current
+section first, summarize the current entries, ask the user to confirm the
+entry or category, then use the scoped tool.
+
+## Component Planning Checklist
+
+When generating or materially updating components, ask which families to
+include unless the user chose automatic generation. In automatic mode, choose a
+preset from the HiFi playbook and state it.
+
+Recommended base catalog:
+
+- Controls: Button, Input, Textarea, Select, Checkbox, RadioGroup, Switch,
+  Slider
+- Navigation: Tabs, Breadcrumb, DropdownMenu, Sidebar, Pagination
+- Feedback: Alert, Toast, Badge, Progress, Skeleton
+- Layout/Data: Card, Table, Dialog, Drawer, Accordion, Tooltip, Popover
+- Developer utility: CodeBlock, CopyButton, CommandPalette, StatusBadge
+- Domain-specific: create names that match the user's product domain
+
+Every component document should include framework/style-system, description,
+props, variants, states, usage, static preview HTML/CSS, and source or
+integration metadata for React, plain HTML/CSS, Tailwind CSS, or shadcn/ui.
 
 ## Flow: Update a Design System
 

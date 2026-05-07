@@ -1,6 +1,10 @@
 export interface SkillBundle {
   name: string;
   content: string;
+  files?: Array<{
+    path: string;
+    content: string;
+  }>;
 }
 
 export interface McpServerConfig {

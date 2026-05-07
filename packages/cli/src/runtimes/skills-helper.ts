@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, writeFileSync, readdirSync, rmSync } from "fs";
-import { join } from "path";
+import { dirname, isAbsolute, join, normalize, sep } from "path";
 
 import type { SkillBundle } from "./base.js";
 
@@ -11,8 +11,21 @@ export function installSkills(skillsDir: string, skills: SkillBundle[]): void {
   mkdirSync(skillsDir, { recursive: true });
   for (const skill of skills) {
     const dir = join(skillsDir, skill.name);
+    rmSync(dir, { recursive: true, force: true });
     mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, "SKILL.md"), skill.content);
+    const files =
+      skill.files && skill.files.length > 0
+        ? skill.files
+        : [{ path: "SKILL.md", content: skill.content }];
+    for (const file of files) {
+      const path = normalize(file.path);
+      if (isAbsolute(path) || path === ".." || path.startsWith(`..${sep}`)) {
+        throw new Error(`Invalid skill file path for ${skill.name}: ${file.path}`);
+      }
+      const target = join(dir, path);
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, file.content);
+    }
   }
 }
 
