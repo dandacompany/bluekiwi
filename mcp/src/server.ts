@@ -640,6 +640,23 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
     ["design_system_id"],
   ),
   tool(
+    "import_design_system_package",
+    "Import a BlueKiwi design-system package exported with format=package or bundle. mode=create creates a separate registry item. mode=version imports as a new version of target_design_system_id.",
+    {
+      package: { type: "object" },
+      mode: { type: "string" },
+      target_design_system_id: { type: "number" },
+      title: { type: "string" },
+      slug: { type: "string" },
+      description: { type: "string" },
+      version: { type: "string" },
+      category: { type: "string" },
+      surface: { type: "string" },
+      folder_id: { type: "number" },
+    },
+    ["package"],
+  ),
+  tool(
     "list_instructions",
     "List instruction templates visible to the current user. Optionally filter by folder_id.",
     {
@@ -1541,6 +1558,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           ),
         );
       }
+      case "import_design_system_package":
+        return wrap(await client.request("POST", "/api/design-systems/import", args));
       case "list_instructions": {
         const qs = new URLSearchParams();
         if (typeof args.folder_id === "number")

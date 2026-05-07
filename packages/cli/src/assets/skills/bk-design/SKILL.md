@@ -298,6 +298,9 @@ For delete intent:
   the same files with `format: "package"` for import/apply workflows.
   `adapters` returns Tailwind config, shadcn registry JSON, React component
   scaffolds, HTML/CSS preview kit, and CSS custom properties.
+- `import_design_system_package` — import a BlueKiwi package export into the
+  registry. Use `mode: "create"` for a separate system, or `mode: "version"`
+  with `target_design_system_id` after the user chooses an existing family.
 
 ## Flow: Use an Existing Design System
 
@@ -494,6 +497,18 @@ generated files instead of reconstructing config by hand.
 
 For a meaningful published revision, call `create_design_system_version` so the
 previous active version remains in history.
+
+For package imports:
+
+1. Inspect `design-package.json` or the package manifest summary.
+2. Call `list_design_systems` and ask whether to import as a separate system or
+   as a new version of a related existing system.
+3. For a separate system, confirm title, slug, category, and surface before
+   calling `import_design_system_package` with `mode: "create"`.
+4. For a version, ask the target system, confirm the version label, then call
+   `import_design_system_package` with `mode: "version"` and
+   `target_design_system_id`.
+5. Run `lint_design_system` on the imported system and summarize warnings.
 
 Before creating a version from an existing system, call
 `list_design_system_versions` when the user asks about history, rollback,

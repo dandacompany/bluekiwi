@@ -41,6 +41,8 @@ describe("bk-design bundled skill", () => {
     expect(skill).toContain("bk://active/design-system/DESIGN.md");
     expect(skill).toContain('format: "package"');
     expect(skill).toContain("design-package.json");
+    expect(skill).toContain("import_design_system_package");
+    expect(skill).toContain('mode: "version"');
     expect(skill).toContain('format: "adapters"');
     expect(skill).toContain("React/Tailwind/shadcn/HTML");
     expect(skill).toContain("bundle");

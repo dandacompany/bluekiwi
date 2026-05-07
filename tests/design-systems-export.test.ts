@@ -11,6 +11,7 @@ import {
   getDesignSystemSectionEntryValue,
   getDesignSystemSectionValue,
   lintDesignSystem,
+  parseDesignSystemPackageExport,
   type DesignSystemDetail,
 } from "../src/lib/db/repositories/design-systems";
 
@@ -198,7 +199,11 @@ describe("design system exports", () => {
     expect(paths).toContain("DESIGN.md");
     expect(paths).toContain("design-package.json");
     expect(paths).toContain("manifest.json");
+    expect(paths).toContain("schema.json");
+    expect(paths).toContain("tokens/all.json");
     expect(paths).toContain("tokens/colors.json");
+    expect(paths).toContain("docs/guidelines.md");
+    expect(paths).toContain("docs/skill.md");
     expect(paths).toContain("adapters/tailwind.config.js");
     expect(paths).toContain("adapters/shadcn-registry.json");
     expect(
@@ -230,6 +235,31 @@ describe("design system exports", () => {
       name: "LessonCard",
       framework: "shadcn",
       react_path: "adapters/react/LessonCard.tsx",
+    });
+  });
+
+  it("parses portable package exports back into create/version input", () => {
+    const packaged = buildDesignSystemPackageExport(detail);
+    const parsed = parseDesignSystemPackageExport(packaged);
+
+    expect(parsed).toMatchObject({
+      title: "Acme Design",
+      slug: "acme-design",
+      description: "Acme product design system",
+      version: "1.0",
+      category: "Developer Tools",
+      surface: "web",
+      guidelinesMarkdown: "## Use\n\nUse brand blue.",
+      skillMarkdown: "Apply Acme tokens.",
+    });
+    expect(parsed.colorTokens).toEqual({ brand: "#0055ff" });
+    expect(parsed.typographyTokens).toEqual({ body: "Inter" });
+    expect(parsed.componentTokens).toHaveProperty("LessonCard");
+    expect(parsed.schema).toEqual({ mediums: ["web"] });
+    expect(parsed.assets[0]).toMatchObject({
+      kind: "css",
+      filename: "tokens.css",
+      mimeType: "text/css",
     });
   });
 

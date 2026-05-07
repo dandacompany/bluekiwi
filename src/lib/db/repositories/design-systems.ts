@@ -121,6 +121,29 @@ export interface DesignSystemLintResult {
   issues: DesignSystemLintIssue[];
 }
 
+export interface ParsedDesignSystemPackage {
+  title: string;
+  slug?: string;
+  description: string;
+  version?: string;
+  category?: string;
+  surface?: string;
+  schema: unknown;
+  tokens: unknown;
+  colorTokens: unknown;
+  typographyTokens: unknown;
+  componentTokens: unknown;
+  guidelinesMarkdown: string;
+  skillMarkdown: string;
+  exportManifest: unknown;
+  assets: Array<{
+    kind: DesignSystemAssetKind;
+    filename: string;
+    mimeType: string;
+    contentText: string;
+  }>;
+}
+
 export interface DesignSystemVersionDiffSection {
   added: string[];
   removed: string[];
@@ -318,6 +341,15 @@ function parseJsonObject<T = Record<string, unknown>>(value: string): T {
     return JSON.parse(value) as T;
   } catch {
     return {} as T;
+  }
+}
+
+function parseJsonValue(value: string, fallback: unknown = {}) {
+  if (!value.trim()) return fallback;
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return fallback;
   }
 }
 
@@ -2588,6 +2620,140 @@ function componentSourceTypes(component: DesignSystemComponentDoc): string[] {
   ].filter(Boolean);
 }
 
+function packageFileMap(pkg: Record<string, unknown>): Map<string, string> {
+  const files = Array.isArray(pkg.files) ? pkg.files : [];
+  const map = new Map<string, string>();
+  for (const item of files) {
+    if (!isPlainObject(item)) continue;
+    const path = typeof item.path === "string" ? item.path : "";
+    const content = typeof item.content === "string" ? item.content : "";
+    if (path) map.set(path, content);
+  }
+  return map;
+}
+
+function fileJson(
+  files: Map<string, string>,
+  path: string,
+  fallback: unknown,
+): unknown {
+  return files.has(path) ? parseJsonValue(files.get(path) ?? "", fallback) : fallback;
+}
+
+function fileText(files: Map<string, string>, path: string): string {
+  return files.get(path)?.trim() ?? "";
+}
+
+function inferAssetKind(filename: string, mimeType: string): DesignSystemAssetKind {
+  if (/image\//i.test(mimeType)) return "image";
+  if (/css/i.test(mimeType) || /\.css$/i.test(filename)) return "css";
+  if (/html|tsx|jsx|template/i.test(mimeType) || /\.(html|tsx|jsx)$/i.test(filename)) {
+    return "template";
+  }
+  if (/markdown|json|text/i.test(mimeType) || /\.(md|json|txt)$/i.test(filename)) {
+    return "reference";
+  }
+  return "other";
+}
+
+export function parseDesignSystemPackageExport(input: unknown): ParsedDesignSystemPackage {
+  const pkg = isPlainObject(input) ? input : {};
+  const files = packageFileMap(pkg);
+  const manifest = recordValue(pkg.package_manifest);
+  const manifestSystem = recordValue(manifest.design_system);
+  const designSystem = {
+    ...manifestSystem,
+    ...recordValue(pkg.design_system),
+  };
+  const tokenSections = recordValue(pkg.token_sections);
+
+  const title =
+    stringValue(designSystem.title) ||
+    stringValue(pkg.title) ||
+    "Imported Design System";
+  const slug = stringValue(designSystem.slug) || undefined;
+  const description =
+    stringValue(designSystem.description) ||
+    stringValue(pkg.description) ||
+    `Imported BlueKiwi design package for ${title}.`;
+
+  const colorTokens =
+    fileJson(files, "tokens/colors.json", undefined) ??
+    recordValue(tokenSections.color);
+  const typographyTokens =
+    fileJson(files, "tokens/typography.json", undefined) ??
+    recordValue(tokenSections.typography);
+  const componentTokens =
+    fileJson(files, "tokens/components.json", undefined) ??
+    recordValue(tokenSections.components);
+  const tokens =
+    fileJson(files, "tokens/all.json", undefined) ??
+    (isPlainObject(pkg.tokens)
+      ? pkg.tokens
+      : {
+          color: colorTokens,
+          typography: typographyTokens,
+          components: componentTokens,
+        });
+
+  const assets = Array.from(files.entries())
+    .filter(([path]) => path.startsWith("assets/"))
+    .map(([path, content]) => {
+      const filename = path.replace(/^assets\//, "");
+      const manifestAsset = Array.isArray(manifest.assets)
+        ? manifest.assets.find(
+            (asset) =>
+              isPlainObject(asset) &&
+              (asset.path === path || asset.filename === filename),
+          )
+        : null;
+      const mimeType =
+        isPlainObject(manifestAsset) && typeof manifestAsset.mime_type === "string"
+          ? manifestAsset.mime_type
+          : "text/plain";
+      const rawKind =
+        isPlainObject(manifestAsset) && typeof manifestAsset.kind === "string"
+          ? manifestAsset.kind
+          : "";
+      const kind = SUPPORTED_ASSET_KINDS.includes(rawKind as DesignSystemAssetKind)
+        ? (rawKind as DesignSystemAssetKind)
+        : inferAssetKind(filename, mimeType);
+      return {
+        kind,
+        filename,
+        mimeType,
+        contentText: content,
+      };
+    });
+
+  return {
+    title,
+    slug,
+    description,
+    version: stringValue(designSystem.version) || undefined,
+    category: stringValue(designSystem.category) || undefined,
+    surface: stringValue(designSystem.surface) || undefined,
+    schema: fileJson(files, "schema.json", recordValue(pkg.schema)),
+    tokens,
+    colorTokens,
+    typographyTokens,
+    componentTokens,
+    guidelinesMarkdown:
+      fileText(files, "docs/guidelines.md") ||
+      stringValue(pkg.guidelines_markdown),
+    skillMarkdown:
+      fileText(files, "docs/skill.md") || stringValue(pkg.skill_markdown),
+    exportManifest:
+      isPlainObject(pkg.export_manifest) || Array.isArray(pkg.export_manifest)
+        ? pkg.export_manifest
+        : {
+            imported_from: "bluekiwi-design-package",
+            package_schema_version: stringValue(manifest.package_schema_version),
+          },
+    assets,
+  };
+}
+
 export function buildDesignSystemBundleExport(detail: DesignSystemDetail) {
   const componentDocs = buildDesignSystemComponentDocs(detail);
   const json = buildDesignSystemJsonExport(detail);
@@ -2603,6 +2769,16 @@ export function buildDesignSystemBundleExport(detail: DesignSystemDetail) {
       path: "SKILL.md",
       mime_type: "text/markdown",
       content: buildDesignSystemSkillExport(detail),
+    },
+    {
+      path: "schema.json",
+      mime_type: "application/json",
+      content: JSON.stringify(parseJsonObject(detail.content.schema_json), null, 2),
+    },
+    {
+      path: "tokens/all.json",
+      mime_type: "application/json",
+      content: JSON.stringify(parseJsonObject(detail.content.tokens_json), null, 2),
     },
     {
       path: "tokens/colors.json",
@@ -2623,6 +2799,16 @@ export function buildDesignSystemBundleExport(detail: DesignSystemDetail) {
       path: "components/README.md",
       mime_type: "text/markdown",
       content: componentDocsMarkdown(componentDocs),
+    },
+    {
+      path: "docs/guidelines.md",
+      mime_type: "text/markdown",
+      content: detail.content.guidelines_markdown,
+    },
+    {
+      path: "docs/skill.md",
+      mime_type: "text/markdown",
+      content: detail.content.skill_markdown,
     },
     ...detail.assets
       .filter((asset) => asset.content_text !== null)
