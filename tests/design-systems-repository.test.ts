@@ -4,10 +4,11 @@ import { join } from "path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 let sqlitePath: string;
-let query: typeof import("../src/lib/db").query;
 let queryOne: typeof import("../src/lib/db").queryOne;
 let createDesignSystem: typeof import("../src/lib/db/repositories/design-systems").createDesignSystem;
 let createDesignSystemVersion: typeof import("../src/lib/db/repositories/design-systems").createDesignSystemVersion;
+let listDesignSystemFamilyVersions: typeof import("../src/lib/db/repositories/design-systems").listDesignSystemFamilyVersions;
+let buildDesignSystemVersionDiff: typeof import("../src/lib/db/repositories/design-systems").buildDesignSystemVersionDiff;
 let listDesignSystemsForVisibilityFilter: typeof import("../src/lib/db/repositories/design-systems").listDesignSystemsForVisibilityFilter;
 let getDesignSystemDetail: typeof import("../src/lib/db/repositories/design-systems").getDesignSystemDetail;
 let getDesignSystemSectionValue: typeof import("../src/lib/db/repositories/design-systems").getDesignSystemSectionValue;
@@ -61,10 +62,11 @@ beforeAll(async () => {
   );
   const userSettings = await import("../src/lib/db/repositories/user-settings");
 
-  query = db.query;
   queryOne = db.queryOne;
   createDesignSystem = designSystems.createDesignSystem;
   createDesignSystemVersion = designSystems.createDesignSystemVersion;
+  listDesignSystemFamilyVersions = designSystems.listDesignSystemFamilyVersions;
+  buildDesignSystemVersionDiff = designSystems.buildDesignSystemVersionDiff;
   listDesignSystemsForVisibilityFilter =
     designSystems.listDesignSystemsForVisibilityFilter;
   getDesignSystemDetail = designSystems.getDesignSystemDetail;
@@ -275,6 +277,14 @@ describe("design-system repository integration", () => {
 
     const previous = await getDesignSystemDetail(designSystemId);
     expect(previous?.is_active).toBe(false);
+
+    const versions = await listDesignSystemFamilyVersions(next.id);
+    expect(versions.map((version) => version.id)).toEqual([next.id, source!.id]);
+
+    const diff = buildDesignSystemVersionDiff(previous!, next);
+    expect(diff.metadata.changed).toContain("version");
+    expect(diff.sections.colors.changed).toContain("accent");
+    expect(diff.markdown.guidelines_changed).toBe(true);
 
     const activeOnly = await listDesignSystemsForVisibilityFilter({
       filterSql: "ds.owner_id = $1",

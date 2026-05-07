@@ -469,6 +469,24 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
     ["design_system_id"],
   ),
   tool(
+    "list_design_system_versions",
+    "List every version in the same family as the given design-system id, including active and inactive versions.",
+    {
+      design_system_id: { type: "number" },
+    },
+    ["design_system_id"],
+  ),
+  tool(
+    "diff_design_system_versions",
+    "Compare two versions in the same design-system family and return metadata, token, component, markdown, and asset changes.",
+    {
+      design_system_id: { type: "number" },
+      from_design_system_id: { type: "number" },
+      to_design_system_id: { type: "number" },
+    },
+    ["design_system_id", "from_design_system_id", "to_design_system_id"],
+  ),
+  tool(
     "add_design_system_asset",
     "Add a small text or base64 asset to a design system. kind must be logo, image, css, template, reference, or other. Use template for HTML/TSX/JSX component source, css for component styles, and reference for component docs. Provide exactly one of content_text or content_base64.",
     {
@@ -1308,6 +1326,30 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             "POST",
             `/api/design-systems/${designSystemId}/versions`,
             body,
+          ),
+        );
+      }
+      case "list_design_system_versions": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        return wrap(
+          await client.request(
+            "GET",
+            `/api/design-systems/${designSystemId}/versions`,
+          ),
+        );
+      }
+      case "diff_design_system_versions": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        const fromId = requireNumberArg(args, "from_design_system_id");
+        const toId = requireNumberArg(args, "to_design_system_id");
+        const qs = new URLSearchParams({
+          from: String(fromId),
+          to: String(toId),
+        });
+        return wrap(
+          await client.request(
+            "GET",
+            `/api/design-systems/${designSystemId}/versions/compare?${qs.toString()}`,
           ),
         );
       }

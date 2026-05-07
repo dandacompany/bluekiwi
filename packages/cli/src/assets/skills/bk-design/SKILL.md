@@ -240,6 +240,10 @@ For delete intent:
   or the user asks for starter/reference systems.
 - `update_design_system` — update metadata or active payload.
 - `create_design_system_version` — publish a new active version.
+- `list_design_system_versions` — list active and inactive versions in one
+  family before update, rollback, or comparison decisions.
+- `diff_design_system_versions` — compare two versions and inspect metadata,
+  token, component, markdown, and asset changes.
 - `delete_design_system` — delete one version or a full version family.
 - `get_design_system_section` — load one category such as colors,
   typography, components, guidelines, skill, or assets.
@@ -450,6 +454,12 @@ another agent to copy the component into a target project:
 
 For a meaningful published revision, call `create_design_system_version` so the
 previous active version remains in history.
+
+Before creating a version from an existing system, call
+`list_design_system_versions` when the user asks about history, rollback,
+comparison, or an older version. After creating a new version, call
+`diff_design_system_versions` against the source and new version when the user
+needs a change summary or when the update is broad.
 
 Never overwrite a user's established design rules without first summarizing the
 change and asking for confirmation.

@@ -105,6 +105,33 @@ export interface DesignSystemLintResult {
   issues: DesignSystemLintIssue[];
 }
 
+export interface DesignSystemVersionDiffSection {
+  added: string[];
+  removed: string[];
+  changed: string[];
+}
+
+export interface DesignSystemVersionDiff {
+  from: Pick<
+    DesignSystem,
+    "id" | "title" | "slug" | "version" | "is_active" | "updated_at"
+  >;
+  to: Pick<
+    DesignSystem,
+    "id" | "title" | "slug" | "version" | "is_active" | "updated_at"
+  >;
+  metadata: DesignSystemVersionDiffSection;
+  sections: Record<
+    "schema" | "tokens" | "colors" | "typography" | "components",
+    DesignSystemVersionDiffSection
+  >;
+  markdown: {
+    guidelines_changed: boolean;
+    skill_changed: boolean;
+  };
+  assets: DesignSystemVersionDiffSection;
+}
+
 export interface DesignSystemCreateInput {
   title: string;
   slug?: string;
@@ -265,6 +292,36 @@ function parseJsonObject<T = Record<string, unknown>>(value: string): T {
   } catch {
     return {} as T;
   }
+}
+
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableJson(item)).join(",")}]`;
+  }
+  if (isPlainObject(value)) {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableJson(value[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function diffRecordKeys(
+  from: Record<string, unknown>,
+  to: Record<string, unknown>,
+): DesignSystemVersionDiffSection {
+  const fromKeys = new Set(Object.keys(from));
+  const toKeys = new Set(Object.keys(to));
+  const added = [...toKeys].filter((key) => !fromKeys.has(key)).sort();
+  const removed = [...fromKeys].filter((key) => !toKeys.has(key)).sort();
+  const changed = [...toKeys]
+    .filter(
+      (key) =>
+        fromKeys.has(key) && stableJson(from[key]) !== stableJson(to[key]),
+    )
+    .sort();
+  return { added, removed, changed };
 }
 
 export function normalizeDesignSystemSection(
@@ -644,6 +701,134 @@ export async function getDesignSystemDetail(
   if (!content) return null;
   const assets = await listDesignSystemAssets(id);
   return { ...designSystem, content, assets };
+}
+
+export async function listDesignSystemFamilyVersions(
+  id: number,
+): Promise<DesignSystem[]> {
+  const existing = await findDesignSystemById(id);
+  if (!existing) return [];
+  const rootId = existing.family_root_id ?? existing.id;
+  const rows = await query<DesignSystemRow>(
+    `SELECT * FROM design_systems
+     WHERE family_root_id = $1 OR id = $1
+     ORDER BY created_at DESC, id DESC`,
+    [rootId],
+  );
+  return rows.map(normalizeDesignSystem);
+}
+
+function diffMetadata(
+  from: DesignSystemDetail,
+  to: DesignSystemDetail,
+): DesignSystemVersionDiffSection {
+  return diffRecordKeys(
+    {
+      title: from.title,
+      slug: from.slug,
+      description: from.description,
+      version: from.version,
+      category: from.category,
+      surface: from.surface,
+      status: from.status,
+      visibility_override: from.visibility_override,
+    },
+    {
+      title: to.title,
+      slug: to.slug,
+      description: to.description,
+      version: to.version,
+      category: to.category,
+      surface: to.surface,
+      status: to.status,
+      visibility_override: to.visibility_override,
+    },
+  );
+}
+
+function diffAssetKeys(
+  from: DesignSystemDetail,
+  to: DesignSystemDetail,
+): DesignSystemVersionDiffSection {
+  const toKey = (asset: DesignSystemAsset) => asset.filename;
+  const fromAssets = Object.fromEntries(
+    from.assets.map((asset) => [
+      toKey(asset),
+      {
+        kind: asset.kind,
+        mime_type: asset.mime_type,
+        size_bytes: asset.size_bytes,
+        content_text: asset.content_text,
+        content_base64: asset.content_base64,
+      },
+    ]),
+  );
+  const toAssets = Object.fromEntries(
+    to.assets.map((asset) => [
+      toKey(asset),
+      {
+        kind: asset.kind,
+        mime_type: asset.mime_type,
+        size_bytes: asset.size_bytes,
+        content_text: asset.content_text,
+        content_base64: asset.content_base64,
+      },
+    ]),
+  );
+  return diffRecordKeys(fromAssets, toAssets);
+}
+
+export function buildDesignSystemVersionDiff(
+  from: DesignSystemDetail,
+  to: DesignSystemDetail,
+): DesignSystemVersionDiff {
+  return {
+    from: {
+      id: from.id,
+      title: from.title,
+      slug: from.slug,
+      version: from.version,
+      is_active: from.is_active,
+      updated_at: from.updated_at,
+    },
+    to: {
+      id: to.id,
+      title: to.title,
+      slug: to.slug,
+      version: to.version,
+      is_active: to.is_active,
+      updated_at: to.updated_at,
+    },
+    metadata: diffMetadata(from, to),
+    sections: {
+      schema: diffRecordKeys(
+        parseJsonObject(from.content.schema_json),
+        parseJsonObject(to.content.schema_json),
+      ),
+      tokens: diffRecordKeys(
+        parseJsonObject(from.content.tokens_json),
+        parseJsonObject(to.content.tokens_json),
+      ),
+      colors: diffRecordKeys(
+        parseJsonObject(from.content.color_tokens_json),
+        parseJsonObject(to.content.color_tokens_json),
+      ),
+      typography: diffRecordKeys(
+        parseJsonObject(from.content.typography_tokens_json),
+        parseJsonObject(to.content.typography_tokens_json),
+      ),
+      components: diffRecordKeys(
+        parseJsonObject(from.content.component_tokens_json),
+        parseJsonObject(to.content.component_tokens_json),
+      ),
+    },
+    markdown: {
+      guidelines_changed:
+        from.content.guidelines_markdown !== to.content.guidelines_markdown,
+      skill_changed: from.content.skill_markdown !== to.content.skill_markdown,
+    },
+    assets: diffAssetKeys(from, to),
+  };
 }
 
 export function getDesignSystemSectionValue(
