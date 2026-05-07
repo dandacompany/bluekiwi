@@ -29,6 +29,14 @@ import { Textarea } from "@/components/ui/textarea";
 
 type JsonMap = Record<string, unknown>;
 
+type ExportFormat =
+  | "json"
+  | "skill"
+  | "design"
+  | "bundle"
+  | "package"
+  | "adapters";
+
 type TokenEntry = {
   path: string;
   value: string;
@@ -136,6 +144,32 @@ function parseJsonMap(value: string): JsonMap {
 
 function stringifyJson(value: JsonMap): string {
   return JSON.stringify(value, null, 2);
+}
+
+function safeFilename(value: string): string {
+  return (
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9가-힣._-]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "design-system"
+  );
+}
+
+function downloadTextFile(
+  filename: string,
+  content: string,
+  mimeType = "text/plain",
+) {
+  const blob = new Blob([content], { type: `${mimeType};charset=utf-8` });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
 }
 
 function isHexColor(value: unknown): value is string {
@@ -610,19 +644,40 @@ export default function DesignSystemDetailPage() {
     }
   }
 
-  async function exportAs(
-    format: "json" | "skill" | "design" | "bundle" | "package" | "adapters",
-  ) {
+  async function exportAs(format: ExportFormat) {
+    setMessage("");
     const res = await fetch(`/api/design-systems/${id}/export?format=${format}`);
     const json = await res.json();
-    setExportContent(
+    if (!res.ok) {
+      setMessage(json?.error?.message ?? "Export failed");
+      return;
+    }
+
+    const data = json.data ?? {};
+    const isJsonExport =
       format === "json" ||
-        format === "bundle" ||
-        format === "package" ||
-        format === "adapters"
-        ? JSON.stringify(json.data ?? {}, null, 2)
-        : json.data?.content ?? "",
-    );
+      format === "bundle" ||
+      format === "package" ||
+      format === "adapters";
+    const content = isJsonExport
+      ? JSON.stringify(data, null, 2)
+      : String(data.content ?? "");
+    const baseName = safeFilename(detail?.slug || detail?.title || `design-${id}`);
+    const filename =
+      typeof data.filename === "string"
+        ? data.filename
+        : {
+            json: `${baseName}.design-system.json`,
+            bundle: `${baseName}.bundle.json`,
+            package: `${baseName}.design-package.json`,
+            adapters: `${baseName}.adapters.json`,
+            design: `${baseName}.DESIGN.md`,
+            skill: `${baseName}.SKILL.md`,
+          }[format];
+
+    setExportContent(content);
+    downloadTextFile(filename, content, isJsonExport ? "application/json" : "text/markdown");
+    setMessage(`Downloaded ${filename}`);
   }
 
   async function runLint() {
