@@ -2498,11 +2498,102 @@ export function buildDesignSystemAdapterExport(detail: DesignSystemDetail) {
   };
 }
 
+function buildDesignSystemPackageManifest(input: {
+  detail: DesignSystemDetail;
+  componentDocs: DesignSystemComponentDoc[];
+  files: Array<{ path: string; mime_type: string }>;
+  lint: DesignSystemLintResult;
+}) {
+  const { detail, componentDocs, files, lint } = input;
+  return {
+    package_schema_version: "bluekiwi.design-package.v1",
+    source: "bluekiwi-registry",
+    generated_at: detail.updated_at,
+    design_system: {
+      id: detail.id,
+      title: detail.title,
+      slug: detail.slug,
+      version: detail.version,
+      category: detail.category,
+      surface: detail.surface,
+      status: detail.status,
+      family_root_id: detail.family_root_id,
+      is_active: detail.is_active,
+    },
+    entrypoints: {
+      agent_document: "DESIGN.md",
+      portable_skill: "SKILL.md",
+      package_manifest: "design-package.json",
+      component_docs: "components/README.md",
+    },
+    tokens: {
+      colors: "tokens/colors.json",
+      typography: "tokens/typography.json",
+      components: "tokens/components.json",
+    },
+    adapters: {
+      css_tokens: "adapters/tokens.css",
+      tailwind: "adapters/tailwind.config.js",
+      shadcn: "adapters/shadcn-registry.json",
+      react: "adapters/react/index.ts",
+      html: "adapters/html/index.html",
+    },
+    components: componentDocs.map((doc) => ({
+      name: doc.name,
+      framework: doc.framework,
+      style_system: doc.styleSystem,
+      states: doc.states,
+      variants: doc.variants,
+      source_types: componentSourceTypes(doc),
+      react_path:
+        doc.react || doc.framework === "react" || doc.framework === "shadcn"
+          ? `adapters/react/${componentFileName(doc.name)}`
+          : null,
+    })),
+    assets: detail.assets.map((asset) => ({
+      id: asset.id,
+      kind: asset.kind,
+      filename: asset.filename,
+      mime_type: asset.mime_type,
+      size_bytes: asset.size_bytes,
+      path: asset.content_text === null ? null : `assets/${asset.filename}`,
+    })),
+    quality: {
+      ok: lint.ok,
+      score: lint.score,
+      issue_counts: lint.issue_counts,
+    },
+    import_hints: {
+      preferred_agent_entrypoint: "DESIGN.md",
+      preferred_implementation_entrypoint: "adapters/tokens.css",
+      version_strategy:
+        "Create a new BlueKiwi design-system version for material updates; preserve family_root_id lineage when importing related revisions.",
+      merge_strategy:
+        "Treat tokens/colors.json, tokens/typography.json, and tokens/components.json as split canonical sections. Merge category-level changes with scoped tools instead of replacing the full system.",
+    },
+    files: files.map((file) => ({
+      path: file.path,
+      mime_type: file.mime_type,
+    })),
+  };
+}
+
+function componentSourceTypes(component: DesignSystemComponentDoc): string[] {
+  return [
+    component.react ? "react" : "",
+    component.html ? "html" : "",
+    component.css ? "css" : "",
+    Object.keys(component.tailwind).length > 0 ? "tailwind" : "",
+    Object.keys(component.shadcn).length > 0 ? "shadcn" : "",
+  ].filter(Boolean);
+}
+
 export function buildDesignSystemBundleExport(detail: DesignSystemDetail) {
   const componentDocs = buildDesignSystemComponentDocs(detail);
   const json = buildDesignSystemJsonExport(detail);
   const adapterExport = buildDesignSystemAdapterExport(detail);
-  const files = [
+  const lint = lintDesignSystem(detail);
+  const baseFiles = [
     {
       path: "DESIGN.md",
       mime_type: "text/markdown",
@@ -2533,38 +2624,6 @@ export function buildDesignSystemBundleExport(detail: DesignSystemDetail) {
       mime_type: "text/markdown",
       content: componentDocsMarkdown(componentDocs),
     },
-    {
-      path: "manifest.json",
-      mime_type: "application/json",
-      content: JSON.stringify(
-        {
-          id: detail.id,
-          title: detail.title,
-          slug: detail.slug,
-          version: detail.version,
-          category: detail.category,
-          surface: detail.surface,
-          files: [
-            "DESIGN.md",
-            "SKILL.md",
-            "tokens/colors.json",
-            "tokens/typography.json",
-            "tokens/components.json",
-            "components/README.md",
-            ...adapterExport.files.map((file) => file.path),
-          ],
-          assets: detail.assets.map((asset) => ({
-            id: asset.id,
-            kind: asset.kind,
-            filename: asset.filename,
-            mime_type: asset.mime_type,
-            size_bytes: asset.size_bytes,
-          })),
-        },
-        null,
-        2,
-      ),
-    },
     ...detail.assets
       .filter((asset) => asset.content_text !== null)
       .map((asset) => ({
@@ -2574,12 +2633,43 @@ export function buildDesignSystemBundleExport(detail: DesignSystemDetail) {
       })),
     ...adapterExport.files,
   ];
+  const packageManifest = buildDesignSystemPackageManifest({
+    detail,
+    componentDocs,
+    files: [
+      ...baseFiles,
+      { path: "design-package.json", mime_type: "application/json" },
+      { path: "manifest.json", mime_type: "application/json" },
+    ],
+    lint,
+  });
+  const files = [
+    ...baseFiles,
+    {
+      path: "design-package.json",
+      mime_type: "application/json",
+      content: JSON.stringify(packageManifest, null, 2),
+    },
+    {
+      path: "manifest.json",
+      mime_type: "application/json",
+      content: JSON.stringify(packageManifest, null, 2),
+    },
+  ];
 
   return {
     format: "bundle",
     design_system: json.design_system,
-    lint: lintDesignSystem(detail),
+    package_manifest: packageManifest,
+    lint,
     files,
+  };
+}
+
+export function buildDesignSystemPackageExport(detail: DesignSystemDetail) {
+  return {
+    ...buildDesignSystemBundleExport(detail),
+    format: "package",
   };
 }
 

@@ -632,7 +632,7 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
   ),
   tool(
     "export_design_system",
-    "Export a design system as json, SKILL.md-compatible skill content, DESIGN.md documentation, a bundle, or implementation adapters. format must be json, skill, design, bundle, or adapters.",
+    "Export a design system as json, SKILL.md-compatible skill content, DESIGN.md documentation, a bundle/package, or implementation adapters. format must be json, skill, design, bundle, package, or adapters.",
     {
       design_system_id: { type: "number" },
       format: { type: "string" },

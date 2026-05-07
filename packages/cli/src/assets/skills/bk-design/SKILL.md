@@ -291,12 +291,13 @@ For delete intent:
   component states, shadcn/Tailwind metadata, and agent-readability gaps.
 - `add_design_system_asset` — attach a small text/base64 asset.
 - `delete_design_system_asset` — remove obsolete source assets.
-- `export_design_system` — export `json`, `skill`, `design`, `bundle`, or
-  `adapters`
-  format. `bundle` returns `DESIGN.md`, `SKILL.md`, split token files,
-  component docs, text assets, implementation adapters, and lint results in
-  one payload. `adapters` returns Tailwind config, shadcn registry JSON, React
-  component scaffolds, HTML/CSS preview kit, and CSS custom properties.
+- `export_design_system` — export `json`, `skill`, `design`, `bundle`,
+  `package`, or `adapters` format. `bundle` returns `DESIGN.md`, `SKILL.md`,
+  `design-package.json`, split token files, component docs, text assets,
+  implementation adapters, and lint results in one payload. `package` returns
+  the same files with `format: "package"` for import/apply workflows.
+  `adapters` returns Tailwind config, shadcn registry JSON, React component
+  scaffolds, HTML/CSS preview kit, and CSS custom properties.
 
 ## Flow: Use an Existing Design System
 
@@ -402,6 +403,7 @@ system:
 - one component: `get_design_component` with the component `name`
 - guidelines: `get_design_system_section` with `section: "guidelines"`
 - portable agent docs: `export_design_system` with `format: "design"`
+- portable design package: `export_design_system` with `format: "package"`
 - implementation handoff: `export_design_system` with `format: "adapters"`
 
 ## Category Operation Matrix
@@ -556,8 +558,9 @@ resources are available, read `bk://design-systems/<id>/DESIGN.md` for the same
 agent-facing view without invoking extra mutation-capable tools. Use
 `format: "skill"` when the user specifically needs a portable SKILL.md. Use
 `format: "adapters"` when another agent needs implementation files for
-React/Tailwind/shadcn/HTML. Use `format: "bundle"` when another agent needs the
-whole system in one response.
+React/Tailwind/shadcn/HTML. Use `format: "package"` when another agent needs a
+portable import/apply package with `design-package.json`, or `format: "bundle"`
+when a legacy consumer expects that name for the whole payload.
 
 ## Safety
 

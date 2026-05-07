@@ -7,6 +7,7 @@ import {
   buildDesignSystemDesignMarkdownExport,
   buildDesignSystemBundleExport,
   buildDesignSystemJsonExport,
+  buildDesignSystemPackageExport,
   buildDesignSystemSkillExport,
   getDesignSystemDetail,
 } from "@/lib/db/repositories/design-systems";
@@ -54,6 +55,10 @@ export const GET = withResource<DesignSystem>({
       const res = okResponse(buildDesignSystemBundleExport(detail));
       return NextResponse.json(res.body, { status: res.status });
     }
+    if (format === "package" || format === "design-package") {
+      const res = okResponse(buildDesignSystemPackageExport(detail));
+      return NextResponse.json(res.body, { status: res.status });
+    }
     if (format === "adapters" || format === "adapter") {
       const res = okResponse(buildDesignSystemAdapterExport(detail));
       return NextResponse.json(res.body, { status: res.status });
@@ -61,7 +66,7 @@ export const GET = withResource<DesignSystem>({
 
     const res = errorResponse(
       "UNSUPPORTED_FORMAT",
-      "format must be json, skill, design, bundle, or adapters",
+      "format must be json, skill, design, bundle, package, or adapters",
       400,
     );
     return NextResponse.json(res.body, { status: res.status });

@@ -5,6 +5,7 @@ import {
   buildDesignSystemComponentDocs,
   buildDesignSystemDesignMarkdownExport,
   buildDesignSystemJsonExport,
+  buildDesignSystemPackageExport,
   buildDesignSystemSkillExport,
   getDesignSystemComponentValue,
   getDesignSystemSectionEntryValue,
@@ -195,13 +196,41 @@ describe("design system exports", () => {
     const paths = bundle.files.map((file) => file.path);
     expect(bundle.format).toBe("bundle");
     expect(paths).toContain("DESIGN.md");
+    expect(paths).toContain("design-package.json");
+    expect(paths).toContain("manifest.json");
     expect(paths).toContain("tokens/colors.json");
     expect(paths).toContain("adapters/tailwind.config.js");
     expect(paths).toContain("adapters/shadcn-registry.json");
     expect(
       bundle.files.find((file) => file.path === "DESIGN.md")?.content,
     ).toContain("## Component Catalog");
+    expect(bundle.package_manifest.package_schema_version).toBe(
+      "bluekiwi.design-package.v1",
+    );
+    expect(bundle.package_manifest.entrypoints.agent_document).toBe("DESIGN.md");
+    expect(bundle.package_manifest.tokens.components).toBe(
+      "tokens/components.json",
+    );
     expect(bundle.lint.issues.length).toBeGreaterThan(0);
+  });
+
+  it("builds portable package export for import/apply workflows", () => {
+    const packaged = buildDesignSystemPackageExport(detail);
+    const manifestFile = packaged.files.find(
+      (file) => file.path === "design-package.json",
+    );
+    const manifest = JSON.parse(manifestFile?.content ?? "{}");
+
+    expect(packaged.format).toBe("package");
+    expect(packaged.package_manifest.design_system.slug).toBe("acme-design");
+    expect(manifest.import_hints.merge_strategy).toContain(
+      "split canonical sections",
+    );
+    expect(manifest.components[0]).toMatchObject({
+      name: "LessonCard",
+      framework: "shadcn",
+      react_path: "adapters/react/LessonCard.tsx",
+    });
   });
 
   it("builds implementation adapter export", () => {

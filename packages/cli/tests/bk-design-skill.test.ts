@@ -39,6 +39,8 @@ describe("bk-design bundled skill", () => {
   it("keeps DESIGN.md and adapter export guidance available to agents", () => {
     expect(skill).toContain('format: "design"');
     expect(skill).toContain("bk://active/design-system/DESIGN.md");
+    expect(skill).toContain('format: "package"');
+    expect(skill).toContain("design-package.json");
     expect(skill).toContain('format: "adapters"');
     expect(skill).toContain("React/Tailwind/shadcn/HTML");
     expect(skill).toContain("bundle");
