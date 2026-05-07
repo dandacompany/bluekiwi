@@ -34,6 +34,7 @@ export async function seedBuiltinWorkflows(
 ): Promise<number> {
   const INCLUDED_SEED_FILES = new Set([
     "content-pipeline.json",
+    "design-system-creation.json",
     "superpowers-brainstorm-to-ship.json",
     "gstack-sprint-pipeline.json",
   ]);

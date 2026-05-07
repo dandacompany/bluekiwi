@@ -143,6 +143,11 @@ export const PERMISSIONS = {
   // Instructions
   "instructions:read": "viewer" as Role,
   "instructions:write": "editor" as Role,
+
+  // Design Systems
+  "design_systems:read": "viewer" as Role,
+  "design_systems:create": "editor" as Role,
+  "design_systems:update": "editor" as Role,
 } as const;
 
 export type Permission = keyof typeof PERMISSIONS;

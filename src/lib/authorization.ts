@@ -163,6 +163,40 @@ export async function canEdit(
   return false;
 }
 
+/**
+ * Design systems do not have direct share rows in the MVP. They inherit access
+ * from folder ownership/visibility/shares plus optional public override.
+ */
+export async function canReadDesignSystem(
+  user: User,
+  resource: OwnedResource,
+): Promise<boolean> {
+  if (resource.owner_id === user.id) return true;
+  if (isPrivileged(user, ["admin", "superuser"])) return true;
+
+  const vis = await effectiveResourceVisibility(resource);
+  if (vis === "public") return true;
+  if (vis === "group") {
+    return (await userFolderShareLevel(user, resource.folder_id)) !== null;
+  }
+  return false;
+}
+
+export async function canEditDesignSystem(
+  user: User,
+  resource: OwnedResource,
+): Promise<boolean> {
+  if (resource.owner_id === user.id) return true;
+  if (user.role === "superuser") return true;
+
+  const vis = await effectiveResourceVisibility(resource);
+  if (vis === "group") {
+    return (await userFolderShareLevel(user, resource.folder_id)) ===
+      "contributor";
+  }
+  return false;
+}
+
 export async function canManageWorkflowShares(
   user: User,
   resource: OwnedResource,
@@ -380,6 +414,64 @@ export async function buildResourceVisibilityFilter(
         AND (
           (${tableAlias}.visibility_override IS NULL AND ${folderIsPublic})
           OR ${groupClause}
+        )
+    )
+  )`;
+
+  return { sql, params };
+}
+
+export async function buildDesignSystemVisibilityFilter(
+  tableAlias: string,
+  user: User,
+  nextParamIndex: number,
+): Promise<AuthFilter> {
+  const groups = await userGroupIds(user.id);
+  const params: unknown[] = [user.id];
+  let p = nextParamIndex;
+  const userIdx = p;
+  p += 1;
+
+  const folderIsPublic = `(
+    f.visibility = 'public'
+    OR (f.visibility = 'inherit' AND f.parent_id IS NOT NULL
+        AND EXISTS (SELECT 1 FROM folders pf WHERE pf.id = f.parent_id AND pf.visibility = 'public'))
+  )`;
+
+  let groupClause = "FALSE";
+  if (groups.length > 0) {
+    const groupPlaceholders = groups
+      .map((_, index) => `$${p + index}`)
+      .join(", ");
+    params.push(...groups);
+    p += groups.length;
+
+    const folderIsGroup = `(
+      f.visibility = 'group'
+      OR (f.visibility = 'inherit' AND f.parent_id IS NOT NULL
+          AND EXISTS (SELECT 1 FROM folders pf WHERE pf.id = f.parent_id AND pf.visibility = 'group'))
+    )`;
+
+    groupClause = `(
+      ${folderIsGroup}
+      AND EXISTS (
+        SELECT 1 FROM folder_shares fs
+        WHERE fs.folder_id IN (f.id, f.parent_id)
+          AND fs.group_id IN (${groupPlaceholders})
+      )
+    )`;
+  }
+
+  const sql = `(
+    ${tableAlias}.owner_id = $${userIdx}
+    OR ${tableAlias}.visibility_override = 'public'
+    OR EXISTS (
+      SELECT 1 FROM folders f
+      WHERE f.id = ${tableAlias}.folder_id
+        AND (
+          (${tableAlias}.visibility_override IS NULL AND ${folderIsPublic})
+          OR (${tableAlias}.visibility_override IS NULL AND ${groupClause})
+          OR (${tableAlias}.visibility_override = 'group' AND ${groupClause})
         )
     )
   )`;

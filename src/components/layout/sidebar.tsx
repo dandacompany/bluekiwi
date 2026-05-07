@@ -9,6 +9,7 @@ import {
   ListTodo,
   KeyRound,
   FileText,
+  Palette,
   BookOpen,
   FileCode,
   Store,
@@ -95,6 +96,11 @@ export function Sidebar({ user, teamName }: SidebarProps) {
       { href: "/tasks", icon: ListTodo, label: t("nav.tasks") },
       { href: "/credentials", icon: KeyRound, label: t("nav.credentials") },
       { href: "/instructions", icon: FileText, label: t("nav.instructions") },
+      {
+        href: "/design-systems",
+        icon: Palette,
+        label: t("nav.designSystems"),
+      },
     ],
     [t],
   );

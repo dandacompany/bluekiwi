@@ -150,6 +150,58 @@ export interface WorkflowShare {
   created_at: string;
 }
 
+export type DesignSystemStatus = "draft" | "published" | "archived";
+export type DesignSystemAssetKind =
+  | "logo"
+  | "image"
+  | "css"
+  | "template"
+  | "reference"
+  | "other";
+
+export interface DesignSystem {
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  version: string;
+  parent_design_system_id: number | null;
+  family_root_id: number;
+  is_active: boolean;
+  status: DesignSystemStatus;
+  owner_id: number;
+  folder_id: number;
+  visibility_override: Visibility | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DesignSystemVersion {
+  id: number;
+  design_system_id: number;
+  schema_json: string;
+  tokens_json: string;
+  guidelines_markdown: string;
+  skill_markdown: string;
+  export_manifest_json: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DesignSystemAsset {
+  id: number;
+  design_system_id: number;
+  version_id: number;
+  kind: DesignSystemAssetKind;
+  filename: string;
+  mime_type: string;
+  content_text: string | null;
+  content_base64: string | null;
+  size_bytes: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface EvaluationContract {
   steps?: Record<
     string,
@@ -362,6 +414,47 @@ function normalizeWorkflow(row: Record<string, unknown>): Workflow {
   };
 }
 
+function normalizeDesignSystem(row: Record<string, unknown>): DesignSystem {
+  return {
+    ...(row as unknown as DesignSystem),
+    is_active: decodeBoolean(row.is_active),
+    created_at: decodeTimestamp(row.created_at) ?? new Date(0).toISOString(),
+    updated_at: decodeTimestamp(row.updated_at) ?? new Date(0).toISOString(),
+  };
+}
+
+function normalizeDesignSystemVersion(
+  row: Record<string, unknown>,
+): DesignSystemVersion {
+  return {
+    ...(row as unknown as DesignSystemVersion),
+    schema_json:
+      typeof row.schema_json === "string"
+        ? row.schema_json
+        : JSON.stringify(row.schema_json ?? {}),
+    tokens_json:
+      typeof row.tokens_json === "string"
+        ? row.tokens_json
+        : JSON.stringify(row.tokens_json ?? {}),
+    export_manifest_json:
+      typeof row.export_manifest_json === "string"
+        ? row.export_manifest_json
+        : JSON.stringify(row.export_manifest_json ?? {}),
+    created_at: decodeTimestamp(row.created_at) ?? new Date(0).toISOString(),
+    updated_at: decodeTimestamp(row.updated_at) ?? new Date(0).toISOString(),
+  };
+}
+
+function normalizeDesignSystemAsset(
+  row: Record<string, unknown>,
+): DesignSystemAsset {
+  return {
+    ...(row as unknown as DesignSystemAsset),
+    created_at: decodeTimestamp(row.created_at) ?? new Date(0).toISOString(),
+    updated_at: decodeTimestamp(row.updated_at) ?? new Date(0).toISOString(),
+  };
+}
+
 function normalizeFolder(row: Record<string, unknown>): Folder {
   return {
     ...(row as unknown as Folder),
@@ -399,6 +492,12 @@ export function normalizeResourceRow<T>(table: string, row: T): T {
       return normalizeInstruction(record) as T;
     case "workflows":
       return normalizeWorkflow(record) as T;
+    case "design_systems":
+      return normalizeDesignSystem(record) as T;
+    case "design_system_versions":
+      return normalizeDesignSystemVersion(record) as T;
+    case "design_system_assets":
+      return normalizeDesignSystemAsset(record) as T;
     case "credentials":
       return normalizeCredential(record) as T;
     case "workflow_nodes":

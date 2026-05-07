@@ -359,6 +359,98 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
     ["credential_id"],
   ),
   tool(
+    "list_design_systems",
+    "List design systems visible to the current user. Optionally filter by folder_id, q, or include_inactive.",
+    {
+      folder_id: { type: "number" },
+      q: { type: "string" },
+      include_inactive: { type: "boolean" },
+    },
+  ),
+  tool(
+    "get_design_system",
+    "Get a design system with its active content payload and assets.",
+    {
+      design_system_id: { type: "number" },
+    },
+    ["design_system_id"],
+  ),
+  tool(
+    "create_design_system",
+    "Create a new design system in the BlueKiwi registry. schema, tokens, and export_manifest may be objects or JSON strings.",
+    {
+      title: { type: "string" },
+      slug: { type: "string" },
+      description: { type: "string" },
+      version: { type: "string" },
+      status: { type: "string" },
+      folder_id: { type: "number" },
+      schema: { type: ["object", "string"] },
+      tokens: { type: ["object", "string"] },
+      guidelines_markdown: { type: "string" },
+      skill_markdown: { type: "string" },
+      export_manifest: { type: ["object", "string"] },
+    },
+    ["title"],
+  ),
+  tool(
+    "update_design_system",
+    "Update a design system's metadata and active content payload. Pass only fields that should change.",
+    {
+      design_system_id: { type: "number" },
+      title: { type: "string" },
+      slug: { type: "string" },
+      description: { type: "string" },
+      status: { type: "string" },
+      visibility_override: { type: ["string", "null"] },
+      schema: { type: ["object", "string"] },
+      tokens: { type: ["object", "string"] },
+      guidelines_markdown: { type: "string" },
+      skill_markdown: { type: "string" },
+      export_manifest: { type: ["object", "string"] },
+    },
+    ["design_system_id"],
+  ),
+  tool(
+    "create_design_system_version",
+    "Create a new active version in the same design-system family. Existing assets are copied by default unless copy_assets=false.",
+    {
+      design_system_id: { type: "number" },
+      title: { type: "string" },
+      description: { type: "string" },
+      version: { type: "string" },
+      schema: { type: ["object", "string"] },
+      tokens: { type: ["object", "string"] },
+      guidelines_markdown: { type: "string" },
+      skill_markdown: { type: "string" },
+      export_manifest: { type: ["object", "string"] },
+      copy_assets: { type: "boolean" },
+    },
+    ["design_system_id"],
+  ),
+  tool(
+    "add_design_system_asset",
+    "Add a small text or base64 asset to a design system. Provide exactly one of content_text or content_base64.",
+    {
+      design_system_id: { type: "number" },
+      kind: { type: "string" },
+      filename: { type: "string" },
+      mime_type: { type: "string" },
+      content_text: { type: "string" },
+      content_base64: { type: "string" },
+    },
+    ["design_system_id", "filename", "mime_type"],
+  ),
+  tool(
+    "export_design_system",
+    "Export a design system as json or SKILL.md-compatible skill content.",
+    {
+      design_system_id: { type: "number" },
+      format: { type: "string" },
+    },
+    ["design_system_id"],
+  ),
+  tool(
     "list_instructions",
     "List instruction templates visible to the current user. Optionally filter by folder_id.",
     {
@@ -925,6 +1017,75 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const credentialId = requireNumberArg(args, "credential_id");
         return wrap(
           await client.request("DELETE", `/api/credentials/${credentialId}`),
+        );
+      }
+      case "list_design_systems": {
+        const qs = new URLSearchParams();
+        if (typeof args.folder_id === "number")
+          qs.set("folder_id", String(args.folder_id));
+        if (typeof args.q === "string") qs.set("q", args.q);
+        if (args.include_inactive === true)
+          qs.set("include_inactive", "true");
+        const suffix = qs.toString() ? `?${qs.toString()}` : "";
+        return wrap(
+          await client.request("GET", `/api/design-systems${suffix}`),
+        );
+      }
+      case "get_design_system": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        return wrap(
+          await client.request("GET", `/api/design-systems/${designSystemId}`),
+        );
+      }
+      case "create_design_system":
+        return wrap(await client.request("POST", "/api/design-systems", args));
+      case "update_design_system": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        const body = { ...args };
+        delete body.design_system_id;
+        return wrap(
+          await client.request(
+            "PATCH",
+            `/api/design-systems/${designSystemId}`,
+            body,
+          ),
+        );
+      }
+      case "create_design_system_version": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        const body = { ...args };
+        delete body.design_system_id;
+        return wrap(
+          await client.request(
+            "POST",
+            `/api/design-systems/${designSystemId}/versions`,
+            body,
+          ),
+        );
+      }
+      case "add_design_system_asset": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        const body = { ...args };
+        delete body.design_system_id;
+        return wrap(
+          await client.request(
+            "POST",
+            `/api/design-systems/${designSystemId}/assets`,
+            body,
+          ),
+        );
+      }
+      case "export_design_system": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        const format =
+          typeof args.format === "string" && args.format.length > 0
+            ? args.format
+            : "json";
+        return wrap(
+          await client.request(
+            "GET",
+            `/api/design-systems/${designSystemId}/export?format=${encodeURIComponent(format)}`,
+          ),
         );
       }
       case "list_instructions": {

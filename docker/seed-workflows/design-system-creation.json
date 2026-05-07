@@ -1,0 +1,80 @@
+{
+  "title": "Design System Creation",
+  "description": "Guide an agent through designing a new brand/product design system, saving it to the BlueKiwi registry, and exporting it for MCP/skill usage.",
+  "version": "1.0",
+  "category": "design-and-review",
+  "nodes": [
+    {
+      "step_order": 1,
+      "node_type": "gate",
+      "title": "Brand and Product Context",
+      "instruction": "Collect the brand or product context before designing anything. Ask for the product name, target audience, primary medium, brand tone, and any existing visual references. Output the confirmed context as structured bullet points.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 2,
+      "node_type": "action",
+      "title": "Design Principles",
+      "instruction": "Derive 3-5 design principles from the confirmed context. Each principle must include a short rationale and a concrete implication for UI/content production.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 3,
+      "node_type": "action",
+      "title": "Tokens",
+      "instruction": "Create a practical token draft covering color, typography, spacing, radius, and core components. Use JSON-compatible structure and keep token names stable and implementation-friendly.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 4,
+      "node_type": "action",
+      "title": "Usage and Prohibition Guidelines",
+      "instruction": "Write markdown guidelines that explain how to use the design system and what to avoid. Include explicit do/don't rules, component usage rules, and accessibility constraints.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 5,
+      "node_type": "action",
+      "title": "Skill Markdown",
+      "instruction": "Generate SKILL.md-compatible guidance for agents. The skill must tell agents when to use the design system, how to apply tokens, how to respect prohibitions, and when to call BlueKiwi design-system MCP tools.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 6,
+      "node_type": "loop",
+      "title": "Assets and Templates",
+      "instruction": "Prepare small supporting assets such as CSS variables, HTML snippets, markdown references, or templates. Present one asset category at a time and ask whether more assets are needed. Terminate when the user confirms no more assets are needed.",
+      "loop_back_to": 6,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 7,
+      "node_type": "action",
+      "title": "Save to Registry",
+      "instruction": "Use the BlueKiwi MCP design-system tools to save the design system. Call create_design_system with title, slug, description, schema, tokens, guidelines_markdown, skill_markdown, and export_manifest. Then call add_design_system_asset for each prepared text asset.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    },
+    {
+      "step_order": 8,
+      "node_type": "gate",
+      "title": "Export Review",
+      "instruction": "Export the saved design system as json and skill using export_design_system. Summarize the saved registry id, version, asset count, and export readiness. Ask the user whether to accept the result or revise.",
+      "loop_back_to": null,
+      "hitl": false,
+      "visual_selection": false
+    }
+  ]
+}
