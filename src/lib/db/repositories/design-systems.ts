@@ -144,6 +144,39 @@ export interface ParsedDesignSystemPackage {
   }>;
 }
 
+export interface DesignSystemPackageAnalysis {
+  summary: {
+    title: string;
+    slug: string | null;
+    description: string;
+    version: string;
+    category: string;
+    surface: string;
+  };
+  counts: {
+    colors: number;
+    typography: number;
+    components: number;
+    assets: number;
+    guidelines_chars: number;
+    skill_chars: number;
+  };
+  related_systems: Array<{
+    id: number;
+    title: string;
+    slug: string;
+    version: string;
+    category: string;
+    surface: string;
+    status: string;
+    is_active: boolean;
+    score: number;
+    reasons: string[];
+  }>;
+  recommended_mode: "create" | "version";
+  suggested_target_design_system_id: number | null;
+}
+
 export interface DesignSystemVersionDiffSection {
   added: string[];
   removed: string[];
@@ -2690,6 +2723,10 @@ function inferAssetKind(filename: string, mimeType: string): DesignSystemAssetKi
   return "other";
 }
 
+function topLevelObjectCount(value: unknown): number {
+  return isPlainObject(value) ? Object.keys(value).length : 0;
+}
+
 export function parseDesignSystemPackageExport(input: unknown): ParsedDesignSystemPackage {
   const pkg = isPlainObject(input) ? input : {};
   const files = packageFileMap(pkg);
@@ -2785,6 +2822,88 @@ export function parseDesignSystemPackageExport(input: unknown): ParsedDesignSyst
             package_schema_version: stringValue(manifest.package_schema_version),
           },
     assets,
+  };
+}
+
+export function analyzeDesignSystemPackage(
+  input: unknown,
+  candidates: DesignSystem[] = [],
+): DesignSystemPackageAnalysis {
+  const parsed = parseDesignSystemPackageExport(input);
+  const normalizedSlug = parsed.slug?.toLowerCase() ?? "";
+  const normalizedTitle = parsed.title.toLowerCase();
+  const normalizedCategory = parsed.category?.toLowerCase() ?? "";
+  const normalizedSurface = parsed.surface?.toLowerCase() ?? "";
+
+  const relatedSystems = candidates
+    .map((candidate) => {
+      const reasons: string[] = [];
+      let score = 0;
+      if (normalizedSlug && candidate.slug.toLowerCase() === normalizedSlug) {
+        score += 100;
+        reasons.push("same slug");
+      }
+      if (candidate.title.toLowerCase() === normalizedTitle) {
+        score += 80;
+        reasons.push("same title");
+      }
+      if (
+        normalizedCategory &&
+        candidate.category.toLowerCase() === normalizedCategory
+      ) {
+        score += 10;
+        reasons.push("same category");
+      }
+      if (
+        normalizedSurface &&
+        candidate.surface.toLowerCase() === normalizedSurface
+      ) {
+        score += 10;
+        reasons.push("same surface");
+      }
+      return {
+        id: candidate.id,
+        title: candidate.title,
+        slug: candidate.slug,
+        version: candidate.version,
+        category: candidate.category,
+        surface: candidate.surface,
+        status: candidate.status,
+        is_active: candidate.is_active,
+        score,
+        reasons,
+      };
+    })
+    .filter((candidate) => candidate.score > 0)
+    .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title))
+    .slice(0, 8);
+
+  const suggestedTarget = relatedSystems.find((candidate) =>
+    candidate.reasons.some(
+      (reason) => reason === "same slug" || reason === "same title",
+    ),
+  );
+
+  return {
+    summary: {
+      title: parsed.title,
+      slug: parsed.slug ?? null,
+      description: parsed.description,
+      version: parsed.version ?? "1.0.0",
+      category: parsed.category ?? "Imported",
+      surface: parsed.surface ?? "web",
+    },
+    counts: {
+      colors: topLevelObjectCount(parsed.colorTokens),
+      typography: topLevelObjectCount(parsed.typographyTokens),
+      components: topLevelObjectCount(parsed.componentTokens),
+      assets: parsed.assets.length,
+      guidelines_chars: parsed.guidelinesMarkdown.length,
+      skill_chars: parsed.skillMarkdown.length,
+    },
+    related_systems: relatedSystems,
+    recommended_mode: suggestedTarget ? "version" : "create",
+    suggested_target_design_system_id: suggestedTarget?.id ?? null,
   };
 }
 

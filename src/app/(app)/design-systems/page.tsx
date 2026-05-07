@@ -52,6 +52,28 @@ type PackageSummary = {
   surface: string;
 };
 
+type PackageAnalysis = {
+  summary: PackageSummary & { slug: string | null };
+  counts: {
+    colors: number;
+    typography: number;
+    components: number;
+    assets: number;
+    guidelines_chars: number;
+    skill_chars: number;
+  };
+  related_systems: Array<{
+    id: number;
+    title: string;
+    slug: string;
+    version: string;
+    score: number;
+    reasons: string[];
+  }>;
+  recommended_mode: ImportMode;
+  suggested_target_design_system_id: number | null;
+};
+
 function recordValue(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -104,6 +126,9 @@ export default function DesignSystemsPage() {
   const [importMode, setImportMode] = useState<ImportMode>("create");
   const [importFileName, setImportFileName] = useState("");
   const [importPackage, setImportPackage] = useState<unknown>(null);
+  const [importAnalysis, setImportAnalysis] = useState<PackageAnalysis | null>(
+    null,
+  );
   const [importTargetId, setImportTargetId] = useState("");
   const [importMessage, setImportMessage] = useState("");
   const [importForm, setImportForm] = useState<PackageSummary>({
@@ -141,12 +166,48 @@ export default function DesignSystemsPage() {
 
     try {
       const parsed = JSON.parse(await file.text()) as unknown;
-      const summary = packageSummary(parsed);
-      setImportPackage(parsed);
       setImportFileName(file.name);
-      setImportForm(summary);
-      setImportMessage("");
-      setImportTargetId((current) => current || String(data[0]?.id ?? ""));
+      setImportPackage(parsed);
+
+      try {
+        const res = await fetch("/api/design-systems/import/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ package: parsed }),
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          throw new Error(json?.error?.message ?? "Failed to analyze package");
+        }
+        const analysis = json.data as PackageAnalysis;
+        const summary = {
+          ...analysis.summary,
+          slug: analysis.summary.slug || slugify(analysis.summary.title),
+        };
+        setImportAnalysis(analysis);
+        setImportForm(summary);
+        setImportMode(analysis.recommended_mode);
+        setImportMessage(
+          analysis.recommended_mode === "version"
+            ? "Related design system found. Importing as a new version is recommended."
+            : "No close match found. Importing as a new design system is recommended.",
+        );
+        setImportTargetId(
+          analysis.suggested_target_design_system_id
+            ? String(analysis.suggested_target_design_system_id)
+            : String(data[0]?.id ?? ""),
+        );
+      } catch (error) {
+        const summary = packageSummary(parsed);
+        setImportAnalysis(null);
+        setImportForm(summary);
+        setImportMessage(
+          error instanceof Error
+            ? error.message
+            : "Package analysis failed. Review the imported metadata.",
+        );
+        setImportTargetId((current) => current || String(data[0]?.id ?? ""));
+      }
     } catch {
       setImportMessage("Choose a valid BlueKiwi design package JSON file.");
     } finally {
@@ -197,6 +258,7 @@ export default function DesignSystemsPage() {
       const importedId = json?.data?.design_system?.id;
       await refetch();
       setImportPackage(null);
+      setImportAnalysis(null);
       setImportFileName("");
       setImportMessage("Imported package");
       if (typeof importedId === "number") {
@@ -395,6 +457,60 @@ export default function DesignSystemsPage() {
                       Version
                     </Button>
                   </div>
+
+                  {importAnalysis ? (
+                    <div className="rounded-md border border-border bg-muted/20 p-3 text-xs text-muted-foreground">
+                      <div className="grid grid-cols-4 gap-2 text-center">
+                        <div>
+                          <div className="font-semibold text-foreground">
+                            {importAnalysis.counts.colors}
+                          </div>
+                          Colors
+                        </div>
+                        <div>
+                          <div className="font-semibold text-foreground">
+                            {importAnalysis.counts.typography}
+                          </div>
+                          Type
+                        </div>
+                        <div>
+                          <div className="font-semibold text-foreground">
+                            {importAnalysis.counts.components}
+                          </div>
+                          Components
+                        </div>
+                        <div>
+                          <div className="font-semibold text-foreground">
+                            {importAnalysis.counts.assets}
+                          </div>
+                          Assets
+                        </div>
+                      </div>
+                      {importAnalysis.related_systems.length > 0 ? (
+                        <div className="mt-3 space-y-1 border-t border-border pt-2">
+                          <p className="font-medium text-foreground">
+                            Related systems
+                          </p>
+                          {importAnalysis.related_systems.slice(0, 3).map(
+                            (item) => (
+                              <button
+                                key={item.id}
+                                className="block w-full rounded-md px-2 py-1 text-left hover:bg-muted"
+                                type="button"
+                                onClick={() => {
+                                  setImportMode("version");
+                                  setImportTargetId(String(item.id));
+                                }}
+                              >
+                                {item.title} · v{item.version} ·{" "}
+                                {item.reasons.join(", ")}
+                              </button>
+                            ),
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
 
                   {importMode === "version" ? (
                     <Select

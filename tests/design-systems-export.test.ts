@@ -11,6 +11,7 @@ import {
   getDesignSystemSectionEntryValue,
   getDesignSystemSectionValue,
   lintDesignSystem,
+  analyzeDesignSystemPackage,
   parseDesignSystemPackageExport,
   type DesignSystemDetail,
 } from "../src/lib/db/repositories/design-systems";
@@ -260,6 +261,34 @@ describe("design system exports", () => {
       filename: "tokens.css",
       mimeType: "text/css",
     });
+  });
+
+  it("analyzes package imports and recommends versioning related systems", () => {
+    const packaged = buildDesignSystemPackageExport(detail);
+    const analysis = analyzeDesignSystemPackage(packaged, [
+      {
+        ...detail,
+        id: 44,
+        is_active: true,
+      },
+    ]);
+
+    expect(analysis.summary).toMatchObject({
+      title: "Acme Design",
+      slug: "acme-design",
+      version: "1.0",
+      category: "Developer Tools",
+      surface: "web",
+    });
+    expect(analysis.counts).toMatchObject({
+      colors: 1,
+      typography: 1,
+      components: 1,
+      assets: 1,
+    });
+    expect(analysis.recommended_mode).toBe("version");
+    expect(analysis.suggested_target_design_system_id).toBe(44);
+    expect(analysis.related_systems[0].reasons).toContain("same slug");
   });
 
   it("builds implementation adapter export", () => {

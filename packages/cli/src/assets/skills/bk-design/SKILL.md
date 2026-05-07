@@ -298,6 +298,9 @@ For delete intent:
   the same files with `format: "package"` for import/apply workflows.
   `adapters` returns Tailwind config, shadcn registry JSON, React component
   scaffolds, HTML/CSS preview kit, and CSS custom properties.
+- `analyze_design_system_package` — inspect a package before import. Returns
+  summary metadata, token/component/asset counts, related existing systems, and
+  recommended `create` vs `version` mode.
 - `import_design_system_package` — import a BlueKiwi package export into the
   registry. Use `mode: "create"` for a separate system, or `mode: "version"`
   with `target_design_system_id` after the user chooses an existing family.
@@ -500,9 +503,10 @@ previous active version remains in history.
 
 For package imports:
 
-1. Inspect `design-package.json` or the package manifest summary.
-2. Call `list_design_systems` and ask whether to import as a separate system or
-   as a new version of a related existing system.
+1. Call `analyze_design_system_package` on the package payload.
+2. Show the summary, counts, related systems, and recommended mode. Ask whether
+   to import as a separate system or as a new version of a related existing
+   system; default to the recommendation unless the user overrides it.
 3. For a separate system, confirm title, slug, category, and surface before
    calling `import_design_system_package` with `mode: "create"`.
 4. For a version, ask the target system, confirm the version label, then call

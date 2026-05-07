@@ -657,6 +657,14 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
     ["package"],
   ),
   tool(
+    "analyze_design_system_package",
+    "Analyze a BlueKiwi design-system package before import. Returns metadata, token/component/asset counts, related existing systems, and recommended create vs version mode.",
+    {
+      package: { type: "object" },
+    },
+    ["package"],
+  ),
+  tool(
     "list_instructions",
     "List instruction templates visible to the current user. Optionally filter by folder_id.",
     {
@@ -1560,6 +1568,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
       case "import_design_system_package":
         return wrap(await client.request("POST", "/api/design-systems/import", args));
+      case "analyze_design_system_package":
+        return wrap(
+          await client.request("POST", "/api/design-systems/import/analyze", args),
+        );
       case "list_instructions": {
         const qs = new URLSearchParams();
         if (typeof args.folder_id === "number")
