@@ -120,7 +120,6 @@ function packageSummary(raw: unknown): PackageSummary {
 export default function DesignSystemsPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [creating, setCreating] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importMode, setImportMode] = useState<ImportMode>("create");
@@ -138,17 +137,6 @@ export default function DesignSystemsPage() {
     version: "",
     category: "Imported",
     surface: "web",
-  });
-  const [form, setForm] = useState({
-    title: "",
-    slug: "",
-    description: "",
-    category: "Custom",
-    surface: "web",
-    tokens: "{\n  \"color\": {},\n  \"typography\": {},\n  \"components\": {}\n}",
-    guidelines_markdown: "## Principles\n\n",
-    skill_markdown:
-      "Use this design system when creating or editing visual materials.",
   });
 
   const url = useMemo(() => {
@@ -273,34 +261,6 @@ export default function DesignSystemsPage() {
     }
   }
 
-  async function createDesignSystem() {
-    setCreating(true);
-    try {
-      const res = await fetch("/api/design-systems", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: form.title,
-          slug: form.slug || undefined,
-          description: form.description,
-          category: form.category,
-          surface: form.surface,
-          tokens: JSON.parse(form.tokens || "{}"),
-          guidelines_markdown: form.guidelines_markdown,
-          skill_markdown: form.skill_markdown,
-        }),
-      });
-      if (!res.ok) {
-        const json = await res.json().catch(() => null);
-        throw new Error(json?.error?.message ?? "Failed to create");
-      }
-      setForm((prev) => ({ ...prev, title: "", slug: "", description: "" }));
-      await refetch();
-    } finally {
-      setCreating(false);
-    }
-  }
-
   async function seedDesignSystems() {
     setSeeding(true);
     try {
@@ -332,10 +292,6 @@ export default function DesignSystemsPage() {
               <Palette className="h-4 w-4" />
               Seed Library
             </Button>
-            <Button onClick={createDesignSystem} disabled={creating || !form.title.trim()}>
-              <Plus className="h-4 w-4" />
-              Create
-            </Button>
           </div>
         </div>
       </header>
@@ -343,78 +299,11 @@ export default function DesignSystemsPage() {
       <div className="grid gap-6 p-6 xl:grid-cols-[360px_1fr]">
         <section className="space-y-4">
           <div className="rounded-lg border border-border bg-card p-4">
-            <h2 className="text-sm font-semibold">New Design System</h2>
-            <div className="mt-4 space-y-3">
-              <Input
-                placeholder="Title"
-                value={form.title}
-                onChange={(event) =>
-                  setForm({ ...form, title: event.target.value })
-                }
-              />
-              <Input
-                placeholder="slug-optional"
-                value={form.slug}
-                onChange={(event) =>
-                  setForm({ ...form, slug: event.target.value })
-                }
-              />
-              <Textarea
-                placeholder="Description"
-                value={form.description}
-                onChange={(event) =>
-                  setForm({ ...form, description: event.target.value })
-                }
-              />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Input
-                  placeholder="Category"
-                  value={form.category}
-                  onChange={(event) =>
-                    setForm({ ...form, category: event.target.value })
-                  }
-                />
-                <Input
-                  placeholder="surface: web, slides, docs..."
-                  value={form.surface}
-                  onChange={(event) =>
-                    setForm({ ...form, surface: event.target.value })
-                  }
-                />
-              </div>
-              <Textarea
-                className="min-h-32 font-mono text-xs"
-                value={form.tokens}
-                onChange={(event) =>
-                  setForm({ ...form, tokens: event.target.value })
-                }
-              />
-              <Textarea
-                className="min-h-28"
-                value={form.guidelines_markdown}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    guidelines_markdown: event.target.value,
-                  })
-                }
-              />
-              <Textarea
-                className="min-h-28"
-                value={form.skill_markdown}
-                onChange={(event) =>
-                  setForm({ ...form, skill_markdown: event.target.value })
-                }
-              />
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-border bg-card p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold">Import Package</h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Load a BlueKiwi package export as a new system or version.
+                  Load a BlueKiwi package export from another server or marketplace as a new system or version.
                 </p>
               </div>
               <PackageOpen className="h-4 w-4 text-muted-foreground" />
@@ -639,7 +528,7 @@ export default function DesignSystemsPage() {
             <EmptyState
               icon={Palette}
               title="No design systems"
-              description="Create a registry item to make design rules available to MCP tools and skills."
+              description="Import a package or use /bk-design with MCP to create registry items for agents."
             />
           ) : (
             <div className="grid gap-3 lg:grid-cols-2">
