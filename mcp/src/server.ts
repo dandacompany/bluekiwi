@@ -136,6 +136,74 @@ const server = new Server(
   { capabilities: { tools: {}, resources: {} } },
 );
 
+type DesignSystemResourceDefinition = {
+  path: string;
+  name: string;
+  description: string;
+  mimeType: string;
+  exportFormat?: string;
+  section?: string;
+};
+
+const DESIGN_SYSTEM_RESOURCE_DEFINITIONS: DesignSystemResourceDefinition[] = [
+  {
+    path: "DESIGN.md",
+    name: "DESIGN.md",
+    description: "Concise agent-readable design-system guide",
+    mimeType: "text/markdown",
+    exportFormat: "design",
+  },
+  {
+    path: "SKILL.md",
+    name: "SKILL.md",
+    description: "Portable skill wrapper for applying this design system",
+    mimeType: "text/markdown",
+    exportFormat: "skill",
+  },
+  {
+    path: "tokens/schema.json",
+    name: "Schema Tokens",
+    description: "Design-system schema and taxonomy",
+    mimeType: "application/json",
+    section: "schema",
+  },
+  {
+    path: "tokens/colors.json",
+    name: "Color Tokens",
+    description: "Split color palette tokens",
+    mimeType: "application/json",
+    section: "colors",
+  },
+  {
+    path: "tokens/typography.json",
+    name: "Typography Tokens",
+    description: "Split typography and font tokens",
+    mimeType: "application/json",
+    section: "typography",
+  },
+  {
+    path: "tokens/components.json",
+    name: "Component Tokens",
+    description: "Component specifications and implementation metadata",
+    mimeType: "application/json",
+    section: "components",
+  },
+  {
+    path: "guidelines.md",
+    name: "Guidelines",
+    description: "Authoring and usage guidelines",
+    mimeType: "text/markdown",
+    section: "guidelines",
+  },
+  {
+    path: "adapters.json",
+    name: "Implementation Adapters",
+    description: "React, HTML/CSS, Tailwind, and shadcn implementation exports",
+    mimeType: "application/json",
+    exportFormat: "adapters",
+  },
+];
+
 const tools: Tool[] = [
   tool(
     "list_workflows",
@@ -1031,31 +1099,27 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
   const rows = extractListData(response);
   return {
     resources: [
-      {
-        uri: "bk://active/design-system/DESIGN.md",
-        name: "Active Design System DESIGN.md",
-        title: "Active Design System",
-        description: "Current user's active BlueKiwi design-system context",
-        mimeType: "text/markdown",
-        annotations: {
-          audience: ["assistant" as const],
-          priority: 1,
-        },
-      },
-      ...rows.map((item) => {
-      const id = String(item.id);
-      const title = String(item.title ?? id);
-      return {
-        uri: `bk://design-systems/${id}/DESIGN.md`,
-        name: `${title} DESIGN.md`,
-        title,
-        description: `${String(item.category ?? "Custom")} · ${String(item.surface ?? "web")} · v${String(item.version ?? "1.0")}`,
-        mimeType: "text/markdown",
-        annotations: {
-          audience: ["assistant" as const],
-          priority: 0.8,
-        },
-      };
+      ...DESIGN_SYSTEM_RESOURCE_DEFINITIONS.map((definition) =>
+        designSystemResource({
+          uri: `bk://active/design-system/${definition.path}`,
+          title: "Active Design System",
+          definition,
+          priority: definition.path === "DESIGN.md" ? 1 : 0.9,
+        }),
+      ),
+      ...rows.flatMap((item) => {
+        const id = String(item.id);
+        const title = String(item.title ?? id);
+        const description = `${String(item.category ?? "Custom")} · ${String(item.surface ?? "web")} · v${String(item.version ?? "1.0")}`;
+        return DESIGN_SYSTEM_RESOURCE_DEFINITIONS.map((definition) =>
+          designSystemResource({
+            uri: `bk://design-systems/${id}/${definition.path}`,
+            title,
+            description,
+            definition,
+            priority: definition.path === "DESIGN.md" ? 0.8 : 0.7,
+          }),
+        );
       }),
     ],
   };
@@ -1063,41 +1127,39 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
 
 server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
   const uri = request.params.uri;
-  if (uri === "bk://active/design-system/DESIGN.md") {
+  const activeMatch = uri.match(/^bk:\/\/active\/design-system\/(.+)$/);
+  if (activeMatch) {
+    const definition = findDesignSystemResourceDefinition(activeMatch[1]);
+    if (!definition) throw new Error("Unsupported BlueKiwi resource URI");
     const activeResponse = await client.request("GET", "/api/design-systems/active");
     const activeId = extractActiveDesignSystemId(activeResponse);
     if (activeId === null) {
       throw new Error("No active BlueKiwi design system is set");
     }
-    const response = await client.request(
-      "GET",
-      `/api/design-systems/${activeId}/export?format=design`,
-    );
+    const content = await readDesignSystemResource(activeId, definition);
     return {
       contents: [
         {
           uri,
-          mimeType: "text/markdown",
-          text: extractExportContent(response),
+          mimeType: definition.mimeType,
+          text: content,
         },
       ],
     };
   }
-  const match = uri.match(/^bk:\/\/design-systems\/(\d+)\/DESIGN\.md$/);
+  const match = uri.match(/^bk:\/\/design-systems\/(\d+)\/(.+)$/);
   if (!match) {
     throw new Error("Unsupported BlueKiwi resource URI");
   }
   const designSystemId = Number(match[1]);
-  const response = await client.request(
-    "GET",
-    `/api/design-systems/${designSystemId}/export?format=design`,
-  );
-  const content = extractExportContent(response);
+  const definition = findDesignSystemResourceDefinition(match[2]);
+  if (!definition) throw new Error("Unsupported BlueKiwi resource URI");
+  const content = await readDesignSystemResource(designSystemId, definition);
   return {
     contents: [
       {
         uri,
-        mimeType: "text/markdown",
+        mimeType: definition.mimeType,
         text: content,
       },
     ],
@@ -2126,10 +2188,18 @@ function extractListData(value: unknown): Array<Record<string, unknown>> {
   return [];
 }
 
+function extractData(value: unknown): unknown {
+  return asRecord(value).data;
+}
+
 function extractExportContent(value: unknown): string {
   const data = asRecord(asRecord(value).data);
   const content = data.content;
   return typeof content === "string" ? content : "";
+}
+
+function extractSectionValue(value: unknown): unknown {
+  return asRecord(asRecord(value).data).value;
 }
 
 function extractActiveDesignSystemId(value: unknown): number | null {
@@ -2137,6 +2207,73 @@ function extractActiveDesignSystemId(value: unknown): number | null {
   const record = asRecord(active);
   const id = record.id;
   return typeof id === "number" && Number.isInteger(id) ? id : null;
+}
+
+function designSystemResource({
+  uri,
+  title,
+  description,
+  definition,
+  priority,
+}: {
+  uri: string;
+  title: string;
+  description?: string;
+  definition: DesignSystemResourceDefinition;
+  priority: number;
+}) {
+  const prefix = description ? `${description} · ` : "";
+  return {
+    uri,
+    name: `${title} ${definition.name}`,
+    title,
+    description: `${prefix}${definition.description}`,
+    mimeType: definition.mimeType,
+    annotations: {
+      audience: ["assistant" as const],
+      priority,
+    },
+  };
+}
+
+function findDesignSystemResourceDefinition(
+  resourcePath: string,
+): DesignSystemResourceDefinition | null {
+  return (
+    DESIGN_SYSTEM_RESOURCE_DEFINITIONS.find(
+      (definition) => definition.path === resourcePath,
+    ) ?? null
+  );
+}
+
+async function readDesignSystemResource(
+  designSystemId: number,
+  definition: DesignSystemResourceDefinition,
+): Promise<string> {
+  if (definition.exportFormat) {
+    const response = await client.request(
+      "GET",
+      `/api/design-systems/${designSystemId}/export?format=${encodeURIComponent(definition.exportFormat)}`,
+    );
+    if (definition.mimeType === "text/markdown") {
+      return extractExportContent(response);
+    }
+    return stringifyResourceValue(extractData(response));
+  }
+
+  if (definition.section) {
+    const response = await client.request(
+      "GET",
+      `/api/design-systems/${designSystemId}/sections/${encodeURIComponent(definition.section)}`,
+    );
+    return stringifyResourceValue(extractSectionValue(response));
+  }
+
+  throw new Error("Unsupported BlueKiwi resource URI");
+}
+
+function stringifyResourceValue(value: unknown): string {
+  return typeof value === "string" ? value : JSON.stringify(value ?? null, null, 2);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
