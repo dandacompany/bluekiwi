@@ -7,6 +7,7 @@ let sqlitePath: string;
 let queryOne: typeof import("../src/lib/db").queryOne;
 let createDesignSystem: typeof import("../src/lib/db/repositories/design-systems").createDesignSystem;
 let createDesignSystemVersion: typeof import("../src/lib/db/repositories/design-systems").createDesignSystemVersion;
+let activateDesignSystemVersion: typeof import("../src/lib/db/repositories/design-systems").activateDesignSystemVersion;
 let listDesignSystemFamilyVersions: typeof import("../src/lib/db/repositories/design-systems").listDesignSystemFamilyVersions;
 let buildDesignSystemVersionDiff: typeof import("../src/lib/db/repositories/design-systems").buildDesignSystemVersionDiff;
 let listDesignSystemsForVisibilityFilter: typeof import("../src/lib/db/repositories/design-systems").listDesignSystemsForVisibilityFilter;
@@ -29,6 +30,7 @@ let deleteUserSetting: typeof import("../src/lib/db/repositories/user-settings")
 let ownerId: number;
 let folderId: number;
 let designSystemId: number;
+let previousVersionId: number;
 
 async function createFixtureUser(): Promise<void> {
   const user = await queryOne<{ id: number }>(
@@ -65,6 +67,7 @@ beforeAll(async () => {
   queryOne = db.queryOne;
   createDesignSystem = designSystems.createDesignSystem;
   createDesignSystemVersion = designSystems.createDesignSystemVersion;
+  activateDesignSystemVersion = designSystems.activateDesignSystemVersion;
   listDesignSystemFamilyVersions = designSystems.listDesignSystemFamilyVersions;
   buildDesignSystemVersionDiff = designSystems.buildDesignSystemVersionDiff;
   listDesignSystemsForVisibilityFilter =
@@ -260,6 +263,7 @@ describe("design-system repository integration", () => {
 
   it("creates versions and keeps only the latest version active", async () => {
     const source = await getDesignSystemDetail(designSystemId);
+    previousVersionId = source!.id;
     const next = await createDesignSystemVersion({
       source: source!,
       version: "1.1",
@@ -294,6 +298,26 @@ describe("design-system repository integration", () => {
     expect(activeOnly.map((system) => system.id)).toEqual([next.id]);
 
     designSystemId = next.id;
+  });
+
+  it("activates an older version for rollback", async () => {
+    const rollbackTarget = await getDesignSystemDetail(previousVersionId);
+    const activated = await activateDesignSystemVersion(rollbackTarget!);
+
+    expect(activated.id).toBe(previousVersionId);
+    expect(activated.is_active).toBe(true);
+
+    const previouslyActive = await getDesignSystemDetail(designSystemId);
+    expect(previouslyActive?.is_active).toBe(false);
+
+    const activeOnly = await listDesignSystemsForVisibilityFilter({
+      filterSql: "ds.owner_id = $1",
+      filterParams: [ownerId],
+      q: "repository-test-system",
+    });
+    expect(activeOnly.map((system) => system.id)).toEqual([previousVersionId]);
+
+    designSystemId = activated.id;
   });
 
   it("stores active design-system context as a user setting", async () => {

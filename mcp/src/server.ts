@@ -487,6 +487,14 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
     ["design_system_id", "from_design_system_id", "to_design_system_id"],
   ),
   tool(
+    "activate_design_system_version",
+    "Activate one design-system version in its family. Use for rollback after listing and comparing versions. Deactivates the previous active version in the same family.",
+    {
+      design_system_id: { type: "number" },
+    },
+    ["design_system_id"],
+  ),
+  tool(
     "add_design_system_asset",
     "Add a small text or base64 asset to a design system. kind must be logo, image, css, template, reference, or other. Use template for HTML/TSX/JSX component source, css for component styles, and reference for component docs. Provide exactly one of content_text or content_base64.",
     {
@@ -1350,6 +1358,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           await client.request(
             "GET",
             `/api/design-systems/${designSystemId}/versions/compare?${qs.toString()}`,
+          ),
+        );
+      }
+      case "activate_design_system_version": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        return wrap(
+          await client.request(
+            "POST",
+            `/api/design-systems/${designSystemId}/activate`,
           ),
         );
       }

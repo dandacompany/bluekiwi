@@ -244,6 +244,9 @@ For delete intent:
   family before update, rollback, or comparison decisions.
 - `diff_design_system_versions` — compare two versions and inspect metadata,
   token, component, markdown, and asset changes.
+- `activate_design_system_version` — activate an existing version in its
+  family. Use this for rollback only after listing versions, comparing the
+  target, and confirming with the user.
 - `delete_design_system` — delete one version or a full version family.
 - `get_design_system_section` — load one category such as colors,
   typography, components, guidelines, skill, or assets.
@@ -468,6 +471,17 @@ Before creating a version from an existing system, call
 comparison, or an older version. After creating a new version, call
 `diff_design_system_versions` against the source and new version when the user
 needs a change summary or when the update is broad.
+
+For rollback:
+
+1. Call `list_design_system_versions`.
+2. Ask which version to restore.
+3. Call `diff_design_system_versions` from the current active version to the
+   selected target.
+4. Summarize what will change and ask for confirmation.
+5. Call `activate_design_system_version`.
+6. If the restored version should guide follow-up work, ask whether to call
+   `set_active_design_system` for that version.
 
 Never overwrite a user's established design rules without first summarizing the
 change and asking for confirmation.

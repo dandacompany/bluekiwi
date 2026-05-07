@@ -692,6 +692,30 @@ export async function findDesignSystemById(
   return row ? normalizeDesignSystem(row) : null;
 }
 
+export async function activateDesignSystemVersion(
+  target: DesignSystem,
+): Promise<DesignSystem> {
+  const rootId = target.family_root_id ?? target.id;
+  return withTransaction(async (client) => {
+    await client.query(
+      `UPDATE design_systems SET is_active = FALSE, updated_at = $2
+       WHERE (family_root_id = $1 OR id = $1) AND is_active = TRUE`,
+      [rootId, new Date().toISOString()],
+    );
+    await client.query(
+      "UPDATE design_systems SET is_active = TRUE, updated_at = $2 WHERE id = $1",
+      [target.id, new Date().toISOString()],
+    );
+    const result = await client.query<DesignSystemRow>(
+      "SELECT * FROM design_systems WHERE id = $1",
+      [target.id],
+    );
+    const row = result.rows[0];
+    if (!row) throw new Error("Failed to load activated design system");
+    return normalizeDesignSystem(row);
+  });
+}
+
 export async function getDesignSystemDetail(
   id: number,
 ): Promise<DesignSystemDetail | null> {
