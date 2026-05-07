@@ -26,6 +26,11 @@ import { Textarea } from "@/components/ui/textarea";
 
 type JsonMap = Record<string, unknown>;
 
+type TokenEntry = {
+  path: string;
+  value: string;
+};
+
 interface DesignSystemDetail {
   id: number;
   title: string;
@@ -102,26 +107,83 @@ function isHexColor(value: unknown): value is string {
   return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value);
 }
 
-function setJsonEntry(json: string, key: string, value: unknown): string {
+function primitiveTokenValue(value: unknown): string | null {
+  if (typeof value === "string" || typeof value === "number") {
+    return String(value);
+  }
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const record = value as JsonMap;
+    const raw = record.$value ?? record.value ?? record.family;
+    if (typeof raw === "string" || typeof raw === "number") return String(raw);
+  }
+  return null;
+}
+
+function flattenTokenEntries(value: JsonMap, prefix = ""): TokenEntry[] {
+  const entries: TokenEntry[] = [];
+  for (const [key, item] of Object.entries(value)) {
+    const path = prefix ? `${prefix}.${key}` : key;
+    const primitive = primitiveTokenValue(item);
+    if (primitive !== null) {
+      entries.push({ path, value: primitive });
+      continue;
+    }
+    if (item && typeof item === "object" && !Array.isArray(item)) {
+      entries.push(...flattenTokenEntries(item as JsonMap, path));
+    }
+  }
+  return entries;
+}
+
+function setJsonPathEntry(json: string, path: string, value: unknown): string {
   const next = parseJsonMap(json);
-  if (!key.trim()) return stringifyJson(next);
-  next[key.trim()] = value;
+  const parts = path
+    .split(".")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length === 0) return stringifyJson(next);
+  let target: JsonMap = next;
+  for (const part of parts.slice(0, -1)) {
+    if (
+      !target[part] ||
+      typeof target[part] !== "object" ||
+      Array.isArray(target[part])
+    ) {
+      target[part] = {};
+    }
+    target = target[part] as JsonMap;
+  }
+  target[parts[parts.length - 1]] = value;
   return stringifyJson(next);
 }
 
-function deleteJsonEntry(json: string, key: string): string {
+function deleteJsonPathEntry(json: string, path: string): string {
   const next = parseJsonMap(json);
-  delete next[key];
+  const parts = path
+    .split(".")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length === 0) return stringifyJson(next);
+  let target: JsonMap = next;
+  for (const part of parts.slice(0, -1)) {
+    const child = target[part];
+    if (!child || typeof child !== "object" || Array.isArray(child)) {
+      return stringifyJson(next);
+    }
+    target = child as JsonMap;
+  }
+  delete target[parts[parts.length - 1]];
   return stringifyJson(next);
 }
 
-function renameJsonEntry(json: string, from: string, to: string): string {
-  const next = parseJsonMap(json);
+function renameJsonPathEntry(json: string, from: string, to: string): string {
   const trimmed = to.trim();
-  if (!trimmed || trimmed === from) return stringifyJson(next);
-  next[trimmed] = next[from];
-  delete next[from];
-  return stringifyJson(next);
+  if (!trimmed || trimmed === from) return json;
+  const source = flattenTokenEntries(parseJsonMap(json)).find(
+    (entry) => entry.path === from,
+  );
+  if (!source) return json;
+  return setJsonPathEntry(deleteJsonPathEntry(json, from), trimmed, source.value);
 }
 
 function updateContent(
@@ -345,6 +407,8 @@ export default function DesignSystemDetailPage() {
   const [selectedComponentName, setSelectedComponentName] = useState<
     string | null
   >(null);
+  const [componentSearch, setComponentSearch] = useState("");
+  const [frameworkFilter, setFrameworkFilter] = useState("all");
 
   useEffect(() => {
     void load();
@@ -377,6 +441,40 @@ export default function DesignSystemDetailPage() {
     () => componentDocsFromTokens(componentTokens),
     [componentTokens],
   );
+  const colorEntries = useMemo(
+    () => flattenTokenEntries(colorTokens),
+    [colorTokens],
+  );
+  const typographyEntries = useMemo(
+    () => flattenTokenEntries(typographyTokens),
+    [typographyTokens],
+  );
+  const componentFrameworks = useMemo(
+    () => [
+      "all",
+      ...Array.from(new Set(componentDocs.map((item) => item.framework))).sort(),
+    ],
+    [componentDocs],
+  );
+  const filteredComponentDocs = useMemo(() => {
+    const query = componentSearch.trim().toLowerCase();
+    return componentDocs.filter((component) => {
+      const matchesFramework =
+        frameworkFilter === "all" || component.framework === frameworkFilter;
+      const searchable = [
+        component.name,
+        component.framework,
+        component.styleSystem,
+        component.description,
+        component.usage,
+        ...component.variants,
+        ...component.states,
+      ]
+        .join(" ")
+        .toLowerCase();
+      return matchesFramework && (!query || searchable.includes(query));
+    });
+  }, [componentDocs, componentSearch, frameworkFilter]);
   const selectedComponent = useMemo(
     () =>
       componentDocs.find((component) => component.name === selectedComponentName) ??
@@ -605,18 +703,54 @@ export default function DesignSystemDetailPage() {
           </Panel>
 
           <Panel title="Color Palette" icon={<Palette className="h-4 w-4" />}>
+            <div className="mb-4 overflow-hidden rounded-lg border border-border">
+              <div className="flex h-16">
+                {colorEntries.filter((entry) => isHexColor(entry.value)).length >
+                0 ? (
+                  colorEntries
+                    .filter((entry) => isHexColor(entry.value))
+                    .slice(0, 12)
+                    .map((entry) => (
+                      <div
+                        key={entry.path}
+                        className="min-w-12 flex-1"
+                        style={{ background: entry.value }}
+                        title={`${entry.path}: ${entry.value}`}
+                      />
+                    ))
+                ) : (
+                  <div className="flex flex-1 items-center justify-center bg-muted/30 text-sm text-muted-foreground">
+                    No hex palette tokens.
+                  </div>
+                )}
+              </div>
+              <div className="grid gap-0 border-t border-border sm:grid-cols-3">
+                <PaletteMetric label="Tokens" value={colorEntries.length} />
+                <PaletteMetric
+                  label="Hex Colors"
+                  value={colorEntries.filter((entry) => isHexColor(entry.value)).length}
+                />
+                <PaletteMetric
+                  label="Nested Paths"
+                  value={
+                    colorEntries.filter((entry) => entry.path.includes("."))
+                      .length
+                  }
+                />
+              </div>
+            </div>
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {Object.entries(colorTokens).map(([name, value]) => (
+              {colorEntries.map((entry) => (
                 <ColorToken
-                  key={name}
-                  name={name}
-                  value={String(value)}
+                  key={entry.path}
+                  name={entry.path}
+                  value={entry.value}
                   onRename={(nextName) =>
                     updateDetail(
                       updateContent(detail, {
-                        color_tokens_json: renameJsonEntry(
+                        color_tokens_json: renameJsonPathEntry(
                           detail.content.color_tokens_json,
-                          name,
+                          entry.path,
                           nextName,
                         ),
                       }),
@@ -625,9 +759,9 @@ export default function DesignSystemDetailPage() {
                   onChange={(nextValue) =>
                     updateDetail(
                       updateContent(detail, {
-                        color_tokens_json: setJsonEntry(
+                        color_tokens_json: setJsonPathEntry(
                           detail.content.color_tokens_json,
-                          name,
+                          entry.path,
                           nextValue,
                         ),
                       }),
@@ -636,9 +770,9 @@ export default function DesignSystemDetailPage() {
                   onDelete={() =>
                     updateDetail(
                       updateContent(detail, {
-                        color_tokens_json: deleteJsonEntry(
+                        color_tokens_json: deleteJsonPathEntry(
                           detail.content.color_tokens_json,
-                          name,
+                          entry.path,
                         ),
                       }),
                     )
@@ -652,9 +786,9 @@ export default function DesignSystemDetailPage() {
               onClick={() =>
                 updateDetail(
                   updateContent(detail, {
-                    color_tokens_json: setJsonEntry(
+                    color_tokens_json: setJsonPathEntry(
                       detail.content.color_tokens_json,
-                      `color${Object.keys(colorTokens).length + 1}`,
+                      `color${colorEntries.length + 1}`,
                       "#256D85",
                     ),
                   }),
@@ -667,36 +801,71 @@ export default function DesignSystemDetailPage() {
           </Panel>
 
           <Panel title="Typography" icon={<Type className="h-4 w-4" />}>
-            <div className="grid gap-3 md:grid-cols-3">
-              {["editorial", "body", "ui"].map((role) => (
-                <div key={role} className="rounded-lg border border-border p-3">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground">
-                    {role}
-                  </label>
-                  <Input
-                    className="mt-2"
-                    value={String(typographyTokens[role] ?? "")}
-                    onChange={(event) =>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {typographyEntries.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No typography tokens registered.
+                </p>
+              ) : (
+                typographyEntries.map((entry) => (
+                  <TypographyToken
+                    key={entry.path}
+                    name={entry.path}
+                    value={entry.value}
+                    onRename={(nextName) =>
                       updateDetail(
                         updateContent(detail, {
-                          typography_tokens_json: setJsonEntry(
+                          typography_tokens_json: renameJsonPathEntry(
                             detail.content.typography_tokens_json,
-                            role,
-                            event.target.value,
+                            entry.path,
+                            nextName,
+                          ),
+                        }),
+                      )
+                    }
+                    onChange={(nextValue) =>
+                      updateDetail(
+                        updateContent(detail, {
+                          typography_tokens_json: setJsonPathEntry(
+                            detail.content.typography_tokens_json,
+                            entry.path,
+                            nextValue,
+                          ),
+                        }),
+                      )
+                    }
+                    onDelete={() =>
+                      updateDetail(
+                        updateContent(detail, {
+                          typography_tokens_json: deleteJsonPathEntry(
+                            detail.content.typography_tokens_json,
+                            entry.path,
                           ),
                         }),
                       )
                     }
                   />
-                  <p
-                    className="mt-3 truncate text-lg"
-                    style={{ fontFamily: String(typographyTokens[role] ?? "") }}
-                  >
-                    Agentic AI Workshop
-                  </p>
-                </div>
-              ))}
+                ))
+              )}
             </div>
+            <Button
+              className="mt-4"
+              variant="outline"
+              onClick={() =>
+                updateDetail(
+                  updateContent(detail, {
+                    typography_tokens_json: setJsonPathEntry(
+                      detail.content.typography_tokens_json,
+                      `role${typographyEntries.length + 1}.family`,
+                      "Inter, system-ui, sans-serif",
+                    ),
+                  }),
+                )
+              }
+            >
+              <Plus className="h-4 w-4" />
+              Add Type Token
+            </Button>
             <EditorBlock
               className="mt-4"
               label="Typography JSON"
@@ -710,13 +879,38 @@ export default function DesignSystemDetailPage() {
           </Panel>
 
           <Panel title="Component Library" icon={<Box className="h-4 w-4" />}>
+            <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+              <Input
+                value={componentSearch}
+                placeholder="Search components, states, variants..."
+                onChange={(event) => setComponentSearch(event.target.value)}
+              />
+              <div className="flex flex-wrap gap-2">
+                {componentFrameworks.map((framework) => (
+                  <Button
+                    key={framework}
+                    size="sm"
+                    variant={
+                      frameworkFilter === framework ? "default" : "outline"
+                    }
+                    onClick={() => setFrameworkFilter(framework)}
+                  >
+                    {framework}
+                  </Button>
+                ))}
+              </div>
+            </div>
             {componentDocs.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No component documents registered.
               </p>
+            ) : filteredComponentDocs.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No components match the current filter.
+              </p>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-                {componentDocs.map((component) => (
+                {filteredComponentDocs.map((component) => (
                   <ComponentGalleryCard
                     key={component.name}
                     component={component}
@@ -816,6 +1010,17 @@ function Panel({
   );
 }
 
+function PaletteMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="border-border px-3 py-2 sm:border-r sm:last:border-r-0">
+      <div className="text-[11px] font-semibold uppercase text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-1 text-lg font-semibold">{value}</div>
+    </div>
+  );
+}
+
 function ColorToken({
   name,
   value,
@@ -846,6 +1051,54 @@ function ColorToken({
       <Button variant="ghost" size="icon" onClick={onDelete}>
         <Trash2 className="h-4 w-4" />
       </Button>
+    </div>
+  );
+}
+
+function TypographyToken({
+  name,
+  value,
+  onRename,
+  onChange,
+  onDelete,
+}: {
+  name: string;
+  value: string;
+  onRename: (name: string) => void;
+  onChange: (value: string) => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="rounded-lg border border-border p-3">
+      <div className="grid grid-cols-[1fr_auto] gap-2">
+        <Input value={name} onChange={(event) => onRename(event.target.value)} />
+        <Button variant="ghost" size="icon" onClick={onDelete}>
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+      <Input
+        className="mt-2"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      <div className="mt-3 rounded-md border border-border bg-muted/20 p-3">
+        <p
+          className="truncate text-xl"
+          style={{
+            fontFamily: /family|font|body|heading|display|mono/i.test(name)
+              ? value
+              : undefined,
+            fontSize: /size/i.test(name) ? value : undefined,
+            fontWeight: /weight/i.test(name) ? value : undefined,
+            lineHeight: /line/i.test(name) ? value : undefined,
+          }}
+        >
+          Agentic AI Workshop
+        </p>
+        <p className="mt-1 truncate text-xs text-muted-foreground">
+          {name} = {value}
+        </p>
+      </div>
     </div>
   );
 }
