@@ -74,6 +74,11 @@ For packaged quickstart builds, generate the standalone app bundle first:
 npm run build:cli
 ```
 
+The bundled runtime carries both seed folders: `docker/seed-workflows` and
+`docker/seed-design-systems`. On first `/setup` or invite acceptance, the server
+installs the workflow examples plus the three Open Design-inspired design-system
+seeds.
+
 ### Troubleshooting
 
 If `bluekiwi start` reports success but the app fails to respond (`/setup` shows "Cannot connect to server" or `bluekiwi status` reports `health: unhealthy`), inspect `~/.bluekiwi/quickstart/<profile>/logs/app.log`. The most common cause is a failed `better-sqlite3` native-binary install during `npm install -g bluekiwi` — rebuild with `cd $(npm root -g)/bluekiwi && node scripts/rebuild-native.mjs`.

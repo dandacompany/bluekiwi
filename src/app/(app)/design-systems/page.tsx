@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type ChangeEvent, useMemo, useState } from "react";
 import {
-  FileJson,
   GitBranch,
   PackageOpen,
   Palette,
@@ -16,6 +15,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -120,7 +127,7 @@ function packageSummary(raw: unknown): PackageSummary {
 export default function DesignSystemsPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [seeding, setSeeding] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importMode, setImportMode] = useState<ImportMode>("create");
   const [importFileName, setImportFileName] = useState("");
@@ -249,6 +256,7 @@ export default function DesignSystemsPage() {
       setImportAnalysis(null);
       setImportFileName("");
       setImportMessage("Imported package");
+      setImportDialogOpen(false);
       if (typeof importedId === "number") {
         router.push(`/design-systems/${importedId}`);
       }
@@ -258,20 +266,6 @@ export default function DesignSystemsPage() {
       );
     } finally {
       setImporting(false);
-    }
-  }
-
-  async function seedDesignSystems() {
-    setSeeding(true);
-    try {
-      const res = await fetch("/api/design-systems/seed", { method: "POST" });
-      if (!res.ok) {
-        const json = await res.json().catch(() => null);
-        throw new Error(json?.error?.message ?? "Failed to seed");
-      }
-      await refetch();
-    } finally {
-      setSeeding(false);
     }
   }
 
@@ -288,222 +282,222 @@ export default function DesignSystemsPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={seedDesignSystems} disabled={seeding}>
-              <Palette className="h-4 w-4" />
-              Seed Library
+            <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+              <PackageOpen className="h-4 w-4" />
+              Import Package
             </Button>
           </div>
         </div>
       </header>
 
-      <div className="grid gap-6 p-6 xl:grid-cols-[360px_1fr]">
-        <section className="space-y-4">
-          <div className="rounded-lg border border-border bg-card p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-sm font-semibold">Import Package</h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Load a BlueKiwi package export from another server or marketplace as a new system or version.
-                </p>
-              </div>
-              <PackageOpen className="h-4 w-4 text-muted-foreground" />
-            </div>
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-[44rem]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PackageOpen className="h-5 w-5" />
+              Import Package
+            </DialogTitle>
+            <DialogDescription>
+              Load a BlueKiwi package export from another server or marketplace
+              as a new system or version.
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="mt-4 space-y-3">
-              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border px-3 py-4 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary">
-                <Upload className="h-4 w-4" />
-                {importFileName || "Choose design-package JSON"}
-                <input
-                  accept="application/json,.json"
-                  className="sr-only"
-                  type="file"
-                  onChange={loadPackageFile}
-                />
-              </label>
+          <div className="space-y-3">
+            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border px-3 py-4 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary">
+              <Upload className="h-4 w-4" />
+              {importFileName || "Choose design-package JSON"}
+              <input
+                accept="application/json,.json"
+                className="sr-only"
+                type="file"
+                onChange={loadPackageFile}
+              />
+            </label>
 
-              {importPackage ? (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      type="button"
-                      variant={importMode === "create" ? "default" : "outline"}
-                      onClick={() => setImportMode("create")}
-                    >
-                      <Plus className="h-4 w-4" />
-                      New
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={importMode === "version" ? "default" : "outline"}
-                      onClick={() => {
-                        setImportMode("version");
-                        setImportTargetId(
-                          (current) => current || String(data[0]?.id ?? ""),
-                        );
-                      }}
-                    >
-                      <GitBranch className="h-4 w-4" />
-                      Version
-                    </Button>
-                  </div>
-
-                  {importAnalysis ? (
-                    <div className="rounded-md border border-border bg-muted/20 p-3 text-xs text-muted-foreground">
-                      <div className="grid grid-cols-4 gap-2 text-center">
-                        <div>
-                          <div className="font-semibold text-foreground">
-                            {importAnalysis.counts.colors}
-                          </div>
-                          Colors
-                        </div>
-                        <div>
-                          <div className="font-semibold text-foreground">
-                            {importAnalysis.counts.typography}
-                          </div>
-                          Type
-                        </div>
-                        <div>
-                          <div className="font-semibold text-foreground">
-                            {importAnalysis.counts.components}
-                          </div>
-                          Components
-                        </div>
-                        <div>
-                          <div className="font-semibold text-foreground">
-                            {importAnalysis.counts.assets}
-                          </div>
-                          Assets
-                        </div>
-                      </div>
-                      {importAnalysis.related_systems.length > 0 ? (
-                        <div className="mt-3 space-y-1 border-t border-border pt-2">
-                          <p className="font-medium text-foreground">
-                            Editable related systems
-                          </p>
-                          {importAnalysis.related_systems.slice(0, 3).map(
-                            (item) => (
-                              <button
-                                key={item.id}
-                                className="block w-full rounded-md px-2 py-1 text-left hover:bg-muted"
-                                type="button"
-                                onClick={() => {
-                                  setImportMode("version");
-                                  setImportTargetId(String(item.id));
-                                }}
-                              >
-                                {item.title} · v{item.version} ·{" "}
-                                {item.reasons.join(", ")}
-                              </button>
-                            ),
-                          )}
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
-
-                  {importMode === "version" ? (
-                    <Select
-                      value={importTargetId}
-                      onValueChange={setImportTargetId}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Target design system" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {data.map((item) => (
-                          <SelectItem key={item.id} value={String(item.id)}>
-                            {item.title} · v{item.version}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : null}
-
-                  <Input
-                    placeholder="Title"
-                    value={importForm.title}
-                    disabled={importMode === "version"}
-                    onChange={(event) =>
-                      setImportForm({
-                        ...importForm,
-                        title: event.target.value,
-                        slug: importForm.slug || slugify(event.target.value),
-                      })
-                    }
-                  />
-                  <Input
-                    placeholder="slug"
-                    value={importForm.slug}
-                    disabled={importMode === "version"}
-                    onChange={(event) =>
-                      setImportForm({ ...importForm, slug: event.target.value })
-                    }
-                  />
-                  <Textarea
-                    className="min-h-20"
-                    placeholder="Description"
-                    value={importForm.description}
-                    disabled={importMode === "version"}
-                    onChange={(event) =>
-                      setImportForm({
-                        ...importForm,
-                        description: event.target.value,
-                      })
-                    }
-                  />
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <Input
-                      placeholder="Version"
-                      value={importForm.version}
-                      onChange={(event) =>
-                        setImportForm({
-                          ...importForm,
-                          version: event.target.value,
-                        })
-                      }
-                    />
-                    <Input
-                      placeholder="Category"
-                      value={importForm.category}
-                      disabled={importMode === "version"}
-                      onChange={(event) =>
-                        setImportForm({
-                          ...importForm,
-                          category: event.target.value,
-                        })
-                      }
-                    />
-                    <Input
-                      placeholder="Surface"
-                      value={importForm.surface}
-                      disabled={importMode === "version"}
-                      onChange={(event) =>
-                        setImportForm({
-                          ...importForm,
-                          surface: event.target.value,
-                        })
-                      }
-                    />
-                  </div>
+            {importPackage ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant={importMode === "create" ? "default" : "outline"}
+                    onClick={() => setImportMode("create")}
+                  >
+                    <Plus className="h-4 w-4" />
+                    New
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={importMode === "version" ? "default" : "outline"}
+                    onClick={() => {
+                      setImportMode("version");
+                      setImportTargetId(
+                        (current) => current || String(data[0]?.id ?? ""),
+                      );
+                    }}
+                  >
+                    <GitBranch className="h-4 w-4" />
+                    Version
+                  </Button>
                 </div>
-              ) : null}
 
-              {importMessage ? (
-                <p className="text-xs text-muted-foreground">{importMessage}</p>
-              ) : null}
+                {importAnalysis ? (
+                  <div className="rounded-md border border-border bg-muted/20 p-3 text-xs text-muted-foreground">
+                    <div className="grid grid-cols-4 gap-2 text-center">
+                      <div>
+                        <div className="font-semibold text-foreground">
+                          {importAnalysis.counts.colors}
+                        </div>
+                        Colors
+                      </div>
+                      <div>
+                        <div className="font-semibold text-foreground">
+                          {importAnalysis.counts.typography}
+                        </div>
+                        Type
+                      </div>
+                      <div>
+                        <div className="font-semibold text-foreground">
+                          {importAnalysis.counts.components}
+                        </div>
+                        Components
+                      </div>
+                      <div>
+                        <div className="font-semibold text-foreground">
+                          {importAnalysis.counts.assets}
+                        </div>
+                        Assets
+                      </div>
+                    </div>
+                    {importAnalysis.related_systems.length > 0 ? (
+                      <div className="mt-3 space-y-1 border-t border-border pt-2">
+                        <p className="font-medium text-foreground">
+                          Editable related systems
+                        </p>
+                        {importAnalysis.related_systems
+                          .slice(0, 3)
+                          .map((item) => (
+                            <button
+                              key={item.id}
+                              className="block w-full rounded-md px-2 py-1 text-left hover:bg-muted"
+                              type="button"
+                              onClick={() => {
+                                setImportMode("version");
+                                setImportTargetId(String(item.id));
+                              }}
+                            >
+                              {item.title} · v{item.version} ·{" "}
+                              {item.reasons.join(", ")}
+                            </button>
+                          ))}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
 
-              <Button
-                className="w-full"
-                disabled={!importPackage || importing}
-                onClick={importDesignSystemPackage}
-              >
-                <Upload className="h-4 w-4" />
-                Import Package
-              </Button>
-            </div>
+                {importMode === "version" ? (
+                  <Select value={importTargetId} onValueChange={setImportTargetId}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Target design system" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {data.map((item) => (
+                        <SelectItem key={item.id} value={String(item.id)}>
+                          {item.title} · v{item.version}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : null}
+
+                <Input
+                  placeholder="Title"
+                  value={importForm.title}
+                  disabled={importMode === "version"}
+                  onChange={(event) =>
+                    setImportForm({
+                      ...importForm,
+                      title: event.target.value,
+                      slug: importForm.slug || slugify(event.target.value),
+                    })
+                  }
+                />
+                <Input
+                  placeholder="slug"
+                  value={importForm.slug}
+                  disabled={importMode === "version"}
+                  onChange={(event) =>
+                    setImportForm({ ...importForm, slug: event.target.value })
+                  }
+                />
+                <Textarea
+                  className="min-h-20"
+                  placeholder="Description"
+                  value={importForm.description}
+                  disabled={importMode === "version"}
+                  onChange={(event) =>
+                    setImportForm({
+                      ...importForm,
+                      description: event.target.value,
+                    })
+                  }
+                />
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <Input
+                    placeholder="Version"
+                    value={importForm.version}
+                    onChange={(event) =>
+                      setImportForm({
+                        ...importForm,
+                        version: event.target.value,
+                      })
+                    }
+                  />
+                  <Input
+                    placeholder="Category"
+                    value={importForm.category}
+                    disabled={importMode === "version"}
+                    onChange={(event) =>
+                      setImportForm({
+                        ...importForm,
+                        category: event.target.value,
+                      })
+                    }
+                  />
+                  <Input
+                    placeholder="Surface"
+                    value={importForm.surface}
+                    disabled={importMode === "version"}
+                    onChange={(event) =>
+                      setImportForm({
+                        ...importForm,
+                        surface: event.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            {importMessage ? (
+              <p className="text-xs text-muted-foreground">{importMessage}</p>
+            ) : null}
           </div>
-        </section>
 
+          <DialogFooter>
+            <Button
+              className="w-full sm:w-auto"
+              disabled={!importPackage || importing}
+              onClick={importDesignSystemPackage}
+            >
+              <Upload className="h-4 w-4" />
+              Import Package
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <div className="p-6">
         <section className="space-y-4">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
@@ -533,43 +527,36 @@ export default function DesignSystemsPage() {
           ) : (
             <div className="grid gap-3 lg:grid-cols-2">
               {data.map((item) => (
-                <Card key={item.id} className="rounded-lg">
-                  <CardContent className="space-y-3 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <Link
-                          href={`/design-systems/${item.id}`}
-                          className="font-medium hover:underline"
-                        >
-                          {item.title}
-                        </Link>
-                        <p className="mt-1 truncate text-xs text-muted-foreground">
-                          {item.slug}
-                        </p>
+                <Link
+                  key={item.id}
+                  href={`/design-systems/${item.id}`}
+                  aria-label={`Open ${item.title}`}
+                  className="block rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  <Card className="h-full rounded-lg transition-colors hover:border-primary/50 hover:bg-muted/20">
+                    <CardContent className="space-y-3 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="font-medium">{item.title}</div>
+                          <p className="mt-1 truncate text-xs text-muted-foreground">
+                            {item.slug}
+                          </p>
+                        </div>
+                        <Badge variant={item.is_active ? "success" : "neutral"}>
+                          v{item.version}
+                        </Badge>
                       </div>
-                      <Badge variant={item.is_active ? "success" : "neutral"}>
-                        v{item.version}
-                      </Badge>
-                    </div>
-                    <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">
-                      {item.description || "No description"}
-                    </p>
-                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">
+                        {item.description || "No description"}
+                      </p>
                       <div className="flex flex-wrap gap-2">
                         <Badge variant="outline">{item.status}</Badge>
                         <Badge variant="secondary">{item.category}</Badge>
                         <Badge variant="neutral">{item.surface}</Badge>
                       </div>
-                      <Link
-                        href={`/design-systems/${item.id}`}
-                        className="inline-flex items-center gap-1 text-xs font-medium text-primary"
-                      >
-                        <FileJson className="h-3.5 w-3.5" />
-                        Open
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
           )}

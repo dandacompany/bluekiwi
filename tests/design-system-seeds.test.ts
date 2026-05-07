@@ -28,17 +28,26 @@ describe("design-system seeds", () => {
   it("keeps every built-in seed parseable and agent-ready", () => {
     const seeds = readSeeds();
 
-    expect(seeds.length).toBeGreaterThanOrEqual(5);
+    expect(seeds).toHaveLength(3);
     for (const seed of seeds) {
       expect(seed.title).toBeTruthy();
       expect(seed.slug).toMatch(/^[a-z0-9-]+$/);
       expect(Object.keys(seed.color_tokens ?? {}).length).toBeGreaterThan(4);
       expect(Object.keys(seed.typography_tokens ?? {}).length).toBeGreaterThan(2);
-      expect(Object.keys(seed.component_tokens ?? {}).length).toBeGreaterThan(0);
+      expect(Object.keys(seed.component_tokens ?? {})).toHaveLength(15);
     }
   });
 
-  it("includes a broad shadcn reference kit for component-heavy generation", () => {
+  it("includes three distinct Open Design-inspired full component kits", () => {
+    const slugs = readSeeds().map((seed) => seed.slug);
+    expect(slugs).toEqual([
+      "shadcn-product-ui-kit",
+      "kami-editorial-paper-kit",
+      "dashboard-operations-dark",
+    ]);
+  });
+
+  it("keeps the shadcn reference kit broad enough for component-heavy generation", () => {
     const kit = readSeeds().find(
       (seed) => seed.slug === "shadcn-product-ui-kit",
     );

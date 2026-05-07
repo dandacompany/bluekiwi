@@ -175,6 +175,14 @@ BlueKiwi can also act as a design-system registry for AI agents. A design system
 
 Use **Design Systems** in the web UI to view palettes, typography, component previews, source snippets, versions, assets, lint results, and export packages. Editing small metadata and token values is available in the UI; component creation, deletion, and larger updates are designed to be handled by agents through `/bk-design` and MCP.
 
+Fresh setup seeds three Open Design-inspired, full component kits alongside the built-in workflow examples:
+
+| Seed | Purpose |
+| --- | --- |
+| `Shadcn Product UI Kit` | universal React/Tailwind/shadcn product UI |
+| `Kami Editorial Paper Kit` | warm document, course, white-paper, and slide-support surfaces |
+| `Dashboard Operations Dark` | dense dark analytics, monitoring, and incident dashboards |
+
 ### Agent workflow
 
 Run `/bk-design` when you want an agent to create, update, delete, load, export, or apply a registered design system. If the request is ambiguous, the skill asks whether the operation is create, update, delete, load, export, or apply. For create flows, it first lists related design systems and asks whether to create a separate system or a new version. For update/delete flows, it lists existing systems and asks which target and category to modify.
