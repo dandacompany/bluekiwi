@@ -9,6 +9,7 @@ import { withAuth } from "@/lib/with-auth";
 import {
   deleteDesignSystemAsset,
   findDesignSystemAsset,
+  recordDesignSystemEvent,
 } from "@/lib/db/repositories/design-systems";
 import { parseDesignSystemId } from "../../../route-helpers";
 
@@ -82,9 +83,25 @@ export const DELETE = withAuth<Params>(
     if (errResp) return errResp;
 
     try {
+      const asset = await findDesignSystemAsset({
+        designSystemId,
+        assetId: parsedAssetId,
+      });
       await deleteDesignSystemAsset({
         designSystemId,
         assetId: parsedAssetId,
+      });
+      await recordDesignSystemEvent({
+        designSystemId,
+        actorUserId: user.id,
+        action: "delete_asset",
+        summary: `Deleted asset ${asset?.filename ?? parsedAssetId}`,
+        metadata: {
+          asset_id: parsedAssetId,
+          filename: asset?.filename,
+          kind: asset?.kind,
+          mime_type: asset?.mime_type,
+        },
       });
       const res = okResponse({ id: parsedAssetId, deleted: true });
       return NextResponse.json(res.body, { status: res.status });

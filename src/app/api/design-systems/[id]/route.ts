@@ -9,6 +9,7 @@ import { withAuth } from "@/lib/with-auth";
 import {
   deleteDesignSystem,
   getDesignSystemDetail,
+  recordDesignSystemEvent,
   updateDesignSystem,
 } from "@/lib/db/repositories/design-systems";
 import { parseDesignSystemId } from "../route-helpers";
@@ -90,6 +91,16 @@ export const PATCH = withAuth<Params>(
             ? body.skill_markdown
             : undefined,
         exportManifest: body.export_manifest,
+      });
+      await recordDesignSystemEvent({
+        designSystemId: updated.id,
+        actorUserId: user.id,
+        action: "update",
+        summary: "Updated design system",
+        metadata: {
+          fields: Object.keys(body ?? {}).sort(),
+          version: updated.version,
+        },
       });
 
       const res = okResponse(updated);

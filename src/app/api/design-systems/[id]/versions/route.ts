@@ -10,6 +10,7 @@ import {
   createDesignSystemVersion,
   getDesignSystemDetail,
   listDesignSystemFamilyVersions,
+  recordDesignSystemEvent,
 } from "@/lib/db/repositories/design-systems";
 import { parseDesignSystemId } from "../../route-helpers";
 
@@ -96,6 +97,18 @@ export const POST = withAuth<Params>(
             : undefined,
         exportManifest: body.export_manifest,
         copyAssets: body.copy_assets !== false,
+      });
+      await recordDesignSystemEvent({
+        designSystemId: created.id,
+        actorUserId: user.id,
+        action: "create_version",
+        summary: `Created version ${created.version}`,
+        metadata: {
+          source_design_system_id: source.id,
+          source_version: source.version,
+          version: created.version,
+          copied_assets: body.copy_assets !== false,
+        },
       });
 
       const res = okResponse(created, 201);

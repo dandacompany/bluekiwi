@@ -56,6 +56,22 @@ interface DesignSystemAssetRow
   updated_at: string | Date;
 }
 
+export interface DesignSystemEvent {
+  id: number;
+  design_system_id: number;
+  actor_user_id: number | null;
+  action: string;
+  summary: string;
+  metadata_json: string;
+  created_at: string;
+}
+
+interface DesignSystemEventRow
+  extends Omit<DesignSystemEvent, "metadata_json" | "created_at"> {
+  metadata_json: string | Record<string, unknown>;
+  created_at: string | Date;
+}
+
 export interface DesignSystemDetail extends DesignSystem {
   content: DesignSystemVersion;
   assets: DesignSystemAsset[];
@@ -263,6 +279,17 @@ function normalizeDesignSystemAsset(
     ...row,
     created_at: decodeTimestamp(row.created_at) ?? new Date(0).toISOString(),
     updated_at: decodeTimestamp(row.updated_at) ?? new Date(0).toISOString(),
+  };
+}
+
+function normalizeDesignSystemEvent(row: DesignSystemEventRow): DesignSystemEvent {
+  return {
+    ...row,
+    metadata_json:
+      typeof row.metadata_json === "string"
+        ? row.metadata_json
+        : JSON.stringify(row.metadata_json ?? {}),
+    created_at: decodeTimestamp(row.created_at) ?? new Date(0).toISOString(),
   };
 }
 
@@ -622,6 +649,48 @@ async function listDesignSystemAssets(
     [designSystemId],
   );
   return rows.map(normalizeDesignSystemAsset);
+}
+
+export async function recordDesignSystemEvent(input: {
+  designSystemId: number;
+  actorUserId?: number | null;
+  action: string;
+  summary?: string;
+  metadata?: unknown;
+}): Promise<DesignSystemEvent> {
+  const id = await insertAndReturnId(
+    `INSERT INTO design_system_events (
+       design_system_id, actor_user_id, action, summary, metadata_json
+     ) VALUES ($1, $2, $3, $4, $5)`,
+    [
+      input.designSystemId,
+      input.actorUserId ?? null,
+      input.action.trim(),
+      input.summary?.trim() ?? "",
+      jsonText(input.metadata),
+    ],
+  );
+  const row = await queryOne<DesignSystemEventRow>(
+    "SELECT * FROM design_system_events WHERE id = $1",
+    [id],
+  );
+  if (!row) throw new Error("Failed to load created design-system event");
+  return normalizeDesignSystemEvent(row);
+}
+
+export async function listDesignSystemEvents(input: {
+  designSystemId: number;
+  limit?: number;
+}): Promise<DesignSystemEvent[]> {
+  const limit = Math.max(1, Math.min(input.limit ?? 50, 200));
+  const rows = await query<DesignSystemEventRow>(
+    `SELECT * FROM design_system_events
+     WHERE design_system_id = $1
+     ORDER BY created_at DESC, id DESC
+     LIMIT $2`,
+    [input.designSystemId, limit],
+  );
+  return rows.map(normalizeDesignSystemEvent);
 }
 
 export async function listDesignSystemsForVisibilityFilter(input: {

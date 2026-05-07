@@ -226,6 +226,8 @@ For delete intent:
 
 - `list_design_systems` — find relevant systems.
 - `get_design_system` — load metadata, active payload, and assets.
+- `list_design_system_events` — inspect recent change/provenance events for
+  one design system after updates, version changes, or rollback.
 - `get_active_design_system` — load the current user's active design-system
   context.
 - `set_active_design_system` — pin a visible system as the active context.
@@ -482,6 +484,8 @@ For rollback:
 5. Call `activate_design_system_version`.
 6. If the restored version should guide follow-up work, ask whether to call
    `set_active_design_system` for that version.
+7. Call `list_design_system_events` if the user asks who changed the system or
+   why the current version differs from an older one.
 
 Never overwrite a user's established design rules without first summarizing the
 change and asking for confirmation.

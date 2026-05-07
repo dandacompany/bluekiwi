@@ -10,6 +10,7 @@ import {
   deleteDesignSystemComponent,
   getDesignSystemComponentValue,
   getDesignSystemDetail,
+  recordDesignSystemEvent,
   upsertDesignSystemComponent,
 } from "@/lib/db/repositories/design-systems";
 import { parseDesignSystemId } from "../../../route-helpers";
@@ -98,6 +99,13 @@ export const PATCH = withAuth<Params>(
         value,
       });
       const component = getDesignSystemComponentValue(updated, name);
+      await recordDesignSystemEvent({
+        designSystemId,
+        actorUserId: user.id,
+        action: "upsert_component",
+        summary: `Updated component ${name}`,
+        metadata: { component: name },
+      });
       const res = okResponse({ component, design_system: updated });
       return NextResponse.json(res.body, { status: res.status });
     } catch (error) {
@@ -130,6 +138,13 @@ export const DELETE = withAuth<Params>(
       const updated = await deleteDesignSystemComponent({
         id: designSystemId,
         name,
+      });
+      await recordDesignSystemEvent({
+        designSystemId,
+        actorUserId: user.id,
+        action: "delete_component",
+        summary: `Deleted component ${name}`,
+        metadata: { component: name },
       });
       const res = okResponse({ name, deleted: true, design_system: updated });
       return NextResponse.json(res.body, { status: res.status });

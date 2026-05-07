@@ -7,6 +7,7 @@ import { withAuth } from "@/lib/with-auth";
 import {
   activateDesignSystemVersion,
   getDesignSystemDetail,
+  recordDesignSystemEvent,
 } from "@/lib/db/repositories/design-systems";
 import { parseDesignSystemId } from "../../route-helpers";
 
@@ -46,6 +47,16 @@ export const POST = withAuth<Params>(
     try {
       const activated = await activateDesignSystemVersion(resource);
       const detail = await getDesignSystemDetail(activated.id);
+      await recordDesignSystemEvent({
+        designSystemId: activated.id,
+        actorUserId: user.id,
+        action: "activate_version",
+        summary: `Activated version ${activated.version}`,
+        metadata: {
+          family_root_id: activated.family_root_id,
+          version: activated.version,
+        },
+      });
       const res = okResponse({
         id: activated.id,
         family_root_id: activated.family_root_id,

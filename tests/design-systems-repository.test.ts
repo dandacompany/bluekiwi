@@ -8,6 +8,8 @@ let queryOne: typeof import("../src/lib/db").queryOne;
 let createDesignSystem: typeof import("../src/lib/db/repositories/design-systems").createDesignSystem;
 let createDesignSystemVersion: typeof import("../src/lib/db/repositories/design-systems").createDesignSystemVersion;
 let activateDesignSystemVersion: typeof import("../src/lib/db/repositories/design-systems").activateDesignSystemVersion;
+let recordDesignSystemEvent: typeof import("../src/lib/db/repositories/design-systems").recordDesignSystemEvent;
+let listDesignSystemEvents: typeof import("../src/lib/db/repositories/design-systems").listDesignSystemEvents;
 let listDesignSystemFamilyVersions: typeof import("../src/lib/db/repositories/design-systems").listDesignSystemFamilyVersions;
 let buildDesignSystemVersionDiff: typeof import("../src/lib/db/repositories/design-systems").buildDesignSystemVersionDiff;
 let listDesignSystemsForVisibilityFilter: typeof import("../src/lib/db/repositories/design-systems").listDesignSystemsForVisibilityFilter;
@@ -68,6 +70,8 @@ beforeAll(async () => {
   createDesignSystem = designSystems.createDesignSystem;
   createDesignSystemVersion = designSystems.createDesignSystemVersion;
   activateDesignSystemVersion = designSystems.activateDesignSystemVersion;
+  recordDesignSystemEvent = designSystems.recordDesignSystemEvent;
+  listDesignSystemEvents = designSystems.listDesignSystemEvents;
   listDesignSystemFamilyVersions = designSystems.listDesignSystemFamilyVersions;
   buildDesignSystemVersionDiff = designSystems.buildDesignSystemVersionDiff;
   listDesignSystemsForVisibilityFilter =
@@ -334,5 +338,30 @@ describe("design-system repository integration", () => {
     await expect(
       getUserSetting(ownerId, "active_design_system_id"),
     ).resolves.toBeNull();
+  });
+
+  it("records and lists design-system provenance events", async () => {
+    await recordDesignSystemEvent({
+      designSystemId,
+      actorUserId: ownerId,
+      action: "test_event",
+      summary: "Recorded by repository test",
+      metadata: { scope: "repository" },
+    });
+
+    const events = await listDesignSystemEvents({
+      designSystemId,
+      limit: 5,
+    });
+
+    expect(events[0]).toMatchObject({
+      design_system_id: designSystemId,
+      actor_user_id: ownerId,
+      action: "test_event",
+      summary: "Recorded by repository test",
+    });
+    expect(JSON.parse(events[0].metadata_json)).toEqual({
+      scope: "repository",
+    });
   });
 });

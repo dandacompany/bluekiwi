@@ -380,6 +380,15 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
     ["design_system_id"],
   ),
   tool(
+    "list_design_system_events",
+    "List recent provenance/change events for one design system. Use after updates, version changes, or rollback to inspect who changed what and why.",
+    {
+      design_system_id: { type: "number" },
+      limit: { type: "number" },
+    },
+    ["design_system_id"],
+  ),
+  tool(
     "get_active_design_system",
     "Get the current user's active design system context, if one is set.",
     {},
@@ -1295,6 +1304,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const designSystemId = requireNumberArg(args, "design_system_id");
         return wrap(
           await client.request("GET", `/api/design-systems/${designSystemId}`),
+        );
+      }
+      case "list_design_system_events": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        const qs = new URLSearchParams();
+        if (typeof args.limit === "number") qs.set("limit", String(args.limit));
+        const suffix = qs.toString() ? `?${qs.toString()}` : "";
+        return wrap(
+          await client.request(
+            "GET",
+            `/api/design-systems/${designSystemId}/events${suffix}`,
+          ),
         );
       }
       case "get_active_design_system":

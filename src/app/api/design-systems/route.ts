@@ -10,6 +10,7 @@ import {
   createDesignSystem,
   findPersonalDesignSystemWorkspaceFolderId,
   listDesignSystemsForVisibilityFilter,
+  recordDesignSystemEvent,
 } from "@/lib/db/repositories/design-systems";
 
 function errorFromException(error: unknown) {
@@ -107,6 +108,19 @@ export const POST = withAuth(
         exportManifest: body.export_manifest,
         ownerId: user.id,
         folderId: targetFolderId,
+      });
+      await recordDesignSystemEvent({
+        designSystemId: created.id,
+        actorUserId: user.id,
+        action: "create",
+        summary: "Created design system",
+        metadata: {
+          title: created.title,
+          slug: created.slug,
+          version: created.version,
+          category: created.category,
+          surface: created.surface,
+        },
       });
 
       const res = okResponse(created, 201);

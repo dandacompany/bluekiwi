@@ -3,7 +3,10 @@ import { DesignSystem, errorResponse, okResponse } from "@/lib/db";
 import { canEditDesignSystem } from "@/lib/authorization";
 import { loadResourceOrFail } from "@/lib/api-helpers";
 import { withAuth } from "@/lib/with-auth";
-import { addDesignSystemAsset } from "@/lib/db/repositories/design-systems";
+import {
+  addDesignSystemAsset,
+  recordDesignSystemEvent,
+} from "@/lib/db/repositories/design-systems";
 import { parseDesignSystemId } from "../../route-helpers";
 
 type Params = { params: Promise<{ id: string }> };
@@ -39,6 +42,19 @@ export const POST = withAuth<Params>(
           typeof body.content_base64 === "string"
             ? body.content_base64
             : null,
+      });
+      await recordDesignSystemEvent({
+        designSystemId,
+        actorUserId: user.id,
+        action: "add_asset",
+        summary: `Added asset ${asset.filename}`,
+        metadata: {
+          asset_id: asset.id,
+          filename: asset.filename,
+          kind: asset.kind,
+          mime_type: asset.mime_type,
+          size_bytes: asset.size_bytes,
+        },
       });
 
       const res = okResponse(asset, 201);

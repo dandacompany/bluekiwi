@@ -11,6 +11,7 @@ import {
   getDesignSystemDetail,
   getDesignSystemSectionEntryValue,
   normalizeDesignSystemSection,
+  recordDesignSystemEvent,
   upsertDesignSystemSectionEntry,
 } from "@/lib/db/repositories/design-systems";
 import { parseDesignSystemId } from "../../../../route-helpers";
@@ -108,6 +109,13 @@ export const PATCH = withAuth<Params>(
         value,
       });
       const normalizedSection = normalizeDesignSystemSection(section);
+      await recordDesignSystemEvent({
+        designSystemId,
+        actorUserId: user.id,
+        action: "upsert_section_entry",
+        summary: `Updated ${normalizedSection}.${key}`,
+        metadata: { section: normalizedSection, key },
+      });
       const res = okResponse({
         section: normalizedSection,
         key,
@@ -148,6 +156,13 @@ export const DELETE = withAuth<Params>(
         key,
       });
       const normalizedSection = normalizeDesignSystemSection(section);
+      await recordDesignSystemEvent({
+        designSystemId,
+        actorUserId: user.id,
+        action: "delete_section_entry",
+        summary: `Deleted ${normalizedSection}.${key}`,
+        metadata: { section: normalizedSection, key },
+      });
       const res = okResponse({
         section: normalizedSection,
         key,

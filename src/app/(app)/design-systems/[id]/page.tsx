@@ -86,6 +86,16 @@ interface DesignSystemVersionSummary {
   versions: DesignSystemVersionItem[];
 }
 
+interface DesignSystemEventItem {
+  id: number;
+  design_system_id: number;
+  actor_user_id: number | null;
+  action: string;
+  summary: string;
+  metadata_json: string;
+  created_at: string;
+}
+
 type ComponentDoc = {
   name: string;
   framework:
@@ -427,6 +437,7 @@ export default function DesignSystemDetailPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [exportContent, setExportContent] = useState("");
+  const [events, setEvents] = useState<DesignSystemEventItem[]>([]);
   const [versionSummary, setVersionSummary] =
     useState<DesignSystemVersionSummary | null>(null);
   const [activeDesignSystemId, setActiveDesignSystemId] = useState<number | null>(
@@ -442,6 +453,7 @@ export default function DesignSystemDetailPage() {
     void load();
     void loadActive();
     void loadVersions();
+    void loadEvents();
     async function load() {
       const res = await fetch(`/api/design-systems/${id}`);
       const json = await res.json();
@@ -456,6 +468,11 @@ export default function DesignSystemDetailPage() {
       const res = await fetch(`/api/design-systems/${id}/versions`);
       const json = await res.json();
       setVersionSummary(json.data ?? null);
+    }
+    async function loadEvents() {
+      const res = await fetch(`/api/design-systems/${id}/events?limit=8`);
+      const json = await res.json();
+      setEvents(json.data ?? []);
     }
   }, [id]);
 
@@ -560,6 +577,7 @@ export default function DesignSystemDetailPage() {
       if (!res.ok) throw new Error(json?.error?.message ?? "Save failed");
       setDetail(json.data);
       setMessage("Saved");
+      void reloadEvents();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Save failed");
     } finally {
@@ -613,6 +631,12 @@ export default function DesignSystemDetailPage() {
     setMessage("Active design system cleared");
   }
 
+  async function reloadEvents() {
+    const res = await fetch(`/api/design-systems/${id}/events?limit=8`);
+    const json = await res.json();
+    setEvents(json.data ?? []);
+  }
+
   async function compareVersion(versionId: number) {
     const activeVersionId = versionSummary?.active_version_id;
     if (!activeVersionId) {
@@ -648,6 +672,7 @@ export default function DesignSystemDetailPage() {
     setVersionSummary(versionsJson.data ?? null);
     if (versionId === Number(id)) {
       if (json.data?.design_system) setDetail(json.data.design_system);
+      void reloadEvents();
     } else {
       router.push(`/design-systems/${versionId}`);
     }
@@ -1028,6 +1053,8 @@ export default function DesignSystemDetailPage() {
             onOpen={(versionId) => router.push(`/design-systems/${versionId}`)}
           />
 
+          <ChangeEventsPanel events={events} />
+
           <Panel title="Asset Manifest">
             <div className="space-y-2">
               {detail.assets.length === 0 ? (
@@ -1154,6 +1181,45 @@ function VersionHistoryPanel({
                   </Button>
                 </div>
               </div>
+            );
+          })}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+function ChangeEventsPanel({ events }: { events: DesignSystemEventItem[] }) {
+  return (
+    <Panel title="Change Events" icon={<Info className="h-4 w-4" />}>
+      {events.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No events recorded.</p>
+      ) : (
+        <div className="space-y-2">
+          {events.map((event) => {
+            const metadata = parseJsonMap(event.metadata_json);
+            return (
+              <details
+                key={event.id}
+                className="rounded-md border border-border px-3 py-2 text-sm"
+              >
+                <summary className="cursor-pointer">
+                  <div className="inline-flex max-w-full flex-col">
+                    <span className="truncate font-medium">
+                      {event.summary || event.action}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {event.action} · user {event.actor_user_id ?? "system"} ·{" "}
+                      {formatVersionDate(event.created_at)}
+                    </span>
+                  </div>
+                </summary>
+                {Object.keys(metadata).length > 0 ? (
+                  <pre className="mt-2 max-h-40 overflow-auto rounded-md bg-muted/40 p-2 text-xs">
+                    <code>{stringifyJson(metadata)}</code>
+                  </pre>
+                ) : null}
+              </details>
             );
           })}
         </div>
