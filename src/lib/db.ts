@@ -181,6 +181,9 @@ export interface DesignSystemVersion {
   design_system_id: number;
   schema_json: string;
   tokens_json: string;
+  color_tokens_json: string;
+  typography_tokens_json: string;
+  component_tokens_json: string;
   guidelines_markdown: string;
   skill_markdown: string;
   export_manifest_json: string;

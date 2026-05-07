@@ -1,5 +1,11 @@
 import { decodeBoolean, decodeTimestamp } from "../value-codecs";
-import { insertAndReturnId, query, queryOne, withTransaction } from "@/lib/db";
+import {
+  execute,
+  insertAndReturnId,
+  query,
+  queryOne,
+  withTransaction,
+} from "@/lib/db";
 import type {
   DesignSystem,
   DesignSystemAsset,
@@ -54,6 +60,32 @@ export interface DesignSystemDetail extends DesignSystem {
   assets: DesignSystemAsset[];
 }
 
+type DesignSystemComponentDoc = {
+  name: string;
+  framework:
+    | "react"
+    | "html"
+    | "mixed"
+    | "tokens"
+    | "tailwind"
+    | "shadcn";
+  styleSystem: string;
+  description: string;
+  props: Array<Record<string, unknown>>;
+  variants: string[];
+  classes: string[];
+  dependencies: string[];
+  install: string[];
+  tailwind: Record<string, unknown>;
+  shadcn: Record<string, unknown>;
+  html: string;
+  css: string;
+  react: string;
+  usage: string;
+  sourceAssets: string[];
+  raw: Record<string, unknown>;
+};
+
 export interface DesignSystemCreateInput {
   title: string;
   slug?: string;
@@ -62,6 +94,9 @@ export interface DesignSystemCreateInput {
   status?: DesignSystemStatus;
   schema?: unknown;
   tokens?: unknown;
+  colorTokens?: unknown;
+  typographyTokens?: unknown;
+  componentTokens?: unknown;
   guidelinesMarkdown?: string;
   skillMarkdown?: string;
   exportManifest?: unknown;
@@ -78,6 +113,9 @@ export interface DesignSystemUpdateInput {
   visibilityOverride?: Visibility | null;
   schema?: unknown;
   tokens?: unknown;
+  colorTokens?: unknown;
+  typographyTokens?: unknown;
+  componentTokens?: unknown;
   guidelinesMarkdown?: string;
   skillMarkdown?: string;
   exportManifest?: unknown;
@@ -104,16 +142,31 @@ function normalizeDesignSystem(row: DesignSystemRow): DesignSystem {
 function normalizeDesignSystemVersion(
   row: DesignSystemVersionRow,
 ): DesignSystemVersion {
+  const tokensJson =
+    typeof row.tokens_json === "string"
+      ? row.tokens_json
+      : JSON.stringify(row.tokens_json ?? {});
+  const tokenSections = deriveTokenSections(tokensJson);
+
   return {
     ...row,
     schema_json:
       typeof row.schema_json === "string"
         ? row.schema_json
         : JSON.stringify(row.schema_json ?? {}),
-    tokens_json:
-      typeof row.tokens_json === "string"
-        ? row.tokens_json
-        : JSON.stringify(row.tokens_json ?? {}),
+    tokens_json: tokensJson,
+    color_tokens_json: normalizeSectionJson(
+      row.color_tokens_json,
+      tokenSections.color,
+    ),
+    typography_tokens_json: normalizeSectionJson(
+      row.typography_tokens_json,
+      tokenSections.typography,
+    ),
+    component_tokens_json: normalizeSectionJson(
+      row.component_tokens_json,
+      tokenSections.components,
+    ),
     export_manifest_json:
       typeof row.export_manifest_json === "string"
         ? row.export_manifest_json
@@ -147,6 +200,135 @@ function jsonText(value: unknown): string {
 function optionalJsonText(value: unknown, fallback: string): string {
   if (value === undefined) return fallback;
   return jsonText(value);
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function parseJsonObject<T = Record<string, unknown>>(value: string): T {
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return {} as T;
+  }
+}
+
+function normalizeSectionJson(
+  value: unknown,
+  fallback: Record<string, unknown>,
+): string {
+  const normalized =
+    value === undefined || value === null || value === ""
+      ? fallback
+      : typeof value === "string"
+        ? parseJsonObject(value)
+        : value;
+  if (!isPlainObject(normalized)) return JSON.stringify(fallback);
+  return JSON.stringify(normalized);
+}
+
+function deriveTokenSections(tokensJson: string): {
+  color: Record<string, unknown>;
+  typography: Record<string, unknown>;
+  components: Record<string, unknown>;
+} {
+  const tokens = parseJsonObject(tokensJson);
+  return {
+    color: isPlainObject(tokens.color) ? tokens.color : {},
+    typography: isPlainObject(tokens.typography) ? tokens.typography : {},
+    components: isPlainObject(tokens.components) ? tokens.components : {},
+  };
+}
+
+function mergeTokenSections(input: {
+  baseTokensJson?: string;
+  baseColorTokensJson?: string;
+  baseTypographyTokensJson?: string;
+  baseComponentTokensJson?: string;
+  tokens?: unknown;
+  colorTokens?: unknown;
+  typographyTokens?: unknown;
+  componentTokens?: unknown;
+}): {
+  tokensJson: string;
+  colorTokensJson: string;
+  typographyTokensJson: string;
+  componentTokensJson: string;
+} {
+  const baseTokens = input.baseTokensJson
+    ? parseJsonObject(input.baseTokensJson)
+    : {};
+  const explicitTokens =
+    input.tokens === undefined
+      ? {}
+      : typeof input.tokens === "string"
+        ? parseJsonObject(input.tokens)
+        : input.tokens;
+  const explicitTokenObject = isPlainObject(explicitTokens)
+    ? explicitTokens
+    : {};
+  const tokens = {
+    ...baseTokens,
+    ...explicitTokenObject,
+  };
+  const derived = deriveTokenSections(JSON.stringify(tokens));
+  const baseDerived = input.baseTokensJson
+    ? deriveTokenSections(input.baseTokensJson)
+    : { color: {}, typography: {}, components: {} };
+  const fallbackColor = input.baseColorTokensJson
+    ? parseJsonObject(input.baseColorTokensJson)
+    : baseDerived.color;
+  const fallbackTypography = input.baseTypographyTokensJson
+    ? parseJsonObject(input.baseTypographyTokensJson)
+    : baseDerived.typography;
+  const fallbackComponents = input.baseComponentTokensJson
+    ? parseJsonObject(input.baseComponentTokensJson)
+    : baseDerived.components;
+
+  const color =
+    input.colorTokens === undefined
+      ? Object.hasOwn(explicitTokenObject, "color") || !input.baseTokensJson
+        ? derived.color
+        : fallbackColor
+      : typeof input.colorTokens === "string"
+        ? parseJsonObject(input.colorTokens)
+        : input.colorTokens;
+  const typography =
+    input.typographyTokens === undefined
+      ? Object.hasOwn(explicitTokenObject, "typography") ||
+        !input.baseTokensJson
+        ? derived.typography
+        : fallbackTypography
+      : typeof input.typographyTokens === "string"
+        ? parseJsonObject(input.typographyTokens)
+        : input.typographyTokens;
+  const components =
+    input.componentTokens === undefined
+      ? Object.hasOwn(explicitTokenObject, "components") ||
+        !input.baseTokensJson
+        ? derived.components
+        : fallbackComponents
+      : typeof input.componentTokens === "string"
+        ? parseJsonObject(input.componentTokens)
+        : input.componentTokens;
+
+  const normalizedColor = isPlainObject(color) ? color : {};
+  const normalizedTypography = isPlainObject(typography) ? typography : {};
+  const normalizedComponents = isPlainObject(components) ? components : {};
+  const combined = {
+    ...tokens,
+    color: normalizedColor,
+    typography: normalizedTypography,
+    components: normalizedComponents,
+  };
+
+  return {
+    tokensJson: JSON.stringify(combined),
+    colorTokensJson: JSON.stringify(normalizedColor),
+    typographyTokensJson: JSON.stringify(normalizedTypography),
+    componentTokensJson: JSON.stringify(normalizedComponents),
+  };
 }
 
 function slugify(value: string): string {
@@ -198,14 +380,6 @@ function incrementVersion(version: string): string {
   const last = Number.parseInt(parts[parts.length - 1] ?? "0", 10);
   parts[parts.length - 1] = String(Number.isNaN(last) ? 1 : last + 1);
   return parts.join(".") + match[2];
-}
-
-function parseJsonObject<T = Record<string, unknown>>(value: string): T {
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    return {} as T;
-  }
 }
 
 function yamlDoubleQuoted(value: string): string {
@@ -352,6 +526,12 @@ export async function createDesignSystem(
     [input.ownerId, input.folderId, slug],
   );
   if (duplicate) throw new Error("design system slug already exists");
+  const tokenPayload = mergeTokenSections({
+    tokens: input.tokens,
+    colorTokens: input.colorTokens,
+    typographyTokens: input.typographyTokens,
+    componentTokens: input.componentTokens,
+  });
 
   const designSystemId = await withTransaction(async (client) => {
     const id = await insertAndReturnId(
@@ -377,13 +557,17 @@ export async function createDesignSystem(
 
     await client.query(
       `INSERT INTO design_system_versions (
-         design_system_id, schema_json, tokens_json, guidelines_markdown,
+         design_system_id, schema_json, tokens_json, color_tokens_json,
+         typography_tokens_json, component_tokens_json, guidelines_markdown,
          skill_markdown, export_manifest_json
-       ) VALUES ($1, $2, $3, $4, $5, $6)`,
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [
         id,
         jsonText(input.schema),
-        jsonText(input.tokens),
+        tokenPayload.tokensJson,
+        tokenPayload.colorTokensJson,
+        tokenPayload.typographyTokensJson,
+        tokenPayload.componentTokensJson,
         input.guidelinesMarkdown?.trim() ?? "",
         input.skillMarkdown?.trim() ?? "",
         jsonText(input.exportManifest),
@@ -421,6 +605,16 @@ export async function updateDesignSystem(
     );
     if (duplicate) throw new Error("design system slug already exists");
   }
+  const tokenPayload = mergeTokenSections({
+    baseTokensJson: existing.content.tokens_json,
+    baseColorTokensJson: existing.content.color_tokens_json,
+    baseTypographyTokensJson: existing.content.typography_tokens_json,
+    baseComponentTokensJson: existing.content.component_tokens_json,
+    tokens: input.tokens,
+    colorTokens: input.colorTokens,
+    typographyTokens: input.typographyTokens,
+    componentTokens: input.componentTokens,
+  });
 
   await withTransaction(async (client) => {
     await client.query(
@@ -448,12 +642,17 @@ export async function updateDesignSystem(
 
     await client.query(
       `UPDATE design_system_versions
-       SET schema_json = $1, tokens_json = $2, guidelines_markdown = $3,
-           skill_markdown = $4, export_manifest_json = $5, updated_at = $6
-       WHERE id = $7`,
+       SET schema_json = $1, tokens_json = $2, color_tokens_json = $3,
+           typography_tokens_json = $4, component_tokens_json = $5,
+           guidelines_markdown = $6, skill_markdown = $7,
+           export_manifest_json = $8, updated_at = $9
+       WHERE id = $10`,
       [
         optionalJsonText(input.schema, existing.content.schema_json),
-        optionalJsonText(input.tokens, existing.content.tokens_json),
+        tokenPayload.tokensJson,
+        tokenPayload.colorTokensJson,
+        tokenPayload.typographyTokensJson,
+        tokenPayload.componentTokensJson,
         input.guidelinesMarkdown === undefined
           ? existing.content.guidelines_markdown
           : input.guidelinesMarkdown,
@@ -482,6 +681,9 @@ export async function createDesignSystemVersion(input: {
   version?: string;
   schema?: unknown;
   tokens?: unknown;
+  colorTokens?: unknown;
+  typographyTokens?: unknown;
+  componentTokens?: unknown;
   guidelinesMarkdown?: string;
   skillMarkdown?: string;
   exportManifest?: unknown;
@@ -489,6 +691,16 @@ export async function createDesignSystemVersion(input: {
 }): Promise<DesignSystemDetail> {
   const source = input.source;
   const newVersion = input.version?.trim() || incrementVersion(source.version);
+  const tokenPayload = mergeTokenSections({
+    baseTokensJson: source.content.tokens_json,
+    baseColorTokensJson: source.content.color_tokens_json,
+    baseTypographyTokensJson: source.content.typography_tokens_json,
+    baseComponentTokensJson: source.content.component_tokens_json,
+    tokens: input.tokens,
+    colorTokens: input.colorTokens,
+    typographyTokens: input.typographyTokens,
+    componentTokens: input.componentTokens,
+  });
 
   const newId = await withTransaction(async (client) => {
     await client.query(
@@ -522,13 +734,17 @@ export async function createDesignSystemVersion(input: {
 
     const versionId = await insertAndReturnId(
       `INSERT INTO design_system_versions (
-         design_system_id, schema_json, tokens_json, guidelines_markdown,
+         design_system_id, schema_json, tokens_json, color_tokens_json,
+         typography_tokens_json, component_tokens_json, guidelines_markdown,
          skill_markdown, export_manifest_json
-       ) VALUES ($1, $2, $3, $4, $5, $6)`,
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [
         designSystemId,
         optionalJsonText(input.schema, source.content.schema_json),
-        optionalJsonText(input.tokens, source.content.tokens_json),
+        tokenPayload.tokensJson,
+        tokenPayload.colorTokensJson,
+        tokenPayload.typographyTokensJson,
+        tokenPayload.componentTokensJson,
         input.guidelinesMarkdown ?? source.content.guidelines_markdown,
         input.skillMarkdown ?? source.content.skill_markdown,
         optionalJsonText(
@@ -600,7 +816,33 @@ export async function addDesignSystemAsset(
   return normalizeDesignSystemAsset(row);
 }
 
+export async function findDesignSystemAsset(input: {
+  designSystemId: number;
+  assetId: number;
+}): Promise<DesignSystemAsset | null> {
+  const row = await queryOne<DesignSystemAssetRow>(
+    "SELECT * FROM design_system_assets WHERE id = $1 AND design_system_id = $2",
+    [input.assetId, input.designSystemId],
+  );
+  return row ? normalizeDesignSystemAsset(row) : null;
+}
+
+export async function deleteDesignSystemAsset(input: {
+  designSystemId: number;
+  assetId: number;
+}): Promise<void> {
+  const asset = await findDesignSystemAsset(input);
+  if (!asset) throw new Error("design system asset not found");
+  await execute(
+    "DELETE FROM design_system_assets WHERE id = $1 AND design_system_id = $2",
+    [input.assetId, input.designSystemId],
+  );
+}
+
 export function buildDesignSystemJsonExport(detail: DesignSystemDetail) {
+  const colorTokens = parseJsonObject(detail.content.color_tokens_json);
+  const typographyTokens = parseJsonObject(detail.content.typography_tokens_json);
+  const componentTokens = parseJsonObject(detail.content.component_tokens_json);
   return {
     design_system: {
       id: detail.id,
@@ -613,8 +855,15 @@ export function buildDesignSystemJsonExport(detail: DesignSystemDetail) {
     },
     schema: parseJsonObject(detail.content.schema_json),
     tokens: parseJsonObject(detail.content.tokens_json),
+    token_sections: {
+      color: colorTokens,
+      typography: typographyTokens,
+      components: componentTokens,
+    },
+    component_documents: buildDesignSystemComponentDocs(detail),
     guidelines_markdown: detail.content.guidelines_markdown,
     skill_markdown: detail.content.skill_markdown,
+    design_markdown: buildDesignSystemDesignMarkdownExport(detail),
     export_manifest: parseJsonObject(detail.content.export_manifest_json),
     assets: detail.assets.map((asset) => ({
       id: asset.id,
@@ -628,6 +877,311 @@ export function buildDesignSystemJsonExport(detail: DesignSystemDetail) {
   };
 }
 
+function markdownTable(
+  rows: Array<[string, string]>,
+  emptyMessage: string,
+): string {
+  if (rows.length === 0) return emptyMessage;
+  return [
+    "| Token | Value |",
+    "| --- | --- |",
+    ...rows.map(([name, value]) => `| \`${name}\` | ${value} |`),
+  ].join("\n");
+}
+
+function flattenTokenRows(
+  value: Record<string, unknown>,
+  prefix = "",
+): Array<[string, string]> {
+  const rows: Array<[string, string]> = [];
+  for (const [key, item] of Object.entries(value)) {
+    const name = prefix ? `${prefix}.${key}` : key;
+    if (isPlainObject(item)) {
+      rows.push(...flattenTokenRows(item, name));
+    } else {
+      rows.push([name, `\`${String(item)}\``]);
+    }
+  }
+  return rows;
+}
+
+function stringValue(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function recordValue(value: unknown): Record<string, unknown> {
+  return isPlainObject(value) ? value : {};
+}
+
+function stringArrayValue(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => (typeof item === "string" ? item.trim() : ""))
+      .filter(Boolean);
+  }
+  if (typeof value === "string" && value.trim()) return [value.trim()];
+  return [];
+}
+
+function propsValue(value: unknown): Array<Record<string, unknown>> {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isPlainObject);
+}
+
+function resolveComponentFramework(
+  spec: Record<string, unknown>,
+): DesignSystemComponentDoc["framework"] {
+  const framework = stringValue(spec.framework).toLowerCase();
+  if (
+    framework === "react" ||
+    framework === "html" ||
+    framework === "mixed" ||
+    framework === "tailwind" ||
+    framework === "shadcn" ||
+    framework === "shadcn-ui"
+  ) {
+    if (framework === "shadcn-ui") return "shadcn";
+    return framework;
+  }
+  if (isPlainObject(spec.shadcn) || isPlainObject(spec.shadcn_ui)) {
+    return "shadcn";
+  }
+  if (
+    isPlainObject(spec.tailwind) ||
+    stringValue(spec.className) ||
+    stringValue(spec.class_name) ||
+    Array.isArray(spec.classes)
+  ) {
+    return "tailwind";
+  }
+  if (stringValue(spec.react) || stringValue(recordValue(spec.source).react)) {
+    return "react";
+  }
+  if (
+    stringValue(spec.html) ||
+    stringValue(recordValue(spec.preview).html) ||
+    stringValue(recordValue(spec.source).html)
+  ) {
+    return "html";
+  }
+  return "tokens";
+}
+
+export function buildDesignSystemComponentDocs(
+  detail: DesignSystemDetail,
+): DesignSystemComponentDoc[] {
+  const components = parseJsonObject(detail.content.component_tokens_json);
+  return Object.entries(components).map(([name, value]) => {
+    const spec = recordValue(value);
+    const preview = recordValue(spec.preview);
+    const source = recordValue(spec.source);
+    const tailwind = recordValue(spec.tailwind);
+    const shadcn = {
+      ...recordValue(spec.shadcn),
+      ...recordValue(spec.shadcn_ui),
+    };
+    return {
+      name,
+      framework: resolveComponentFramework(spec),
+      styleSystem:
+        stringValue(spec.style_system) ||
+        stringValue(spec.styleSystem) ||
+        (isPlainObject(spec.shadcn) || isPlainObject(spec.shadcn_ui)
+          ? "shadcn/ui + Tailwind CSS"
+          : isPlainObject(spec.tailwind)
+            ? "Tailwind CSS"
+            : ""),
+      description: stringValue(spec.description),
+      props: propsValue(spec.props),
+      variants: stringArrayValue(spec.variants),
+      classes: [
+        ...stringArrayValue(spec.classes),
+        ...stringArrayValue(tailwind.classes),
+        ...stringArrayValue(spec.className),
+        ...stringArrayValue(spec.class_name),
+      ],
+      dependencies: [
+        ...stringArrayValue(spec.dependencies),
+        ...stringArrayValue(shadcn.dependencies),
+        ...stringArrayValue(tailwind.plugins),
+      ],
+      install: [
+        ...stringArrayValue(spec.install),
+        ...stringArrayValue(spec.install_commands),
+        ...stringArrayValue(spec.installCommands),
+        ...stringArrayValue(shadcn.install),
+        ...stringArrayValue(shadcn.install_commands),
+      ],
+      tailwind,
+      shadcn,
+      html:
+        stringValue(preview.html) ||
+        stringValue(spec.html) ||
+        stringValue(source.html),
+      css:
+        stringValue(preview.css) ||
+        stringValue(spec.css) ||
+        stringValue(source.css),
+      react: stringValue(spec.react) || stringValue(source.react),
+      usage: stringValue(spec.usage) || stringValue(spec.guidelines),
+      sourceAssets: stringArrayValue(spec.assets),
+      raw: spec,
+    };
+  });
+}
+
+function componentDocsMarkdown(docs: DesignSystemComponentDoc[]): string {
+  if (docs.length === 0) return "No component documents recorded.";
+
+  return docs
+    .map((doc) => {
+      const props =
+        doc.props.length > 0
+          ? [
+              "| Prop | Type | Default | Description |",
+              "| --- | --- | --- | --- |",
+              ...doc.props.map((prop) => {
+                const name = stringValue(prop.name) || "-";
+                const type = stringValue(prop.type) || "-";
+                const defaultValue =
+                  prop.default === undefined ? "-" : String(prop.default);
+                const description = stringValue(prop.description) || "-";
+                return `| \`${name}\` | \`${type}\` | \`${defaultValue}\` | ${description} |`;
+              }),
+            ].join("\n")
+          : "No props documented.";
+      const variants =
+        doc.variants.length > 0
+          ? doc.variants.map((variant) => `- \`${variant}\``).join("\n")
+          : "- No variants documented.";
+      const assets =
+        doc.sourceAssets.length > 0
+          ? doc.sourceAssets.map((asset) => `- \`${asset}\``).join("\n")
+          : "- No component-specific assets linked.";
+      const classes =
+        doc.classes.length > 0
+          ? doc.classes.map((item) => `- \`${item}\``).join("\n")
+          : "- No Tailwind classes documented.";
+      const dependencies =
+        doc.dependencies.length > 0
+          ? doc.dependencies.map((item) => `- \`${item}\``).join("\n")
+          : "- No dependencies documented.";
+      const install =
+        doc.install.length > 0
+          ? doc.install.map((item) => `- \`${item}\``).join("\n")
+          : "- No install commands documented.";
+      const codeBlocks = [
+        doc.react
+          ? `\n#### React\n\n\`\`\`tsx\n${doc.react}\n\`\`\``
+          : "",
+        doc.html ? `\n#### HTML\n\n\`\`\`html\n${doc.html}\n\`\`\`` : "",
+        doc.css ? `\n#### CSS\n\n\`\`\`css\n${doc.css}\n\`\`\`` : "",
+        Object.keys(doc.tailwind).length > 0
+          ? `\n#### Tailwind\n\n\`\`\`json\n${JSON.stringify(doc.tailwind, null, 2)}\n\`\`\``
+          : "",
+        Object.keys(doc.shadcn).length > 0
+          ? `\n#### shadcn/ui\n\n\`\`\`json\n${JSON.stringify(doc.shadcn, null, 2)}\n\`\`\``
+          : "",
+      ].join("");
+
+      return `### ${doc.name}
+
+- Framework: \`${doc.framework}\`
+- Style system: ${doc.styleSystem || "Not specified."}
+- Description: ${doc.description || "No description recorded."}
+
+#### Props
+
+${props}
+
+#### Variants
+
+${variants}
+
+#### Usage
+
+${doc.usage || "No usage guidance recorded."}
+
+#### Tailwind Classes
+
+${classes}
+
+#### Dependencies
+
+${dependencies}
+
+#### Install
+
+${install}
+
+#### Source Assets
+
+${assets}${codeBlocks}`;
+    })
+    .join("\n\n");
+}
+
+export function buildDesignSystemDesignMarkdownExport(
+  detail: DesignSystemDetail,
+): string {
+  const schema = parseJsonObject(detail.content.schema_json);
+  const colors = parseJsonObject(detail.content.color_tokens_json);
+  const typography = parseJsonObject(detail.content.typography_tokens_json);
+  const components = parseJsonObject(detail.content.component_tokens_json);
+  const componentDocs = buildDesignSystemComponentDocs(detail);
+  const guidelines = detail.content.guidelines_markdown.trim();
+  const assets = detail.assets
+    .map(
+      (asset) =>
+        `- ${asset.kind}: \`${asset.filename}\` (${asset.mime_type}, ${asset.size_bytes} bytes)`,
+    )
+    .join("\n");
+
+  return `# ${detail.title} DESIGN.md
+
+## Identity
+
+- Slug: \`${detail.slug}\`
+- Version: \`${detail.version}\`
+- Status: \`${detail.status}\`
+- Description: ${detail.description || "No description recorded."}
+
+## Usage
+
+${detail.content.skill_markdown.trim() || "Use this design system when creating or editing user-facing visual materials."}
+
+## Schema
+
+\`\`\`json
+${JSON.stringify(schema, null, 2)}
+\`\`\`
+
+## Color Palette
+
+${markdownTable(flattenTokenRows(colors), "No color tokens recorded.")}
+
+## Typography
+
+${markdownTable(flattenTokenRows(typography), "No typography tokens recorded.")}
+
+## Components
+
+${markdownTable(flattenTokenRows(components), "No component tokens recorded.")}
+
+## Component Documents
+
+${componentDocsMarkdown(componentDocs)}
+
+## Guidelines
+
+${guidelines || "No additional guidelines have been recorded yet."}
+
+## Assets
+
+${assets || "- No assets registered."}
+`;
+}
+
 export function buildDesignSystemSkillExport(
   detail: DesignSystemDetail,
 ): string {
@@ -639,9 +1193,10 @@ export function buildDesignSystemSkillExport(
   const guidelines = detail.content.guidelines_markdown.trim();
   const tokens = JSON.stringify(parseJsonObject(detail.content.tokens_json), null, 2);
   const schema = JSON.stringify(parseJsonObject(detail.content.schema_json), null, 2);
+  const designMarkdown = buildDesignSystemDesignMarkdownExport(detail);
   const assetList = detail.assets
     .map((asset) => `- ${asset.kind}: ${asset.filename} (${asset.mime_type})`)
     .join("\n");
 
-  return `---\nname: ${detail.slug}\ndescription: ${yamlDoubleQuoted(description)}\n---\n\n# ${title}\n\n${baseSkill || "Use this design system when creating or editing user-facing visual materials."}\n\n## Guidelines\n\n${guidelines || "No additional guidelines have been recorded yet."}\n\n## Tokens\n\n\`\`\`json\n${tokens}\n\`\`\`\n\n## Schema\n\n\`\`\`json\n${schema}\n\`\`\`\n\n## Assets\n\n${assetList || "- No assets registered."}\n`;
+  return `---\nname: ${detail.slug}\ndescription: ${yamlDoubleQuoted(description)}\n---\n\n# ${title}\n\n${baseSkill || "Use this design system when creating or editing user-facing visual materials."}\n\n## Guidelines\n\n${guidelines || "No additional guidelines have been recorded yet."}\n\n## DESIGN.md\n\n${designMarkdown}\n\n## Tokens\n\n\`\`\`json\n${tokens}\n\`\`\`\n\n## Schema\n\n\`\`\`json\n${schema}\n\`\`\`\n\n## Assets\n\n${assetList || "- No assets registered."}\n`;
 }

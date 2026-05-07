@@ -377,7 +377,7 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
   ),
   tool(
     "create_design_system",
-    "Create a new design system in the BlueKiwi registry. schema, tokens, and export_manifest may be objects or JSON strings.",
+    "Create a new design system in the BlueKiwi registry. status must be draft, published, or archived. tokens is the combined legacy object; prefer color_tokens, typography_tokens, and component_tokens for structured authoring. component_tokens may contain React, HTML/CSS, Tailwind CSS, or shadcn/ui component documents with framework, style_system, description, props, variants, classes, dependencies, install commands, tailwind/shadcn metadata, preview/source code, usage, and linked assets.",
     {
       title: { type: "string" },
       slug: { type: "string" },
@@ -387,6 +387,9 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
       folder_id: { type: "number" },
       schema: { type: ["object", "string"] },
       tokens: { type: ["object", "string"] },
+      color_tokens: { type: ["object", "string"] },
+      typography_tokens: { type: ["object", "string"] },
+      component_tokens: { type: ["object", "string"] },
       guidelines_markdown: { type: "string" },
       skill_markdown: { type: "string" },
       export_manifest: { type: ["object", "string"] },
@@ -395,7 +398,7 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
   ),
   tool(
     "update_design_system",
-    "Update a design system's metadata and active content payload. Pass only fields that should change.",
+    "Update a design system's metadata and active content payload. Pass only fields that should change. status must be draft, published, or archived. To add, modify, or remove React, HTML/CSS, Tailwind, or shadcn component documents, send the full updated component_tokens object.",
     {
       design_system_id: { type: "number" },
       title: { type: "string" },
@@ -405,6 +408,9 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
       visibility_override: { type: ["string", "null"] },
       schema: { type: ["object", "string"] },
       tokens: { type: ["object", "string"] },
+      color_tokens: { type: ["object", "string"] },
+      typography_tokens: { type: ["object", "string"] },
+      component_tokens: { type: ["object", "string"] },
       guidelines_markdown: { type: "string" },
       skill_markdown: { type: "string" },
       export_manifest: { type: ["object", "string"] },
@@ -421,6 +427,9 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
       version: { type: "string" },
       schema: { type: ["object", "string"] },
       tokens: { type: ["object", "string"] },
+      color_tokens: { type: ["object", "string"] },
+      typography_tokens: { type: ["object", "string"] },
+      component_tokens: { type: ["object", "string"] },
       guidelines_markdown: { type: "string" },
       skill_markdown: { type: "string" },
       export_manifest: { type: ["object", "string"] },
@@ -430,7 +439,7 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
   ),
   tool(
     "add_design_system_asset",
-    "Add a small text or base64 asset to a design system. Provide exactly one of content_text or content_base64.",
+    "Add a small text or base64 asset to a design system. kind must be logo, image, css, template, reference, or other. Use template for HTML/TSX/JSX component source, css for component styles, and reference for component docs. Provide exactly one of content_text or content_base64.",
     {
       design_system_id: { type: "number" },
       kind: { type: "string" },
@@ -442,8 +451,17 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
     ["design_system_id", "filename", "mime_type"],
   ),
   tool(
+    "delete_design_system_asset",
+    "Delete a design-system asset by id. Use with update_design_system when removing a component document that references obsolete source assets.",
+    {
+      design_system_id: { type: "number" },
+      asset_id: { type: "number" },
+    },
+    ["design_system_id", "asset_id"],
+  ),
+  tool(
     "export_design_system",
-    "Export a design system as json or SKILL.md-compatible skill content.",
+    "Export a design system as json, SKILL.md-compatible skill content, or DESIGN.md documentation. format must be json, skill, or design.",
     {
       design_system_id: { type: "number" },
       format: { type: "string" },
@@ -1072,6 +1090,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             "POST",
             `/api/design-systems/${designSystemId}/assets`,
             body,
+          ),
+        );
+      }
+      case "delete_design_system_asset": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        const assetId = requireNumberArg(args, "asset_id");
+        return wrap(
+          await client.request(
+            "DELETE",
+            `/api/design-systems/${designSystemId}/assets/${assetId}`,
           ),
         );
       }

@@ -3,6 +3,7 @@ import { DesignSystem, errorResponse, okResponse } from "@/lib/db";
 import { canReadDesignSystem } from "@/lib/authorization";
 import { withResource } from "@/lib/api-helpers";
 import {
+  buildDesignSystemDesignMarkdownExport,
   buildDesignSystemJsonExport,
   buildDesignSystemSkillExport,
   getDesignSystemDetail,
@@ -39,10 +40,18 @@ export const GET = withResource<DesignSystem>({
       });
       return NextResponse.json(res.body, { status: res.status });
     }
+    if (format === "design" || format === "design.md") {
+      const res = okResponse({
+        format: "design",
+        filename: "DESIGN.md",
+        content: buildDesignSystemDesignMarkdownExport(detail),
+      });
+      return NextResponse.json(res.body, { status: res.status });
+    }
 
     const res = errorResponse(
       "UNSUPPORTED_FORMAT",
-      "format must be json or skill",
+      "format must be json, skill, or design",
       400,
     );
     return NextResponse.json(res.body, { status: res.status });

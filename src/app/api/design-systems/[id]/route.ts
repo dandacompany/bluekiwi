@@ -75,6 +75,9 @@ export const PATCH = withAuth<Params>(
           "visibility_override" in body ? body.visibility_override : undefined,
         schema: body.schema,
         tokens: body.tokens,
+        colorTokens: body.color_tokens,
+        typographyTokens: body.typography_tokens,
+        componentTokens: body.component_tokens,
         guidelinesMarkdown:
           typeof body.guidelines_markdown === "string"
             ? body.guidelines_markdown

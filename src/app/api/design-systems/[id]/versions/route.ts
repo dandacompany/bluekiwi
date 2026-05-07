@@ -49,6 +49,9 @@ export const POST = withAuth<Params>(
         version: typeof body.version === "string" ? body.version : undefined,
         schema: body.schema,
         tokens: body.tokens,
+        colorTokens: body.color_tokens,
+        typographyTokens: body.typography_tokens,
+        componentTokens: body.component_tokens,
         guidelinesMarkdown:
           typeof body.guidelines_markdown === "string"
             ? body.guidelines_markdown

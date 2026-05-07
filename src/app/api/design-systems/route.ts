@@ -89,6 +89,9 @@ export const POST = withAuth(
         status: body.status,
         schema: body.schema,
         tokens: body.tokens,
+        colorTokens: body.color_tokens,
+        typographyTokens: body.typography_tokens,
+        componentTokens: body.component_tokens,
         guidelinesMarkdown:
           typeof body.guidelines_markdown === "string"
             ? body.guidelines_markdown
@@ -108,4 +111,3 @@ export const POST = withAuth(
     }
   },
 );
-
