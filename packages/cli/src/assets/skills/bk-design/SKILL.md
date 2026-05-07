@@ -110,6 +110,31 @@ Confirmation question:
 - "Confirm this change before I write to BlueKiwi."
 - Options: Apply Change, Revise Plan, Cancel
 
+### Required Dialogue Scenarios
+
+Use these scenarios as behavioral tests when deciding whether to ask or act:
+
+- User says only `/bk-design` or "design system": ask the intent question and
+  stop. Do not call mutation tools.
+- User says "make a design system" without enough product context: call
+  `list_design_systems`, ask whether related systems should become a new
+  version or a separate system when applicable, then run the depth and
+  generation mode questions.
+- User says "update the colors": call `list_design_systems`, ask the target
+  system, ask whether the scope is the full palette or specific tokens, load
+  the current colors, then confirm the intended scoped tool call.
+- User says "delete this design system" without a concrete id or slug: call
+  `list_design_systems`, ask the target, ask whether to delete the selected
+  version or full family, then confirm before deletion.
+- User says "use the current design system": call `get_active_design_system`.
+  If one is set, confirm whether to use it. If none is set, call
+  `list_design_systems` and ask the user to choose one.
+- User asks for an automatic HiFi design system: show three tailored
+  recommendations unless they explicitly asked you to choose automatically.
+  If they asked you to choose, state the selected direction and assumptions,
+  draft the system, ask for feedback, then write only after approval unless the
+  user already gave explicit permission to write automatically.
+
 ### Design Depth Gate
 
 Before creating or materially updating design tokens, typography, or
