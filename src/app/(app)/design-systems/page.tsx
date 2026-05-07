@@ -1,12 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { FileJson, Palette, Plus, RefreshCw, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { type ChangeEvent, useMemo, useState } from "react";
+import {
+  FileJson,
+  GitBranch,
+  PackageOpen,
+  Palette,
+  Plus,
+  RefreshCw,
+  Search,
+  Upload,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useListFetch } from "@/lib/use-list-fetch";
@@ -24,10 +41,79 @@ interface DesignSystem {
   updated_at: string;
 }
 
+type ImportMode = "create" | "version";
+
+type PackageSummary = {
+  title: string;
+  slug: string;
+  description: string;
+  version: string;
+  category: string;
+  surface: string;
+};
+
+function recordValue(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function stringValue(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function slugify(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function packageSummary(raw: unknown): PackageSummary {
+  const pkg = recordValue(raw);
+  const manifest = recordValue(pkg.package_manifest);
+  const designSystem = {
+    ...recordValue(manifest.design_system),
+    ...recordValue(pkg.design_system),
+  };
+  const title =
+    stringValue(designSystem.title) ||
+    stringValue(pkg.title) ||
+    "Imported Design System";
+  const slug = stringValue(designSystem.slug) || slugify(title);
+  return {
+    title,
+    slug,
+    description:
+      stringValue(designSystem.description) ||
+      stringValue(pkg.description) ||
+      `Imported BlueKiwi design package for ${title}.`,
+    version: stringValue(designSystem.version) || "1.0.0",
+    category: stringValue(designSystem.category) || "Imported",
+    surface: stringValue(designSystem.surface) || "web",
+  };
+}
+
 export default function DesignSystemsPage() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importMode, setImportMode] = useState<ImportMode>("create");
+  const [importFileName, setImportFileName] = useState("");
+  const [importPackage, setImportPackage] = useState<unknown>(null);
+  const [importTargetId, setImportTargetId] = useState("");
+  const [importMessage, setImportMessage] = useState("");
+  const [importForm, setImportForm] = useState<PackageSummary>({
+    title: "",
+    slug: "",
+    description: "",
+    version: "",
+    category: "Imported",
+    surface: "web",
+  });
   const [form, setForm] = useState({
     title: "",
     slug: "",
@@ -48,6 +134,82 @@ export default function DesignSystemsPage() {
   }, [search]);
 
   const { data, loading, refetch } = useListFetch<DesignSystem>(url, [url]);
+
+  async function loadPackageFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const parsed = JSON.parse(await file.text()) as unknown;
+      const summary = packageSummary(parsed);
+      setImportPackage(parsed);
+      setImportFileName(file.name);
+      setImportForm(summary);
+      setImportMessage("");
+      setImportTargetId((current) => current || String(data[0]?.id ?? ""));
+    } catch {
+      setImportMessage("Choose a valid BlueKiwi design package JSON file.");
+    } finally {
+      event.target.value = "";
+    }
+  }
+
+  async function importDesignSystemPackage() {
+    if (!importPackage) {
+      setImportMessage("Choose a package JSON file first.");
+      return;
+    }
+    if (importMode === "version" && !importTargetId) {
+      setImportMessage("Choose a target design system for the new version.");
+      return;
+    }
+
+    setImporting(true);
+    setImportMessage("");
+    try {
+      const body =
+        importMode === "version"
+          ? {
+              mode: "version",
+              target_design_system_id: Number(importTargetId),
+              version: importForm.version || undefined,
+              package: importPackage,
+            }
+          : {
+              mode: "create",
+              title: importForm.title,
+              slug: importForm.slug || undefined,
+              description: importForm.description,
+              version: importForm.version || undefined,
+              category: importForm.category,
+              surface: importForm.surface,
+              package: importPackage,
+            };
+      const res = await fetch("/api/design-systems/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json?.error?.message ?? "Failed to import package");
+      }
+      const importedId = json?.data?.design_system?.id;
+      await refetch();
+      setImportPackage(null);
+      setImportFileName("");
+      setImportMessage("Imported package");
+      if (typeof importedId === "number") {
+        router.push(`/design-systems/${importedId}`);
+      }
+    } catch (error) {
+      setImportMessage(
+        error instanceof Error ? error.message : "Failed to import package",
+      );
+    } finally {
+      setImporting(false);
+    }
+  }
 
   async function createDesignSystem() {
     setCreating(true);
@@ -182,6 +344,157 @@ export default function DesignSystemsPage() {
                   setForm({ ...form, skill_markdown: event.target.value })
                 }
               />
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold">Import Package</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Load a BlueKiwi package export as a new system or version.
+                </p>
+              </div>
+              <PackageOpen className="h-4 w-4 text-muted-foreground" />
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border px-3 py-4 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-primary">
+                <Upload className="h-4 w-4" />
+                {importFileName || "Choose design-package JSON"}
+                <input
+                  accept="application/json,.json"
+                  className="sr-only"
+                  type="file"
+                  onChange={loadPackageFile}
+                />
+              </label>
+
+              {importPackage ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      type="button"
+                      variant={importMode === "create" ? "default" : "outline"}
+                      onClick={() => setImportMode("create")}
+                    >
+                      <Plus className="h-4 w-4" />
+                      New
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={importMode === "version" ? "default" : "outline"}
+                      onClick={() => {
+                        setImportMode("version");
+                        setImportTargetId(
+                          (current) => current || String(data[0]?.id ?? ""),
+                        );
+                      }}
+                    >
+                      <GitBranch className="h-4 w-4" />
+                      Version
+                    </Button>
+                  </div>
+
+                  {importMode === "version" ? (
+                    <Select
+                      value={importTargetId}
+                      onValueChange={setImportTargetId}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Target design system" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {data.map((item) => (
+                          <SelectItem key={item.id} value={String(item.id)}>
+                            {item.title} · v{item.version}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : null}
+
+                  <Input
+                    placeholder="Title"
+                    value={importForm.title}
+                    disabled={importMode === "version"}
+                    onChange={(event) =>
+                      setImportForm({
+                        ...importForm,
+                        title: event.target.value,
+                        slug: importForm.slug || slugify(event.target.value),
+                      })
+                    }
+                  />
+                  <Input
+                    placeholder="slug"
+                    value={importForm.slug}
+                    disabled={importMode === "version"}
+                    onChange={(event) =>
+                      setImportForm({ ...importForm, slug: event.target.value })
+                    }
+                  />
+                  <Textarea
+                    className="min-h-20"
+                    placeholder="Description"
+                    value={importForm.description}
+                    disabled={importMode === "version"}
+                    onChange={(event) =>
+                      setImportForm({
+                        ...importForm,
+                        description: event.target.value,
+                      })
+                    }
+                  />
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <Input
+                      placeholder="Version"
+                      value={importForm.version}
+                      onChange={(event) =>
+                        setImportForm({
+                          ...importForm,
+                          version: event.target.value,
+                        })
+                      }
+                    />
+                    <Input
+                      placeholder="Category"
+                      value={importForm.category}
+                      disabled={importMode === "version"}
+                      onChange={(event) =>
+                        setImportForm({
+                          ...importForm,
+                          category: event.target.value,
+                        })
+                      }
+                    />
+                    <Input
+                      placeholder="Surface"
+                      value={importForm.surface}
+                      disabled={importMode === "version"}
+                      onChange={(event) =>
+                        setImportForm({
+                          ...importForm,
+                          surface: event.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              ) : null}
+
+              {importMessage ? (
+                <p className="text-xs text-muted-foreground">{importMessage}</p>
+              ) : null}
+
+              <Button
+                className="w-full"
+                disabled={!importPackage || importing}
+                onClick={importDesignSystemPackage}
+              >
+                <Upload className="h-4 w-4" />
+                Import Package
+              </Button>
             </div>
           </div>
         </section>
