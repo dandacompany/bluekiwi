@@ -188,7 +188,7 @@
     "sVsMore3": "bk-matrix — 2×2 importance/urgency placement",
     "sVsMore4": "bk-code-compare — compare two versions of code",
     "sVsMore5": "bk-split, bk-pros-cons, bk-mockup, bk-timeline — comparison and review layouts",
-    "sVsTip": "During bk-design or bk-start execution, the agent auto-generates VS UIs at Gate nodes. Just set visual_selection: true on the workflow node — no extra configuration needed.",
+    "sVsTip": "During bk-create or bk-start execution, the agent auto-generates VS UIs at Gate nodes. Just set visual_selection: true on the workflow node — no extra configuration needed.",
     "sSkIntro": "Beyond the web UI, BlueKiwi can be used directly from your AI coding tool via slash commands (/skill). Skills are the fastest and most natural path to running workflows.",
     "sSkTableTitle": "Skill list",
     "sSkBkStart": "Select a workflow and create/run a task. Also handles resuming and closing interrupted tasks.",

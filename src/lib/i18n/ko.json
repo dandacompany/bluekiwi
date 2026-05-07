@@ -188,7 +188,7 @@
     "sVsMore3": "bk-matrix — 2×2 중요도·긴급도 배치",
     "sVsMore4": "bk-code-compare — 코드 두 버전 비교",
     "sVsMore5": "bk-split, bk-pros-cons, bk-mockup, bk-timeline — 비교·검토용 레이아웃",
-    "sVsTip": "에이전트가 bk-design 또는 bk-start 실행 중 Gate 노드에서 VS UI를 자동 생성합니다. 별도 설정 없이 워크플로 노드에서 visual_selection: true로 지정하면 됩니다.",
+    "sVsTip": "에이전트가 bk-create 또는 bk-start 실행 중 Gate 노드에서 VS UI를 자동 생성합니다. 별도 설정 없이 워크플로 노드에서 visual_selection: true로 지정하면 됩니다.",
     "sSkIntro": "BlueKiwi는 웹 UI 외에 AI 코딩 도구에서 슬래시 명령어(/skill)로 직접 사용할 수 있습니다. 스킬은 가장 빠르고 자연스러운 워크플로 실행 경로입니다.",
     "sSkTableTitle": "스킬 목록",
     "sSkBkStart": "워크플로를 선택하고 태스크를 생성·실행합니다. 중단된 태스크 재개 및 종료도 처리합니다.",

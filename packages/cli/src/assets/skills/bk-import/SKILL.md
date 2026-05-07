@@ -11,7 +11,7 @@ Analyze an external resource, extract its process logic, convert it into a struc
 **Which creation skill to use?**
 
 - **`/bk-import`** (this one) — user has a GitHub repo, URL, local skill, or pasted text to convert.
-- **`/bk-design`** — start from a natural-language goal without an existing resource.
+- **`/bk-create`** — start from a natural-language goal without an existing resource.
 - **`/bk-improve`** — an already-registered workflow needs a better version.
 
 ## Argument Handling
@@ -116,7 +116,7 @@ From the analyzed content, identify and label each element:
 
 ## Step 4: Design Nodes
 
-Convert the extracted logic into BlueKiwi nodes. Apply the **Instruction Depth Standard** (same rules as bk-design) to every node:
+Convert the extracted logic into BlueKiwi nodes. Apply the **Instruction Depth Standard** (same rules as bk-create) to every node:
 
 <HARD-RULE>
 Every node instruction must include ALL of the following:

@@ -136,7 +136,7 @@ Call `delete_credential`. On 409 error (in use), inform the user which workflow 
 
 Credentials are linked to workflow nodes via `credential_id`.
 
-When designing workflows (`/bk-design`, `/bk-improve`), set the credential on the node that calls an external API:
+When designing workflows (`/bk-create`, `/bk-improve`), set the credential on the node that calls an external API:
 
 ```json
 {

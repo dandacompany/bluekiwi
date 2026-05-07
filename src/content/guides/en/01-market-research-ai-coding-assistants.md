@@ -4,7 +4,7 @@
 
 With a single natural-language prompt, BlueKiwi will:
 
-1. Use `/bk-design` to **design a 7-step workflow → register it on the server**
+1. Use `/bk-create` to **design a 7-step workflow → register it on the server**
 2. Use `/bk-start` to **auto-execute each step** (web search + artifact writing)
 3. Pause mid-run for a **VS Gate (Visual Selection)** human review
 4. Automatically produce a final **Markdown report**
@@ -48,7 +48,7 @@ bluekiwi init -p dev -s https://dantelabs.bluekiwi.work -k bk_xxxxxxxxxxxxxxxxxx
 
 ### 1-2. Verify Skill Registration
 
-When you install the BlueKiwi CLI, **skills** like `/bk-design` and `/bk-start` are automatically registered in Claude Code. Skills run as slash commands and communicate with the BlueKiwi server internally.
+When you install the BlueKiwi CLI, **skills** like `/bk-create` and `/bk-start` are automatically registered in Claude Code. Skills run as slash commands and communicate with the BlueKiwi server internally.
 
 > **You only need to call the skill.** MCP connections and API calls are handled automatically.
 
@@ -84,7 +84,7 @@ Comparison points:
 - Korean user community reactions (blogs, YouTube, communities)
 - Strengths and weaknesses
 
-Use /bk-design to design the workflow, then /bk-start to execute it,
+Use /bk-create to design the workflow, then /bk-start to execute it,
 and produce a final Markdown comparison report at the end.
 ```
 
@@ -94,13 +94,13 @@ That's it. The agent handles everything from here.
 
 ## 3. Step-by-Step Session Log
 
-### Phase A — `/bk-design` Workflow Design
+### Phase A — `/bk-create` Workflow Design
 
 ```
-⏺ Skill(bk-design)  Successfully loaded skill
+⏺ Skill(bk-create)  Successfully loaded skill
 ```
 
-The agent runs the `/bk-design` skill. It queries existing folders and workflows on the BlueKiwi server, then proposes a **7-step design** tailored to the goal.
+The agent runs the `/bk-create` skill. It queries existing folders and workflows on the BlueKiwi server, then proposes a **7-step design** tailored to the goal.
 
 ```
 Workflow: Domestic AI Coding Assistant Market Research (Cursor/Windsurf/Claude Code)
@@ -236,7 +236,7 @@ The agent's one-line summary at the end of the report:
 
 ### Strengths of This Workflow
 
-- **7-step auto-execution from one natural-language prompt**: No need to direct each step individually — `/bk-design` analyzes your goal and designs the full structure.
+- **7-step auto-execution from one natural-language prompt**: No need to direct each step individually — `/bk-create` analyzes your goal and designs the full structure.
 - **Isolated artifacts per step**: Each step's output (`cursor.json`, `windsurf.json`, etc.) is stored independently, so you can edit and re-run a single step.
 - **Mid-run intervention via VS Gate**: Rather than "run everything to the end", you can embed explicit review checkpoints inside the workflow.
 

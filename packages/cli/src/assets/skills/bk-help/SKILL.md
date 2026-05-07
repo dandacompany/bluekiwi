@@ -43,9 +43,10 @@ Map detected language to output:
 
 | 명령어            | 설명                                              | 사용 예시                                         |
 | ----------------- | ------------------------------------------------- | ------------------------------------------------- |
-| `/bk-design`      | 자연어 목표로 새 워크플로 설계 및 등록            | `/bk-design 경쟁사 분석 워크플로 만들어줘`        |
+| `/bk-create`      | 자연어 목표로 새 워크플로 설계 및 등록            | `/bk-create 경쟁사 분석 워크플로 만들어줘`        |
+| `/bk-design`      | 디자인 시스템 생성·조회·업데이트·내보내기         | `/bk-design 단테랩스 디자인 시스템 만들어줘`      |
 | `/bk-import`      | GitHub / 로컬 스킬 / URL을 분석해 워크플로로 변환 | `/bk-import yamadashy/repomix`                    |
-|                   |                                                   | `/bk-import bk-design`                            |
+|                   |                                                   | `/bk-import bk-create`                            |
 |                   |                                                   | `/bk-import https://example.com/runbook`          |
 |                   |                                                   | `/bk-import` (대화형 — 텍스트·JSON 붙여넣기 포함) |
 | `/bk-improve`     | 기존 워크플로 분석 후 개선 버전 생성              | `/bk-improve 시장조사`                            |
@@ -93,9 +94,10 @@ Map detected language to output:
 
 | Command           | Description                                                         | Example                                               |
 | ----------------- | ------------------------------------------------------------------- | ----------------------------------------------------- |
-| `/bk-design`      | Design and register a new workflow from a natural language goal     | `/bk-design build a competitor analysis workflow`     |
+| `/bk-create`      | Design and register a new workflow from a natural language goal     | `/bk-create build a competitor analysis workflow`     |
+| `/bk-design`      | Create, apply, update, and export BlueKiwi design systems           | `/bk-design create a Dante Labs design system`        |
 | `/bk-import`      | Analyze a GitHub repo / local skill / URL and convert to a workflow | `/bk-import yamadashy/repomix`                        |
-|                   |                                                                     | `/bk-import bk-design`                                |
+|                   |                                                                     | `/bk-import bk-create`                                |
 |                   |                                                                     | `/bk-import https://example.com/runbook`              |
 |                   |                                                                     | `/bk-import` (interactive — includes text/JSON paste) |
 | `/bk-improve`     | Analyze an existing workflow and generate an improved version       | `/bk-improve market-research`                         |

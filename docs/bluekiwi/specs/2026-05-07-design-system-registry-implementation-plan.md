@@ -13,7 +13,7 @@ Included:
   `design_systems:update`.
 - Repository helpers and REST API routes.
 - MCP tools for list/get/create/update/version/asset/export.
-- Bundled `bk-design-system` skill.
+- Bundled `bk-design` skill.
 - Minimal web UI for list/detail/create/edit/export.
 - Seed workflow for creating a design system.
 - Tests for repository/API/export/MCP wiring where practical.
@@ -258,7 +258,7 @@ Manual smoke:
 
 ### Work
 
-- Add bundled `bk-design-system` skill.
+- Add bundled `bk-design` skill.
 - Teach the skill to use MCP tools, never raw API calls.
 - Include flows for:
   - using an existing design system
@@ -268,7 +268,7 @@ Manual smoke:
 
 ### Files
 
-- `packages/cli/src/assets/skills/bk-design-system/SKILL.md`
+- `packages/cli/src/assets/skills/bk-design/SKILL.md`
 - `packages/cli/src/assets/index.ts`
 - `packages/cli/tests/skills-helper.test.ts`
 

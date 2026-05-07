@@ -17,7 +17,7 @@ A GitHub repo, a local skill, an external URL — one `/bk-import` command is al
 | ----------------- | ------------------------------- | -------------------------------------------- |
 | GitHub repo URL   | `https://github.com/owner/repo` | repomix `--remote` (Tree-sitter compression) |
 | GitHub shorthand  | `owner/repo`                    | Same                                         |
-| Local skill name  | `bk-design`, `bk-start`         | Reads `~/.claude/skills/<name>/SKILL.md`     |
+| Local skill name  | `bk-create`, `bk-start`         | Reads `~/.claude/skills/<name>/SKILL.md`     |
 | Local path        | `~/projects/my-script`          | Reads files directly                         |
 | External URL      | `https://example.com/runbook`   | WebFetch                                     |
 | Text / JSON paste | n8n workflow JSON, etc.         | Direct parse                                 |
@@ -42,10 +42,10 @@ The agent automatically:
 ### 2-2. Create a workflow from a local skill
 
 ```text
-/bk-import bk-design
+/bk-import bk-create
 ```
 
-Reads `~/.claude/skills/bk-design/SKILL.md` and converts the skill's execution flow into a BlueKiwi workflow.
+Reads `~/.claude/skills/bk-create/SKILL.md` and converts the skill's execution flow into a BlueKiwi workflow.
 
 ### 2-3. Create a workflow from an external document
 
@@ -85,7 +85,7 @@ Agent:
 
 ## 4. Instruction quality
 
-`/bk-import` applies the same **Instruction Depth Standard** as `/bk-design`. Every node instruction must include:
+`/bk-import` applies the same **Instruction Depth Standard** as `/bk-create`. Every node instruction must include:
 
 1. **Role/context** — who or what performs this step
 2. **Numbered sub-steps** — what to do and how
@@ -128,4 +128,4 @@ Or click the **Run** button on the workflow page that opens in your browser.
 - **Large GitHub repos** — repomix applies `--compress` automatically, reducing token count by ~70%.
 - **Not happy with the result?** — choose "Edit node structure" to refine specific nodes before registering.
 - **Similar workflow already exists?** — use `/bk-improve` to enhance it instead of creating a duplicate.
-- **Local skill names** — the `bk-` prefix is optional (`design` is resolved to `bk-design` automatically).
+- **Local skill names** — the `bk-` prefix is optional (`create` is resolved to `bk-create` automatically).

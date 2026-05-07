@@ -310,7 +310,7 @@ const tools: Tool[] = [
 
 Optional first-line size directive: <!-- @bk size=sm|md|lg|xl|full --> (default sm).
 
-Components (use class names directly): bk-options, bk-cards, bk-checklist, bk-code-compare (selection); bk-slider, bk-input, bk-textarea, bk-ranking, bk-matrix (input); bk-split, bk-pros-cons, bk-mockup, bk-timeline (display). Every selectable/input element needs data-value or data-name. Full catalog, attribute reference, and sizing rules live in the bk-design / bk-start skills.
+Components (use class names directly): bk-options, bk-cards, bk-checklist, bk-code-compare (selection); bk-slider, bk-input, bk-textarea, bk-ranking, bk-matrix (input); bk-split, bk-pros-cons, bk-mockup, bk-timeline (display). Every selectable/input element needs data-value or data-name. Full catalog, attribute reference, and sizing rules live in the bk-create / bk-start skills.
 
 Response format (JSON from get_web_response): {selections, values, ranking, matrix, comment, fields, option_comments} — only populated keys appear.`,
     {

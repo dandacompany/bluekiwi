@@ -166,7 +166,7 @@ Call `list_workflows` to retrieve the list.
 - "No workflows found. Would you like to create one now?"
 - options: "Create new workflow" / "Cancel"
 
-If "Create new workflow" → immediately invoke the `bk-design` skill. Pass the user's original argument (if any) as the goal so `bk-design` can pre-fill the design step. After `bk-design` completes and the workflow is registered, return here and proceed with Step 2 using the newly created workflow.
+If "Create new workflow" → immediately invoke the `bk-create` skill. Pass the user's original argument (if any) as the goal so `bk-create` can pre-fill the design step. After `bk-create` completes and the workflow is registered, return here and proceed with Step 2 using the newly created workflow.
 
 **Single workflow**: Skip the selection UI, just confirm:
 
@@ -174,7 +174,7 @@ If "Create new workflow" → immediately invoke the `bk-design` skill. Pass the 
 
 **Multiple workflows**: Show selection via AskUserQuestion.
 
-If the user selects "Create new workflow" from the selection UI → invoke `bk-design`, then continue as above.
+If the user selects "Create new workflow" from the selection UI → invoke `bk-create`, then continue as above.
 
 ### 2. Create Task + Open Monitoring Page
 
@@ -224,7 +224,7 @@ Write VS content text (titles, descriptions, option labels) in the user's langua
      - Per-item memo: add `data-requires-comment` to force a memo before submit. Optional `data-comment-name="<key>"` stores it into `response.fields[<key>]`.
      - Optional first line: `<!-- @bk size=sm|md|lg|xl|full -->` (default `sm`).
 
-     **Full catalog with template patterns and per-component examples: see `bk-design § VS Component Selection Guide`.**
+     **Full catalog with template patterns and per-component examples: see `bk-create § VS Component Selection Guide`.**
 
      Minimal example:
 

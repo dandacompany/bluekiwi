@@ -12,7 +12,7 @@ design systems from the same BlueKiwi registry.
 The feature adds a dedicated DesignSystem resource rather than overloading
 existing instructions. A design system can contain structured tokens,
 guidelines, generated skill instructions, and supporting assets. Agents consume
-it through BlueKiwi MCP tools and a bundled `bk-design-system` skill. Humans can
+it through BlueKiwi MCP tools and a bundled `bk-design` skill. Humans can
 manage it through a minimal web UI, and a seed workflow can guide creation of a
 new design system.
 
@@ -23,7 +23,7 @@ MVP success criteria:
   small images.
 - Provide REST API and MCP tools for list/get/create/update/version/asset/export.
 - Add dedicated authorization permissions for design systems.
-- Add a bundled `bk-design-system` skill for agent runtimes.
+- Add a bundled `bk-design` skill for agent runtimes.
 - Provide minimal web UI for list/detail/edit/export.
 - Seed a "Design System Creation" workflow.
 
@@ -49,7 +49,7 @@ MVP success criteria:
   - Adds tools that directly operate on the registry resource.
   - Keeps raw database details hidden from agents.
 - CLI runtime assets
-  - Adds `bk-design-system` to bundled skills.
+  - Adds `bk-design` to bundled skills.
   - Existing runtime sync installs it into supported agents.
 - Web UI
   - Adds a registry page for list/create.
@@ -256,7 +256,7 @@ The MVP is not a full visual design editor.
 
 ### Bundled Skill
 
-Add `bk-design-system`.
+Add `bk-design`.
 
 Responsibilities:
 
@@ -337,7 +337,7 @@ UI:
 
 CLI/skill:
 
-- `bk-design-system` is included in bundled skills.
+- `bk-design` is included in bundled skills.
 - Runtime sync installs the new bundled skill without pruning user skills.
 
 Seed workflow:
@@ -351,7 +351,7 @@ Seed workflow:
 1. Add DB schema, auth permissions, TypeScript types, and repository helpers.
 2. Add REST API routes for CRUD, version, asset, and export.
 3. Add MCP tools and API-client methods.
-4. Add bundled `bk-design-system` skill.
+4. Add bundled `bk-design` skill.
 5. Add minimal UI pages and sidebar entry.
 6. Add seed workflow.
 7. Add tests and documentation updates.

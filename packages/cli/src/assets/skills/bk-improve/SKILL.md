@@ -11,7 +11,7 @@ Improve an existing workflow by creating a new version, then optionally execute 
 **Which creation skill to use?**
 
 - **`/bk-improve`** (this one) — a registered workflow exists and needs a better version.
-- **`/bk-design`** — start from a natural-language goal without an existing workflow.
+- **`/bk-create`** — start from a natural-language goal without an existing workflow.
 - **`/bk-import`** — external resource (GitHub repo, URL, local skill, pasted text) to convert into a new workflow.
 
 ## Argument Handling

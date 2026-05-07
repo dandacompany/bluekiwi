@@ -165,7 +165,7 @@ Title: <title> (ID: <id>)
 Credential: <service_name> (ID: <credential_id>) — or "없음"
 
 To use this instruction in a workflow node, set instruction_id: <id>
-when designing nodes with `/bk-design`.
+when designing nodes with `/bk-create`.
 ```
 
 ---
