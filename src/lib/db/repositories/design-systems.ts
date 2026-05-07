@@ -2323,15 +2323,13 @@ export function buildDesignSystemSkillExport(
     detail.description.trim() ||
     `Use the ${detail.title} design system from the BlueKiwi registry.`;
   const baseSkill = detail.content.skill_markdown.trim();
-  const guidelines = detail.content.guidelines_markdown.trim();
-  const tokens = JSON.stringify(parseJsonObject(detail.content.tokens_json), null, 2);
   const schema = JSON.stringify(parseJsonObject(detail.content.schema_json), null, 2);
   const designMarkdown = buildDesignSystemDesignMarkdownExport(detail);
   const assetList = detail.assets
     .map((asset) => `- ${asset.kind}: ${asset.filename} (${asset.mime_type})`)
     .join("\n");
 
-  return `---\nname: ${detail.slug}\ndescription: ${yamlDoubleQuoted(description)}\n---\n\n# ${title}\n\n${baseSkill || "Use this design system when creating or editing user-facing visual materials."}\n\n## Guidelines\n\n${guidelines || "No additional guidelines have been recorded yet."}\n\n## DESIGN.md\n\n${designMarkdown}\n\n## Tokens\n\n\`\`\`json\n${tokens}\n\`\`\`\n\n## Schema\n\n\`\`\`json\n${schema}\n\`\`\`\n\n## Assets\n\n${assetList || "- No assets registered."}\n`;
+  return `---\nname: ${detail.slug}\ndescription: ${yamlDoubleQuoted(description)}\n---\n\n# ${title}\n\n${baseSkill || "Use this design system when creating or editing user-facing visual materials."}\n\n## How To Use This Skill\n\n1. Read the embedded DESIGN.md summary below before making visual decisions.\n2. Use the Color Palette, Typography, Component Inventory, and Component Catalog as the agent-readable source of truth.\n3. Do not expect this SKILL.md to contain full source code or raw token dumps. For implementation files, request \`export_design_system\` with \`format: \"adapters\"\`.\n4. For a portable archive with split token JSON, component specs, assets, and adapters, request \`export_design_system\` with \`format: \"package\"\` or \`format: \"bundle\"\`.\n5. For one component's full normalized spec, call \`get_design_component\`.\n\n## DESIGN.md Summary\n\n${designMarkdown}\n\n## Schema\n\n\`\`\`json\n${schema}\n\`\`\`\n\n## External Source Paths\n\n- Agent document: \`DESIGN.md\`\n- Split tokens: \`tokens/colors.json\`, \`tokens/typography.json\`, \`tokens/components.json\`\n- React adapters: \`adapters/react/\`\n- HTML/CSS preview kit: \`adapters/html/\`\n- Tailwind config: \`adapters/tailwind.config.js\`\n- shadcn registry: \`adapters/shadcn-registry.json\`\n\n## Assets\n\n${assetList || "- No assets registered."}\n`;
 }
 
 function cssVariableName(prefix: string, name: string): string {

@@ -120,7 +120,11 @@ describe("design system exports", () => {
     expect(exported).toContain("name: acme-design");
     expect(exported).toContain("# Acme Design");
     expect(exported).toContain("Apply Acme tokens.");
+    expect(exported).toContain("## DESIGN.md Summary");
+    expect(exported).toContain("format: \"adapters\"");
+    expect(exported).toContain("tokens/components.json");
     expect(exported).toContain("tokens.css");
+    expect(exported).not.toContain("export function LessonCard");
   });
 
   it("builds DESIGN.md documentation", () => {
