@@ -6,6 +6,7 @@ import type {
   DbQueryResult,
   DbTransactionClient,
 } from "../adapter";
+import { decodeNumericId } from "../value-codecs";
 
 let pool: Pool | null = null;
 
@@ -38,10 +39,10 @@ async function executeWithClient(
   params?: unknown[],
 ): Promise<DbMutationResult> {
   const result = await client.query(text, params);
-  const firstRow = result.rows[0] as { id?: number } | undefined;
+  const firstRow = result.rows[0] as { id?: unknown } | undefined;
   return {
     rowCount: result.rowCount ?? 0,
-    lastInsertId: typeof firstRow?.id === "number" ? firstRow.id : undefined,
+    lastInsertId: decodeNumericId(firstRow?.id),
   };
 }
 

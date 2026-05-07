@@ -7,7 +7,11 @@ import {
 } from "./workflow-transfer";
 import type { DbTransactionClient } from "./db/adapter";
 import { getDatabaseConfig } from "./db/config";
-import { decodeBoolean, decodeTimestamp } from "./db/value-codecs";
+import {
+  decodeBoolean,
+  decodeNumericId,
+  decodeTimestamp,
+} from "./db/value-codecs";
 import { ensureDatabaseBootstrapped } from "./db/bootstrap";
 import { postgresAdapter, getPostgresPool } from "./db/adapters/postgres";
 import { sqliteAdapter } from "./db/adapters/sqlite";
@@ -61,9 +65,9 @@ export async function insert(
   params?: unknown[],
 ): Promise<number> {
   await ensureDatabaseBootstrapped();
-  const result = await activeAdapter.query<{ id?: number }>(text, params);
-  const id = result.rows[0]?.id;
-  if (typeof id !== "number") {
+  const result = await activeAdapter.query<{ id?: unknown }>(text, params);
+  const id = decodeNumericId(result.rows[0]?.id);
+  if (id === undefined) {
     throw new Error("insert() expected a numeric id from the database result");
   }
   return id;
@@ -77,13 +81,13 @@ export async function insertAndReturnId(
   await ensureDatabaseBootstrapped();
   if (activeAdapter.dialect === "postgres") {
     const result = client
-      ? await client.query<{ id?: number }>(`${text} RETURNING id`, params)
-      : await activeAdapter.query<{ id?: number }>(
+      ? await client.query<{ id?: unknown }>(`${text} RETURNING id`, params)
+      : await activeAdapter.query<{ id?: unknown }>(
           `${text} RETURNING id`,
           params,
         );
-    const id = result.rows[0]?.id;
-    if (typeof id !== "number") {
+    const id = decodeNumericId(result.rows[0]?.id);
+    if (id === undefined) {
       throw new Error(
         "insertAndReturnId() expected a numeric id from postgres",
       );

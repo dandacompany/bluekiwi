@@ -25,6 +25,19 @@ export function decodeTimestamp(value: unknown): string | null {
   return String(value);
 }
 
+export function decodeNumericId(value: unknown): number | undefined {
+  if (typeof value === "number") {
+    return Number.isSafeInteger(value) ? value : undefined;
+  }
+
+  if (typeof value === "string" && /^\d+$/.test(value)) {
+    const id = Number(value);
+    return Number.isSafeInteger(id) ? id : undefined;
+  }
+
+  return undefined;
+}
+
 export function encodeJson(value: unknown): string {
   return JSON.stringify(value);
 }
