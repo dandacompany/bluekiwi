@@ -62,6 +62,9 @@ COPY docker/migrations ./docker/migrations
 # Built-in workflow seeds
 COPY docker/seed-workflows ./docker/seed-workflows
 
+# Built-in design-system seeds
+COPY docker/seed-design-systems ./docker/seed-design-systems
+
 USER nextjs
 
 EXPOSE 3000 3001

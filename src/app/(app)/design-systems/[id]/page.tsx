@@ -32,6 +32,8 @@ interface DesignSystemDetail {
   slug: string;
   description: string;
   version: string;
+  category: string;
+  surface: string;
   status: string;
   content: {
     schema_json: string;
@@ -67,6 +69,7 @@ type ComponentDoc = {
   description: string;
   props: Array<JsonMap>;
   variants: string[];
+  states: string[];
   classes: string[];
   dependencies: string[];
   install: string[];
@@ -148,6 +151,25 @@ function stringArrayValue(value: unknown): string[] {
   return [];
 }
 
+function stateArrayValue(value: unknown): string[] {
+  const normalize = (item: string) =>
+    item.trim().toLowerCase().replaceAll("_", "-").replaceAll(" ", "-");
+  if (Array.isArray(value)) {
+    return [
+      ...new Set(
+        value
+          .map((item) => (typeof item === "string" ? normalize(item) : ""))
+          .filter(Boolean),
+      ),
+    ];
+  }
+  if (typeof value === "string" && value.trim()) return [normalize(value)];
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return Object.keys(value).map(normalize).filter(Boolean);
+  }
+  return [];
+}
+
 function propsValue(value: unknown): Array<JsonMap> {
   if (!Array.isArray(value)) return [];
   return value.filter(
@@ -216,6 +238,11 @@ function componentDocsFromTokens(tokens: JsonMap): ComponentDoc[] {
       description: stringValue(spec.description),
       props: propsValue(spec.props),
       variants: stringArrayValue(spec.variants),
+      states: [
+        ...stateArrayValue(spec.states),
+        ...stateArrayValue(spec.state),
+        ...stateArrayValue(spec.interaction_states),
+      ],
       classes: [
         ...stringArrayValue(spec.classes),
         ...stringArrayValue(tailwind.classes),
@@ -268,6 +295,9 @@ function componentRawRows(component: ComponentDoc): Array<[string, unknown]> {
         "styleSystem",
         "props",
         "variants",
+        "states",
+        "state",
+        "interaction_states",
         "classes",
         "className",
         "class_name",
@@ -290,6 +320,18 @@ function componentRawRows(component: ComponentDoc): Array<[string, unknown]> {
   );
 }
 
+function missingComponentStates(component: ComponentDoc): string[] {
+  const required = ["default", "hover", "focus-visible", "disabled"];
+  const name = component.name.toLowerCase();
+  if (/button|submit|cta/.test(name)) required.push("loading");
+  if (/input|select|textarea|checkbox|radio|switch|slider|field/.test(name)) {
+    required.push("error");
+  }
+  return [...new Set(required)].filter(
+    (state) => !component.states.includes(state),
+  );
+}
+
 export default function DesignSystemDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
@@ -297,16 +339,25 @@ export default function DesignSystemDetailPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [exportContent, setExportContent] = useState("");
+  const [activeDesignSystemId, setActiveDesignSystemId] = useState<number | null>(
+    null,
+  );
   const [selectedComponentName, setSelectedComponentName] = useState<
     string | null
   >(null);
 
   useEffect(() => {
     void load();
+    void loadActive();
     async function load() {
       const res = await fetch(`/api/design-systems/${id}`);
       const json = await res.json();
       setDetail(json.data ?? null);
+    }
+    async function loadActive() {
+      const res = await fetch("/api/design-systems/active");
+      const json = await res.json();
+      setActiveDesignSystemId(json.data?.active?.id ?? null);
     }
   }, [id]);
 
@@ -361,6 +412,8 @@ export default function DesignSystemDetailPage() {
           title: detail.title,
           slug: detail.slug,
           description: detail.description,
+          category: detail.category,
+          surface: detail.surface,
           schema: parseJsonMap(detail.content.schema_json),
           tokens,
           color_tokens,
@@ -382,14 +435,48 @@ export default function DesignSystemDetailPage() {
     }
   }
 
-  async function exportAs(format: "json" | "skill" | "design") {
+  async function exportAs(format: "json" | "skill" | "design" | "bundle") {
     const res = await fetch(`/api/design-systems/${id}/export?format=${format}`);
     const json = await res.json();
     setExportContent(
-      format === "json"
+      format === "json" || format === "bundle"
         ? JSON.stringify(json.data ?? {}, null, 2)
         : json.data?.content ?? "",
     );
+  }
+
+  async function runLint() {
+    const res = await fetch(`/api/design-systems/${id}/lint`, {
+      method: "POST",
+    });
+    const json = await res.json();
+    setExportContent(JSON.stringify(json.data ?? {}, null, 2));
+  }
+
+  async function setActiveDesignSystem() {
+    const res = await fetch("/api/design-systems/active", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ design_system_id: Number(id) }),
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      setMessage(json?.error?.message ?? "Failed to set active design system");
+      return;
+    }
+    setActiveDesignSystemId(json.data?.active?.id ?? Number(id));
+    setMessage("Set as active design system");
+  }
+
+  async function clearActiveDesignSystem() {
+    const res = await fetch("/api/design-systems/active", { method: "DELETE" });
+    if (!res.ok) {
+      const json = await res.json().catch(() => null);
+      setMessage(json?.error?.message ?? "Failed to clear active design system");
+      return;
+    }
+    setActiveDesignSystemId(null);
+    setMessage("Active design system cleared");
   }
 
   if (!detail) {
@@ -410,8 +497,15 @@ export default function DesignSystemDetailPage() {
                 {detail.title}
               </h1>
               <Badge variant="success">v{detail.version}</Badge>
+              {activeDesignSystemId === detail.id ? (
+                <Badge variant="accent">Active</Badge>
+              ) : null}
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">{detail.slug}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <p className="text-sm text-muted-foreground">{detail.slug}</p>
+              <Badge variant="secondary">{detail.category}</Badge>
+              <Badge variant="neutral">{detail.surface}</Badge>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => exportAs("design")}>
@@ -422,10 +516,29 @@ export default function DesignSystemDetailPage() {
               <Download className="h-4 w-4" />
               JSON
             </Button>
+            <Button variant="outline" onClick={() => exportAs("bundle")}>
+              <Download className="h-4 w-4" />
+              Bundle
+            </Button>
             <Button variant="outline" onClick={() => exportAs("skill")}>
               <Download className="h-4 w-4" />
               Skill
             </Button>
+            <Button variant="outline" onClick={runLint}>
+              <Info className="h-4 w-4" />
+              Lint
+            </Button>
+            {activeDesignSystemId === detail.id ? (
+              <Button variant="outline" onClick={clearActiveDesignSystem}>
+                <X className="h-4 w-4" />
+                Clear Active
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={setActiveDesignSystem}>
+                <Check className="h-4 w-4" />
+                Set Active
+              </Button>
+            )}
             <Button onClick={save} disabled={saving}>
               <Save className="h-4 w-4" />
               Save
@@ -453,6 +566,20 @@ export default function DesignSystemDetailPage() {
                   updateDetail({ ...detail, slug: event.target.value })
                 }
               />
+              <Input
+                value={detail.category}
+                placeholder="Category"
+                onChange={(event) =>
+                  updateDetail({ ...detail, category: event.target.value })
+                }
+              />
+              <Input
+                value={detail.surface}
+                placeholder="surface: web, slides, docs..."
+                onChange={(event) =>
+                  updateDetail({ ...detail, surface: event.target.value })
+                }
+              />
               <Textarea
                 className="md:col-span-2"
                 value={detail.description}
@@ -461,6 +588,14 @@ export default function DesignSystemDetailPage() {
                 }
               />
             </div>
+          </Panel>
+
+          <Panel title="Showcase Preview" icon={<Layers className="h-4 w-4" />}>
+            <iframe
+              className="h-[520px] w-full rounded-lg border border-border bg-white"
+              title={`${detail.title} showcase preview`}
+              src={`/api/design-systems/${id}/preview`}
+            />
           </Panel>
 
           <Panel title="Color Palette" icon={<Palette className="h-4 w-4" />}>
@@ -718,6 +853,7 @@ function ComponentGalleryCard({
 }) {
   const previewHtml = componentPreviewHtml(component);
   const chipCount = component.classes.length + component.variants.length;
+  const missingStates = missingComponentStates(component);
 
   return (
     <article className="overflow-hidden rounded-lg border border-border bg-background">
@@ -729,6 +865,11 @@ function ComponentGalleryCard({
           </p>
         </div>
         <Badge variant="outline">{component.framework}</Badge>
+        {missingStates.length > 0 ? (
+          <Badge variant="warning">{missingStates.length} states missing</Badge>
+        ) : (
+          <Badge variant="success">states ready</Badge>
+        )}
       </div>
 
       {previewHtml ? (
@@ -750,8 +891,8 @@ function ComponentGalleryCard({
             {component.styleSystem || "Design tokens"}
           </div>
           <div className="mt-1 text-[11px] text-muted-foreground">
-            {component.props.length} props · {component.install.length} install ·{" "}
-            {chipCount} tags
+            {component.props.length} props · {component.states.length} states ·{" "}
+            {component.install.length} install · {chipCount} tags
           </div>
         </div>
         <Button variant="outline" size="sm" onClick={onOpen}>
@@ -772,6 +913,7 @@ function ComponentDetailDialog({
 }) {
   const previewHtml = componentPreviewHtml(component);
   const rawRows = componentRawRows(component);
+  const missingStates = missingComponentStates(component);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4">
@@ -788,6 +930,13 @@ function ComponentDetailDialog({
               {component.styleSystem ? (
                 <Badge variant="secondary">{component.styleSystem}</Badge>
               ) : null}
+              {missingStates.length > 0 ? (
+                <Badge variant="warning">
+                  Missing {missingStates.length} states
+                </Badge>
+              ) : (
+                <Badge variant="success">State coverage ready</Badge>
+              )}
             </div>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               {component.description || "No description recorded."}
@@ -820,6 +969,14 @@ function ComponentDetailDialog({
 
             <DetailSection title="Variants">
               <ChipList items={component.variants} empty="No variants." />
+            </DetailSection>
+            <DetailSection title="States">
+              <ChipList items={component.states} empty="No states." />
+              {missingStates.length > 0 ? (
+                <p className="mt-2 text-xs text-warning">
+                  Missing: {missingStates.join(", ")}
+                </p>
+              ) : null}
             </DetailSection>
             <DetailSection title="Tailwind Classes">
               <ChipList items={component.classes} empty="No classes." />

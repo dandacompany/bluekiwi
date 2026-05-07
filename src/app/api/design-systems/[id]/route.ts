@@ -7,6 +7,7 @@ import {
 import { loadResourceOrFail, withResource } from "@/lib/api-helpers";
 import { withAuth } from "@/lib/with-auth";
 import {
+  deleteDesignSystem,
   getDesignSystemDetail,
   updateDesignSystem,
 } from "@/lib/db/repositories/design-systems";
@@ -70,6 +71,8 @@ export const PATCH = withAuth<Params>(
         slug: typeof body.slug === "string" ? body.slug : undefined,
         description:
           typeof body.description === "string" ? body.description : undefined,
+        category: typeof body.category === "string" ? body.category : undefined,
+        surface: typeof body.surface === "string" ? body.surface : undefined,
         status: body.status,
         visibilityOverride:
           "visibility_override" in body ? body.visibility_override : undefined,
@@ -90,6 +93,37 @@ export const PATCH = withAuth<Params>(
       });
 
       const res = okResponse(updated);
+      return NextResponse.json(res.body, { status: res.status });
+    } catch (error) {
+      const res = errorFromException(error);
+      return NextResponse.json(res.body, { status: res.status });
+    }
+  },
+);
+
+export const DELETE = withAuth<Params>(
+  "design_systems:update",
+  async (request: NextRequest, user, { params }) => {
+    const { id } = await params;
+    const parsedId = parseDesignSystemId(id);
+    if (parsedId instanceof NextResponse) return parsedId;
+    const designSystemId = parsedId;
+
+    const { response: errResp } = await loadResourceOrFail<DesignSystem>({
+      table: "design_systems",
+      id: designSystemId,
+      user,
+      check: canEditDesignSystem,
+      notFoundMessage: "디자인시스템을 찾을 수 없습니다",
+      forbiddenMessage: "편집 권한 없음",
+    });
+    if (errResp) return errResp;
+
+    try {
+      const url = new URL(request.url);
+      const family = url.searchParams.get("family") === "true";
+      await deleteDesignSystem({ id: designSystemId, family });
+      const res = okResponse({ id: designSystemId, family, deleted: true });
       return NextResponse.json(res.body, { status: res.status });
     } catch (error) {
       const res = errorFromException(error);

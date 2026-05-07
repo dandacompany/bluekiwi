@@ -14,6 +14,7 @@ import {
   withTransaction,
 } from "@/lib/db";
 import { isExpired } from "@/lib/invites";
+import { seedBuiltinDesignSystems } from "@/lib/seed-design-systems";
 import { seedBuiltinWorkflows } from "@/lib/seed-workflows";
 import { resolveOrigin } from "@/lib/url";
 
@@ -206,6 +207,9 @@ export async function POST(request: NextRequest, { params }: Params) {
   // Seed built-in workflows (best-effort, same as setup)
   await seedBuiltinWorkflows(created.id, folderId).catch((err) => {
     console.error("[seed] built-in workflow seeding failed:", err);
+  });
+  await seedBuiltinDesignSystems(created.id, folderId).catch((err) => {
+    console.error("[seed] built-in design-system seeding failed:", err);
   });
 
   return NextResponse.json({

@@ -1,0 +1,32 @@
+import { NextResponse } from "next/server";
+import { DesignSystem, errorResponse, okResponse } from "@/lib/db";
+import { canReadDesignSystem } from "@/lib/authorization";
+import { withResource } from "@/lib/api-helpers";
+import {
+  getDesignSystemDetail,
+  lintDesignSystem,
+} from "@/lib/db/repositories/design-systems";
+
+export const GET = withResource<DesignSystem>({
+  permission: "design_systems:read",
+  table: "design_systems",
+  check: canReadDesignSystem,
+  notFoundMessage: "디자인시스템을 찾을 수 없습니다",
+  forbiddenMessage: "접근 권한 없음",
+  handler: async ({ resource }) => {
+    const detail = await getDesignSystemDetail(resource.id);
+    if (!detail) {
+      const res = errorResponse(
+        "NOT_FOUND",
+        "디자인시스템을 찾을 수 없습니다",
+        404,
+      );
+      return NextResponse.json(res.body, { status: res.status });
+    }
+
+    const res = okResponse(lintDesignSystem(detail));
+    return NextResponse.json(res.body, { status: res.status });
+  },
+});
+
+export const POST = GET;

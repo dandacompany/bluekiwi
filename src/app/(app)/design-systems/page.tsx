@@ -17,6 +17,8 @@ interface DesignSystem {
   slug: string;
   description: string;
   version: string;
+  category: string;
+  surface: string;
   status: string;
   is_active: boolean;
   updated_at: string;
@@ -25,10 +27,13 @@ interface DesignSystem {
 export default function DesignSystemsPage() {
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
+  const [seeding, setSeeding] = useState(false);
   const [form, setForm] = useState({
     title: "",
     slug: "",
     description: "",
+    category: "Custom",
+    surface: "web",
     tokens: "{\n  \"color\": {},\n  \"typography\": {},\n  \"components\": {}\n}",
     guidelines_markdown: "## Principles\n\n",
     skill_markdown:
@@ -54,6 +59,8 @@ export default function DesignSystemsPage() {
           title: form.title,
           slug: form.slug || undefined,
           description: form.description,
+          category: form.category,
+          surface: form.surface,
           tokens: JSON.parse(form.tokens || "{}"),
           guidelines_markdown: form.guidelines_markdown,
           skill_markdown: form.skill_markdown,
@@ -70,6 +77,20 @@ export default function DesignSystemsPage() {
     }
   }
 
+  async function seedDesignSystems() {
+    setSeeding(true);
+    try {
+      const res = await fetch("/api/design-systems/seed", { method: "POST" });
+      if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        throw new Error(json?.error?.message ?? "Failed to seed");
+      }
+      await refetch();
+    } finally {
+      setSeeding(false);
+    }
+  }
+
   return (
     <main className="flex min-h-screen flex-col bg-[var(--background)]">
       <header className="border-b border-border px-6 py-5">
@@ -82,10 +103,16 @@ export default function DesignSystemsPage() {
               Versioned design-system registry for BlueKiwi MCP and skills.
             </p>
           </div>
-          <Button onClick={createDesignSystem} disabled={creating || !form.title.trim()}>
-            <Plus className="h-4 w-4" />
-            Create
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={seedDesignSystems} disabled={seeding}>
+              <Palette className="h-4 w-4" />
+              Seed Library
+            </Button>
+            <Button onClick={createDesignSystem} disabled={creating || !form.title.trim()}>
+              <Plus className="h-4 w-4" />
+              Create
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -115,6 +142,22 @@ export default function DesignSystemsPage() {
                   setForm({ ...form, description: event.target.value })
                 }
               />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Input
+                  placeholder="Category"
+                  value={form.category}
+                  onChange={(event) =>
+                    setForm({ ...form, category: event.target.value })
+                  }
+                />
+                <Input
+                  placeholder="surface: web, slides, docs..."
+                  value={form.surface}
+                  onChange={(event) =>
+                    setForm({ ...form, surface: event.target.value })
+                  }
+                />
+              </div>
               <Textarea
                 className="min-h-32 font-mono text-xs"
                 value={form.tokens}
@@ -193,8 +236,12 @@ export default function DesignSystemsPage() {
                     <p className="line-clamp-2 min-h-10 text-sm text-muted-foreground">
                       {item.description || "No description"}
                     </p>
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline">{item.status}</Badge>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline">{item.status}</Badge>
+                        <Badge variant="secondary">{item.category}</Badge>
+                        <Badge variant="neutral">{item.surface}</Badge>
+                      </div>
                       <Link
                         href={`/design-systems/${item.id}`}
                         className="inline-flex items-center gap-1 text-xs font-medium text-primary"
@@ -213,4 +260,3 @@ export default function DesignSystemsPage() {
     </main>
   );
 }
-

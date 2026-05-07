@@ -3,6 +3,7 @@ import { insertAndReturnId, queryOne } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { createSession } from "@/lib/session";
 import { seedBuiltinWorkflows } from "@/lib/seed-workflows";
+import { seedBuiltinDesignSystems } from "@/lib/seed-design-systems";
 
 // GET: Check if setup is needed (no users exist)
 export async function GET() {
@@ -60,6 +61,9 @@ export async function POST(req: NextRequest) {
   // Seed built-in workflows
   await seedBuiltinWorkflows(userId, folderId).catch((err) => {
     console.error("[seed] built-in workflow seeding failed:", err);
+  });
+  await seedBuiltinDesignSystems(userId, folderId).catch((err) => {
+    console.error("[seed] built-in design-system seeding failed:", err);
   });
 
   const token = await createSession({

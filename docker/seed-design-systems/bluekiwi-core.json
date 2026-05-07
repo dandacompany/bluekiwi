@@ -1,0 +1,354 @@
+[
+  {
+    "title": "Education Workshop System",
+    "slug": "education-workshop-system",
+    "description": "Structured, editorial design system for courses, agentic AI workshops, tutorials, and lesson materials.",
+    "version": "1.0",
+    "category": "Education",
+    "surface": "web",
+    "schema": {
+      "version": "1.0",
+      "mediums": ["web", "docs", "slides"],
+      "archetype": "learning-workshop-kit"
+    },
+    "tokens": {
+      "spacing": { "xs": 4, "sm": 8, "md": 16, "lg": 24, "xl": 40, "section": 72 },
+      "radius": { "control": 6, "card": 8, "modal": 8 },
+      "shadow": { "none": "none", "soft": "0 8px 24px rgba(26,26,26,.08)" },
+      "motion": { "durationFast": "120ms", "durationBase": "180ms", "easingStandard": "cubic-bezier(.2,.8,.2,1)" }
+    },
+    "color_tokens": {
+      "canvas": "#F7F2E6",
+      "surface": "#FFFFFF",
+      "surfaceElevated": "#FCFAF3",
+      "ink": "#1A1A1A",
+      "muted": "#6B665E",
+      "line": "#D8CCB8",
+      "accent": "#A0522D",
+      "accentInk": "#FFFFFF",
+      "success": "#2F6B4F",
+      "warning": "#B7791F",
+      "danger": "#B42318",
+      "info": "#256D85"
+    },
+    "typography_tokens": {
+      "display": "Instrument Serif, Fraunces, serif",
+      "heading": "Source Sans 3, Noto Sans KR, system-ui, sans-serif",
+      "body": "Source Sans 3, Noto Sans KR, system-ui, sans-serif",
+      "label": "Source Sans 3, system-ui, sans-serif",
+      "caption": "Source Sans 3, system-ui, sans-serif",
+      "mono": "IBM Plex Mono, ui-monospace, monospace"
+    },
+    "component_tokens": {
+      "PrimaryButton": {
+        "framework": "shadcn",
+        "style_system": "shadcn/ui + Tailwind CSS",
+        "description": "Primary action for lesson start, registration, and submission moments.",
+        "props": [{ "name": "children", "type": "ReactNode", "description": "Button label" }],
+        "variants": ["default", "secondary", "quiet"],
+        "states": ["default", "hover", "focus-visible", "active", "disabled", "loading"],
+        "classes": ["rounded-md", "bg-[var(--accent)]", "text-[var(--accentInk)]", "focus-visible:ring-2"],
+        "dependencies": ["lucide-react"],
+        "install": ["npx shadcn@latest add button"],
+        "preview": {
+          "html": "<button class=\"wk-button\">Start Lesson</button>",
+          "css": ".wk-button{border:0;border-radius:6px;background:#A0522D;color:white;padding:10px 14px;font-weight:700}"
+        },
+        "usage": "Use once per decision area; keep secondary actions neutral."
+      },
+      "LessonCard": {
+        "framework": "html",
+        "style_system": "HTML + CSS",
+        "description": "Course module card with visible hierarchy and practical outcome.",
+        "props": [{ "name": "title", "type": "string", "description": "Lesson title" }],
+        "variants": ["default", "active", "completed"],
+        "states": ["default", "hover", "focus-visible", "disabled"],
+        "preview": {
+          "html": "<article class=\"lesson-card\"><span>Module 01</span><h3>Agent Workflow Design</h3><p>Map steps, gates, and expected outputs.</p></article>",
+          "css": ".lesson-card{border-left:4px solid #A0522D;border-radius:8px;border:1px solid #D8CCB8;padding:18px;background:#fff}.lesson-card span{font:700 12px IBM Plex Mono;color:#6B665E}.lesson-card h3{margin:8px 0 4px;font-size:20px}.lesson-card p{margin:0;color:#6B665E}"
+        },
+        "usage": "Use for workshop modules, practice blocks, and resource cards."
+      },
+      "TextField": {
+        "framework": "tailwind",
+        "style_system": "Tailwind CSS",
+        "description": "Readable labeled input for quiz, registration, and feedback forms.",
+        "props": [{ "name": "error", "type": "string", "description": "Validation message" }],
+        "variants": ["default", "error"],
+        "states": ["default", "hover", "focus-visible", "disabled", "error"],
+        "classes": ["rounded-md", "border", "border-[var(--line)]", "focus-visible:ring-2", "aria-invalid:border-[var(--danger)]"],
+        "preview": {
+          "html": "<label class=\"wk-field\"><span>Learning goal</span><input placeholder=\"Automate a review loop\" /></label>",
+          "css": ".wk-field{display:grid;gap:6px;font-weight:700}.wk-field input{border:1px solid #D8CCB8;border-radius:6px;padding:10px 12px}"
+        },
+        "usage": "Always pair with visible labels and helper or validation text."
+      }
+    },
+    "guidelines_markdown": "## Principles\n\n- Make learning hierarchy visible: module, objective, task, output.\n- Use the rust accent sparingly for primary actions and section markers.\n- Keep body copy practical and outcome-oriented.\n- Use code and rubrics as first-class content, not decorative blocks.",
+    "skill_markdown": "Use this design system for educational websites, AI workshop kits, course materials, slide support pages, tutorials, and lesson dashboards."
+  },
+  {
+    "title": "Developer Workbench System",
+    "slug": "developer-workbench-system",
+    "description": "Dense, high-signal system for CLI tools, MCP products, API docs, SDK dashboards, and automation builders.",
+    "version": "1.0",
+    "category": "Developer Tools",
+    "surface": "web",
+    "schema": {
+      "version": "1.0",
+      "mediums": ["web", "docs"],
+      "archetype": "developer-workbench"
+    },
+    "tokens": {
+      "spacing": { "xs": 4, "sm": 8, "md": 12, "lg": 20, "xl": 32, "section": 56 },
+      "radius": { "control": 6, "card": 8, "modal": 8 },
+      "shadow": { "none": "none", "soft": "0 12px 28px rgba(15,23,42,.10)" },
+      "motion": { "durationFast": "100ms", "durationBase": "160ms", "easingStandard": "ease-out" }
+    },
+    "color_tokens": {
+      "canvas": "#FAFAFA",
+      "surface": "#FFFFFF",
+      "surfaceElevated": "#F4F4F5",
+      "ink": "#171717",
+      "muted": "#52525B",
+      "line": "#D4D4D8",
+      "accent": "#16A34A",
+      "accentInk": "#FFFFFF",
+      "success": "#15803D",
+      "warning": "#CA8A04",
+      "danger": "#DC2626",
+      "info": "#2563EB",
+      "codeSurface": "#0F172A",
+      "codeInk": "#E2E8F0"
+    },
+    "typography_tokens": {
+      "display": "Geist, system-ui, sans-serif",
+      "heading": "Geist, system-ui, sans-serif",
+      "body": "Geist, system-ui, sans-serif",
+      "label": "Geist, system-ui, sans-serif",
+      "caption": "Geist, system-ui, sans-serif",
+      "mono": "JetBrains Mono, Fira Code, ui-monospace, monospace"
+    },
+    "component_tokens": {
+      "CommandButton": {
+        "framework": "shadcn",
+        "style_system": "shadcn/ui + Tailwind CSS",
+        "description": "Compact command-oriented action button for developer workflows.",
+        "props": [{ "name": "isLoading", "type": "boolean", "description": "Shows pending command state" }],
+        "variants": ["primary", "secondary", "danger"],
+        "states": ["default", "hover", "focus-visible", "active", "disabled", "loading"],
+        "classes": ["h-9", "rounded-md", "font-medium", "focus-visible:ring-2", "bg-[var(--accent)]"],
+        "install": ["npx shadcn@latest add button"],
+        "preview": {
+          "html": "<button class=\"dev-button\">Run scan</button>",
+          "css": ".dev-button{height:36px;border:0;border-radius:6px;background:#16A34A;color:#fff;padding:0 12px;font-weight:700}"
+        },
+        "usage": "Use for concrete commands. Avoid vague CTA copy."
+      },
+      "CodeBlock": {
+        "framework": "html",
+        "style_system": "HTML + CSS",
+        "description": "Copyable code or terminal surface with strong contrast.",
+        "props": [{ "name": "code", "type": "string", "description": "Code content" }],
+        "variants": ["terminal", "api", "diff"],
+        "states": ["default", "hover", "focus-visible", "disabled"],
+        "preview": {
+          "html": "<pre class=\"dev-code\"><code>bluekiwi design lint --id 42</code></pre>",
+          "css": ".dev-code{margin:0;border-radius:8px;background:#0F172A;color:#E2E8F0;padding:16px;font:13px/1.6 JetBrains Mono,monospace}"
+        },
+        "usage": "Always include copy affordance in production UI."
+      },
+      "ConfigField": {
+        "framework": "tailwind",
+        "style_system": "Tailwind CSS",
+        "description": "Labeled configuration input for keys, URLs, and command parameters.",
+        "props": [{ "name": "status", "type": "valid | invalid", "description": "Validation status" }],
+        "variants": ["default", "invalid", "readonly"],
+        "states": ["default", "hover", "focus-visible", "disabled", "error"],
+        "classes": ["rounded-md", "border", "font-mono", "focus-visible:ring-2", "aria-invalid:border-red-600"],
+        "preview": {
+          "html": "<label class=\"dev-field\"><span>MCP URL</span><input value=\"http://localhost:3100\" /></label>",
+          "css": ".dev-field{display:grid;gap:6px;font:13px Geist}.dev-field input{border:1px solid #D4D4D8;border-radius:6px;padding:9px 10px;font-family:JetBrains Mono}"
+        },
+        "usage": "Use mono font for machine values and visible validation for invalid endpoints."
+      }
+    },
+    "guidelines_markdown": "## Principles\n\n- Prioritize command clarity, logs, copyable code, and status visibility.\n- Keep motion minimal and state transitions explicit.\n- Use the green accent for successful execution and primary command moments.\n- Do not hide important configuration inside decorative cards.",
+    "skill_markdown": "Use this design system for developer tooling, API products, MCP dashboards, CLI control panels, SDK documentation, and automation workbenches."
+  },
+  {
+    "title": "SaaS Operator Console",
+    "slug": "saas-operator-console",
+    "description": "Quiet, durable interface system for SaaS admin panels, workflow registries, CRM-style tools, and repeated operations.",
+    "version": "1.0",
+    "category": "SaaS",
+    "surface": "web",
+    "schema": {
+      "version": "1.0",
+      "mediums": ["web"],
+      "archetype": "operator-console"
+    },
+    "tokens": {
+      "spacing": { "xs": 4, "sm": 8, "md": 16, "lg": 24, "xl": 32, "section": 48 },
+      "radius": { "control": 6, "card": 8, "modal": 8 },
+      "shadow": { "none": "none", "soft": "0 8px 20px rgba(24,24,27,.08)" },
+      "motion": { "durationFast": "120ms", "durationBase": "180ms", "easingStandard": "ease-out" }
+    },
+    "color_tokens": {
+      "canvas": "#F8FAFC",
+      "surface": "#FFFFFF",
+      "surfaceElevated": "#F4F7FB",
+      "ink": "#18181B",
+      "muted": "#71717A",
+      "line": "#E4E4E7",
+      "accent": "#0F766E",
+      "accentInk": "#FFFFFF",
+      "success": "#15803D",
+      "warning": "#B45309",
+      "danger": "#B91C1C",
+      "info": "#2563EB"
+    },
+    "typography_tokens": {
+      "display": "Geist, Source Sans 3, system-ui, sans-serif",
+      "heading": "Geist, Source Sans 3, system-ui, sans-serif",
+      "body": "Source Sans 3, system-ui, sans-serif",
+      "label": "Source Sans 3, system-ui, sans-serif",
+      "caption": "Source Sans 3, system-ui, sans-serif",
+      "mono": "JetBrains Mono, ui-monospace, monospace"
+    },
+    "component_tokens": {
+      "ActionButton": {
+        "framework": "shadcn",
+        "style_system": "shadcn/ui + Tailwind CSS",
+        "description": "Primary and secondary operational button.",
+        "props": [{ "name": "variant", "type": "primary | secondary | danger", "description": "Action tone" }],
+        "variants": ["primary", "secondary", "danger"],
+        "states": ["default", "hover", "focus-visible", "active", "disabled", "loading"],
+        "classes": ["rounded-md", "h-9", "px-3", "focus-visible:ring-2"],
+        "install": ["npx shadcn@latest add button"],
+        "preview": {
+          "html": "<button class=\"ops-button\">Create workflow</button>",
+          "css": ".ops-button{height:36px;border:0;border-radius:6px;background:#0F766E;color:#fff;padding:0 12px;font-weight:700}"
+        },
+        "usage": "Use short verb labels. Reserve danger variant for destructive actions."
+      },
+      "DataTable": {
+        "framework": "tailwind",
+        "style_system": "Tailwind CSS",
+        "description": "Dense table for repeated scanning, comparison, and batch actions.",
+        "props": [{ "name": "rows", "type": "array", "description": "Visible data rows" }],
+        "variants": ["default", "selectable", "compact"],
+        "states": ["default", "hover", "focus-visible", "disabled", "loading"],
+        "classes": ["text-sm", "border", "divide-y", "rounded-lg", "data-[selected=true]:bg-slate-50"],
+        "preview": {
+          "html": "<table class=\"ops-table\"><tr><th>Name</th><th>Status</th></tr><tr><td>Review Flow</td><td>Active</td></tr></table>",
+          "css": ".ops-table{width:100%;border-collapse:collapse;font:13px Source Sans 3}.ops-table th,.ops-table td{border-bottom:1px solid #E4E4E7;padding:10px;text-align:left}.ops-table th{color:#71717A}"
+        },
+        "usage": "Always provide loading, empty, error, populated, and edge states."
+      },
+      "SearchField": {
+        "framework": "tailwind",
+        "style_system": "Tailwind CSS",
+        "description": "Filtering input for list and table surfaces.",
+        "props": [{ "name": "value", "type": "string", "description": "Search query" }],
+        "variants": ["default", "with-icon"],
+        "states": ["default", "hover", "focus-visible", "disabled", "error"],
+        "classes": ["rounded-md", "border", "pl-9", "focus-visible:ring-2"],
+        "preview": {
+          "html": "<input class=\"ops-search\" placeholder=\"Search workflows\" />",
+          "css": ".ops-search{height:36px;border:1px solid #E4E4E7;border-radius:6px;padding:0 12px;width:100%}"
+        },
+        "usage": "Use on every long registry or table view."
+      }
+    },
+    "guidelines_markdown": "## Principles\n\n- Favor dense, predictable layouts over decorative marketing composition.\n- Use accent color for action, focus, and active navigation only.\n- Every table or list surface needs loading, empty, error, populated, and edge states.\n- Keep card radius at 8px or less.",
+    "skill_markdown": "Use this design system for SaaS dashboards, admin consoles, CRM tools, workflow registries, settings pages, and operational products."
+  },
+  {
+    "title": "Data Cockpit Dark",
+    "slug": "data-cockpit-dark",
+    "description": "Dark, instrumented system for analytics, monitoring, finance, security, and live operational dashboards.",
+    "version": "1.0",
+    "category": "Dashboard",
+    "surface": "web",
+    "schema": {
+      "version": "1.0",
+      "mediums": ["web"],
+      "archetype": "data-cockpit"
+    },
+    "tokens": {
+      "spacing": { "xs": 4, "sm": 8, "md": 12, "lg": 20, "xl": 28, "section": 40 },
+      "radius": { "control": 6, "card": 8, "modal": 8 },
+      "shadow": { "none": "none", "soft": "0 18px 40px rgba(0,0,0,.30)" },
+      "motion": { "durationFast": "100ms", "durationBase": "160ms", "easingStandard": "linear" }
+    },
+    "color_tokens": {
+      "canvas": "#111827",
+      "surface": "#1F2937",
+      "surfaceElevated": "#263244",
+      "ink": "#F9FAFB",
+      "muted": "#9CA3AF",
+      "line": "#374151",
+      "accent": "#F59E0B",
+      "accentInk": "#111827",
+      "success": "#22C55E",
+      "warning": "#F59E0B",
+      "danger": "#EF4444",
+      "info": "#06B6D4"
+    },
+    "typography_tokens": {
+      "display": "IBM Plex Sans, Geist, system-ui, sans-serif",
+      "heading": "IBM Plex Sans, Geist, system-ui, sans-serif",
+      "body": "IBM Plex Sans, Geist, system-ui, sans-serif",
+      "label": "IBM Plex Sans, Geist, system-ui, sans-serif",
+      "caption": "IBM Plex Sans, Geist, system-ui, sans-serif",
+      "mono": "JetBrains Mono, ui-monospace, monospace"
+    },
+    "component_tokens": {
+      "MetricTile": {
+        "framework": "html",
+        "style_system": "HTML + CSS",
+        "description": "Compact KPI tile with value, trend, and status cue.",
+        "props": [{ "name": "value", "type": "string", "description": "Metric value" }],
+        "variants": ["default", "warning", "danger"],
+        "states": ["default", "hover", "focus-visible", "disabled", "loading"],
+        "preview": {
+          "html": "<article class=\"metric\"><span>Latency</span><strong>132ms</strong><em>+4.2%</em></article>",
+          "css": ".metric{border:1px solid #374151;border-radius:8px;background:#1F2937;color:#F9FAFB;padding:14px}.metric span{color:#9CA3AF;font-size:12px}.metric strong{display:block;font-size:28px}.metric em{color:#F59E0B;font-style:normal;font-family:JetBrains Mono}"
+        },
+        "usage": "Use for one metric per tile; avoid mixing unrelated units."
+      },
+      "FilterSelect": {
+        "framework": "tailwind",
+        "style_system": "Tailwind CSS",
+        "description": "Compact select control for dashboard filtering.",
+        "props": [{ "name": "options", "type": "array", "description": "Filter options" }],
+        "variants": ["default", "inline"],
+        "states": ["default", "hover", "focus-visible", "disabled", "error"],
+        "classes": ["h-8", "rounded-md", "border", "bg-slate-800", "focus-visible:ring-2"],
+        "preview": {
+          "html": "<select class=\"cockpit-select\"><option>Last 24 hours</option></select>",
+          "css": ".cockpit-select{height:32px;border:1px solid #374151;border-radius:6px;background:#1F2937;color:#F9FAFB;padding:0 10px}"
+        },
+        "usage": "Keep filters near charts and preserve selected state visibility."
+      },
+      "AlertPanel": {
+        "framework": "shadcn",
+        "style_system": "shadcn/ui + Tailwind CSS",
+        "description": "High-contrast alert panel for monitoring incidents.",
+        "props": [{ "name": "severity", "type": "info | warning | danger", "description": "Alert severity" }],
+        "variants": ["info", "warning", "danger"],
+        "states": ["default", "hover", "focus-visible", "disabled"],
+        "classes": ["rounded-lg", "border", "bg-slate-800", "text-slate-50"],
+        "install": ["npx shadcn@latest add alert"],
+        "preview": {
+          "html": "<div class=\"cockpit-alert\"><strong>Queue spike</strong><p>Workers above expected threshold.</p></div>",
+          "css": ".cockpit-alert{border:1px solid #F59E0B;border-radius:8px;background:#1F2937;color:#F9FAFB;padding:14px}.cockpit-alert p{margin:4px 0 0;color:#9CA3AF}"
+        },
+        "usage": "Use sparingly for actionable incident states."
+      }
+    },
+    "guidelines_markdown": "## Principles\n\n- Preserve contrast and chart readability before adding decoration.\n- Use amber or cyan for scanning signals; do not flood the viewport with accent.\n- Every data panel must document loading, empty, error, populated, and edge states.\n- Keep labels literal and figures in mono where precision matters.",
+    "skill_markdown": "Use this design system for analytics, observability, security monitoring, finance dashboards, and live operations views."
+  }
+]

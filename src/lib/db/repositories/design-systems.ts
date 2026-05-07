@@ -28,6 +28,7 @@ const SUPPORTED_STATUSES: DesignSystemStatus[] = [
   "published",
   "archived",
 ];
+const SUPPORTED_SURFACES = ["web", "image", "video", "audio", "slides", "docs"];
 const SUPPORTED_VISIBILITY_OVERRIDES: Array<Visibility | null> = [
   "personal",
   "group",
@@ -73,6 +74,7 @@ type DesignSystemComponentDoc = {
   description: string;
   props: Array<Record<string, unknown>>;
   variants: string[];
+  states: string[];
   classes: string[];
   dependencies: string[];
   install: string[];
@@ -86,11 +88,30 @@ type DesignSystemComponentDoc = {
   raw: Record<string, unknown>;
 };
 
+export type DesignSystemLintSeverity = "error" | "warning" | "info";
+
+export interface DesignSystemLintIssue {
+  severity: DesignSystemLintSeverity;
+  code: string;
+  target: string;
+  message: string;
+  suggestion?: string;
+}
+
+export interface DesignSystemLintResult {
+  ok: boolean;
+  score: number;
+  issue_counts: Record<DesignSystemLintSeverity, number>;
+  issues: DesignSystemLintIssue[];
+}
+
 export interface DesignSystemCreateInput {
   title: string;
   slug?: string;
   description?: string;
   version?: string;
+  category?: string;
+  surface?: string;
   status?: DesignSystemStatus;
   schema?: unknown;
   tokens?: unknown;
@@ -109,6 +130,8 @@ export interface DesignSystemUpdateInput {
   title?: string;
   slug?: string;
   description?: string;
+  category?: string;
+  surface?: string;
   status?: DesignSystemStatus;
   visibilityOverride?: Visibility | null;
   schema?: unknown;
@@ -129,6 +152,36 @@ export interface DesignSystemAssetInput {
   contentText?: string | null;
   contentBase64?: string | null;
 }
+
+export type DesignSystemSection =
+  | "schema"
+  | "tokens"
+  | "colors"
+  | "typography"
+  | "components"
+  | "guidelines"
+  | "skill"
+  | "assets";
+
+export type DesignSystemSectionUpdateMode = "replace" | "merge";
+
+const DESIGN_SYSTEM_SECTION_ALIASES: Record<string, DesignSystemSection> = {
+  schema: "schema",
+  tokens: "tokens",
+  color: "colors",
+  colors: "colors",
+  palette: "colors",
+  palettes: "colors",
+  typography: "typography",
+  font: "typography",
+  fonts: "typography",
+  components: "components",
+  component: "components",
+  guidelines: "guidelines",
+  guideline: "guidelines",
+  skill: "skill",
+  assets: "assets",
+};
 
 function normalizeDesignSystem(row: DesignSystemRow): DesignSystem {
   return {
@@ -214,6 +267,48 @@ function parseJsonObject<T = Record<string, unknown>>(value: string): T {
   }
 }
 
+export function normalizeDesignSystemSection(
+  value: string,
+): DesignSystemSection {
+  const section = DESIGN_SYSTEM_SECTION_ALIASES[value.trim().toLowerCase()];
+  if (!section) {
+    throw new Error(
+      "section must be schema, tokens, colors, typography, components, guidelines, skill, or assets",
+    );
+  }
+  return section;
+}
+
+function normalizeSectionUpdateMode(
+  value: unknown,
+): DesignSystemSectionUpdateMode {
+  if (value === undefined || value === null || value === "") return "replace";
+  if (value === "replace" || value === "merge") return value;
+  throw new Error("mode must be replace or merge");
+}
+
+function ensureObjectSectionValue(
+  section: DesignSystemSection,
+  value: unknown,
+): Record<string, unknown> {
+  const parsed =
+    typeof value === "string" && value.trim() ? parseJsonObject(value) : value;
+  if (!isPlainObject(parsed)) {
+    throw new Error(`${section} section value must be a JSON object`);
+  }
+  return parsed;
+}
+
+function ensureStringSectionValue(
+  section: DesignSystemSection,
+  value: unknown,
+): string {
+  if (typeof value !== "string") {
+    throw new Error(`${section} section value must be a string`);
+  }
+  return value;
+}
+
 function normalizeSectionJson(
   value: unknown,
   fallback: Record<string, unknown>,
@@ -239,6 +334,21 @@ function deriveTokenSections(tokensJson: string): {
     typography: isPlainObject(tokens.typography) ? tokens.typography : {},
     components: isPlainObject(tokens.components) ? tokens.components : {},
   };
+}
+
+function applySplitTokenSection(input: {
+  tokensJson: string;
+  section: "colors" | "typography" | "components";
+  value: Record<string, unknown>;
+}): string {
+  const tokens = parseJsonObject(input.tokensJson);
+  const key =
+    input.section === "colors"
+      ? "color"
+      : input.section === "typography"
+        ? "typography"
+        : "components";
+  return JSON.stringify({ ...tokens, [key]: input.value });
 }
 
 function mergeTokenSections(input: {
@@ -362,6 +472,20 @@ function normalizeStatus(
   throw new Error("status must be draft, published, or archived");
 }
 
+function normalizeCategory(value: unknown, fallback = "Custom"): string {
+  if (value === undefined || value === null) return fallback;
+  const normalized = String(value).trim();
+  return normalized || fallback;
+}
+
+function normalizeSurface(value: unknown, fallback = "web"): string {
+  if (value === undefined || value === null || value === "") return fallback;
+  if (typeof value === "string" && SUPPORTED_SURFACES.includes(value)) {
+    return value;
+  }
+  throw new Error("surface must be web, image, video, audio, slides, or docs");
+}
+
 function normalizeVisibilityOverride(
   value: unknown,
   fallback: Visibility | null,
@@ -449,6 +573,8 @@ export async function listDesignSystemsForVisibilityFilter(input: {
   includeInactive?: boolean;
   folderId?: number;
   q?: string;
+  category?: string;
+  surface?: string;
 }): Promise<DesignSystem[]> {
   const clauses = [input.filterSql];
   const params: unknown[] = [...input.filterParams];
@@ -470,8 +596,16 @@ export async function listDesignSystemsForVisibilityFilter(input: {
   if (input.q) {
     params.push(`%${input.q}%`);
     clauses.push(
-      `(LOWER(ds.title) LIKE LOWER($${params.length}) OR LOWER(ds.slug) LIKE LOWER($${params.length}))`,
+      `(LOWER(ds.title) LIKE LOWER($${params.length}) OR LOWER(ds.slug) LIKE LOWER($${params.length}) OR LOWER(ds.category) LIKE LOWER($${params.length}))`,
     );
+  }
+  if (input.category) {
+    params.push(input.category);
+    clauses.push(`LOWER(ds.category) = LOWER($${params.length})`);
+  }
+  if (input.surface) {
+    params.push(input.surface);
+    clauses.push(`ds.surface = $${params.length}`);
   }
 
   const rows = await query<DesignSystemRow>(
@@ -512,6 +646,259 @@ export async function getDesignSystemDetail(
   return { ...designSystem, content, assets };
 }
 
+export function getDesignSystemSectionValue(
+  detail: DesignSystemDetail,
+  sectionInput: string,
+): unknown {
+  const section = normalizeDesignSystemSection(sectionInput);
+  if (section === "schema") return parseJsonObject(detail.content.schema_json);
+  if (section === "tokens") return parseJsonObject(detail.content.tokens_json);
+  if (section === "colors") {
+    return parseJsonObject(detail.content.color_tokens_json);
+  }
+  if (section === "typography") {
+    return parseJsonObject(detail.content.typography_tokens_json);
+  }
+  if (section === "components") {
+    return parseJsonObject(detail.content.component_tokens_json);
+  }
+  if (section === "guidelines") return detail.content.guidelines_markdown;
+  if (section === "skill") return detail.content.skill_markdown;
+  return detail.assets;
+}
+
+function getObjectSectionValue(
+  detail: DesignSystemDetail,
+  section: DesignSystemSection,
+): Record<string, unknown> {
+  const value = getDesignSystemSectionValue(detail, section);
+  if (!isPlainObject(value)) {
+    throw new Error(`${section} section does not support keyed entries`);
+  }
+  return value;
+}
+
+export function getDesignSystemSectionEntryValue(
+  detail: DesignSystemDetail,
+  sectionInput: string,
+  key: string,
+): unknown | null {
+  const section = normalizeDesignSystemSection(sectionInput);
+  const value = getObjectSectionValue(detail, section);
+  return Object.hasOwn(value, key) ? value[key] : null;
+}
+
+export function getDesignSystemComponentValue(
+  detail: DesignSystemDetail,
+  name: string,
+): { name: string; value: unknown; document: DesignSystemComponentDoc | null } | null {
+  const value = getDesignSystemSectionEntryValue(detail, "components", name);
+  if (value === null) return null;
+  const document =
+    buildDesignSystemComponentDocs(detail).find((doc) => doc.name === name) ??
+    null;
+  return { name, value, document };
+}
+
+export async function deleteDesignSystem(input: {
+  id: number;
+  family?: boolean;
+}): Promise<void> {
+  const existing = await findDesignSystemById(input.id);
+  if (!existing) throw new Error("design system not found");
+  if (input.family) {
+    const rootId = existing.family_root_id ?? existing.id;
+    await execute(
+      `DELETE FROM design_systems
+       WHERE id IN (
+         SELECT id FROM design_systems WHERE id = $1 OR family_root_id = $1
+       )`,
+      [rootId],
+    );
+    return;
+  }
+  await execute("DELETE FROM design_systems WHERE id = $1", [input.id]);
+}
+
+export async function updateDesignSystemSection(input: {
+  id: number;
+  section: string;
+  value: unknown;
+  mode?: unknown;
+}): Promise<DesignSystemDetail> {
+  const existing = await getDesignSystemDetail(input.id);
+  if (!existing) throw new Error("design system not found");
+
+  const section = normalizeDesignSystemSection(input.section);
+  const mode = normalizeSectionUpdateMode(input.mode);
+  const now = new Date().toISOString();
+
+  if (section === "assets") {
+    throw new Error("assets section cannot be replaced; use asset endpoints");
+  }
+
+  let schemaJson = existing.content.schema_json;
+  let tokensJson = existing.content.tokens_json;
+  let colorTokensJson = existing.content.color_tokens_json;
+  let typographyTokensJson = existing.content.typography_tokens_json;
+  let componentTokensJson = existing.content.component_tokens_json;
+  let guidelinesMarkdown = existing.content.guidelines_markdown;
+  let skillMarkdown = existing.content.skill_markdown;
+
+  if (section === "guidelines") {
+    guidelinesMarkdown = ensureStringSectionValue(section, input.value);
+  } else if (section === "skill") {
+    skillMarkdown = ensureStringSectionValue(section, input.value);
+  } else if (section === "schema") {
+    const value = ensureObjectSectionValue(section, input.value);
+    const current = parseJsonObject(existing.content.schema_json);
+    schemaJson = JSON.stringify(mode === "merge" ? { ...current, ...value } : value);
+  } else if (section === "tokens") {
+    const value = ensureObjectSectionValue(section, input.value);
+    const current = parseJsonObject(existing.content.tokens_json);
+    const tokens = mode === "merge" ? { ...current, ...value } : value;
+    const split = deriveTokenSections(JSON.stringify(tokens));
+    tokensJson = JSON.stringify(tokens);
+    colorTokensJson = JSON.stringify(split.color);
+    typographyTokensJson = JSON.stringify(split.typography);
+    componentTokensJson = JSON.stringify(split.components);
+  } else {
+    const value = ensureObjectSectionValue(section, input.value);
+    const current = getObjectSectionValue(existing, section);
+    const next = mode === "merge" ? { ...current, ...value } : value;
+    if (section === "colors") {
+      colorTokensJson = JSON.stringify(next);
+      tokensJson = applySplitTokenSection({
+        tokensJson,
+        section,
+        value: next,
+      });
+    } else if (section === "typography") {
+      typographyTokensJson = JSON.stringify(next);
+      tokensJson = applySplitTokenSection({
+        tokensJson,
+        section,
+        value: next,
+      });
+    } else if (section === "components") {
+      componentTokensJson = JSON.stringify(next);
+      tokensJson = applySplitTokenSection({
+        tokensJson,
+        section,
+        value: next,
+      });
+    }
+  }
+
+  await withTransaction(async (client) => {
+    await client.query(
+      "UPDATE design_systems SET updated_at = $1 WHERE id = $2",
+      [now, input.id],
+    );
+    await client.query(
+      `UPDATE design_system_versions
+       SET schema_json = $1, tokens_json = $2, color_tokens_json = $3,
+           typography_tokens_json = $4, component_tokens_json = $5,
+           guidelines_markdown = $6, skill_markdown = $7, updated_at = $8
+       WHERE id = $9`,
+      [
+        schemaJson,
+        tokensJson,
+        colorTokensJson,
+        typographyTokensJson,
+        componentTokensJson,
+        guidelinesMarkdown,
+        skillMarkdown,
+        now,
+        existing.content.id,
+      ],
+    );
+  });
+
+  const detail = await getDesignSystemDetail(input.id);
+  if (!detail) throw new Error("Failed to load updated design system");
+  return detail;
+}
+
+export async function clearDesignSystemSection(input: {
+  id: number;
+  section: string;
+}): Promise<DesignSystemDetail> {
+  const section = normalizeDesignSystemSection(input.section);
+  if (section === "assets") {
+    throw new Error("assets section cannot be cleared; use asset endpoints");
+  }
+  const value = section === "guidelines" || section === "skill" ? "" : {};
+  return updateDesignSystemSection({
+    id: input.id,
+    section,
+    value,
+    mode: "replace",
+  });
+}
+
+export async function upsertDesignSystemSectionEntry(input: {
+  id: number;
+  section: string;
+  key: string;
+  value: unknown;
+}): Promise<DesignSystemDetail> {
+  const key = input.key.trim();
+  if (!key) throw new Error("entry key is required");
+  const existing = await getDesignSystemDetail(input.id);
+  if (!existing) throw new Error("design system not found");
+  const section = normalizeDesignSystemSection(input.section);
+  const sectionValue = getObjectSectionValue(existing, section);
+  return updateDesignSystemSection({
+    id: input.id,
+    section,
+    value: { ...sectionValue, [key]: input.value },
+    mode: "replace",
+  });
+}
+
+export async function deleteDesignSystemSectionEntry(input: {
+  id: number;
+  section: string;
+  key: string;
+}): Promise<DesignSystemDetail> {
+  const existing = await getDesignSystemDetail(input.id);
+  if (!existing) throw new Error("design system not found");
+  const section = normalizeDesignSystemSection(input.section);
+  const sectionValue = { ...getObjectSectionValue(existing, section) };
+  delete sectionValue[input.key];
+  return updateDesignSystemSection({
+    id: input.id,
+    section,
+    value: sectionValue,
+    mode: "replace",
+  });
+}
+
+export async function upsertDesignSystemComponent(input: {
+  id: number;
+  name: string;
+  value: unknown;
+}): Promise<DesignSystemDetail> {
+  return upsertDesignSystemSectionEntry({
+    id: input.id,
+    section: "components",
+    key: input.name,
+    value: input.value,
+  });
+}
+
+export async function deleteDesignSystemComponent(input: {
+  id: number;
+  name: string;
+}): Promise<DesignSystemDetail> {
+  return deleteDesignSystemSectionEntry({
+    id: input.id,
+    section: "components",
+    key: input.name,
+  });
+}
+
 export async function createDesignSystem(
   input: DesignSystemCreateInput,
 ): Promise<DesignSystemDetail> {
@@ -536,13 +923,16 @@ export async function createDesignSystem(
   const designSystemId = await withTransaction(async (client) => {
     const id = await insertAndReturnId(
       `INSERT INTO design_systems (
-         title, slug, description, version, status, owner_id, folder_id
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+         title, slug, description, version, category, surface, status, owner_id,
+         folder_id
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [
         title,
         slug,
         input.description?.trim() ?? "",
         input.version?.trim() || "1.0",
+        normalizeCategory(input.category),
+        normalizeSurface(input.surface),
         normalizeStatus(input.status, "draft"),
         input.ownerId,
         input.folderId,
@@ -619,15 +1009,17 @@ export async function updateDesignSystem(
   await withTransaction(async (client) => {
     await client.query(
       `UPDATE design_systems
-       SET title = $1, slug = $2, description = $3, status = $4,
-           visibility_override = $5, updated_at = $6
-       WHERE id = $7`,
+       SET title = $1, slug = $2, description = $3, category = $4,
+           surface = $5, status = $6, visibility_override = $7, updated_at = $8
+       WHERE id = $9`,
       [
         title,
         slug,
         input.description === undefined
           ? existing.description
           : input.description.trim(),
+        normalizeCategory(input.category, existing.category),
+        normalizeSurface(input.surface, existing.surface),
         normalizeStatus(input.status, existing.status),
         input.visibilityOverride === undefined
           ? existing.visibility_override
@@ -711,10 +1103,10 @@ export async function createDesignSystemVersion(input: {
 
     const designSystemId = await insertAndReturnId(
       `INSERT INTO design_systems (
-         title, slug, description, version, parent_design_system_id,
-         family_root_id, is_active, status, owner_id, folder_id,
-         visibility_override
-       ) VALUES ($1, $2, $3, $4, $5, $6, TRUE, $7, $8, $9, $10)`,
+         title, slug, description, version, category, surface,
+         parent_design_system_id, family_root_id, is_active, status, owner_id,
+         folder_id, visibility_override
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, $9, $10, $11, $12)`,
       [
         input.title?.trim() || source.title,
         source.slug,
@@ -722,6 +1114,8 @@ export async function createDesignSystemVersion(input: {
           ? source.description
           : input.description.trim(),
         newVersion,
+        source.category,
+        source.surface,
         source.id,
         source.family_root_id,
         source.status,
@@ -850,6 +1244,8 @@ export function buildDesignSystemJsonExport(detail: DesignSystemDetail) {
       slug: detail.slug,
       description: detail.description,
       version: detail.version,
+      category: detail.category,
+      surface: detail.surface,
       status: detail.status,
       family_root_id: detail.family_root_id,
     },
@@ -889,6 +1285,18 @@ function markdownTable(
   ].join("\n");
 }
 
+function escapeHtml(value: unknown): string {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("\"", "&quot;");
+}
+
+function safeCssToken(value: string, fallback: string): string {
+  return /^[#(),.%\w\s-]+$/.test(value) ? value : fallback;
+}
+
 function flattenTokenRows(
   value: Record<string, unknown>,
   prefix = "",
@@ -920,6 +1328,19 @@ function stringArrayValue(value: unknown): string[] {
       .filter(Boolean);
   }
   if (typeof value === "string" && value.trim()) return [value.trim()];
+  return [];
+}
+
+function stateArrayValue(value: unknown): string[] {
+  const normalize = (item: string) =>
+    item.trim().toLowerCase().replaceAll("_", "-").replaceAll(" ", "-");
+  if (Array.isArray(value)) {
+    return [...new Set(value.map((item) => typeof item === "string" ? normalize(item) : "").filter(Boolean))];
+  }
+  if (typeof value === "string" && value.trim()) return [normalize(value)];
+  if (isPlainObject(value)) {
+    return Object.keys(value).map(normalize).filter(Boolean);
+  }
   return [];
 }
 
@@ -994,6 +1415,11 @@ export function buildDesignSystemComponentDocs(
       description: stringValue(spec.description),
       props: propsValue(spec.props),
       variants: stringArrayValue(spec.variants),
+      states: [
+        ...stateArrayValue(spec.states),
+        ...stateArrayValue(spec.state),
+        ...stateArrayValue(spec.interaction_states),
+      ],
       classes: [
         ...stringArrayValue(spec.classes),
         ...stringArrayValue(tailwind.classes),
@@ -1054,6 +1480,10 @@ function componentDocsMarkdown(docs: DesignSystemComponentDoc[]): string {
         doc.variants.length > 0
           ? doc.variants.map((variant) => `- \`${variant}\``).join("\n")
           : "- No variants documented.";
+      const states =
+        doc.states.length > 0
+          ? doc.states.map((state) => `- \`${state}\``).join("\n")
+          : "- No states documented.";
       const assets =
         doc.sourceAssets.length > 0
           ? doc.sourceAssets.map((asset) => `- \`${asset}\``).join("\n")
@@ -1098,6 +1528,10 @@ ${props}
 
 ${variants}
 
+#### States
+
+${states}
+
 #### Usage
 
 ${doc.usage || "No usage guidance recorded."}
@@ -1119,6 +1553,225 @@ ${install}
 ${assets}${codeBlocks}`;
     })
     .join("\n\n");
+}
+
+function addIssue(
+  issues: DesignSystemLintIssue[],
+  issue: DesignSystemLintIssue,
+): void {
+  issues.push(issue);
+}
+
+function hexToRgb(hex: string): [number, number, number] | null {
+  const match = hex.trim().match(/^#([0-9a-fA-F]{6})$/);
+  if (!match) return null;
+  const value = match[1];
+  return [
+    Number.parseInt(value.slice(0, 2), 16),
+    Number.parseInt(value.slice(2, 4), 16),
+    Number.parseInt(value.slice(4, 6), 16),
+  ];
+}
+
+function relativeLuminance([r, g, b]: [number, number, number]): number {
+  const channel = (value: number) => {
+    const normalized = value / 255;
+    return normalized <= 0.03928
+      ? normalized / 12.92
+      : ((normalized + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+}
+
+function contrastRatio(a: string, b: string): number | null {
+  const rgbA = hexToRgb(a);
+  const rgbB = hexToRgb(b);
+  if (!rgbA || !rgbB) return null;
+  const l1 = relativeLuminance(rgbA);
+  const l2 = relativeLuminance(rgbB);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function findTokenByHints(
+  tokens: Record<string, unknown>,
+  hints: RegExp[],
+): string | null {
+  const rows = flattenTokenRows(tokens);
+  for (const [name, value] of rows) {
+    const raw = value.replaceAll("`", "");
+    if (hexToRgb(raw) && hints.some((hint) => hint.test(name))) return raw;
+  }
+  return null;
+}
+
+function missingStates(component: DesignSystemComponentDoc): string[] {
+  const required = ["default", "hover", "focus-visible", "disabled"];
+  const name = component.name.toLowerCase();
+  if (/button|submit|cta/.test(name)) required.push("loading");
+  if (/input|select|textarea|checkbox|radio|switch|slider|field/.test(name)) {
+    required.push("error");
+  }
+  return [...new Set(required)].filter(
+    (state) => !component.states.includes(state),
+  );
+}
+
+export function lintDesignSystem(detail: DesignSystemDetail): DesignSystemLintResult {
+  const issues: DesignSystemLintIssue[] = [];
+  const colors = parseJsonObject(detail.content.color_tokens_json);
+  const typography = parseJsonObject(detail.content.typography_tokens_json);
+  const components = buildDesignSystemComponentDocs(detail);
+  const guidelines = detail.content.guidelines_markdown.trim();
+  const skill = detail.content.skill_markdown.trim();
+
+  if (!detail.category || detail.category === "Custom") {
+    addIssue(issues, {
+      severity: "info",
+      code: "DS_CATEGORY_GENERIC",
+      target: "metadata.category",
+      message: "Design system category is generic.",
+      suggestion: "Set a product-oriented category such as Education, Developer Tools, SaaS, Dashboard, Docs, or Slides.",
+    });
+  }
+  if (!detail.surface) {
+    addIssue(issues, {
+      severity: "warning",
+      code: "DS_SURFACE_MISSING",
+      target: "metadata.surface",
+      message: "Design system surface is missing.",
+      suggestion: "Set the primary surface: web, slides, docs, image, video, or audio.",
+    });
+  }
+
+  const colorRows = flattenTokenRows(colors);
+  if (colorRows.length < 6) {
+    addIssue(issues, {
+      severity: "warning",
+      code: "DS_COLOR_ROLES_SPARSE",
+      target: "tokens.colors",
+      message: "Color tokens are too sparse for reliable agent use.",
+      suggestion: "Define canvas, surface, ink, muted, line, accent, accentInk, and semantic state colors.",
+    });
+  }
+  const canvas = findTokenByHints(colors, [/canvas/i, /surface/i, /background/i]);
+  const ink = findTokenByHints(colors, [/ink/i, /text/i, /foreground/i]);
+  if (canvas && ink) {
+    const ratio = contrastRatio(canvas, ink);
+    if (ratio !== null && ratio < 4.5) {
+      addIssue(issues, {
+        severity: "error",
+        code: "DS_CONTRAST_LOW_TEXT",
+        target: "tokens.colors",
+        message: `Primary text contrast is ${ratio.toFixed(2)}:1, below WCAG AA body-text guidance.`,
+        suggestion: "Adjust ink/canvas tokens to reach at least 4.5:1 contrast.",
+      });
+    }
+  }
+  for (const [name, value] of colorRows) {
+    const raw = value.replaceAll("`", "").toLowerCase();
+    if (["#6366f1", "#8b5cf6", "#7c3aed", "#4f46e5"].includes(raw)) {
+      addIssue(issues, {
+        severity: "info",
+        code: "DS_AI_DEFAULT_ACCENT",
+        target: `tokens.colors.${name}`,
+        message: "Palette uses a common AI-default indigo/purple accent.",
+        suggestion: "Keep it only if intentional; otherwise choose a category-specific accent.",
+      });
+    }
+  }
+
+  for (const role of ["body", "heading", "label"]) {
+    if (!Object.hasOwn(typography, role)) {
+      addIssue(issues, {
+        severity: "warning",
+        code: "DS_TYPOGRAPHY_ROLE_MISSING",
+        target: `tokens.typography.${role}`,
+        message: `Typography role '${role}' is missing.`,
+        suggestion: "Define role-based typography tokens for agent-readable hierarchy.",
+      });
+    }
+  }
+
+  if (components.length === 0) {
+    addIssue(issues, {
+      severity: "warning",
+      code: "DS_COMPONENTS_EMPTY",
+      target: "components",
+      message: "No component documents are registered.",
+      suggestion: "Add at least button, input, card, select, dialog, alert, table, and badge for web/app systems.",
+    });
+  }
+  for (const component of components) {
+    if (!component.description) {
+      addIssue(issues, {
+        severity: "info",
+        code: "DS_COMPONENT_DESCRIPTION_MISSING",
+        target: `components.${component.name}.description`,
+        message: `${component.name} has no description.`,
+      });
+    }
+    const missing = missingStates(component);
+    if (missing.length > 0) {
+      addIssue(issues, {
+        severity: "warning",
+        code: "DS_COMPONENT_STATES_MISSING",
+        target: `components.${component.name}.states`,
+        message: `${component.name} is missing states: ${missing.join(", ")}.`,
+        suggestion: "Document interaction states so agents can render consistent variants.",
+      });
+    }
+    if ((component.framework === "tailwind" || component.framework === "shadcn") && component.classes.length === 0) {
+      addIssue(issues, {
+        severity: "warning",
+        code: "DS_COMPONENT_CLASSES_MISSING",
+        target: `components.${component.name}.classes`,
+        message: `${component.name} is marked ${component.framework} but has no classes.`,
+      });
+    }
+    if (component.framework === "shadcn" && component.install.length === 0) {
+      addIssue(issues, {
+        severity: "info",
+        code: "DS_SHADCN_INSTALL_MISSING",
+        target: `components.${component.name}.install`,
+        message: `${component.name} has shadcn metadata but no install command.`,
+      });
+    }
+  }
+
+  if (!guidelines) {
+    addIssue(issues, {
+      severity: "warning",
+      code: "DS_GUIDELINES_EMPTY",
+      target: "guidelines",
+      message: "Guidelines markdown is empty.",
+    });
+  }
+  if (!skill) {
+    addIssue(issues, {
+      severity: "info",
+      code: "DS_SKILL_EMPTY",
+      target: "skill",
+      message: "Skill markdown is empty.",
+    });
+  }
+
+  const issueCounts = {
+    error: issues.filter((issue) => issue.severity === "error").length,
+    warning: issues.filter((issue) => issue.severity === "warning").length,
+    info: issues.filter((issue) => issue.severity === "info").length,
+  };
+  const score = Math.max(
+    0,
+    100 - issueCounts.error * 20 - issueCounts.warning * 8 - issueCounts.info * 2,
+  );
+  return {
+    ok: issueCounts.error === 0,
+    score,
+    issue_counts: issueCounts,
+    issues,
+  };
 }
 
 export function buildDesignSystemDesignMarkdownExport(
@@ -1143,6 +1796,8 @@ export function buildDesignSystemDesignMarkdownExport(
 
 - Slug: \`${detail.slug}\`
 - Version: \`${detail.version}\`
+- Category: \`${detail.category}\`
+- Surface: \`${detail.surface}\`
 - Status: \`${detail.status}\`
 - Description: ${detail.description || "No description recorded."}
 
@@ -1199,4 +1854,212 @@ export function buildDesignSystemSkillExport(
     .join("\n");
 
   return `---\nname: ${detail.slug}\ndescription: ${yamlDoubleQuoted(description)}\n---\n\n# ${title}\n\n${baseSkill || "Use this design system when creating or editing user-facing visual materials."}\n\n## Guidelines\n\n${guidelines || "No additional guidelines have been recorded yet."}\n\n## DESIGN.md\n\n${designMarkdown}\n\n## Tokens\n\n\`\`\`json\n${tokens}\n\`\`\`\n\n## Schema\n\n\`\`\`json\n${schema}\n\`\`\`\n\n## Assets\n\n${assetList || "- No assets registered."}\n`;
+}
+
+export function buildDesignSystemBundleExport(detail: DesignSystemDetail) {
+  const componentDocs = buildDesignSystemComponentDocs(detail);
+  const json = buildDesignSystemJsonExport(detail);
+  const files = [
+    {
+      path: "DESIGN.md",
+      mime_type: "text/markdown",
+      content: buildDesignSystemDesignMarkdownExport(detail),
+    },
+    {
+      path: "SKILL.md",
+      mime_type: "text/markdown",
+      content: buildDesignSystemSkillExport(detail),
+    },
+    {
+      path: "tokens/colors.json",
+      mime_type: "application/json",
+      content: JSON.stringify(parseJsonObject(detail.content.color_tokens_json), null, 2),
+    },
+    {
+      path: "tokens/typography.json",
+      mime_type: "application/json",
+      content: JSON.stringify(parseJsonObject(detail.content.typography_tokens_json), null, 2),
+    },
+    {
+      path: "tokens/components.json",
+      mime_type: "application/json",
+      content: JSON.stringify(parseJsonObject(detail.content.component_tokens_json), null, 2),
+    },
+    {
+      path: "components/README.md",
+      mime_type: "text/markdown",
+      content: componentDocsMarkdown(componentDocs),
+    },
+    {
+      path: "manifest.json",
+      mime_type: "application/json",
+      content: JSON.stringify(
+        {
+          id: detail.id,
+          title: detail.title,
+          slug: detail.slug,
+          version: detail.version,
+          category: detail.category,
+          surface: detail.surface,
+          files: [
+            "DESIGN.md",
+            "SKILL.md",
+            "tokens/colors.json",
+            "tokens/typography.json",
+            "tokens/components.json",
+            "components/README.md",
+          ],
+          assets: detail.assets.map((asset) => ({
+            id: asset.id,
+            kind: asset.kind,
+            filename: asset.filename,
+            mime_type: asset.mime_type,
+            size_bytes: asset.size_bytes,
+          })),
+        },
+        null,
+        2,
+      ),
+    },
+    ...detail.assets
+      .filter((asset) => asset.content_text !== null)
+      .map((asset) => ({
+        path: `assets/${asset.filename}`,
+        mime_type: asset.mime_type,
+        content: asset.content_text ?? "",
+      })),
+  ];
+
+  return {
+    format: "bundle",
+    design_system: json.design_system,
+    lint: lintDesignSystem(detail),
+    files,
+  };
+}
+
+export function buildDesignSystemPreviewHtml(detail: DesignSystemDetail): string {
+  const colors = parseJsonObject(detail.content.color_tokens_json);
+  const typography = parseJsonObject(detail.content.typography_tokens_json);
+  const componentDocs = buildDesignSystemComponentDocs(detail);
+  const flatColors = flattenTokenRows(colors).slice(0, 24);
+  const flatTypography = flattenTokenRows(typography).slice(0, 16);
+  const primary =
+    safeCssToken(
+      flatColors.find(([, value]) => /^`#[0-9a-fA-F]{6}`$/.test(value))?.[1]
+        .replaceAll("`", "") ?? "#256D85",
+      "#256D85",
+    );
+  const surface =
+    safeCssToken(
+      flatColors
+        .find(([name]) => /surface|paper|background|canvas/i.test(name))?.[1]
+        .replaceAll("`", "") ?? "#FFFFFF",
+      "#FFFFFF",
+    );
+  const text =
+    safeCssToken(
+      flatColors
+        .find(([name]) => /text|ink|foreground/i.test(name))?.[1]
+        .replaceAll("`", "") ?? "#111827",
+      "#111827",
+    );
+  const bodyFont =
+    safeCssToken(
+      flatTypography.find(([name]) => /body|ui|sans|font/i.test(name))?.[1]
+        .replaceAll("`", "") ?? "Inter, system-ui, sans-serif",
+      "Inter, system-ui, sans-serif",
+    );
+
+  const swatches = flatColors
+    .map(
+      ([name, value]) => `<div class="swatch">
+        <span style="background:${escapeHtml(safeCssToken(value.replaceAll("`", ""), "#FFFFFF"))}"></span>
+        <strong>${escapeHtml(name)}</strong>
+        <code>${escapeHtml(value.replaceAll("`", ""))}</code>
+      </div>`,
+    )
+    .join("");
+  const typeRows = flatTypography
+    .map(
+      ([name, value]) => `<div class="type-row">
+        <span>${escapeHtml(name)}</span>
+        <strong style="font-family:${escapeHtml(value.replaceAll("`", ""))}">${escapeHtml(value.replaceAll("`", ""))}</strong>
+      </div>`,
+    )
+    .join("");
+  const components = componentDocs
+    .slice(0, 12)
+    .map((component) => {
+      const preview = component.html
+        ? `<iframe title="${escapeHtml(component.name)} preview" sandbox srcdoc="${escapeHtml(`<!doctype html><html><head><style>body{margin:0;padding:20px;font-family:${bodyFont};background:${surface};color:${text}}${component.css}</style></head><body>${component.html}</body></html>`)}"></iframe>`
+        : `<div class="component-empty">No HTML preview</div>`;
+      return `<article class="component">
+        <div class="component-head">
+          <strong>${escapeHtml(component.name)}</strong>
+          <span>${escapeHtml(component.framework)}</span>
+        </div>
+        ${preview}
+      </article>`;
+    })
+    .join("");
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${escapeHtml(detail.title)} Preview</title>
+  <style>
+    :root { --primary:${primary}; --surface:${surface}; --text:${text}; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:#f6f8fb; color:var(--text); font-family:${bodyFont}; }
+    main { max-width:1180px; margin:0 auto; padding:32px; }
+    header { display:grid; gap:12px; padding:28px; border:1px solid #dce4ee; border-radius:12px; background:var(--surface); }
+    h1 { margin:0; font-size:36px; line-height:1.1; letter-spacing:-0.02em; }
+    p { margin:0; color:#667085; line-height:1.6; }
+    .meta { display:flex; flex-wrap:wrap; gap:8px; }
+    .pill { border:1px solid #dce4ee; border-radius:999px; padding:6px 10px; font-size:12px; background:#fff; }
+    .cta { width:max-content; border:0; border-radius:8px; padding:12px 16px; color:#fff; background:var(--primary); font-weight:700; }
+    section { margin-top:20px; padding:22px; border:1px solid #dce4ee; border-radius:12px; background:#fff; }
+    h2 { margin:0 0 16px; font-size:18px; }
+    .swatches { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; }
+    .swatch { display:grid; grid-template-columns:38px 1fr; gap:3px 10px; align-items:center; min-width:0; }
+    .swatch span { grid-row:1/3; width:38px; height:38px; border:1px solid #dce4ee; border-radius:8px; }
+    code { color:#475467; font-size:12px; }
+    .type-row { display:flex; justify-content:space-between; gap:16px; padding:10px 0; border-bottom:1px solid #eef2f6; }
+    .components { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; }
+    .component { overflow:hidden; border:1px solid #dce4ee; border-radius:10px; }
+    .component-head { display:flex; justify-content:space-between; gap:12px; padding:10px 12px; border-bottom:1px solid #eef2f6; font-size:13px; }
+    iframe { width:100%; height:180px; border:0; background:#fff; }
+    .component-empty { display:grid; height:180px; place-items:center; color:#98a2b3; font-size:13px; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="meta">
+        <span class="pill">${escapeHtml(detail.category)}</span>
+        <span class="pill">${escapeHtml(detail.surface)}</span>
+        <span class="pill">v${escapeHtml(detail.version)}</span>
+      </div>
+      <h1>${escapeHtml(detail.title)}</h1>
+      <p>${escapeHtml(detail.description || "No description recorded.")}</p>
+      <button class="cta">Primary Action</button>
+    </header>
+    <section>
+      <h2>Color Palette</h2>
+      <div class="swatches">${swatches || "<p>No color tokens recorded.</p>"}</div>
+    </section>
+    <section>
+      <h2>Typography</h2>
+      ${typeRows || "<p>No typography tokens recorded.</p>"}
+    </section>
+    <section>
+      <h2>Components</h2>
+      <div class="components">${components || "<p>No component previews recorded.</p>"}</div>
+    </section>
+  </main>
+</body>
+</html>`;
 }

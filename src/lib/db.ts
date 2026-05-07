@@ -165,6 +165,8 @@ export interface DesignSystem {
   slug: string;
   description: string;
   version: string;
+  category: string;
+  surface: string;
   parent_design_system_id: number | null;
   family_root_id: number;
   is_active: boolean;

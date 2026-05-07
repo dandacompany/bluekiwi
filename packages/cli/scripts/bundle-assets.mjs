@@ -39,6 +39,16 @@ if (existsSync(join(standaloneDist, "server.js"))) {
     cpSync(publicDir, join(appRuntimeDist, "public"), { recursive: true });
   }
 
+  for (const seedDir of ["seed-workflows", "seed-design-systems"]) {
+    const source = join(root, "docker", seedDir);
+    if (existsSync(source)) {
+      mkdirSync(join(appRuntimeDist, "docker"), { recursive: true });
+      cpSync(source, join(appRuntimeDist, "docker", seedDir), {
+        recursive: true,
+      });
+    }
+  }
+
   // Remove platform-specific native binaries — postinstall downloads the correct one
   const sqliteBuild = join(
     appRuntimeDist,

@@ -2,7 +2,9 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
+  ListResourcesRequestSchema,
   ListToolsRequestSchema,
+  ReadResourceRequestSchema,
   type Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 import { BlueKiwiClient } from "./api-client.js";
@@ -131,7 +133,7 @@ if (!apiKey) {
 const client = new BlueKiwiClient(apiUrl, apiKey);
 const server = new Server(
   { name: "bluekiwi", version: "1.0.0" },
-  { capabilities: { tools: {} } },
+  { capabilities: { tools: {}, resources: {} } },
 );
 
 const tools: Tool[] = [
@@ -360,10 +362,12 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
   ),
   tool(
     "list_design_systems",
-    "List design systems visible to the current user. Optionally filter by folder_id, q, or include_inactive.",
+    "List design systems visible to the current user. Optionally filter by folder_id, q, category, surface, or include_inactive.",
     {
       folder_id: { type: "number" },
       q: { type: "string" },
+      category: { type: "string" },
+      surface: { type: "string" },
       include_inactive: { type: "boolean" },
     },
   ),
@@ -376,6 +380,24 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
     ["design_system_id"],
   ),
   tool(
+    "get_active_design_system",
+    "Get the current user's active design system context, if one is set.",
+    {},
+  ),
+  tool(
+    "set_active_design_system",
+    "Set the current user's active design system context. The selected system becomes readable through bk://active/design-system/DESIGN.md.",
+    {
+      design_system_id: { type: "number" },
+    },
+    ["design_system_id"],
+  ),
+  tool(
+    "clear_active_design_system",
+    "Clear the current user's active design system context.",
+    {},
+  ),
+  tool(
     "create_design_system",
     "Create a new design system in the BlueKiwi registry. status must be draft, published, or archived. tokens is the combined legacy object; prefer color_tokens, typography_tokens, and component_tokens for structured authoring. component_tokens may contain React, HTML/CSS, Tailwind CSS, or shadcn/ui component documents with framework, style_system, description, props, variants, classes, dependencies, install commands, tailwind/shadcn metadata, preview/source code, usage, and linked assets.",
     {
@@ -383,6 +405,8 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
       slug: { type: "string" },
       description: { type: "string" },
       version: { type: "string" },
+      category: { type: "string" },
+      surface: { type: "string" },
       status: { type: "string" },
       folder_id: { type: "number" },
       schema: { type: ["object", "string"] },
@@ -397,6 +421,11 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
     ["title"],
   ),
   tool(
+    "seed_design_systems",
+    "Seed the built-in BlueKiwi design-system library into the current user's [Design Seeds] folder. Idempotent by slug; returns how many new systems were inserted.",
+    {},
+  ),
+  tool(
     "update_design_system",
     "Update a design system's metadata and active content payload. Pass only fields that should change. status must be draft, published, or archived. To add, modify, or remove React, HTML/CSS, Tailwind, or shadcn component documents, send the full updated component_tokens object.",
     {
@@ -404,6 +433,8 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
       title: { type: "string" },
       slug: { type: "string" },
       description: { type: "string" },
+      category: { type: "string" },
+      surface: { type: "string" },
       status: { type: "string" },
       visibility_override: { type: ["string", "null"] },
       schema: { type: ["object", "string"] },
@@ -460,8 +491,113 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
     ["design_system_id", "asset_id"],
   ),
   tool(
+    "delete_design_system",
+    "Delete one design-system version. Pass family=true to delete every version in the same design-system family.",
+    {
+      design_system_id: { type: "number" },
+      family: { type: "boolean" },
+    },
+    ["design_system_id"],
+  ),
+  tool(
+    "get_design_system_section",
+    "Load one design-system section by category. section accepts schema, tokens, colors, typography/fonts, components, guidelines, skill, or assets.",
+    {
+      design_system_id: { type: "number" },
+      section: { type: "string" },
+    },
+    ["design_system_id", "section"],
+  ),
+  tool(
+    "update_design_system_section",
+    "Replace or shallow-merge one design-system section. Use mode=merge for additive palette/font/component category edits, mode=replace for intentional full replacement. Assets must use asset tools.",
+    {
+      design_system_id: { type: "number" },
+      section: { type: "string" },
+      value: { type: ["object", "array", "string", "number", "boolean", "null"] },
+      mode: { type: "string" },
+    },
+    ["design_system_id", "section", "value"],
+  ),
+  tool(
+    "delete_design_system_section",
+    "Clear one design-system section. Object sections become {}, markdown sections become an empty string. Assets must use asset tools.",
+    {
+      design_system_id: { type: "number" },
+      section: { type: "string" },
+    },
+    ["design_system_id", "section"],
+  ),
+  tool(
+    "get_design_system_section_entry",
+    "Load one keyed entry from an object section, such as one color token, font token, schema key, or raw component spec.",
+    {
+      design_system_id: { type: "number" },
+      section: { type: "string" },
+      key: { type: "string" },
+    },
+    ["design_system_id", "section", "key"],
+  ),
+  tool(
+    "upsert_design_system_section_entry",
+    "Create or replace one keyed entry inside an object section, such as a palette color, typography role, or component token.",
+    {
+      design_system_id: { type: "number" },
+      section: { type: "string" },
+      key: { type: "string" },
+      value: { type: ["object", "array", "string", "number", "boolean", "null"] },
+    },
+    ["design_system_id", "section", "key", "value"],
+  ),
+  tool(
+    "delete_design_system_section_entry",
+    "Delete one keyed entry from an object section, such as a palette color, typography role, or raw component spec.",
+    {
+      design_system_id: { type: "number" },
+      section: { type: "string" },
+      key: { type: "string" },
+    },
+    ["design_system_id", "section", "key"],
+  ),
+  tool(
+    "get_design_component",
+    "Load one component by name, returning both its raw component_tokens value and normalized viewer/agent document.",
+    {
+      design_system_id: { type: "number" },
+      name: { type: "string" },
+    },
+    ["design_system_id", "name"],
+  ),
+  tool(
+    "upsert_design_component",
+    "Create or replace one component spec by name. Supports React, HTML/CSS, Tailwind CSS, and shadcn/ui metadata.",
+    {
+      design_system_id: { type: "number" },
+      name: { type: "string" },
+      value: { type: ["object", "array", "string", "number", "boolean", "null"] },
+    },
+    ["design_system_id", "name", "value"],
+  ),
+  tool(
+    "delete_design_component",
+    "Delete one component spec by name from component_tokens.",
+    {
+      design_system_id: { type: "number" },
+      name: { type: "string" },
+    },
+    ["design_system_id", "name"],
+  ),
+  tool(
+    "lint_design_system",
+    "Run deterministic quality checks on one design system. Checks token coverage, color contrast, component state coverage, shadcn/tailwind metadata, and agent-readability gaps.",
+    {
+      design_system_id: { type: "number" },
+    },
+    ["design_system_id"],
+  ),
+  tool(
     "export_design_system",
-    "Export a design system as json, SKILL.md-compatible skill content, or DESIGN.md documentation. format must be json, skill, or design.",
+    "Export a design system as json, SKILL.md-compatible skill content, DESIGN.md documentation, or a bundle. format must be json, skill, design, or bundle.",
     {
       design_system_id: { type: "number" },
       format: { type: "string" },
@@ -830,6 +966,84 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools,
 }));
 
+server.setRequestHandler(ListResourcesRequestSchema, async () => {
+  const response = await client.request("GET", "/api/design-systems");
+  const rows = extractListData(response);
+  return {
+    resources: [
+      {
+        uri: "bk://active/design-system/DESIGN.md",
+        name: "Active Design System DESIGN.md",
+        title: "Active Design System",
+        description: "Current user's active BlueKiwi design-system context",
+        mimeType: "text/markdown",
+        annotations: {
+          audience: ["assistant" as const],
+          priority: 1,
+        },
+      },
+      ...rows.map((item) => {
+      const id = String(item.id);
+      const title = String(item.title ?? id);
+      return {
+        uri: `bk://design-systems/${id}/DESIGN.md`,
+        name: `${title} DESIGN.md`,
+        title,
+        description: `${String(item.category ?? "Custom")} · ${String(item.surface ?? "web")} · v${String(item.version ?? "1.0")}`,
+        mimeType: "text/markdown",
+        annotations: {
+          audience: ["assistant" as const],
+          priority: 0.8,
+        },
+      };
+      }),
+    ],
+  };
+});
+
+server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+  const uri = request.params.uri;
+  if (uri === "bk://active/design-system/DESIGN.md") {
+    const activeResponse = await client.request("GET", "/api/design-systems/active");
+    const activeId = extractActiveDesignSystemId(activeResponse);
+    if (activeId === null) {
+      throw new Error("No active BlueKiwi design system is set");
+    }
+    const response = await client.request(
+      "GET",
+      `/api/design-systems/${activeId}/export?format=design`,
+    );
+    return {
+      contents: [
+        {
+          uri,
+          mimeType: "text/markdown",
+          text: extractExportContent(response),
+        },
+      ],
+    };
+  }
+  const match = uri.match(/^bk:\/\/design-systems\/(\d+)\/DESIGN\.md$/);
+  if (!match) {
+    throw new Error("Unsupported BlueKiwi resource URI");
+  }
+  const designSystemId = Number(match[1]);
+  const response = await client.request(
+    "GET",
+    `/api/design-systems/${designSystemId}/export?format=design`,
+  );
+  const content = extractExportContent(response);
+  return {
+    contents: [
+      {
+        uri,
+        mimeType: "text/markdown",
+        text: content,
+      },
+    ],
+  };
+});
+
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const name = request.params.name;
   const args = toArgs(request.params.arguments);
@@ -1042,6 +1256,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (typeof args.folder_id === "number")
           qs.set("folder_id", String(args.folder_id));
         if (typeof args.q === "string") qs.set("q", args.q);
+        if (typeof args.category === "string") qs.set("category", args.category);
+        if (typeof args.surface === "string") qs.set("surface", args.surface);
         if (args.include_inactive === true)
           qs.set("include_inactive", "true");
         const suffix = qs.toString() ? `?${qs.toString()}` : "";
@@ -1055,8 +1271,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           await client.request("GET", `/api/design-systems/${designSystemId}`),
         );
       }
+      case "get_active_design_system":
+        return wrap(await client.request("GET", "/api/design-systems/active"));
+      case "set_active_design_system": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        return wrap(
+          await client.request("PUT", "/api/design-systems/active", {
+            design_system_id: designSystemId,
+          }),
+        );
+      }
+      case "clear_active_design_system":
+        return wrap(await client.request("DELETE", "/api/design-systems/active"));
       case "create_design_system":
         return wrap(await client.request("POST", "/api/design-systems", args));
+      case "seed_design_systems":
+        return wrap(await client.request("POST", "/api/design-systems/seed", {}));
       case "update_design_system": {
         const designSystemId = requireNumberArg(args, "design_system_id");
         const body = { ...args };
@@ -1100,6 +1330,121 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           await client.request(
             "DELETE",
             `/api/design-systems/${designSystemId}/assets/${assetId}`,
+          ),
+        );
+      }
+      case "delete_design_system": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        const suffix = args.family === true ? "?family=true" : "";
+        return wrap(
+          await client.request(
+            "DELETE",
+            `/api/design-systems/${designSystemId}${suffix}`,
+          ),
+        );
+      }
+      case "get_design_system_section": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        const section = requireStringArg(args, "section");
+        return wrap(
+          await client.request(
+            "GET",
+            `/api/design-systems/${designSystemId}/sections/${encodeURIComponent(section)}`,
+          ),
+        );
+      }
+      case "update_design_system_section": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        const section = requireStringArg(args, "section");
+        return wrap(
+          await client.request(
+            "PATCH",
+            `/api/design-systems/${designSystemId}/sections/${encodeURIComponent(section)}`,
+            { value: args.value, mode: args.mode },
+          ),
+        );
+      }
+      case "delete_design_system_section": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        const section = requireStringArg(args, "section");
+        return wrap(
+          await client.request(
+            "DELETE",
+            `/api/design-systems/${designSystemId}/sections/${encodeURIComponent(section)}`,
+          ),
+        );
+      }
+      case "get_design_system_section_entry": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        const section = requireStringArg(args, "section");
+        const key = requireStringArg(args, "key");
+        return wrap(
+          await client.request(
+            "GET",
+            `/api/design-systems/${designSystemId}/sections/${encodeURIComponent(section)}/${encodeURIComponent(key)}`,
+          ),
+        );
+      }
+      case "upsert_design_system_section_entry": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        const section = requireStringArg(args, "section");
+        const key = requireStringArg(args, "key");
+        return wrap(
+          await client.request(
+            "PATCH",
+            `/api/design-systems/${designSystemId}/sections/${encodeURIComponent(section)}/${encodeURIComponent(key)}`,
+            { value: args.value },
+          ),
+        );
+      }
+      case "delete_design_system_section_entry": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        const section = requireStringArg(args, "section");
+        const key = requireStringArg(args, "key");
+        return wrap(
+          await client.request(
+            "DELETE",
+            `/api/design-systems/${designSystemId}/sections/${encodeURIComponent(section)}/${encodeURIComponent(key)}`,
+          ),
+        );
+      }
+      case "get_design_component": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        const name = requireStringArg(args, "name");
+        return wrap(
+          await client.request(
+            "GET",
+            `/api/design-systems/${designSystemId}/components/${encodeURIComponent(name)}`,
+          ),
+        );
+      }
+      case "upsert_design_component": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        const name = requireStringArg(args, "name");
+        return wrap(
+          await client.request(
+            "PATCH",
+            `/api/design-systems/${designSystemId}/components/${encodeURIComponent(name)}`,
+            { value: args.value },
+          ),
+        );
+      }
+      case "delete_design_component": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        const name = requireStringArg(args, "name");
+        return wrap(
+          await client.request(
+            "DELETE",
+            `/api/design-systems/${designSystemId}/components/${encodeURIComponent(name)}`,
+          ),
+        );
+      }
+      case "lint_design_system": {
+        const designSystemId = requireNumberArg(args, "design_system_id");
+        return wrap(
+          await client.request(
+            "POST",
+            `/api/design-systems/${designSystemId}/lint`,
           ),
         );
       }
@@ -1653,6 +1998,38 @@ function requireStringArg(args: Record<string, unknown>, key: string): string {
   }
 
   return value;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function extractListData(value: unknown): Array<Record<string, unknown>> {
+  const record = asRecord(value);
+  const data = record.data;
+  if (Array.isArray(data)) return data.filter(isRecord);
+  const nested = asRecord(data);
+  if (Array.isArray(nested.items)) return nested.items.filter(isRecord);
+  return [];
+}
+
+function extractExportContent(value: unknown): string {
+  const data = asRecord(asRecord(value).data);
+  const content = data.content;
+  return typeof content === "string" ? content : "";
+}
+
+function extractActiveDesignSystemId(value: unknown): number | null {
+  const active = asRecord(asRecord(value).data).active;
+  const record = asRecord(active);
+  const id = record.id;
+  return typeof id === "number" && Number.isInteger(id) ? id : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
 function wrap(data: unknown) {

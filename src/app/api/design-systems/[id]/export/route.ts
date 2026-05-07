@@ -4,6 +4,7 @@ import { canReadDesignSystem } from "@/lib/authorization";
 import { withResource } from "@/lib/api-helpers";
 import {
   buildDesignSystemDesignMarkdownExport,
+  buildDesignSystemBundleExport,
   buildDesignSystemJsonExport,
   buildDesignSystemSkillExport,
   getDesignSystemDetail,
@@ -48,10 +49,14 @@ export const GET = withResource<DesignSystem>({
       });
       return NextResponse.json(res.body, { status: res.status });
     }
+    if (format === "bundle") {
+      const res = okResponse(buildDesignSystemBundleExport(detail));
+      return NextResponse.json(res.body, { status: res.status });
+    }
 
     const res = errorResponse(
       "UNSUPPORTED_FORMAT",
-      "format must be json, skill, or design",
+      "format must be json, skill, design, or bundle",
       400,
     );
     return NextResponse.json(res.body, { status: res.status });

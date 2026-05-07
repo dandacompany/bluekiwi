@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildDesignSystemBundleExport,
   buildDesignSystemComponentDocs,
   buildDesignSystemDesignMarkdownExport,
   buildDesignSystemJsonExport,
   buildDesignSystemSkillExport,
+  getDesignSystemComponentValue,
+  getDesignSystemSectionEntryValue,
+  getDesignSystemSectionValue,
+  lintDesignSystem,
   type DesignSystemDetail,
 } from "../src/lib/db/repositories/design-systems";
 
@@ -13,6 +18,8 @@ const detail: DesignSystemDetail = {
   slug: "acme-design",
   description: "Acme product design system",
   version: "1.0",
+  category: "Developer Tools",
+  surface: "web",
   parent_design_system_id: null,
   family_root_id: 7,
   is_active: true,
@@ -52,6 +59,7 @@ const detail: DesignSystemDetail = {
           },
         ],
         variants: ["default", "active"],
+        states: ["default", "hover", "focus-visible", "disabled"],
         preview: {
           html: "<article class=\"lesson-card\"><h3>Prompt Design</h3></article>",
           css: ".lesson-card{border:1px solid #D8CCB8;padding:16px}",
@@ -91,9 +99,12 @@ describe("design system exports", () => {
   it("builds stable json export shape", () => {
     const exported = buildDesignSystemJsonExport(detail);
     expect(exported.design_system.slug).toBe("acme-design");
+    expect(exported.design_system.category).toBe("Developer Tools");
+    expect(exported.design_system.surface).toBe("web");
     expect(exported.tokens).toEqual({ color: { brand: "#0055ff" } });
     expect(exported.token_sections.color).toEqual({ brand: "#0055ff" });
     expect(exported.component_documents[0].framework).toBe("shadcn");
+    expect(exported.component_documents[0].states).toContain("focus-visible");
     expect(exported.component_documents[0].classes).toContain("rounded-lg");
     expect(exported.design_markdown).toContain("## Color Palette");
     expect(exported.assets).toHaveLength(1);
@@ -111,10 +122,13 @@ describe("design system exports", () => {
   it("builds DESIGN.md documentation", () => {
     const exported = buildDesignSystemDesignMarkdownExport(detail);
     expect(exported).toContain("# Acme Design DESIGN.md");
+    expect(exported).toContain("- Category: `Developer Tools`");
+    expect(exported).toContain("- Surface: `web`");
     expect(exported).toContain("| `brand` | `#0055ff` |");
     expect(exported).toContain("## Component Documents");
     expect(exported).toContain("### LessonCard");
     expect(exported).toContain("#### React");
+    expect(exported).toContain("#### States");
     expect(exported).toContain("#### Tailwind");
     expect(exported).toContain("#### shadcn/ui");
   });
@@ -127,10 +141,51 @@ describe("design system exports", () => {
       framework: "shadcn",
       styleSystem: "shadcn/ui + Tailwind CSS",
       variants: ["default", "active"],
+      states: ["default", "hover", "focus-visible", "disabled"],
       sourceAssets: ["LessonCard.tsx", "lesson-card.css"],
     });
     expect(docs[0].html).toContain("lesson-card");
     expect(docs[0].dependencies).toContain("lucide-react");
     expect(docs[0].install).toContain("npx shadcn@latest add card button");
+  });
+
+  it("loads section and keyed values for category-level agents", () => {
+    expect(getDesignSystemSectionValue(detail, "colors")).toEqual({
+      brand: "#0055ff",
+    });
+    expect(getDesignSystemSectionValue(detail, "fonts")).toEqual({
+      body: "Inter",
+    });
+    expect(getDesignSystemSectionEntryValue(detail, "components", "LessonCard"))
+      .toMatchObject({
+        framework: "shadcn",
+        description: "Compact lesson module card.",
+      });
+  });
+
+  it("loads a normalized component by name", () => {
+    const component = getDesignSystemComponentValue(detail, "LessonCard");
+    expect(component?.name).toBe("LessonCard");
+    expect(component?.value).toMatchObject({ framework: "shadcn" });
+    expect(component?.document?.classes).toContain("rounded-lg");
+    expect(getDesignSystemComponentValue(detail, "Missing")).toBeNull();
+  });
+
+  it("lints design-system quality gaps", () => {
+    const result = lintDesignSystem(detail);
+    expect(result.ok).toBe(true);
+    expect(result.score).toBeLessThan(100);
+    expect(
+      result.issues.some((issue) => issue.code === "DS_COLOR_ROLES_SPARSE"),
+    ).toBe(true);
+  });
+
+  it("builds bundle export", () => {
+    const bundle = buildDesignSystemBundleExport(detail);
+    const paths = bundle.files.map((file) => file.path);
+    expect(bundle.format).toBe("bundle");
+    expect(paths).toContain("DESIGN.md");
+    expect(paths).toContain("tokens/colors.json");
+    expect(bundle.lint.issues.length).toBeGreaterThan(0);
   });
 });

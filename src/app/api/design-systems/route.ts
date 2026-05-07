@@ -28,6 +28,8 @@ export const GET = withAuth(
     const includeInactive = url.searchParams.get("include_inactive") === "true";
     const folderId = url.searchParams.get("folder_id");
     const q = url.searchParams.get("q");
+    const category = url.searchParams.get("category");
+    const surface = url.searchParams.get("surface");
 
     const filter = await buildDesignSystemVisibilityFilter("ds", user, 1);
     const rows = await listDesignSystemsForVisibilityFilter({
@@ -36,6 +38,8 @@ export const GET = withAuth(
       includeInactive,
       folderId: folderId ? Number(folderId) : undefined,
       q: q ?? undefined,
+      category: category ?? undefined,
+      surface: surface ?? undefined,
     });
 
     const res = listResponse(rows, rows.length);
@@ -86,6 +90,8 @@ export const POST = withAuth(
         description:
           typeof body.description === "string" ? body.description : "",
         version: typeof body.version === "string" ? body.version : undefined,
+        category: typeof body.category === "string" ? body.category : undefined,
+        surface: typeof body.surface === "string" ? body.surface : undefined,
         status: body.status,
         schema: body.schema,
         tokens: body.tokens,
