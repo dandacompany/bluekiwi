@@ -429,6 +429,16 @@ function missingComponentStates(component: ComponentDoc): string[] {
   );
 }
 
+function componentSourceLabels(component: ComponentDoc): string[] {
+  return [
+    component.react ? "React" : "",
+    component.html ? "HTML" : "",
+    component.css ? "CSS" : "",
+    Object.keys(component.tailwind).length > 0 ? "Tailwind" : "",
+    Object.keys(component.shadcn).length > 0 ? "shadcn/ui" : "",
+  ].filter(Boolean);
+}
+
 export default function DesignSystemDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -532,6 +542,21 @@ export default function DesignSystemDetailPage() {
       null,
     [componentDocs, selectedComponentName],
   );
+  const componentStats = useMemo(() => {
+    const withMissingStates = componentDocs.filter(
+      (component) => missingComponentStates(component).length > 0,
+    ).length;
+    const withSource = componentDocs.filter(
+      (component) => componentSourceLabels(component).length > 0,
+    ).length;
+    return {
+      total: componentDocs.length,
+      filtered: filteredComponentDocs.length,
+      frameworks: componentFrameworks.length - 1,
+      withMissingStates,
+      withSource,
+    };
+  }, [componentDocs, componentFrameworks.length, filteredComponentDocs.length]);
 
   function updateDetail(next: DesignSystemDetail) {
     setDetail(next);
@@ -753,9 +778,38 @@ export default function DesignSystemDetailPage() {
         ) : null}
       </header>
 
+      <SectionNav
+        items={[
+          ["Overview", "#overview"],
+          ["Identity", "#identity"],
+          ["Preview", "#preview"],
+          ["Colors", "#colors"],
+          ["Typography", "#typography"],
+          ["Components", "#components"],
+          ["Docs", "#docs"],
+          ["Versions", "#versions"],
+          ["Assets", "#assets"],
+        ]}
+      />
+
       <div className="grid gap-6 p-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <section className="space-y-5">
-          <Panel title="Identity" icon={<FileText className="h-4 w-4" />}>
+          <Panel title="Registry Overview" icon={<Info className="h-4 w-4" />} id="overview">
+            <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+              <SummaryMetric label="Colors" value={colorEntries.length} />
+              <SummaryMetric label="Type Tokens" value={typographyEntries.length} />
+              <SummaryMetric label="Components" value={componentDocs.length} />
+              <SummaryMetric label="Frameworks" value={componentStats.frameworks} />
+              <SummaryMetric label="Assets" value={detail.assets.length} />
+              <SummaryMetric
+                label="State Gaps"
+                tone={componentStats.withMissingStates > 0 ? "warning" : "success"}
+                value={componentStats.withMissingStates}
+              />
+            </div>
+          </Panel>
+
+          <Panel title="Identity" icon={<FileText className="h-4 w-4" />} id="identity">
             <div className="grid gap-3 md:grid-cols-2">
               <Input
                 value={detail.title}
@@ -793,7 +847,7 @@ export default function DesignSystemDetailPage() {
             </div>
           </Panel>
 
-          <Panel title="Showcase Preview" icon={<Layers className="h-4 w-4" />}>
+          <Panel title="Showcase Preview" icon={<Layers className="h-4 w-4" />} id="preview">
             <iframe
               className="h-[520px] w-full rounded-lg border border-border bg-white"
               title={`${detail.title} showcase preview`}
@@ -801,7 +855,7 @@ export default function DesignSystemDetailPage() {
             />
           </Panel>
 
-          <Panel title="Color Palette" icon={<Palette className="h-4 w-4" />}>
+          <Panel title="Color Palette" icon={<Palette className="h-4 w-4" />} id="colors">
             <div className="mb-4 overflow-hidden rounded-lg border border-border">
               <div className="flex h-16">
                 {colorEntries.filter((entry) => isHexColor(entry.value)).length >
@@ -899,7 +953,7 @@ export default function DesignSystemDetailPage() {
             </Button>
           </Panel>
 
-          <Panel title="Typography" icon={<Type className="h-4 w-4" />}>
+          <Panel title="Typography" icon={<Type className="h-4 w-4" />} id="typography">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {typographyEntries.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
@@ -977,7 +1031,8 @@ export default function DesignSystemDetailPage() {
             />
           </Panel>
 
-          <Panel title="Component Library" icon={<Box className="h-4 w-4" />}>
+          <Panel title="Component Library" icon={<Box className="h-4 w-4" />} id="components">
+            <ComponentLibraryStats stats={componentStats} />
             <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
               <Input
                 value={componentSearch}
@@ -1021,6 +1076,7 @@ export default function DesignSystemDetailPage() {
           </Panel>
 
           <EditorBlock
+            id="docs"
             label="Guidelines Markdown"
             value={detail.content.guidelines_markdown}
             onChange={(value) =>
@@ -1045,6 +1101,7 @@ export default function DesignSystemDetailPage() {
 
         <aside className="space-y-4">
           <VersionHistoryPanel
+            id="versions"
             activeVersionId={versionSummary?.active_version_id ?? null}
             currentId={detail.id}
             versions={versionSummary?.versions ?? []}
@@ -1055,7 +1112,7 @@ export default function DesignSystemDetailPage() {
 
           <ChangeEventsPanel events={events} />
 
-          <Panel title="Asset Manifest">
+          <Panel title="Asset Manifest" id="assets">
             <div className="space-y-2">
               {detail.assets.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No assets.</p>
@@ -1100,6 +1157,49 @@ export default function DesignSystemDetailPage() {
   );
 }
 
+function SectionNav({ items }: { items: Array<[string, string]> }) {
+  return (
+    <nav className="sticky top-0 z-20 border-b border-border bg-background/95 px-6 py-2 backdrop-blur">
+      <div className="flex gap-2 overflow-x-auto">
+        {items.map(([label, href]) => (
+          <a
+            key={href}
+            className="whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
+            href={href}
+          >
+            {label}
+          </a>
+        ))}
+      </div>
+    </nav>
+  );
+}
+
+function SummaryMetric({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string;
+  value: number;
+  tone?: "default" | "success" | "warning";
+}) {
+  const toneClass =
+    tone === "success"
+      ? "text-success"
+      : tone === "warning"
+        ? "text-warning"
+        : "text-foreground";
+  return (
+    <div className="rounded-md border border-border px-3 py-2">
+      <div className="text-[11px] font-semibold uppercase text-muted-foreground">
+        {label}
+      </div>
+      <div className={`mt-1 text-2xl font-semibold ${toneClass}`}>{value}</div>
+    </div>
+  );
+}
+
 function formatVersionDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -1112,6 +1212,7 @@ function formatVersionDate(value: string): string {
 }
 
 function VersionHistoryPanel({
+  id,
   versions,
   activeVersionId,
   currentId,
@@ -1119,6 +1220,7 @@ function VersionHistoryPanel({
   onCompare,
   onOpen,
 }: {
+  id?: string;
   versions: DesignSystemVersionItem[];
   activeVersionId: number | null;
   currentId: number;
@@ -1127,7 +1229,7 @@ function VersionHistoryPanel({
   onOpen: (versionId: number) => void;
 }) {
   return (
-    <Panel title="Version History" icon={<History className="h-4 w-4" />}>
+    <Panel title="Version History" icon={<History className="h-4 w-4" />} id={id}>
       {versions.length === 0 ? (
         <p className="text-sm text-muted-foreground">No version history.</p>
       ) : (
@@ -1229,22 +1331,46 @@ function ChangeEventsPanel({ events }: { events: DesignSystemEventItem[] }) {
 }
 
 function Panel({
+  id,
   title,
   icon,
   children,
 }: {
+  id?: string;
   title: string;
   icon?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-border bg-card p-4">
+    <section className="scroll-mt-16 rounded-lg border border-border bg-card p-4" id={id}>
       <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
         {icon}
         {title}
       </div>
       {children}
     </section>
+  );
+}
+
+function ComponentLibraryStats({
+  stats,
+}: {
+  stats: {
+    total: number;
+    filtered: number;
+    frameworks: number;
+    withMissingStates: number;
+    withSource: number;
+  };
+}) {
+  return (
+    <div className="mb-4 grid gap-2 sm:grid-cols-5">
+      <PaletteMetric label="Total" value={stats.total} />
+      <PaletteMetric label="Shown" value={stats.filtered} />
+      <PaletteMetric label="Frameworks" value={stats.frameworks} />
+      <PaletteMetric label="With Source" value={stats.withSource} />
+      <PaletteMetric label="State Gaps" value={stats.withMissingStates} />
+    </div>
   );
 }
 
@@ -1351,6 +1477,7 @@ function ComponentGalleryCard({
   const previewHtml = componentPreviewHtml(component);
   const chipCount = component.classes.length + component.variants.length;
   const missingStates = missingComponentStates(component);
+  const sources = componentSourceLabels(component);
 
   return (
     <article className="overflow-hidden rounded-lg border border-border bg-background">
@@ -1389,7 +1516,8 @@ function ComponentGalleryCard({
           </div>
           <div className="mt-1 text-[11px] text-muted-foreground">
             {component.props.length} props · {component.states.length} states ·{" "}
-            {component.install.length} install · {chipCount} tags
+            {component.install.length} install · {chipCount} tags ·{" "}
+            {sources.length || 0} source
           </div>
         </div>
         <Button variant="outline" size="sm" onClick={onOpen}>
@@ -1411,6 +1539,7 @@ function ComponentDetailDialog({
   const previewHtml = componentPreviewHtml(component);
   const rawRows = componentRawRows(component);
   const missingStates = missingComponentStates(component);
+  const sources = componentSourceLabels(component);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4">
@@ -1438,6 +1567,14 @@ function ComponentDetailDialog({
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               {component.description || "No description recorded."}
             </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Badge variant="neutral">{component.props.length} props</Badge>
+              <Badge variant="neutral">{component.variants.length} variants</Badge>
+              <Badge variant="neutral">{component.states.length} states</Badge>
+              <Badge variant="neutral">
+                {sources.length > 0 ? sources.join(" / ") : "tokens only"}
+              </Badge>
+            </div>
           </div>
           <Button
             aria-label="Close component details"
@@ -1480,6 +1617,9 @@ function ComponentDetailDialog({
             </DetailSection>
             <DetailSection title="Linked Assets">
               <ChipList items={component.sourceAssets} empty="No assets." />
+            </DetailSection>
+            <DetailSection title="Source Types">
+              <ChipList items={sources} empty="No source code registered." />
             </DetailSection>
           </aside>
 
@@ -1689,18 +1829,23 @@ function AssetSource({
 }
 
 function EditorBlock({
+  id,
   label,
   value,
   onChange,
   className = "",
 }: {
+  id?: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
   className?: string;
 }) {
   return (
-    <section className={`rounded-lg border border-border bg-card p-4 ${className}`}>
+    <section
+      className={`scroll-mt-16 rounded-lg border border-border bg-card p-4 ${className}`}
+      id={id}
+    >
       <label className="text-sm font-semibold">{label}</label>
       <Textarea
         className="mt-3 min-h-48 font-mono text-xs"
