@@ -1871,6 +1871,31 @@ ${assets}${codeBlocks}`;
     .join("\n\n");
 }
 
+function componentInventoryMarkdown(docs: DesignSystemComponentDoc[]): string {
+  if (docs.length === 0) return "No component inventory recorded.";
+
+  return [
+    "| Component | Framework | States | Variants | Source |",
+    "| --- | --- | --- | --- | --- |",
+    ...docs.map((doc) => {
+      const source = [
+        doc.react ? "React" : "",
+        doc.html ? "HTML" : "",
+        doc.css ? "CSS" : "",
+        Object.keys(doc.tailwind).length > 0 ? "Tailwind" : "",
+        Object.keys(doc.shadcn).length > 0 ? "shadcn/ui" : "",
+      ].filter(Boolean);
+      return [
+        `\`${doc.name}\``,
+        `\`${doc.framework}\``,
+        doc.states.length,
+        doc.variants.length,
+        source.length > 0 ? source.join(", ") : "Tokens",
+      ].join(" | ");
+    }).map((row) => `| ${row} |`),
+  ].join("\n");
+}
+
 function componentCatalogMarkdown(docs: DesignSystemComponentDoc[]): string {
   if (docs.length === 0) return "No component catalog entries recorded.";
 
@@ -2179,10 +2204,11 @@ export function buildDesignSystemDesignMarkdownExport(
    system.
 2. Use Color Palette and Typography as the canonical visual tokens. These are
    stored separately in BlueKiwi but merged here for agent consumption.
-3. Use Component Catalog to choose the right component and Component Documents
-   for props, states, static preview code, and React/HTML/CSS source.
-4. For implementation handoff, request \`export_design_system\` with
-   \`format: "adapters"\` or \`format: "bundle"\`.
+3. Use Component Inventory, Component Catalog, and Component Detail Access to
+   choose the right component, states, variants, and implementation entrypoint.
+4. Do not treat this file as the full source dump. For source code and large
+   structured payloads, request \`export_design_system\` with
+   \`format: "package"\`, \`format: "adapters"\`, or \`format: "bundle"\`.
 
 ## Usage
 
@@ -2210,17 +2236,25 @@ ${markdownTable(flattenTokenRows(colors), "No color tokens recorded.")}
 
 ${markdownTable(flattenTokenRows(typography), "No typography tokens recorded.")}
 
-## Components
+## Component Inventory
 
-${markdownTable(flattenTokenRows(components), "No component tokens recorded.")}
+${componentInventoryMarkdown(componentDocs)}
 
 ## Component Catalog
 
 ${componentCatalogMarkdown(componentDocs)}
 
-## Component Documents
+## Component Detail Access
 
-${componentDocsMarkdown(componentDocs)}
+- Use the Component Catalog above to choose the component name.
+- For a single detailed component document, call \`get_design_component\`.
+- For all component specs, load \`tokens/components.json\` from
+  \`format: "package"\` or \`format: "bundle"\`.
+- For implementation files, export \`format: "adapters"\`; React sources are
+  under \`adapters/react/\`, HTML/CSS preview kit under \`adapters/html/\`, and
+  shadcn metadata under \`adapters/shadcn-registry.json\`.
+- Keep this \`DESIGN.md\` as the agent-readable usage summary, not the full
+  source archive.
 
 ## Implementation Handoff
 
