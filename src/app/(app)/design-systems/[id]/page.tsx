@@ -435,11 +435,13 @@ export default function DesignSystemDetailPage() {
     }
   }
 
-  async function exportAs(format: "json" | "skill" | "design" | "bundle") {
+  async function exportAs(
+    format: "json" | "skill" | "design" | "bundle" | "adapters",
+  ) {
     const res = await fetch(`/api/design-systems/${id}/export?format=${format}`);
     const json = await res.json();
     setExportContent(
-      format === "json" || format === "bundle"
+      format === "json" || format === "bundle" || format === "adapters"
         ? JSON.stringify(json.data ?? {}, null, 2)
         : json.data?.content ?? "",
     );
@@ -519,6 +521,10 @@ export default function DesignSystemDetailPage() {
             <Button variant="outline" onClick={() => exportAs("bundle")}>
               <Download className="h-4 w-4" />
               Bundle
+            </Button>
+            <Button variant="outline" onClick={() => exportAs("adapters")}>
+              <Code2 className="h-4 w-4" />
+              Adapters
             </Button>
             <Button variant="outline" onClick={() => exportAs("skill")}>
               <Download className="h-4 w-4" />

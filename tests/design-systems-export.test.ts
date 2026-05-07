@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildDesignSystemAdapterExport,
   buildDesignSystemBundleExport,
   buildDesignSystemComponentDocs,
   buildDesignSystemDesignMarkdownExport,
@@ -186,6 +187,26 @@ describe("design system exports", () => {
     expect(bundle.format).toBe("bundle");
     expect(paths).toContain("DESIGN.md");
     expect(paths).toContain("tokens/colors.json");
+    expect(paths).toContain("adapters/tailwind.config.js");
+    expect(paths).toContain("adapters/shadcn-registry.json");
     expect(bundle.lint.issues.length).toBeGreaterThan(0);
+  });
+
+  it("builds implementation adapter export", () => {
+    const adapters = buildDesignSystemAdapterExport(detail);
+    const files = Object.fromEntries(
+      adapters.files.map((file) => [file.path, file.content]),
+    );
+
+    expect(adapters.format).toBe("adapters");
+    expect(adapters.adapters.tailwind).toBe("adapters/tailwind.config.js");
+    expect(files["adapters/tokens.css"]).toContain("--bk-color-brand");
+    expect(files["adapters/tailwind.config.js"]).toContain("brand");
+    expect(files["adapters/shadcn-registry.json"]).toContain("LessonCard");
+    expect(files["adapters/react/LessonCard.tsx"]).toContain(
+      "export function LessonCard",
+    );
+    expect(files["adapters/html/index.html"]).toContain("LessonCard");
+    expect(files["adapters/html/styles.css"]).toContain(".lesson-card");
   });
 });

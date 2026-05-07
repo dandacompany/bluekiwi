@@ -2041,9 +2041,273 @@ export function buildDesignSystemSkillExport(
   return `---\nname: ${detail.slug}\ndescription: ${yamlDoubleQuoted(description)}\n---\n\n# ${title}\n\n${baseSkill || "Use this design system when creating or editing user-facing visual materials."}\n\n## Guidelines\n\n${guidelines || "No additional guidelines have been recorded yet."}\n\n## DESIGN.md\n\n${designMarkdown}\n\n## Tokens\n\n\`\`\`json\n${tokens}\n\`\`\`\n\n## Schema\n\n\`\`\`json\n${schema}\n\`\`\`\n\n## Assets\n\n${assetList || "- No assets registered."}\n`;
 }
 
+function cssVariableName(prefix: string, name: string): string {
+  const normalized = name
+    .replaceAll(".", "-")
+    .replace(/[^a-zA-Z0-9가-힣-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase();
+  return `--bk-${prefix}-${normalized || "value"}`;
+}
+
+function tokenPrimitiveValue(value: unknown): string | null {
+  if (typeof value === "string" || typeof value === "number") {
+    return String(value);
+  }
+  if (isPlainObject(value)) {
+    const raw = value.$value ?? value.value ?? value.family;
+    if (typeof raw === "string" || typeof raw === "number") {
+      return String(raw);
+    }
+  }
+  return null;
+}
+
+function tokenCssRows(
+  value: Record<string, unknown>,
+  prefix: string,
+): Array<[string, string]> {
+  const rows: Array<[string, string]> = [];
+  for (const [key, item] of Object.entries(value)) {
+    const name = prefix ? `${prefix}.${key}` : key;
+    const primitive = tokenPrimitiveValue(item);
+    if (primitive !== null) {
+      rows.push([name, primitive]);
+      continue;
+    }
+    if (isPlainObject(item)) rows.push(...tokenCssRows(item, name));
+  }
+  return rows;
+}
+
+function buildAdapterTokensCss(detail: DesignSystemDetail): string {
+  const colors = parseJsonObject(detail.content.color_tokens_json);
+  const typography = parseJsonObject(detail.content.typography_tokens_json);
+  const colorRows = tokenCssRows(colors, "").map(
+    ([name, value]) => `  ${cssVariableName("color", name)}: ${value};`,
+  );
+  const typographyRows = tokenCssRows(typography, "").map(
+    ([name, value]) => `  ${cssVariableName("font", name)}: ${value};`,
+  );
+  return `:root {
+${[...colorRows, ...typographyRows].join("\n")}
+}
+`;
+}
+
+function tailwindKey(name: string): string {
+  return name
+    .split(".")
+    .map((part) =>
+      part
+        .replace(/[^a-zA-Z0-9가-힣]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .toLowerCase(),
+    )
+    .filter(Boolean)
+    .join("-");
+}
+
+function buildTailwindConfig(detail: DesignSystemDetail): string {
+  const colors = Object.fromEntries(
+    tokenCssRows(parseJsonObject(detail.content.color_tokens_json), "").map(
+      ([name]) => [tailwindKey(name), `var(${cssVariableName("color", name)})`],
+    ),
+  );
+  const fontFamily = Object.fromEntries(
+    tokenCssRows(parseJsonObject(detail.content.typography_tokens_json), "")
+      .filter(([name]) => /family|body|heading|display|mono|label/i.test(name))
+      .map(([name]) => [tailwindKey(name), `var(${cssVariableName("font", name)})`]),
+  );
+  return `/** Generated from BlueKiwi design system: ${detail.title} (${detail.slug}) */
+export default {
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx,mdx}"],
+  theme: {
+    extend: {
+      colors: ${JSON.stringify(colors, null, 6)},
+      fontFamily: ${JSON.stringify(fontFamily, null, 6)}
+    }
+  }
+};
+`;
+}
+
+function componentFileName(name: string): string {
+  return `${name
+    .replace(/[^a-zA-Z0-9가-힣]+/g, "-")
+    .replace(/^-|-$/g, "") || "Component"}.tsx`;
+}
+
+function componentIdentifier(name: string): string {
+  const cleaned = name.replace(/[^a-zA-Z0-9_$]+/g, "");
+  const candidate = cleaned || "Component";
+  return /^[a-zA-Z_$]/.test(candidate) ? candidate : `Component${candidate}`;
+}
+
+function buildReactSource(component: DesignSystemComponentDoc): string {
+  if (component.react) return component.react;
+  const classes = component.classes.join(" ");
+  const html = component.html || `<div>${component.name}</div>`;
+  return `export function ${componentIdentifier(component.name)}() {
+  return (
+    <div className=${JSON.stringify(classes)}>
+      ${JSON.stringify(html)}
+    </div>
+  );
+}
+`;
+}
+
+function buildReactIndex(docs: DesignSystemComponentDoc[]): string {
+  const reactDocs = docs.filter(
+    (doc) => doc.react || doc.framework === "react" || doc.framework === "shadcn",
+  );
+  if (reactDocs.length === 0) {
+    return "// No React component sources were registered in this design system.\n";
+  }
+  return reactDocs
+    .map((doc) => `export * from "./${componentFileName(doc.name).replace(/\.tsx$/, "")}";`)
+    .join("\n");
+}
+
+function buildShadcnRegistry(detail: DesignSystemDetail): string {
+  const docs = buildDesignSystemComponentDocs(detail).filter(
+    (doc) => doc.framework === "shadcn" || Object.keys(doc.shadcn).length > 0,
+  );
+  const items = docs.map((doc) => ({
+    name: doc.name,
+    type: "registry:component",
+    title: doc.name,
+    description: doc.description,
+    dependencies: doc.dependencies,
+    registryDependencies: stringArrayValue(doc.shadcn.registry_items),
+    files: [
+      {
+        path: `components/${componentFileName(doc.name)}`,
+        type: "registry:component",
+        content: buildReactSource(doc),
+      },
+    ],
+    cssVars: {
+      light: Object.fromEntries(
+        tokenCssRows(parseJsonObject(detail.content.color_tokens_json), "")
+          .slice(0, 24)
+          .map(([name, value]) => [cssVariableName("color", name), value]),
+      ),
+    },
+  }));
+  return JSON.stringify(
+    {
+      "$schema": "https://ui.shadcn.com/schema/registry.json",
+      name: detail.slug,
+      type: "registry:style",
+      title: detail.title,
+      description: detail.description,
+      items,
+    },
+    null,
+    2,
+  );
+}
+
+function buildHtmlKit(detail: DesignSystemDetail): { html: string; css: string } {
+  const docs = buildDesignSystemComponentDocs(detail);
+  const css = [
+    buildAdapterTokensCss(detail),
+    "body { margin: 0; padding: 24px; background: var(--bk-color-canvas, #f8fafc); color: var(--bk-color-ink, #111827); font-family: var(--bk-font-body-family, system-ui, sans-serif); }",
+    ".bk-preview-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }",
+    ".bk-preview-item { border: 1px solid var(--bk-color-line, #e5e7eb); border-radius: 8px; padding: 16px; background: var(--bk-color-surface, #ffffff); }",
+    ...docs.map((doc) => doc.css).filter(Boolean),
+  ].join("\n\n");
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${escapeHtml(detail.title)} Preview Kit</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <h1>${escapeHtml(detail.title)}</h1>
+  <main class="bk-preview-grid">
+${docs
+  .map(
+    (doc) => `    <section class="bk-preview-item">
+      <h2>${escapeHtml(doc.name)}</h2>
+      ${doc.html || `<p>${escapeHtml(doc.description || "No preview HTML registered.")}</p>`}
+    </section>`,
+  )
+  .join("\n")}
+  </main>
+</body>
+</html>
+`;
+  return { html, css };
+}
+
+export function buildDesignSystemAdapterExport(detail: DesignSystemDetail) {
+  const componentDocs = buildDesignSystemComponentDocs(detail);
+  const htmlKit = buildHtmlKit(detail);
+  const reactDocs = componentDocs.filter(
+    (doc) => doc.react || doc.framework === "react" || doc.framework === "shadcn",
+  );
+  const files = [
+    {
+      path: "adapters/tokens.css",
+      mime_type: "text/css",
+      content: buildAdapterTokensCss(detail),
+    },
+    {
+      path: "adapters/tailwind.config.js",
+      mime_type: "text/javascript",
+      content: buildTailwindConfig(detail),
+    },
+    {
+      path: "adapters/shadcn-registry.json",
+      mime_type: "application/json",
+      content: buildShadcnRegistry(detail),
+    },
+    {
+      path: "adapters/react/index.ts",
+      mime_type: "text/typescript",
+      content: buildReactIndex(componentDocs),
+    },
+    ...reactDocs.map((doc) => ({
+      path: `adapters/react/${componentFileName(doc.name)}`,
+      mime_type: "text/tsx",
+      content: buildReactSource(doc),
+    })),
+    {
+      path: "adapters/html/index.html",
+      mime_type: "text/html",
+      content: htmlKit.html,
+    },
+    {
+      path: "adapters/html/styles.css",
+      mime_type: "text/css",
+      content: htmlKit.css,
+    },
+  ];
+
+  return {
+    format: "adapters",
+    design_system: buildDesignSystemJsonExport(detail).design_system,
+    adapters: {
+      tailwind: "adapters/tailwind.config.js",
+      shadcn: "adapters/shadcn-registry.json",
+      react: "adapters/react/index.ts",
+      html: "adapters/html/index.html",
+      css_tokens: "adapters/tokens.css",
+    },
+    files,
+  };
+}
+
 export function buildDesignSystemBundleExport(detail: DesignSystemDetail) {
   const componentDocs = buildDesignSystemComponentDocs(detail);
   const json = buildDesignSystemJsonExport(detail);
+  const adapterExport = buildDesignSystemAdapterExport(detail);
   const files = [
     {
       path: "DESIGN.md",
@@ -2093,6 +2357,7 @@ export function buildDesignSystemBundleExport(detail: DesignSystemDetail) {
             "tokens/typography.json",
             "tokens/components.json",
             "components/README.md",
+            ...adapterExport.files.map((file) => file.path),
           ],
           assets: detail.assets.map((asset) => ({
             id: asset.id,
@@ -2113,6 +2378,7 @@ export function buildDesignSystemBundleExport(detail: DesignSystemDetail) {
         mime_type: asset.mime_type,
         content: asset.content_text ?? "",
       })),
+    ...adapterExport.files,
   ];
 
   return {
