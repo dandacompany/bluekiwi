@@ -1563,6 +1563,12 @@ function markdownTable(
   ].join("\n");
 }
 
+function markdownValue(value: unknown): string {
+  return String(value ?? "")
+    .replaceAll("|", "\\|")
+    .replaceAll("\n", "<br>");
+}
+
 function escapeHtml(value: unknown): string {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -1833,6 +1839,61 @@ ${assets}${codeBlocks}`;
     .join("\n\n");
 }
 
+function componentCatalogMarkdown(docs: DesignSystemComponentDoc[]): string {
+  if (docs.length === 0) return "No component catalog entries recorded.";
+
+  return [
+    "| Component | Framework | Style System | States | Variants | Source |",
+    "| --- | --- | --- | --- | --- | --- |",
+    ...docs.map((doc) => {
+      const source = [
+        doc.react ? "React" : "",
+        doc.html ? "HTML" : "",
+        doc.css ? "CSS" : "",
+        Object.keys(doc.tailwind).length > 0 ? "Tailwind" : "",
+        Object.keys(doc.shadcn).length > 0 ? "shadcn/ui" : "",
+      ].filter(Boolean);
+      return [
+        `\`${doc.name}\``,
+        `\`${doc.framework}\``,
+        markdownValue(doc.styleSystem || "Not specified"),
+        doc.states.length > 0
+          ? doc.states.map((state) => `\`${state}\``).join(", ")
+          : "None",
+        doc.variants.length > 0
+          ? doc.variants.map((variant) => `\`${variant}\``).join(", ")
+          : "None",
+        source.length > 0 ? source.join(", ") : "Tokens only",
+      ].join(" | ");
+    }).map((row) => `| ${row} |`),
+  ].join("\n");
+}
+
+function lintSummaryMarkdown(result: DesignSystemLintResult): string {
+  const issues = result.issues.slice(0, 12);
+  const issueList =
+    issues.length > 0
+      ? issues
+          .map((issue) => {
+            const suggestion = issue.suggestion
+              ? ` Suggestion: ${issue.suggestion}`
+              : "";
+            return `- ${issue.severity.toUpperCase()} \`${issue.code}\` at \`${issue.target}\`: ${issue.message}${suggestion}`;
+          })
+          .join("\n")
+      : "- No lint issues detected.";
+  const remaining =
+    result.issues.length > issues.length
+      ? `\n- ${result.issues.length - issues.length} additional issue(s) omitted from this summary.`
+      : "";
+
+  return `- OK: \`${result.ok}\`
+- Score: \`${result.score}\`
+- Issue counts: error \`${result.issue_counts.error}\`, warning \`${result.issue_counts.warning}\`, info \`${result.issue_counts.info}\`
+
+${issueList}${remaining}`;
+}
+
 function addIssue(
   issues: DesignSystemLintIssue[],
   issue: DesignSystemLintIssue,
@@ -2061,6 +2122,7 @@ export function buildDesignSystemDesignMarkdownExport(
   const components = parseJsonObject(detail.content.component_tokens_json);
   const componentDocs = buildDesignSystemComponentDocs(detail);
   const guidelines = detail.content.guidelines_markdown.trim();
+  const lint = lintDesignSystem(detail);
   const assets = detail.assets
     .map(
       (asset) =>
@@ -2079,6 +2141,17 @@ export function buildDesignSystemDesignMarkdownExport(
 - Status: \`${detail.status}\`
 - Description: ${detail.description || "No description recorded."}
 
+## Agent Quick Start
+
+1. Read Identity, Usage, Guidelines, and Quality Signals before applying this
+   system.
+2. Use Color Palette and Typography as the canonical visual tokens. These are
+   stored separately in BlueKiwi but merged here for agent consumption.
+3. Use Component Catalog to choose the right component and Component Documents
+   for props, states, static preview code, and React/HTML/CSS source.
+4. For implementation handoff, request \`export_design_system\` with
+   \`format: "adapters"\` or \`format: "bundle"\`.
+
 ## Usage
 
 ${detail.content.skill_markdown.trim() || "Use this design system when creating or editing user-facing visual materials."}
@@ -2088,6 +2161,14 @@ ${detail.content.skill_markdown.trim() || "Use this design system when creating 
 \`\`\`json
 ${JSON.stringify(schema, null, 2)}
 \`\`\`
+
+## Split Token Sources
+
+| Source | Bundle Path | Entries | Purpose |
+| --- | --- | ---: | --- |
+| Colors | \`tokens/colors.json\` | ${flattenTokenRows(colors).length} | Semantic palette, surfaces, text, accents, states |
+| Typography | \`tokens/typography.json\` | ${flattenTokenRows(typography).length} | Font families, sizes, weights, line heights, labels |
+| Components | \`tokens/components.json\` | ${Object.keys(components).length} | Component specs for viewer, agents, and adapters |
 
 ## Color Palette
 
@@ -2101,9 +2182,29 @@ ${markdownTable(flattenTokenRows(typography), "No typography tokens recorded.")}
 
 ${markdownTable(flattenTokenRows(components), "No component tokens recorded.")}
 
+## Component Catalog
+
+${componentCatalogMarkdown(componentDocs)}
+
 ## Component Documents
 
 ${componentDocsMarkdown(componentDocs)}
+
+## Implementation Handoff
+
+- Agent document: \`DESIGN.md\`
+- Portable skill: \`SKILL.md\`
+- Split tokens: \`tokens/colors.json\`, \`tokens/typography.json\`,
+  \`tokens/components.json\`
+- Tailwind config: \`adapters/tailwind.config.js\`
+- shadcn registry: \`adapters/shadcn-registry.json\`
+- React entrypoint: \`adapters/react/index.ts\`
+- HTML preview kit: \`adapters/html/index.html\`,
+  \`adapters/html/styles.css\`
+
+## Quality Signals
+
+${lintSummaryMarkdown(lint)}
 
 ## Guidelines
 

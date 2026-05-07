@@ -123,15 +123,24 @@ describe("design system exports", () => {
   it("builds DESIGN.md documentation", () => {
     const exported = buildDesignSystemDesignMarkdownExport(detail);
     expect(exported).toContain("# Acme Design DESIGN.md");
+    expect(exported).toContain("## Agent Quick Start");
     expect(exported).toContain("- Category: `Developer Tools`");
     expect(exported).toContain("- Surface: `web`");
+    expect(exported).toContain("## Split Token Sources");
+    expect(exported).toContain("| Colors | `tokens/colors.json` |");
     expect(exported).toContain("| `brand` | `#0055ff` |");
+    expect(exported).toContain("## Component Catalog");
+    expect(exported).toContain("| `LessonCard` | `shadcn` |");
     expect(exported).toContain("## Component Documents");
     expect(exported).toContain("### LessonCard");
     expect(exported).toContain("#### React");
     expect(exported).toContain("#### States");
     expect(exported).toContain("#### Tailwind");
     expect(exported).toContain("#### shadcn/ui");
+    expect(exported).toContain("## Implementation Handoff");
+    expect(exported).toContain("`adapters/tailwind.config.js`");
+    expect(exported).toContain("## Quality Signals");
+    expect(exported).toContain("DS_COLOR_ROLES_SPARSE");
   });
 
   it("normalizes component documents for UI and agents", () => {
@@ -189,6 +198,9 @@ describe("design system exports", () => {
     expect(paths).toContain("tokens/colors.json");
     expect(paths).toContain("adapters/tailwind.config.js");
     expect(paths).toContain("adapters/shadcn-registry.json");
+    expect(
+      bundle.files.find((file) => file.path === "DESIGN.md")?.content,
+    ).toContain("## Component Catalog");
     expect(bundle.lint.issues.length).toBeGreaterThan(0);
   });
 
