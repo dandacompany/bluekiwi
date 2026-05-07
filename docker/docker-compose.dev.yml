@@ -11,7 +11,7 @@ services:
       POSTGRES_USER: bluekiwi
       POSTGRES_PASSWORD: bluekiwi_dev_2026
     ports:
-      - "5433:5432"
+      - "${DB_PORT:-5433}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
