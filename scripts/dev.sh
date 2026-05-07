@@ -53,7 +53,7 @@ find_free_port() {
       echo "$port"
       return 0
     fi
-    yellow "  Port $port occupied, trying $((port + 1))..."
+    yellow "  Port $port occupied, trying $((port + 1))..." >&2
     port=$((port + 1))
     tries=$((tries + 1))
   done
@@ -148,9 +148,9 @@ cmd_status() {
   echo ""
 
   # App port
-  if [ -f "$LOG_DIR/dev.port" ]; then
-    local port
-    port=$(cat "$LOG_DIR/dev.port")
+  local port
+  port=$(get_app_port)
+  if [ -n "$port" ]; then
     echo "App URL: http://localhost:$port"
 
     # Health check
