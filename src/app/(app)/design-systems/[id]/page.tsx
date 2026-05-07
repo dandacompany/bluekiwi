@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import {
   Box,
@@ -10,10 +10,13 @@ import {
   Copy,
   Download,
   FileText,
+  GitCompare,
+  History,
   Info,
   Layers,
   Palette,
   Plus,
+  RotateCcw,
   Save,
   Trash2,
   Type,
@@ -59,6 +62,28 @@ interface DesignSystemDetail {
     content_text: string | null;
     content_base64: string | null;
   }>;
+}
+
+interface DesignSystemVersionItem {
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  version: string;
+  category: string;
+  surface: string;
+  status: string;
+  family_root_id: number;
+  parent_design_system_id: number | null;
+  is_active: boolean;
+  updated_at: string;
+  created_at: string;
+}
+
+interface DesignSystemVersionSummary {
+  family_root_id: number;
+  active_version_id: number | null;
+  versions: DesignSystemVersionItem[];
 }
 
 type ComponentDoc = {
@@ -396,11 +421,14 @@ function missingComponentStates(component: ComponentDoc): string[] {
 
 export default function DesignSystemDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const id = params.id;
   const [detail, setDetail] = useState<DesignSystemDetail | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [exportContent, setExportContent] = useState("");
+  const [versionSummary, setVersionSummary] =
+    useState<DesignSystemVersionSummary | null>(null);
   const [activeDesignSystemId, setActiveDesignSystemId] = useState<number | null>(
     null,
   );
@@ -413,6 +441,7 @@ export default function DesignSystemDetailPage() {
   useEffect(() => {
     void load();
     void loadActive();
+    void loadVersions();
     async function load() {
       const res = await fetch(`/api/design-systems/${id}`);
       const json = await res.json();
@@ -422,6 +451,11 @@ export default function DesignSystemDetailPage() {
       const res = await fetch("/api/design-systems/active");
       const json = await res.json();
       setActiveDesignSystemId(json.data?.active?.id ?? null);
+    }
+    async function loadVersions() {
+      const res = await fetch(`/api/design-systems/${id}/versions`);
+      const json = await res.json();
+      setVersionSummary(json.data ?? null);
     }
   }, [id]);
 
@@ -577,6 +611,46 @@ export default function DesignSystemDetailPage() {
     }
     setActiveDesignSystemId(null);
     setMessage("Active design system cleared");
+  }
+
+  async function compareVersion(versionId: number) {
+    const activeVersionId = versionSummary?.active_version_id;
+    if (!activeVersionId) {
+      setMessage("No active version to compare");
+      return;
+    }
+    const res = await fetch(
+      `/api/design-systems/${id}/versions/compare?from=${activeVersionId}&to=${versionId}`,
+    );
+    const json = await res.json();
+    setExportContent(JSON.stringify(json.data ?? json.error ?? {}, null, 2));
+    if (!res.ok) {
+      setMessage(json?.error?.message ?? "Version compare failed");
+    }
+  }
+
+  async function activateVersion(versionId: number) {
+    const res = await fetch(`/api/design-systems/${versionId}/activate`, {
+      method: "POST",
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      setMessage(json?.error?.message ?? "Version activation failed");
+      return;
+    }
+    setMessage(
+      json.data?.already_active
+        ? "Version is already active"
+        : `Activated version ${versionId}`,
+    );
+    const versionsRes = await fetch(`/api/design-systems/${versionId}/versions`);
+    const versionsJson = await versionsRes.json();
+    setVersionSummary(versionsJson.data ?? null);
+    if (versionId === Number(id)) {
+      if (json.data?.design_system) setDetail(json.data.design_system);
+    } else {
+      router.push(`/design-systems/${versionId}`);
+    }
   }
 
   if (!detail) {
@@ -945,6 +1019,15 @@ export default function DesignSystemDetailPage() {
         </section>
 
         <aside className="space-y-4">
+          <VersionHistoryPanel
+            activeVersionId={versionSummary?.active_version_id ?? null}
+            currentId={detail.id}
+            versions={versionSummary?.versions ?? []}
+            onActivate={activateVersion}
+            onCompare={compareVersion}
+            onOpen={(versionId) => router.push(`/design-systems/${versionId}`)}
+          />
+
           <Panel title="Asset Manifest">
             <div className="space-y-2">
               {detail.assets.length === 0 ? (
@@ -987,6 +1070,95 @@ export default function DesignSystemDetailPage() {
         />
       ) : null}
     </main>
+  );
+}
+
+function formatVersionDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function VersionHistoryPanel({
+  versions,
+  activeVersionId,
+  currentId,
+  onActivate,
+  onCompare,
+  onOpen,
+}: {
+  versions: DesignSystemVersionItem[];
+  activeVersionId: number | null;
+  currentId: number;
+  onActivate: (versionId: number) => void;
+  onCompare: (versionId: number) => void;
+  onOpen: (versionId: number) => void;
+}) {
+  return (
+    <Panel title="Version History" icon={<History className="h-4 w-4" />}>
+      {versions.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No version history.</p>
+      ) : (
+        <div className="space-y-2">
+          {versions.map((version) => {
+            const isActive = version.id === activeVersionId;
+            const isCurrent = version.id === currentId;
+            return (
+              <div
+                key={version.id}
+                className="rounded-md border border-border px-3 py-2"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        className="truncate text-left text-sm font-semibold hover:underline"
+                        type="button"
+                        onClick={() => onOpen(version.id)}
+                      >
+                        v{version.version}
+                      </button>
+                      {isActive ? <Badge variant="success">Active</Badge> : null}
+                      {isCurrent ? (
+                        <Badge variant="secondary">Current</Badge>
+                      ) : null}
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {version.status} · {formatVersionDate(version.updated_at)}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onCompare(version.id)}
+                    disabled={!activeVersionId || isActive}
+                  >
+                    <GitCompare className="h-4 w-4" />
+                    Diff
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={isActive ? "outline" : "default"}
+                    onClick={() => onActivate(version.id)}
+                    disabled={isActive}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Activate
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Panel>
   );
 }
 
