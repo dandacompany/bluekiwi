@@ -12,7 +12,7 @@ Design reusable workflows, run them from any AI coding agent, and watch every st
 [![Docker](https://img.shields.io/badge/ghcr.io-bluekiwi-b7cf57)](https://ghcr.io/dandacompany/bluekiwi)
 [![License](https://img.shields.io/badge/License-Sustainable_Use-lightgrey)](LICENSE.md)
 
-[Quick Setup](#quick-setup) · [Skills](#skills) · [MCP Tools](#mcp-tools) · [CLI](#cli) · [Self-Hosting](#self-hosting) · [Contributing](#contributing)
+[Quick Setup](#quick-setup) · [Skills](#skills) · [Design Systems](#design-systems) · [MCP Tools](#mcp-tools) · [CLI](#cli) · [Self-Hosting](#self-hosting) · [Contributing](#contributing)
 
 🌐 [한국어](README.ko.md) · 📊 [Presentation Slides](https://canva.link/5f62nmx6wk7x4ka)
 
@@ -135,7 +135,8 @@ After `bluekiwi accept`, you have these slash commands inside Claude Code (and o
 | Command                | Description                                                                                  |
 | ---------------------- | -------------------------------------------------------------------------------------------- |
 | `/bk-start [workflow]` | Start or resume a workflow. Handles session restore, timed-out tasks, and HITL gates inline. |
-| `/bk-design [goal]`    | Design and register a new workflow from a natural-language description.                      |
+| `/bk-create [goal]`    | Design and register a new workflow from a natural-language description.                      |
+| `/bk-design [goal]`    | Create, update, delete, load, export, or apply registry design systems.                      |
 | `/bk-approve`          | Approve a paused HITL step when resuming a session mid-approval.                             |
 | `/bk-improve`          | Analyze a completed task and suggest workflow improvements.                                  |
 | `/bk-report`           | Generate a structured report for a completed task.                                           |
@@ -165,6 +166,43 @@ Agent: → Approved. Step 3/6 — Performance analysis ...
 ```
 
 While the agent runs, watch the live timeline at **`http://localhost:3100/tasks/{id}`**.
+
+---
+
+## Design Systems
+
+BlueKiwi can also act as a design-system registry for AI agents. A design system is a versioned resource containing split color tokens, typography tokens, component specs, guidelines, assets, and implementation adapters.
+
+Use **Design Systems** in the web UI to view palettes, typography, component previews, source snippets, versions, assets, lint results, and export packages. Editing small metadata and token values is available in the UI; component creation, deletion, and larger updates are designed to be handled by agents through `/bk-design` and MCP.
+
+### Agent workflow
+
+Run `/bk-design` when you want an agent to create, update, delete, load, export, or apply a registered design system. If the request is ambiguous, the skill asks whether the operation is create, update, delete, load, export, or apply. For create flows, it first lists related design systems and asks whether to create a separate system or a new version. For update/delete flows, it lists existing systems and asks which target and category to modify.
+
+### Export formats
+
+| Format      | Use when                                                                 |
+| ----------- | ------------------------------------------------------------------------ |
+| `DESIGN.md` | An agent needs a concise, readable design guide before making UI choices |
+| `SKILL.md`  | You want a portable skill wrapper around the concise design guide        |
+| `Adapters`  | A React/Tailwind/shadcn/HTML implementation handoff is needed            |
+| `Package`   | You want to import the system into another BlueKiwi registry             |
+| `Bundle`    | You want the complete portable payload, including docs, assets, and lint |
+| `JSON`      | You need the raw registry payload for inspection or debugging            |
+
+MCP resources expose the same design context directly:
+
+```text
+bk://active/design-system/DESIGN.md
+bk://active/design-system/SKILL.md
+bk://active/design-system/tokens/colors.json
+bk://active/design-system/tokens/typography.json
+bk://active/design-system/tokens/components.json
+bk://active/design-system/guidelines.md
+bk://active/design-system/adapters.json
+```
+
+Use `set_active_design_system` to pin the current design context, or read a specific system with `bk://design-systems/{id}/...`.
 
 ---
 
@@ -260,6 +298,19 @@ The `bluekiwi` MCP server exposes tools your agent runtime calls automatically. 
 | ---------------------------------------------------------------------------------------- | ---------------------------- |
 | `list_instructions` / `create_instruction` / `update_instruction` / `delete_instruction` | Instruction template library |
 | `list_credentials` / `create_credential` / `update_credential` / `delete_credential`     | Credential store             |
+
+### Design systems
+
+| Tool                                                                                                      | Description                                       |
+| --------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `list_design_systems` / `get_design_system`                                                              | Browse and load registry design systems          |
+| `create_design_system` / `update_design_system` / `delete_design_system`                                  | Full design-system CRUD                          |
+| `get_design_system_section` / `update_design_system_section` / `delete_design_system_section`             | Load or edit schema, tokens, colors, typography, components, guidelines, skill, or assets by category |
+| `get_design_component` / `upsert_design_component` / `delete_design_component`                            | Load or edit one component spec                  |
+| `export_design_system`                                                                                   | Export `json`, `design`, `skill`, `bundle`, `package`, or `adapters` |
+| `analyze_design_system_package` / `import_design_system_package`                                          | Inspect and import portable design packages      |
+| `get_active_design_system` / `set_active_design_system` / `clear_active_design_system`                    | Manage the agent's active design context         |
+| `lint_design_system`                                                                                     | Check token coverage, component states, metadata, and agent-readability |
 
 ### Folders & sharing
 

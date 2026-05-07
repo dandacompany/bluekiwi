@@ -12,7 +12,7 @@
 [![Docker](https://img.shields.io/badge/ghcr.io-bluekiwi-b7cf57)](https://ghcr.io/dandacompany/bluekiwi)
 [![License](https://img.shields.io/badge/License-Sustainable_Use-lightgrey)](LICENSE.md)
 
-[빠른 시작](#빠른-시작) · [스킬](#스킬) · [MCP 도구](#mcp-도구) · [CLI](#cli) · [셀프호스팅](#셀프호스팅) · [기여하기](#기여하기)
+[빠른 시작](#빠른-시작) · [스킬](#스킬) · [디자인시스템](#디자인시스템) · [MCP 도구](#mcp-도구) · [CLI](#cli) · [셀프호스팅](#셀프호스팅) · [기여하기](#기여하기)
 
 🌐 [English](README.md) · 📊 [프레젠테이션 슬라이드](https://canva.link/5f62nmx6wk7x4ka)
 
@@ -135,7 +135,8 @@ bluekiwi stop
 | 커맨드                   | 설명                                                                                         |
 | ------------------------ | -------------------------------------------------------------------------------------------- |
 | `/bk-start [워크플로우]` | 워크플로우 시작 또는 재개. 세션 복원, timed-out 태스크, HITL 게이트를 인라인으로 처리합니다. |
-| `/bk-design [목표]`      | 자연어 설명으로 새 워크플로우를 설계하고 서버에 등록합니다.                                  |
+| `/bk-create [목표]`      | 자연어 설명으로 새 워크플로우를 설계하고 서버에 등록합니다.                                  |
+| `/bk-design [목표]`      | 레지스트리 디자인시스템 생성, 수정, 삭제, 로드, 내보내기, 적용을 처리합니다.                 |
 | `/bk-approve`            | 세션 재개 시 대기 중인 HITL 단계를 승인합니다.                                               |
 | `/bk-improve`            | 완료된 태스크를 분석해 워크플로우 개선안을 제안합니다.                                       |
 | `/bk-report`             | 완료된 태스크에 대한 구조화된 리포트를 생성합니다.                                           |
@@ -165,6 +166,43 @@ bluekiwi stop
 ```
 
 에이전트가 실행되는 동안 **`http://localhost:3100/tasks/{id}`** 에서 실시간 타임라인을 확인하세요.
+
+---
+
+## 디자인시스템
+
+BlueKiwi는 AI 에이전트를 위한 디자인시스템 레지스트리로도 사용할 수 있습니다. 디자인시스템은 색상 토큰, 타이포그래피 토큰, 컴포넌트 명세, 가이드라인, 에셋, 구현 어댑터를 버전 관리하는 리소스입니다.
+
+웹 UI의 **Design Systems** 화면에서는 컬러 팔레트, 폰트, 컴포넌트 프리뷰, 소스 코드, 버전, 에셋, lint 결과, export package를 확인할 수 있습니다. UI에서는 메타데이터와 일부 토큰 값을 빠르게 조정하고, 컴포넌트 생성·삭제·대규모 수정은 `/bk-design` 스킬과 MCP 도구를 통해 에이전트가 처리하는 구조입니다.
+
+### 에이전트 사용 흐름
+
+디자인시스템을 생성, 수정, 삭제, 로드, 내보내기, 적용하려면 `/bk-design`을 사용합니다. 요청이 모호하면 스킬은 먼저 작업이 생성/수정/삭제/로드/내보내기/적용 중 무엇인지 묻습니다. 생성 작업에서는 기존 디자인시스템 목록을 조회한 뒤 신규 생성인지 기존 시스템의 새 버전인지 확인합니다. 수정/삭제 작업에서는 대상 시스템과 수정 범위를 선택하게 합니다.
+
+### Export 포맷
+
+| 포맷        | 사용 시점                                                        |
+| ----------- | ---------------------------------------------------------------- |
+| `DESIGN.md` | 에이전트가 UI 결정을 내리기 전에 읽는 간결한 디자인 가이드       |
+| `SKILL.md`  | 디자인 가이드를 포함한 휴대용 스킬 래퍼가 필요할 때              |
+| `Adapters`  | React/Tailwind/shadcn/HTML 구현 핸드오프가 필요할 때             |
+| `Package`   | 다른 BlueKiwi 레지스트리로 가져갈 import package가 필요할 때     |
+| `Bundle`    | 문서, 토큰, 에셋, lint 결과까지 포함한 전체 포터블 payload       |
+| `JSON`      | 레지스트리 원본 payload를 점검하거나 디버깅할 때                 |
+
+MCP resource로도 같은 디자인 컨텍스트를 바로 읽을 수 있습니다:
+
+```text
+bk://active/design-system/DESIGN.md
+bk://active/design-system/SKILL.md
+bk://active/design-system/tokens/colors.json
+bk://active/design-system/tokens/typography.json
+bk://active/design-system/tokens/components.json
+bk://active/design-system/guidelines.md
+bk://active/design-system/adapters.json
+```
+
+현재 디자인 컨텍스트는 `set_active_design_system`으로 고정할 수 있고, 특정 시스템은 `bk://design-systems/{id}/...` URI로 직접 읽을 수 있습니다.
 
 ---
 
@@ -259,6 +297,19 @@ pending → running → completed
 | ---------------------------------------------------------------------------------------- | ---------------------- |
 | `list_instructions` / `create_instruction` / `update_instruction` / `delete_instruction` | 지시 템플릿 라이브러리 |
 | `list_credentials` / `create_credential` / `update_credential` / `delete_credential`     | 크리덴셜 저장소        |
+
+### 디자인시스템
+
+| 도구                                                                                                      | 설명                                      |
+| --------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| `list_design_systems` / `get_design_system`                                                              | 레지스트리 디자인시스템 조회 및 로드      |
+| `create_design_system` / `update_design_system` / `delete_design_system`                                  | 디자인시스템 전체 CRUD                    |
+| `get_design_system_section` / `update_design_system_section` / `delete_design_system_section`             | schema, tokens, colors, typography, components, guidelines, skill, assets를 카테고리 단위로 로드·수정 |
+| `get_design_component` / `upsert_design_component` / `delete_design_component`                            | 단일 컴포넌트 명세 로드·수정              |
+| `export_design_system`                                                                                   | `json`, `design`, `skill`, `bundle`, `package`, `adapters` 포맷으로 내보내기 |
+| `analyze_design_system_package` / `import_design_system_package`                                          | 포터블 디자인 package 분석 및 가져오기    |
+| `get_active_design_system` / `set_active_design_system` / `clear_active_design_system`                    | 에이전트의 활성 디자인 컨텍스트 관리      |
+| `lint_design_system`                                                                                     | 토큰 커버리지, 컴포넌트 상태, 메타데이터, 에이전트 가독성 점검 |
 
 ### 폴더 & 공유
 

@@ -790,27 +790,57 @@ export default function DesignSystemDetailPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => exportAs("design")}>
+            <Button
+              aria-label="Download concise agent-readable DESIGN.md"
+              title="Agent-readable summary for applying the design system"
+              variant="outline"
+              onClick={() => exportAs("design")}
+            >
               <FileText className="h-4 w-4" />
               DESIGN.md
             </Button>
-            <Button variant="outline" onClick={() => exportAs("json")}>
+            <Button
+              aria-label="Download raw design system JSON"
+              title="Raw registry payload for debugging and inspection"
+              variant="outline"
+              onClick={() => exportAs("json")}
+            >
               <Download className="h-4 w-4" />
               JSON
             </Button>
-            <Button variant="outline" onClick={() => exportAs("bundle")}>
+            <Button
+              aria-label="Download full design system bundle"
+              title="Full portable bundle with docs, split tokens, adapters, assets, and lint results"
+              variant="outline"
+              onClick={() => exportAs("bundle")}
+            >
               <Download className="h-4 w-4" />
               Bundle
             </Button>
-            <Button variant="outline" onClick={() => exportAs("package")}>
+            <Button
+              aria-label="Download importable design system package"
+              title="Importable package for creating a new system or version in another BlueKiwi registry"
+              variant="outline"
+              onClick={() => exportAs("package")}
+            >
               <Download className="h-4 w-4" />
               Package
             </Button>
-            <Button variant="outline" onClick={() => exportAs("adapters")}>
+            <Button
+              aria-label="Download implementation adapters"
+              title="Implementation handoff for React, HTML/CSS, Tailwind, and shadcn"
+              variant="outline"
+              onClick={() => exportAs("adapters")}
+            >
               <Code2 className="h-4 w-4" />
               Adapters
             </Button>
-            <Button variant="outline" onClick={() => exportAs("skill")}>
+            <Button
+              aria-label="Download portable design system SKILL.md"
+              title="Portable skill wrapper that embeds the concise DESIGN.md summary"
+              variant="outline"
+              onClick={() => exportAs("skill")}
+            >
               <Download className="h-4 w-4" />
               Skill
             </Button>

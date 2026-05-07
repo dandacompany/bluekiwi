@@ -471,6 +471,7 @@ export default function TutorialPage() {
     { id: "start", label: t("tutorial.navStart") },
     { id: "instructions", label: t("tutorial.navInstructions") },
     { id: "workflows", label: t("tutorial.navWorkflows") },
+    { id: "design-systems", label: t("tutorial.navDesignSystems") },
     { id: "vs", label: t("tutorial.navVS") },
     { id: "skills", label: t("tutorial.navSkills") },
     { id: "execute", label: t("tutorial.navExecute") },
@@ -721,8 +722,44 @@ export default function TutorialPage() {
                 </p>
               </Section>
 
-              {/* Section 4: Visual Selection */}
-              <Section id="vs" num={4} title={t("tutorial.navVS")}>
+              <Section
+                id="design-systems"
+                num={4}
+                title={t("tutorial.navDesignSystems")}
+              >
+                <p className="mb-4 leading-relaxed text-muted-foreground">
+                  {t("tutorial.sDsIntro")}
+                </p>
+
+                <h3 className={S.subheading}>{t("tutorial.sDsFlowTitle")}</h3>
+                <div className={`${S.panel} mb-5`}>
+                  <ol className="space-y-3 text-sm text-muted-foreground">
+                    <li>{t("tutorial.sDsFlow1")}</li>
+                    <li>{t("tutorial.sDsFlow2")}</li>
+                    <li>{t("tutorial.sDsFlow3")}</li>
+                    <li>{t("tutorial.sDsFlow4")}</li>
+                  </ol>
+                </div>
+
+                <h3 className={S.subheading}>{t("tutorial.sDsFormatsTitle")}</h3>
+                <BulletList
+                  items={[
+                    t("tutorial.sDsFormatDesign"),
+                    t("tutorial.sDsFormatAdapters"),
+                    t("tutorial.sDsFormatPackage"),
+                  ]}
+                />
+
+                <h3 className={S.subheading}>
+                  {t("tutorial.sDsResourcesTitle")}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {t("tutorial.sDsResourcesDesc")}
+                </p>
+              </Section>
+
+              {/* Section 5: Visual Selection */}
+              <Section id="vs" num={5} title={t("tutorial.navVS")}>
                 <p className="mb-4 leading-relaxed text-muted-foreground">
                   {t("tutorial.sVsIntro")}
                 </p>
@@ -820,8 +857,8 @@ export default function TutorialPage() {
                 </div>
               </Section>
 
-              {/* Section 5: Skill Commands */}
-              <Section id="skills" num={5} title={t("tutorial.navSkills")}>
+              {/* Section 6: Skill Commands */}
+              <Section id="skills" num={6} title={t("tutorial.navSkills")}>
                 <p className="mb-4 leading-relaxed text-muted-foreground">
                   {t("tutorial.sSkIntro")}
                 </p>
@@ -840,6 +877,7 @@ export default function TutorialPage() {
                         [
                           ["/bk-start", t("tutorial.sSkBkStart")],
                           ["/bk-next", t("tutorial.sSkBkNext")],
+                          ["/bk-create", t("tutorial.sSkBkCreate")],
                           ["/bk-design", t("tutorial.sSkBkDesign")],
                           ["/bk-approve", t("tutorial.sSkBkApprove")],
                           ["/bk-improve", t("tutorial.sSkBkImprove")],
@@ -882,8 +920,8 @@ export default function TutorialPage() {
                 />
               </Section>
 
-              {/* Section 6: Execute */}
-              <Section id="execute" num={6} title={t("tutorial.navExecute")}>
+              {/* Section 7: Execute */}
+              <Section id="execute" num={7} title={t("tutorial.navExecute")}>
                 <p className="mb-4 leading-relaxed text-muted-foreground">
                   {t("tutorial.s4Intro")}
                 </p>
@@ -934,8 +972,8 @@ export default function TutorialPage() {
                 </p>
               </Section>
 
-              {/* Section 7: Check Tasks */}
-              <Section id="monitor" num={7} title={t("tutorial.navMonitor")}>
+              {/* Section 8: Check Tasks */}
+              <Section id="monitor" num={8} title={t("tutorial.navMonitor")}>
                 <p className="mb-4 leading-relaxed text-muted-foreground">
                   {t("tutorial.s5Intro")}
                 </p>
@@ -976,8 +1014,8 @@ export default function TutorialPage() {
                 </p>
               </Section>
 
-              {/* Section 8: Practical Example */}
-              <Section id="example" num={8} title={t("tutorial.navExample")}>
+              {/* Section 9: Practical Example */}
+              <Section id="example" num={9} title={t("tutorial.navExample")}>
                 <p className="mb-4 leading-relaxed text-muted-foreground">
                   {t("tutorial.s6Intro")}
                 </p>
@@ -1039,8 +1077,8 @@ export default function TutorialPage() {
                 </div>
               </Section>
 
-              {/* Section 9: MCP Integration */}
-              <Section id="mcp-loop" num={9} title={t("tutorial.s7Title")}>
+              {/* Section 10: MCP Integration */}
+              <Section id="mcp-loop" num={10} title={t("tutorial.s7Title")}>
                 <p className="mb-4 leading-relaxed text-muted-foreground">
                   {t("tutorial.s7Intro")}
                 </p>
@@ -1176,7 +1214,7 @@ export default function TutorialPage() {
               </Section>
 
               {/* Section 10: Tips */}
-              <Section id="tips" num={10} title={t("tutorial.navTips")}>
+              <Section id="tips" num={11} title={t("tutorial.navTips")}>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className={S.panel}>
                     <p className="text-sm font-semibold">
