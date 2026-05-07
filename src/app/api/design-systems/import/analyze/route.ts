@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { errorResponse, okResponse } from "@/lib/db";
-import { buildDesignSystemVisibilityFilter } from "@/lib/authorization";
+import {
+  buildDesignSystemVisibilityFilter,
+  canEditDesignSystem,
+} from "@/lib/authorization";
 import { withAuth } from "@/lib/with-auth";
 import {
   analyzeDesignSystemPackage,
@@ -34,7 +37,13 @@ export const POST = withAuth(
       includeInactive: true,
       q: initialAnalysis.summary.slug ?? initialAnalysis.summary.title,
     });
-    const analysis = analyzeDesignSystemPackage(rawPackage, candidates);
+    const editableCandidates = [];
+    for (const candidate of candidates) {
+      if (await canEditDesignSystem(user, candidate)) {
+        editableCandidates.push(candidate);
+      }
+    }
+    const analysis = analyzeDesignSystemPackage(rawPackage, editableCandidates);
     const res = okResponse(analysis);
     return NextResponse.json(res.body, { status: res.status });
   },

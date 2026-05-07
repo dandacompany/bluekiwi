@@ -489,7 +489,7 @@ export default function DesignSystemsPage() {
                       {importAnalysis.related_systems.length > 0 ? (
                         <div className="mt-3 space-y-1 border-t border-border pt-2">
                           <p className="font-medium text-foreground">
-                            Related systems
+                            Editable related systems
                           </p>
                           {importAnalysis.related_systems.slice(0, 3).map(
                             (item) => (

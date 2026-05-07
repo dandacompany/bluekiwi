@@ -299,8 +299,8 @@ For delete intent:
   `adapters` returns Tailwind config, shadcn registry JSON, React component
   scaffolds, HTML/CSS preview kit, and CSS custom properties.
 - `analyze_design_system_package` — inspect a package before import. Returns
-  summary metadata, token/component/asset counts, related existing systems, and
-  recommended `create` vs `version` mode.
+  summary metadata, token/component/asset counts, editable related existing
+  systems, and recommended `create` vs `version` mode.
 - `import_design_system_package` — import a BlueKiwi package export into the
   registry. Use `mode: "create"` for a separate system, or `mode: "version"`
   with `target_design_system_id` after the user chooses an existing family.

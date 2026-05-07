@@ -658,7 +658,7 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
   ),
   tool(
     "analyze_design_system_package",
-    "Analyze a BlueKiwi design-system package before import. Returns metadata, token/component/asset counts, related existing systems, and recommended create vs version mode.",
+    "Analyze a BlueKiwi design-system package before import. Returns metadata, token/component/asset counts, editable related existing systems, and recommended create vs version mode.",
     {
       package: { type: "object" },
     },
