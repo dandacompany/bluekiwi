@@ -453,8 +453,14 @@ function VisualSelector({
     if (!canSelect) return;
 
     function handleMessage(event: MessageEvent) {
-      // Filter by bk_* message type only — sandbox="allow-scripts" without allow-same-origin
-      // makes WindowProxy comparison unreliable across browsers.
+      // Provenance binding: only accept messages from THIS selector's own iframe.
+      // (event.source is a stable WindowProxy reference, comparable even for a
+      // null-origin sandboxed frame.) Prevents another mounted selector — or any
+      // other frame — from driving this one's submit.
+      if (iframeRef.current && event.source !== iframeRef.current.contentWindow) {
+        return;
+      }
+
       const msg = event.data as {
         type?: string;
         value?: string;

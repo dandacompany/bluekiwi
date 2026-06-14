@@ -18,6 +18,8 @@ import { rateLimit, clientKey } from "@/lib/rate-limit";
 import { seedBuiltinWorkflows } from "@/lib/seed-workflows";
 import { resolveOrigin } from "@/lib/url";
 
+const MIN_PASSWORD_LENGTH = 10;
+
 type Params = { params: Promise<{ token: string }> };
 
 type InviteRow = {
@@ -167,6 +169,16 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
   const username = body.username.trim();
   const password = body.password.trim();
+
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return NextResponse.json(
+      {
+        error: "weak_password",
+        message: `비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`,
+      },
+      { status: 400 },
+    );
+  }
 
   const existingUsername = await queryOne<{ id: number }>(
     `SELECT id FROM users WHERE username = $1`,

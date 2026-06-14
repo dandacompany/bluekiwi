@@ -4,6 +4,9 @@ import { queryOne, execute } from "@/lib/db";
 import { verifyPassword, hashPassword } from "@/lib/auth";
 import { createSession, verifySession } from "@/lib/session";
 import { rateLimit, clientKey } from "@/lib/rate-limit";
+import { csrfCheck } from "@/lib/csrf";
+
+const MIN_PASSWORD_LENGTH = 10;
 
 interface UserRow {
   id: number;
@@ -15,6 +18,9 @@ interface UserRow {
 }
 
 export async function POST(req: NextRequest) {
+  const csrf = csrfCheck(req);
+  if (csrf) return csrf;
+
   // 1. Verify session from cookie
   const cookieStore = await cookies();
   const token = cookieStore.get("session")?.value;
@@ -61,9 +67,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (new_password.length < 6) {
+  if (new_password.length < MIN_PASSWORD_LENGTH) {
     return NextResponse.json(
-      { error: "새 비밀번호는 최소 6자 이상이어야 합니다." },
+      {
+        error: `새 비밀번호는 최소 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`,
+      },
       { status: 400 },
     );
   }

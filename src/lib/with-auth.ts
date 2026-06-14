@@ -7,6 +7,7 @@ import {
   type User,
 } from "./auth";
 import { verifySession } from "./session";
+import { csrfCheck } from "./csrf";
 import { findActiveUserById } from "@/lib/db/repositories/auth";
 
 type Handler = (
@@ -43,6 +44,9 @@ export function withAuth(
     request: NextRequest,
     context?: unknown,
   ): Promise<NextResponse> => {
+    const csrf = csrfCheck(request);
+    if (csrf) return csrf;
+
     const authHeader = request.headers.get("authorization");
     let user: User | null = null;
 
@@ -83,6 +87,9 @@ export async function requireAuth(
   request: NextRequest,
   permission: Permission,
 ): Promise<User | NextResponse> {
+  const csrf = csrfCheck(request);
+  if (csrf) return csrf;
+
   const authHeader = request.headers.get("authorization");
   let user: User | null = null;
 
@@ -154,6 +161,9 @@ export function withOptionalAuth(
     request: NextRequest,
     context?: unknown,
   ): Promise<NextResponse> => {
+    const csrf = csrfCheck(request);
+    if (csrf) return csrf;
+
     const authHeader = request.headers.get("authorization");
 
     // No auth header → pass through (web UI compatibility)

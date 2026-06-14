@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { insertAndReturnId, queryOne } from "@/lib/db";
+import { execute, insertAndReturnId, queryOne } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { createSession } from "@/lib/session";
 import { rateLimit, clientKey } from "@/lib/rate-limit";
 import { seedBuiltinWorkflows } from "@/lib/seed-workflows";
+
+const MIN_PASSWORD_LENGTH = 10;
 
 // GET: Check if setup is needed (no users exist)
 export async function GET() {
@@ -56,19 +58,35 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (password.length < 6) {
+  if (password.length < MIN_PASSWORD_LENGTH) {
     return NextResponse.json(
-      { error: "비밀번호는 6자 이상이어야 합니다." },
+      { error: `비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.` },
       { status: 400 },
     );
   }
 
   const hash = await hashPassword(password);
 
-  const userId = await insertAndReturnId(
-    "INSERT INTO users (username, email, password_hash, role) VALUES ($1, $2, $3, 'superuser')",
+  // Conditional insert collapses the check-then-act window (the bcrypt hash above
+  // widened it): only inserts when the users table is still empty. If another
+  // concurrent first-run won the race, no row is inserted → 409.
+  const inserted = await execute(
+    `INSERT INTO users (username, email, password_hash, role)
+     SELECT $1, $2, $3, 'superuser'
+     WHERE NOT EXISTS (SELECT 1 FROM users)`,
     [username, email, hash],
   );
+  if (inserted.rowCount === 0) {
+    return NextResponse.json(
+      { error: "Setup already completed." },
+      { status: 409 },
+    );
+  }
+  const createdRow = await queryOne<{ id: number }>(
+    "SELECT id FROM users WHERE email = $1",
+    [email],
+  );
+  const userId = createdRow!.id;
 
   // Create default folder for the superuser
   const folderId = await insertAndReturnId(

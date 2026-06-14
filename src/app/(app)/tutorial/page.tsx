@@ -774,7 +774,7 @@ export default function TutorialPage() {
                     <iframe
                       srcDoc={VS_DEMO_OPTIONS}
                       className="h-72 w-full rounded-2xl border border-border/80 bg-background"
-                      sandbox="allow-scripts allow-same-origin"
+                      sandbox="allow-scripts"
                       title="bk-options demo"
                     />
                   </div>
@@ -785,7 +785,7 @@ export default function TutorialPage() {
                     <iframe
                       srcDoc={VS_DEMO_CHECKLIST}
                       className="h-72 w-full rounded-2xl border border-border/80 bg-background"
-                      sandbox="allow-scripts allow-same-origin"
+                      sandbox="allow-scripts"
                       title="bk-checklist demo"
                     />
                   </div>
@@ -796,7 +796,7 @@ export default function TutorialPage() {
                     <iframe
                       srcDoc={VS_DEMO_SLIDER}
                       className="h-72 w-full rounded-2xl border border-border/80 bg-background"
-                      sandbox="allow-scripts allow-same-origin"
+                      sandbox="allow-scripts"
                       title="bk-slider demo"
                     />
                   </div>

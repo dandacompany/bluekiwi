@@ -314,11 +314,21 @@ export interface AuthFilter {
   params: unknown[];
 }
 
+// Defense-in-depth: the visibility filter builders interpolate `tableAlias`
+// directly into SQL. All current callers pass hardcoded constants, but guard
+// against a future caller forwarding a request-derived value.
+function assertSafeAlias(tableAlias: string): void {
+  if (!/^[a-z_][a-z0-9_]*$/i.test(tableAlias)) {
+    throw new Error(`Unsafe SQL table alias: ${tableAlias}`);
+  }
+}
+
 export async function buildResourceVisibilityFilter(
   tableAlias: string,
   user: User,
   nextParamIndex: number,
 ): Promise<AuthFilter> {
+  assertSafeAlias(tableAlias);
   // Even superusers respect personal visibility in listings.
   const groups = await userGroupIds(user.id);
   const params: unknown[] = [user.id];
@@ -392,6 +402,7 @@ export async function buildFolderVisibilityFilter(
   user: User,
   nextParamIndex: number,
 ): Promise<AuthFilter> {
+  assertSafeAlias(tableAlias);
   // Even superusers respect personal visibility —
   // their folder tree shows only own + public + group-shared folders.
   const groups = await userGroupIds(user.id);
@@ -454,6 +465,7 @@ export async function buildCredentialVisibilityFilter(
   user: User,
   nextParamIndex: number,
 ): Promise<AuthFilter> {
+  assertSafeAlias(tableAlias);
   // Even superusers respect personal visibility in listings.
   const groups = await userGroupIds(user.id);
   const params: unknown[] = [user.id];

@@ -3,7 +3,6 @@ import { findLoginUserByEmail } from "@/lib/db/repositories/auth";
 import { verifyPassword } from "@/lib/auth";
 import { createSession } from "@/lib/session";
 import { rateLimit, clientKey } from "@/lib/rate-limit";
-import { resolveOrigin } from "@/lib/url";
 
 const RATE_WINDOW_MS = 15 * 60 * 1000;
 
@@ -85,7 +84,7 @@ export async function POST(req: NextRequest) {
   response.cookies.set("session", token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: resolveOrigin(req).startsWith("https://"),
+    secure: process.env.NODE_ENV === "production",
     maxAge: 60 * 60 * 24 * 7,
     path: "/",
   });
