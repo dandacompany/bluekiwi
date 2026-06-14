@@ -26,6 +26,7 @@ services:
       TEAM_NAME: ${TEAM_NAME:-}
       BLUEKIWI_VERSION: ${BLUEKIWI_VERSION:-latest}
       WS_RELAY_URL: http://ws-relay:3001
+      WS_RELAY_SECRET: ${WS_RELAY_SECRET:-}
     depends_on:
       db:
         condition: service_healthy
@@ -40,6 +41,10 @@ services:
     command: ["node", "scripts/ws-relay.js"]
     environment:
       WS_PORT: "3001"
+      # Must match the app: same JWT_SECRET to verify session cookies on WS
+      # upgrades, same WS_RELAY_SECRET to authenticate POST /notify.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      WS_RELAY_SECRET: ${WS_RELAY_SECRET:-}
 
 volumes:
   pgdata:

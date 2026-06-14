@@ -30,6 +30,10 @@ services:
     ports:
       - "${WS_PORT:-3001}:3001"
     command: ["npx", "tsx", "scripts/ws-relay.ts"]
+    # Relay shares the app's JWT_SECRET (to verify session cookies) and
+    # WS_RELAY_SECRET (to authenticate /notify) via the same env file.
+    env_file:
+      - ../.env.local
     environment:
       WS_PORT: "3001"
     volumes:
