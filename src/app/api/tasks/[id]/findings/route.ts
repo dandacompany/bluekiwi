@@ -9,6 +9,7 @@ import {
   errorResponse,
 } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
+import { requireTaskAccess } from "@/lib/task-access";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -16,7 +17,7 @@ const SEVERITY_VALUES = new Set(["BLOCK", "REVIEW", "WARN", "INFO"]);
 
 export const GET = withAuth<Params>(
   "tasks:read",
-  async (_request, _user, { params }) => {
+  async (_request, user, { params }) => {
     const { id } = await params;
     const taskId = Number(id);
     if (!Number.isFinite(taskId)) {
@@ -27,6 +28,9 @@ export const GET = withAuth<Params>(
       );
       return NextResponse.json(res.body, { status: res.status });
     }
+
+    const access = await requireTaskAccess(taskId, user, "read");
+    if (access instanceof NextResponse) return access;
 
     const task = await queryOne<Task>("SELECT id FROM tasks WHERE id = $1", [
       taskId,
@@ -52,7 +56,7 @@ export const GET = withAuth<Params>(
 
 export const POST = withAuth<Params>(
   "tasks:execute",
-  async (request: NextRequest, _user, { params }) => {
+  async (request: NextRequest, user, { params }) => {
     const { id } = await params;
     const taskId = Number(id);
     if (!Number.isFinite(taskId)) {
@@ -63,6 +67,9 @@ export const POST = withAuth<Params>(
       );
       return NextResponse.json(res.body, { status: res.status });
     }
+
+    const access = await requireTaskAccess(taskId, user, "execute");
+    if (access instanceof NextResponse) return access;
 
     const task = await queryOne<Task>("SELECT id FROM tasks WHERE id = $1", [
       taskId,

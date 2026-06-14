@@ -9,6 +9,7 @@ import {
   errorResponse,
 } from "@/lib/db";
 import { requireAuth } from "@/lib/with-auth";
+import { requireTaskAccess } from "@/lib/task-access";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -17,6 +18,9 @@ export async function GET(request: NextRequest, { params }: Params) {
   if (authResult instanceof NextResponse) return authResult;
 
   const { id } = await params;
+
+  const access = await requireTaskAccess(Number(id), authResult, "read");
+  if (access instanceof NextResponse) return access;
 
   const comments = await query<TaskComment>(
     "SELECT * FROM task_comments WHERE task_id = $1 ORDER BY step_order ASC, created_at DESC",
@@ -31,6 +35,10 @@ export async function POST(request: NextRequest, { params }: Params) {
   if (authResult instanceof NextResponse) return authResult;
 
   const { id } = await params;
+
+  const access = await requireTaskAccess(Number(id), authResult, "execute");
+  if (access instanceof NextResponse) return access;
+
   const body = await request.json();
   const { step_order, comment } = body;
 

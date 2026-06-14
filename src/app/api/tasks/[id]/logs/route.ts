@@ -9,6 +9,7 @@ import {
   errorResponse,
 } from "@/lib/db";
 import { requireAuth } from "@/lib/with-auth";
+import { requireTaskAccess } from "@/lib/task-access";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -17,6 +18,9 @@ export async function GET(request: NextRequest, { params }: Params) {
   if (authResult instanceof NextResponse) return authResult;
 
   const { id } = await params;
+
+  const access = await requireTaskAccess(Number(id), authResult, "read");
+  if (access instanceof NextResponse) return access;
 
   const logs = await query<TaskLog>(
     `SELECT tl.*, wn.visual_selection
@@ -34,6 +38,10 @@ export async function POST(request: NextRequest, { params }: Params) {
   const authResult = await requireAuth(request, "tasks:execute");
   if (authResult instanceof NextResponse) return authResult;
   const { id } = await params;
+
+  const access = await requireTaskAccess(Number(id), authResult, "execute");
+  if (access instanceof NextResponse) return access;
+
   const body = await request.json();
   const { node_id, step_order, output, status } = body;
 

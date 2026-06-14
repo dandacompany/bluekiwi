@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { queryOne, execute, okResponse, errorResponse } from "@/lib/db";
 import { requireAuth } from "@/lib/with-auth";
+import { requireTaskAccess } from "@/lib/task-access";
 import { findTaskById } from "@/lib/db/repositories/tasks";
 
 type Params = { params: Promise<{ id: string }> };
@@ -11,6 +12,10 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   const { id } = await params;
   const taskId = Number(id);
+
+  const access = await requireTaskAccess(taskId, authResult, "execute");
+  if (access instanceof NextResponse) return access;
+
   const body = await request.json();
   const { node_id, progress } = body;
 

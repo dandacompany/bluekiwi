@@ -13,6 +13,7 @@ import {
   upsertAgentRegistrySlug,
 } from "@/lib/db/repositories/tasks";
 import { requireAuth } from "@/lib/with-auth";
+import { requireTaskAccess } from "@/lib/task-access";
 import { queryOne as dbQueryOne } from "@/lib/db";
 import { findTaskById } from "@/lib/db/repositories/tasks";
 
@@ -24,6 +25,10 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   const { id } = await params;
   const taskId = Number(id);
+
+  const access = await requireTaskAccess(taskId, authResult, "execute");
+  if (access instanceof NextResponse) return access;
+
   const body = await request.json();
   const {
     node_id,

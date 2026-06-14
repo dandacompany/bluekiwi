@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { okResponse, errorResponse, type TaskLog } from "@/lib/db";
 import { requireAuth } from "@/lib/with-auth";
+import { requireTaskAccess } from "@/lib/task-access";
 import {
   advanceTaskToStep,
   completeTaskIfNoNextNode,
@@ -25,6 +26,9 @@ export async function POST(request: NextRequest, { params }: Params) {
   const taskId = Number(id);
   const body = await request.json().catch(() => ({}));
   const peek = body.peek === true;
+
+  const access = await requireTaskAccess(taskId, user, "execute");
+  if (access instanceof NextResponse) return access;
 
   let task = await findTaskById(taskId);
   if (!task) {

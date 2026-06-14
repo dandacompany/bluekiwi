@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query, execute, okResponse, errorResponse } from "@/lib/db";
 import { requireAuth } from "@/lib/with-auth";
+import { requireTaskAccess } from "@/lib/task-access";
 import { notifyTaskUpdate } from "@/lib/notify-ws";
 
 type Params = { params: Promise<{ id: string }> };
@@ -39,6 +40,10 @@ export async function GET(request: NextRequest, { params }: Params) {
 
   const { id } = await params;
   const taskId = Number(id);
+
+  const access = await requireTaskAccess(taskId, authResult, "read");
+  if (access instanceof NextResponse) return access;
+
   const nodeIdParam = request.nextUrl.searchParams.get("node_id");
 
   if (nodeIdParam) {
@@ -100,6 +105,10 @@ export async function POST(request: NextRequest, { params }: Params) {
   if (authResult instanceof NextResponse) return authResult;
 
   const { id } = await params;
+
+  const access = await requireTaskAccess(Number(id), authResult, "execute");
+  if (access instanceof NextResponse) return access;
+
   const body = await request.json();
   const { node_id, response } = body;
 
