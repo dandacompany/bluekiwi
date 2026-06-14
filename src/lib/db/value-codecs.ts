@@ -32,5 +32,10 @@ export function encodeJson(value: unknown): string {
 export function decodeJson<T = unknown>(value: unknown): T | null {
   if (value == null) return null;
   if (typeof value !== "string") return value as T;
-  return JSON.parse(value) as T;
+  try {
+    return JSON.parse(value) as T;
+  } catch (error) {
+    console.warn("[value-codecs] failed to parse JSON value", error);
+    return null;
+  }
 }

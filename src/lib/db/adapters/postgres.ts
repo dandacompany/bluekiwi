@@ -15,7 +15,15 @@ export function getPostgresPool(): Pool {
     if (!config.connectionString) {
       throw new Error("DATABASE_URL is required for postgres mode");
     }
-    pool = new Pool({ connectionString: config.connectionString, max: 20 });
+    pool = new Pool({
+      connectionString: config.connectionString,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+    });
+    pool.on("error", (err) => {
+      console.error("[pg pool] unexpected idle client error", err);
+    });
   }
   return pool;
 }
