@@ -1,4 +1,5 @@
 import type { Credential } from "@/lib/db";
+import { decryptSecret } from "./crypto";
 
 export const WORKFLOW_PACKAGE_FORMAT = "bluekiwi.workflow-package";
 export const WORKFLOW_PACKAGE_VERSION = 1;
@@ -188,7 +189,7 @@ export function evaluateCredentialRequirement(
   const serviceMismatch =
     credential.service_name.trim().toLowerCase() !==
     requirement.service_name.trim().toLowerCase();
-  const parsedSecrets = parseCredentialSecrets(credential.secrets);
+  const parsedSecrets = parseCredentialSecrets(decryptSecret(credential.secrets));
   const missingKeys = requiredKeys.filter((key) => {
     const value = parsedSecrets[key];
     return typeof value !== "string" || !value.trim();
@@ -212,7 +213,9 @@ export function buildCredentialCandidates(
 
   return credentials
     .map((credential) => {
-      const parsedSecrets = parseCredentialSecrets(credential.secrets);
+      const parsedSecrets = parseCredentialSecrets(
+        decryptSecret(credential.secrets),
+      );
       const presentKeys = new Set(
         Object.keys(parsedSecrets)
           .filter((key) => typeof parsedSecrets[key] === "string")

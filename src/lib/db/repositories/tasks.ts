@@ -4,6 +4,7 @@ import type { Task, TaskLog, Workflow, WorkflowNode } from "@/lib/db";
 import { maskSecrets } from "@/lib/db";
 import type { User } from "@/lib/auth";
 import { canUseCredential } from "@/lib/authorization";
+import { decryptSecret } from "@/lib/crypto";
 import { notifyTaskUpdate } from "@/lib/notify-ws";
 
 interface TaskRow extends Omit<
@@ -412,7 +413,7 @@ export async function resolveTaskNodeResponse(node: WorkflowNode, user: User) {
     if (cred && (await canUseCredential(user, cred))) {
       credentials = {
         service: cred.service_name,
-        secrets_masked: maskSecrets(cred.secrets),
+        secrets_masked: maskSecrets(decryptSecret(cred.secrets)),
       };
     }
   }

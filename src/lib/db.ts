@@ -5,6 +5,7 @@ import {
   type CredentialBindingStatus,
   type CredentialRequirement,
 } from "./workflow-transfer";
+import { decryptSecret } from "./crypto";
 import type { DbTransactionClient } from "./db/adapter";
 import { getDatabaseConfig } from "./db/config";
 import { decodeBoolean, decodeTimestamp } from "./db/value-codecs";
@@ -475,13 +476,16 @@ export async function resolveNodes(
     );
     let credentialBindingStatus: CredentialBindingStatus | null = null;
     if (credentialRequirement) {
-      const credential = node.credential_id
+      const credentialRow = node.credential_id
         ? await queryOne<{
             service_name: string;
             secrets: string;
           }>("SELECT service_name, secrets FROM credentials WHERE id = $1", [
             node.credential_id,
           ])
+        : null;
+      const credential = credentialRow
+        ? { ...credentialRow, secrets: decryptSecret(credentialRow.secrets) }
         : null;
       credentialBindingStatus = evaluateCredentialRequirement(
         credentialRequirement,

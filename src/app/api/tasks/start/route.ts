@@ -13,6 +13,7 @@ import {
 } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canExecute, canUseCredential } from "@/lib/authorization";
+import { decryptSecret } from "@/lib/crypto";
 import {
   evaluateCredentialRequirement,
   parseCredentialRequirement,
@@ -159,7 +160,7 @@ export const POST = withAuth(
         }
         continue;
       }
-      const cred = await queryOne<{
+      const credRow = await queryOne<{
         id: number;
         owner_id: number;
         service_name: string;
@@ -168,7 +169,8 @@ export const POST = withAuth(
         "SELECT id, owner_id, service_name, secrets FROM credentials WHERE id = $1",
         [node.credential_id],
       );
-      if (!cred) continue;
+      if (!credRow) continue;
+      const cred = { ...credRow, secrets: decryptSecret(credRow.secrets) };
       if (!(await canUseCredential(user, cred))) {
         const res = errorResponse(
           "CREDENTIAL_USE_DENIED",
@@ -280,7 +282,7 @@ export const POST = withAuth(
       if (cred) {
         credentials = {
           service: cred.service_name,
-          secrets_masked: maskSecrets(cred.secrets),
+          secrets_masked: maskSecrets(decryptSecret(cred.secrets)),
         };
       }
     }

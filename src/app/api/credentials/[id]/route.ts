@@ -10,6 +10,7 @@ import {
   canEditCredential,
   canListCredential,
 } from "@/lib/authorization";
+import { decryptSecret } from "@/lib/crypto";
 import { withAuth } from "@/lib/with-auth";
 import { loadResourceOrFail, withResource } from "@/lib/api-helpers";
 import {
@@ -28,9 +29,15 @@ export const GET = withResource<Credential>({
   notFoundMessage: "크레덴셜 없음",
   forbiddenMessage: "접근 권한 없음",
   handler: async ({ resource: cred }) => {
+    // Explicit fields only — NEVER spread the row (raw `secrets` would leak).
     const res = okResponse({
-      ...cred,
-      secrets_masked: maskSecrets(cred.secrets),
+      id: cred.id,
+      service_name: cred.service_name,
+      description: cred.description,
+      owner_id: cred.owner_id,
+      created_at: cred.created_at,
+      updated_at: cred.updated_at,
+      secrets_masked: maskSecrets(decryptSecret(cred.secrets)),
     });
     return NextResponse.json(res.body, { status: res.status });
   },
@@ -61,8 +68,13 @@ export const PUT = withAuth<Params>(
       secrets: body.secrets ?? null,
     });
     const res = okResponse({
-      ...updated!,
-      secrets_masked: maskSecrets(updated!.secrets),
+      id: updated!.id,
+      service_name: updated!.service_name,
+      description: updated!.description,
+      owner_id: updated!.owner_id,
+      created_at: updated!.created_at,
+      updated_at: updated!.updated_at,
+      secrets_masked: maskSecrets(decryptSecret(updated!.secrets)),
     });
     return NextResponse.json(res.body, { status: res.status });
   },

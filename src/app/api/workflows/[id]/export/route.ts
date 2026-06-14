@@ -9,6 +9,7 @@ import {
   type WorkflowNode,
 } from "@/lib/db";
 import { canRead } from "@/lib/authorization";
+import { decryptSecret } from "@/lib/crypto";
 import { loadResourceOrFail } from "@/lib/api-helpers";
 import { withAuth } from "@/lib/with-auth";
 import {
@@ -80,7 +81,7 @@ export const GET = withAuth<Params>(
         credentialRequirement = credential
           ? extractCredentialRequirementFromSecrets(
               credential.service_name,
-              credential.secrets,
+              decryptSecret(credential.secrets),
               credential.description,
             )
           : null;

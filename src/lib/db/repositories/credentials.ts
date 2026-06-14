@@ -1,6 +1,7 @@
 import { decodeTimestamp } from "../value-codecs";
 import { execute, insertAndReturnId, query, queryOne } from "@/lib/db";
 import type { Credential, CredentialShare } from "@/lib/db";
+import { encryptSecret } from "@/lib/crypto";
 
 interface CredentialRow extends Omit<Credential, "created_at" | "updated_at"> {
   created_at: string | Date;
@@ -46,7 +47,12 @@ export async function createCredential(input: {
   const id = await insertAndReturnId(
     `INSERT INTO credentials (service_name, description, secrets, owner_id)
      VALUES ($1, $2, $3, $4)`,
-    [input.serviceName, input.description, input.secrets, input.ownerId],
+    [
+      input.serviceName,
+      input.description,
+      encryptSecret(input.secrets),
+      input.ownerId,
+    ],
   );
   return findCredentialById(id);
 }
@@ -77,7 +83,7 @@ export async function updateCredentialById(input: {
     [
       input.serviceName,
       input.description,
-      input.secrets,
+      input.secrets === null ? null : encryptSecret(input.secrets),
       new Date().toISOString(),
       input.id,
     ],

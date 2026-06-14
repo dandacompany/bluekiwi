@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { queryOne, type Credential, okResponse, errorResponse } from "@/lib/db";
 import { withAuth } from "@/lib/with-auth";
 import { canRevealCredential } from "@/lib/authorization";
+import { decryptSecret } from "@/lib/crypto";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -25,7 +26,7 @@ export const POST = withAuth<Params>(
       );
       return NextResponse.json(res.body, { status: res.status });
     }
-    const res = okResponse({ id: cred.id, secrets: cred.secrets });
+    const res = okResponse({ id: cred.id, secrets: decryptSecret(cred.secrets) });
     return NextResponse.json(res.body, { status: res.status });
   },
 );
