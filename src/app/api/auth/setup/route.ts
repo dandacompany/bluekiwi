@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { insertAndReturnId, queryOne } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { createSession } from "@/lib/session";
+import { rateLimit, clientKey } from "@/lib/rate-limit";
 import { seedBuiltinWorkflows } from "@/lib/seed-workflows";
 
 // GET: Check if setup is needed (no users exist)
@@ -14,6 +15,26 @@ export async function GET() {
 
 // POST: Create first superuser
 export async function POST(req: NextRequest) {
+  // Throttle the first-run endpoint by IP.
+  const limit = rateLimit(clientKey(req, "setup"), {
+    limit: 5,
+    windowMs: 15 * 60 * 1000,
+  });
+  if (!limit.allowed) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "RATE_LIMITED",
+          message: "너무 많은 시도입니다. 잠시 후 다시 시도하세요.",
+        },
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil(limit.retryAfterMs / 1000)) },
+      },
+    );
+  }
+
   // Check no users exist
   const result = await queryOne<{ count: number | string }>(
     "SELECT COUNT(*) AS count FROM users",

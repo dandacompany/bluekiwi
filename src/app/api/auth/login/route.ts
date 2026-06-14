@@ -2,7 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { findLoginUserByEmail } from "@/lib/db/repositories/auth";
 import { verifyPassword } from "@/lib/auth";
 import { createSession } from "@/lib/session";
+import { rateLimit, clientKey } from "@/lib/rate-limit";
 import { resolveOrigin } from "@/lib/url";
+
+const RATE_WINDOW_MS = 15 * 60 * 1000;
+
+function rateLimitedResponse(retryAfterMs: number): NextResponse {
+  const retryAfterSec = Math.ceil(retryAfterMs / 1000);
+  return NextResponse.json(
+    {
+      error: {
+        code: "RATE_LIMITED",
+        message: "너무 많은 시도입니다. 잠시 후 다시 시도하세요.",
+      },
+    },
+    { status: 429, headers: { "Retry-After": String(retryAfterSec) } },
+  );
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -12,6 +28,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { error: "이메일과 비밀번호를 입력해주세요." },
       { status: 400 },
+    );
+  }
+
+  // Throttle brute-force / credential-stuffing: per IP+email and coarser per IP.
+  const perUser = rateLimit(clientKey(req, "login", String(email)), {
+    limit: 5,
+    windowMs: RATE_WINDOW_MS,
+  });
+  const perIp = rateLimit(clientKey(req, "login-ip"), {
+    limit: 20,
+    windowMs: RATE_WINDOW_MS,
+  });
+  if (!perUser.allowed || !perIp.allowed) {
+    // Do not leak whether the username exists.
+    return rateLimitedResponse(
+      Math.max(perUser.retryAfterMs, perIp.retryAfterMs),
     );
   }
 

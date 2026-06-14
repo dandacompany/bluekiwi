@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { queryOne, execute } from "@/lib/db";
 import { verifyPassword, hashPassword } from "@/lib/auth";
 import { createSession, verifySession } from "@/lib/session";
+import { rateLimit, clientKey } from "@/lib/rate-limit";
 
 interface UserRow {
   id: number;
@@ -26,6 +27,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { error: "세션이 만료되었습니다. 다시 로그인해주세요." },
       { status: 401 },
+    );
+  }
+
+  // Throttle repeated attempts by authenticated user id (fallback to IP).
+  const limit = rateLimit(
+    clientKey(req, "change-password", String(session.userId)),
+    { limit: 10, windowMs: 15 * 60 * 1000 },
+  );
+  if (!limit.allowed) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "RATE_LIMITED",
+          message: "너무 많은 시도입니다. 잠시 후 다시 시도하세요.",
+        },
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil(limit.retryAfterMs / 1000)) },
+      },
     );
   }
 

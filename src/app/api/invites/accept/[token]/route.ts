@@ -14,6 +14,7 @@ import {
   withTransaction,
 } from "@/lib/db";
 import { isExpired } from "@/lib/invites";
+import { rateLimit, clientKey } from "@/lib/rate-limit";
 import { seedBuiltinWorkflows } from "@/lib/seed-workflows";
 import { resolveOrigin } from "@/lib/url";
 
@@ -75,6 +76,27 @@ export async function GET(_request: NextRequest, { params }: Params) {
 
 export async function POST(request: NextRequest, { params }: Params) {
   const { token } = await params;
+
+  // Throttle by IP to stop invite-token brute force.
+  const limit = rateLimit(clientKey(request, "invite-accept"), {
+    limit: 10,
+    windowMs: 15 * 60 * 1000,
+  });
+  if (!limit.allowed) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "RATE_LIMITED",
+          message: "너무 많은 시도입니다. 잠시 후 다시 시도하세요.",
+        },
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil(limit.retryAfterMs / 1000)) },
+      },
+    );
+  }
+
   const body = (await request.json()) as {
     username?: unknown;
     password?: unknown;

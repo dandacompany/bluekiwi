@@ -8,9 +8,26 @@ export interface SessionUser {
   mustChangePassword: boolean;
 }
 
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "bluekiwi-dev-secret-change-in-production",
-);
+const DEV_FALLBACK_SECRET = "bluekiwi-dev-secret-change-in-production";
+
+function resolveSecret(): Uint8Array {
+  const configured = process.env.JWT_SECRET;
+  if (configured && configured.length > 0) {
+    return new TextEncoder().encode(configured);
+  }
+  if (process.env.NODE_ENV === "production") {
+    // Fail fast: never boot production with a forgeable default secret.
+    throw new Error(
+      "JWT_SECRET is not set. Refusing to start in production with a default secret.",
+    );
+  }
+  console.warn(
+    "[session] JWT_SECRET not set — using insecure development fallback secret. Do NOT use in production.",
+  );
+  return new TextEncoder().encode(DEV_FALLBACK_SECRET);
+}
+
+const SECRET = resolveSecret();
 const EXPIRY = "7d";
 
 export async function createSession(user: SessionUser): Promise<string> {
@@ -25,7 +42,9 @@ export async function verifySession(
   token: string,
 ): Promise<SessionUser | null> {
   try {
-    const { payload } = await jwtVerify(token, SECRET);
+    const { payload } = await jwtVerify(token, SECRET, {
+      algorithms: ["HS256"],
+    });
     return {
       userId: payload.userId as number,
       username: payload.username as string,
