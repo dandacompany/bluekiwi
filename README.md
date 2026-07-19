@@ -177,11 +177,11 @@ Use **Design Systems** in the web UI to view palettes, typography, component pre
 
 Fresh setup seeds three Open Design-inspired, full component kits alongside the built-in workflow examples:
 
-| Seed | Purpose |
-| --- | --- |
-| `Shadcn Product UI Kit` | universal React/Tailwind/shadcn product UI |
-| `Kami Editorial Paper Kit` | warm document, course, white-paper, and slide-support surfaces |
-| `Dashboard Operations Dark` | dense dark analytics, monitoring, and incident dashboards |
+| Seed                        | Purpose                                                        |
+| --------------------------- | -------------------------------------------------------------- |
+| `Shadcn Product UI Kit`     | universal React/Tailwind/shadcn product UI                     |
+| `Kami Editorial Paper Kit`  | warm document, course, white-paper, and slide-support surfaces |
+| `Dashboard Operations Dark` | dense dark analytics, monitoring, and incident dashboards      |
 
 ### Agent workflow
 
@@ -309,16 +309,16 @@ The `bluekiwi` MCP server exposes tools your agent runtime calls automatically. 
 
 ### Design systems
 
-| Tool                                                                                                      | Description                                       |
-| --------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `list_design_systems` / `get_design_system`                                                              | Browse and load registry design systems          |
-| `create_design_system` / `update_design_system` / `delete_design_system`                                  | Full design-system CRUD                          |
-| `get_design_system_section` / `update_design_system_section` / `delete_design_system_section`             | Load or edit schema, tokens, colors, typography, components, guidelines, skill, or assets by category |
-| `get_design_component` / `upsert_design_component` / `delete_design_component`                            | Load or edit one component spec                  |
-| `export_design_system`                                                                                   | Export `json`, `design`, `skill`, `bundle`, `package`, or `adapters` |
-| `analyze_design_system_package` / `import_design_system_package`                                          | Inspect and import portable design packages      |
-| `get_active_design_system` / `set_active_design_system` / `clear_active_design_system`                    | Manage the agent's active design context         |
-| `lint_design_system`                                                                                     | Check token coverage, component states, metadata, and agent-readability |
+| Tool                                                                                          | Description                                                                                           |
+| --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `list_design_systems` / `get_design_system`                                                   | Browse and load registry design systems                                                               |
+| `create_design_system` / `update_design_system` / `delete_design_system`                      | Full design-system CRUD                                                                               |
+| `get_design_system_section` / `update_design_system_section` / `delete_design_system_section` | Load or edit schema, tokens, colors, typography, components, guidelines, skill, or assets by category |
+| `get_design_component` / `upsert_design_component` / `delete_design_component`                | Load or edit one component spec                                                                       |
+| `export_design_system`                                                                        | Export `json`, `design`, `skill`, `bundle`, `package`, or `adapters`                                  |
+| `analyze_design_system_package` / `import_design_system_package`                              | Inspect and import portable design packages                                                           |
+| `get_active_design_system` / `set_active_design_system` / `clear_active_design_system`        | Manage the agent's active design context                                                              |
+| `lint_design_system`                                                                          | Check token coverage, component states, metadata, and agent-readability                               |
 
 ### Folders & sharing
 
@@ -355,29 +355,30 @@ npm install -g bluekiwi
 | `bluekiwi logout`                              | Log out and remove all credentials                   |
 | `bluekiwi upgrade`                             | Upgrade CLI and refresh MCP assets in all runtimes   |
 
-**Supported runtimes (17):**
+**Supported runtimes (18):**
 
-| #   | Runtime            | Runtime id       | Config file                                                                                                              | Format                                           |
-| --- | ------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| 1   | Claude Code        | `claude-code`    | `~/.claude.json`                                                                                                         | JSON (`mcpServers`)                              |
-| 2   | Claude Desktop     | `claude-desktop` | `~/Library/Application Support/Claude/claude_desktop_config.json` _(macOS)_                                              | JSON (`mcpServers`)                              |
-| 3   | Codex CLI          | `codex`          | `~/.codex/config.toml`                                                                                                   | TOML section                                     |
-| 4   | Gemini CLI         | `gemini-cli`     | `~/.gemini/settings.json`                                                                                                | JSON (`mcpServers`)                              |
-| 5   | OpenCode           | `opencode`       | `~/.opencode/mcp.json`                                                                                                   | JSON (`mcpServers`)                              |
-| 6   | OpenClaw           | `openclaw`       | `~/.openclaw/mcp.json`                                                                                                   | JSON (`mcpServers`)                              |
-| 7   | Cursor             | `cursor`         | `~/.cursor/mcp.json`                                                                                                     | JSON (`mcpServers`)                              |
-| 8   | Antigravity        | `antigravity`    | `~/.antigravity/mcp.json`                                                                                                | JSON (`mcpServers`)                              |
-| 9   | Windsurf           | `windsurf`       | `~/.codeium/windsurf/mcp_config.json`                                                                                    | JSON (`mcpServers`)                              |
-| 10  | Cline (VS Code)    | `cline`          | VS Code `globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`                                          | JSON (`mcpServers`)                              |
-| 11  | Roo Code (VS Code) | `roo-code`       | VS Code `globalStorage/rooveterinaryinc.roo-cline/settings/mcp_settings.json`                                            | JSON (`mcpServers`)                              |
-| 12  | VS Code (Copilot)  | `vscode`         | `<VS Code User dir>/mcp.json`                                                                                            | JSON (`servers` + `type: "stdio"`)               |
-| 13  | Continue.dev       | `continue`       | `~/.continue/mcpServers/bluekiwi.yaml`                                                                                   | YAML (standalone file)                           |
-| 14  | Zed                | `zed`            | `~/.config/zed/settings.json`                                                                                            | JSON (`context_servers`)                         |
-| 15  | Goose              | `goose`          | `~/.config/goose/config.yaml`                                                                                            | YAML (`extensions:` with managed sentinel block) |
-| 16  | JetBrains AI       | `jetbrains`      | `<JetBrains>/<each-ide-version>/mcp.json` (fans out across every IntelliJ / PyCharm / WebStorm / Rider / … installation) | JSON (`mcpServers`)                              |
-| 17  | Trae               | `trae`           | `~/Library/Application Support/Trae/User/mcp.json` _(best-effort; Trae global path is not officially documented)_        | JSON (`mcpServers`)                              |
+| #   | Runtime            | Runtime id       | Config file                                                                                                              | Format                                            |
+| --- | ------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| 1   | Claude Code        | `claude-code`    | `~/.claude.json`                                                                                                         | JSON (`mcpServers`)                               |
+| 2   | Claude Desktop     | `claude-desktop` | `~/Library/Application Support/Claude/claude_desktop_config.json` _(macOS)_                                              | JSON (`mcpServers`)                               |
+| 3   | Codex CLI          | `codex`          | `~/.codex/config.toml`                                                                                                   | TOML section                                      |
+| 4   | Gemini CLI         | `gemini-cli`     | `~/.gemini/settings.json`                                                                                                | JSON (`mcpServers`)                               |
+| 5   | OpenCode           | `opencode`       | `~/.opencode/mcp.json`                                                                                                   | JSON (`mcpServers`)                               |
+| 6   | OpenClaw           | `openclaw`       | `~/.openclaw/mcp.json`                                                                                                   | JSON (`mcpServers`)                               |
+| 7   | Cursor             | `cursor`         | `~/.cursor/mcp.json`                                                                                                     | JSON (`mcpServers`)                               |
+| 8   | Antigravity        | `antigravity`    | `~/.antigravity/mcp.json`                                                                                                | JSON (`mcpServers`)                               |
+| 9   | Windsurf           | `windsurf`       | `~/.codeium/windsurf/mcp_config.json`                                                                                    | JSON (`mcpServers`)                               |
+| 10  | Cline (VS Code)    | `cline`          | VS Code `globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`                                          | JSON (`mcpServers`)                               |
+| 11  | Roo Code (VS Code) | `roo-code`       | VS Code `globalStorage/rooveterinaryinc.roo-cline/settings/mcp_settings.json`                                            | JSON (`mcpServers`)                               |
+| 12  | VS Code (Copilot)  | `vscode`         | `<VS Code User dir>/mcp.json`                                                                                            | JSON (`servers` + `type: "stdio"`)                |
+| 13  | Continue.dev       | `continue`       | `~/.continue/mcpServers/bluekiwi.yaml`                                                                                   | YAML (standalone file)                            |
+| 14  | Zed                | `zed`            | `~/.config/zed/settings.json`                                                                                            | JSON (`context_servers`)                          |
+| 15  | Goose              | `goose`          | `~/.config/goose/config.yaml`                                                                                            | YAML (`extensions:` with managed sentinel block)  |
+| 16  | JetBrains AI       | `jetbrains`      | `<JetBrains>/<each-ide-version>/mcp.json` (fans out across every IntelliJ / PyCharm / WebStorm / Rider / … installation) | JSON (`mcpServers`)                               |
+| 17  | Trae               | `trae`           | `~/Library/Application Support/Trae/User/mcp.json` _(best-effort; Trae global path is not officially documented)_        | JSON (`mcpServers`)                               |
+| 18  | Hermes Agent       | `hermes`         | `~/.hermes/config.yaml` — profiles auto-detected as `hermes:<profile>` (`~/.hermes/profiles/<name>/config.yaml`)         | YAML (`mcp_servers:` with managed sentinel block) |
 
-After connecting, BlueKiwi also copies its built-in skills into each runtime's skills directory. Slash commands are available natively in runtimes that scan a skills directory (Claude Code, Claude Desktop, Codex, Gemini, OpenCode, OpenClaw). In runtimes without native skills support, skill files are still written (at `<base>/skills/`) for future compatibility but are not auto-loaded today.
+After connecting, BlueKiwi also copies its built-in skills into each runtime's skills directory. Slash commands are available natively in runtimes that scan a skills directory (Claude Code, Claude Desktop, Codex, Gemini, OpenCode, OpenClaw, Hermes). In runtimes without native skills support, skill files are still written (at `<base>/skills/`) for future compatibility but are not auto-loaded today.
 
 Target a single runtime with `--runtime <id>`, e.g. `bluekiwi init --runtime cursor`.
 

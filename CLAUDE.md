@@ -71,27 +71,44 @@ docker compose -f docker/docker-compose.dev.yml ps
 
 ### Docker 이미지 빌드 & 배포
 
-로컬 Mac(ARM64)에서 빌드 후 Linux 서버(x86_64)에 배포할 때 **반드시 `--platform linux/amd64`** 지정:
+이미지는 **멀티아치**(`linux/amd64,linux/arm64`)로 빌드해 GHCR에 푸시한다. Linux 서버(amd64)와 Apple Silicon Mac(arm64) 모두 동일한 태그로 네이티브 구동 — Rosetta/qemu 에뮬 없음.
+
+빌드는 **GitHub Actions** (`.github/workflows/release-docker.yml`)에서 amd64 (`ubuntu-latest`)와 arm64 (`ubuntu-24.04-arm`) 네이티브 러너 병렬로 처리한다. `local/bk-release.sh`(또는 `/bk-deploy`)는 `gh workflow run release-docker.yml`로 트리거 후 `gh run watch`로 완료 대기. Mac 로컬은 lint + Next.js build + MCP build + `git push`만 담당.
+
+수동으로 트리거하려면:
 
 ```bash
-# ❌ 잘못된 방법 — Mac ARM64 이미지가 올라가서 서버에서 "exec format error" 발생
-docker build -t ghcr.io/dandacompany/bluekiwi:latest .
-docker push ghcr.io/dandacompany/bluekiwi:latest
+gh workflow run release-docker.yml --ref main \
+  -f version=1.2.3 -f tag_latest=true
+```
 
-# ✅ 올바른 방법
-docker buildx build --platform linux/amd64 \
-  -t ghcr.io/dandacompany/bluekiwi:latest --push .
+`git tag v1.2.3 && git push origin v1.2.3`로도 같은 워크플로가 자동 트리거된다(release-docker.yml은 `push: tags: ["v*"]` 트리거 보유).
+
+❌ 로컬에서 맨손으로 `docker build`만 돌리면 단일 아치 이미지가 올라가 반대편 플랫폼에서 `exec format error`가 발생한다. GHA 경로를 통해야 멀티아치 매니페스트가 나옴.
+
+Mac에서 최신 이미지를 로컬로 스모크 테스트하려면 (버그 신고 재현 등):
+
+```bash
+mkdir /tmp/bk-smoke && cd /tmp/bk-smoke
+curl -fsSL https://raw.githubusercontent.com/dandacompany/bluekiwi/main/docker-compose.yml -o docker-compose.yml
+printf 'DB_PASSWORD=%s\nJWT_SECRET=%s\nAPP_PORT=3180\nWS_PORT=3181\n' "$(openssl rand -hex 16)" "$(openssl rand -hex 32)" > .env
+docker compose pull && docker compose up -d
+docker compose logs app | grep "\[migrate\]"   # fresh DB에 migrate.js가 순서대로 적용
 ```
 
 ### 배포 절차
 
 ```bash
-# 1. 이미지 빌드 & 푸시 (amd64)
-docker buildx build --platform linux/amd64 -t ghcr.io/dandacompany/bluekiwi:latest --push .
+# 1. 이미지 빌드 & 푸시 (GHA 멀티아치)
+gh workflow run release-docker.yml --ref main \
+  -f version=$(node -p "require('./package.json').version") -f tag_latest=true
+gh run watch  # 완료 확인
 
 # 2. 서버에서 이미지 갱신 & 재시작
 ssh DanteServer "cd /home/dante/projects/bluekiwi && docker compose pull && docker compose up -d"
 ```
+
+`/bk-deploy all with patch bump`이 위 두 단계를 포함한 전체 릴리스를 자동 처리한다.
 
 ### 초기화 (데이터 포함 완전 리셋)
 
