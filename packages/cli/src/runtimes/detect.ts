@@ -16,6 +16,7 @@ import { TraeAdapter } from "./trae.js";
 import { VscodeAdapter } from "./vscode.js";
 import { WindsurfAdapter } from "./windsurf.js";
 import { ZedAdapter } from "./zed.js";
+import { getHermesAdapters } from "./hermes.js";
 
 export function getAllAdapters(): RuntimeAdapter[] {
   return [
@@ -34,6 +35,7 @@ export function getAllAdapters(): RuntimeAdapter[] {
     new ContinueAdapter(),
     new ZedAdapter(),
     new GooseAdapter(),
+    ...getHermesAdapters(),
     new JetbrainsAdapter(),
     new TraeAdapter(),
   ];

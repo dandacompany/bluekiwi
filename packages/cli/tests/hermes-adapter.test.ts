@@ -184,3 +184,40 @@ describe("HermesAdapter (YAML sentinel)", () => {
     expect(existsSync(join(skillsDir, "bk-alpha"))).toBe(false);
   });
 });
+
+describe("getHermesAdapters (profile enumeration)", () => {
+  it("returns only the global adapter when ~/.hermes is absent", () => {
+    const adapters = getHermesAdapters();
+    expect(adapters.map((a) => a.name)).toEqual(["hermes"]);
+    expect(adapters[0].isInstalled()).toBe(false);
+  });
+
+  it("enumerates profile directories sorted, ignoring plain files", () => {
+    const profiles = join(HERMES, "profiles");
+    mkdirSync(join(profiles, "sophie"), { recursive: true });
+    mkdirSync(join(profiles, "ada"), { recursive: true });
+    writeFileSync(join(profiles, "README.md"), "not a profile");
+    const adapters = getHermesAdapters();
+    expect(adapters.map((a) => a.name)).toEqual([
+      "hermes",
+      "hermes:ada",
+      "hermes:sophie",
+    ]);
+    expect(adapters.map((a) => a.displayName)).toEqual([
+      "Hermes",
+      "Hermes (ada)",
+      "Hermes (sophie)",
+    ]);
+    expect(adapters[1].isInstalled()).toBe(true);
+  });
+
+  it("profile adapter writes to the profile tree, not the global one", () => {
+    const profileDir = join(HERMES, "profiles", "ada");
+    mkdirSync(profileDir, { recursive: true });
+    const adapter = getHermesAdapters().find((a) => a.name === "hermes:ada");
+    expect(adapter).toBeDefined();
+    adapter?.installMcp(SAMPLE);
+    expect(existsSync(join(profileDir, "config.yaml"))).toBe(true);
+    expect(existsSync(CFG)).toBe(false);
+  });
+});
