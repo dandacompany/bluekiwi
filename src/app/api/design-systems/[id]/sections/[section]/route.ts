@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DesignSystem, errorResponse, okResponse } from "@/lib/db";
-import {
-  canEditDesignSystem,
-  canReadDesignSystem,
-} from "@/lib/authorization";
+import { canEditDesignSystem, canReadDesignSystem } from "@/lib/authorization";
 import { loadResourceOrFail } from "@/lib/api-helpers";
 import { withAuth } from "@/lib/with-auth";
 import {

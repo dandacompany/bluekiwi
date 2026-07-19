@@ -617,7 +617,9 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
     {
       design_system_id: { type: "number" },
       section: { type: "string" },
-      value: { type: ["object", "array", "string", "number", "boolean", "null"] },
+      value: {
+        type: ["object", "array", "string", "number", "boolean", "null"],
+      },
       mode: { type: "string" },
     },
     ["design_system_id", "section", "value"],
@@ -648,7 +650,9 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
       design_system_id: { type: "number" },
       section: { type: "string" },
       key: { type: "string" },
-      value: { type: ["object", "array", "string", "number", "boolean", "null"] },
+      value: {
+        type: ["object", "array", "string", "number", "boolean", "null"],
+      },
     },
     ["design_system_id", "section", "key", "value"],
   ),
@@ -677,7 +681,9 @@ Response format (JSON from get_web_response): {selections, values, ranking, matr
     {
       design_system_id: { type: "number" },
       name: { type: "string" },
-      value: { type: ["object", "array", "string", "number", "boolean", "null"] },
+      value: {
+        type: ["object", "array", "string", "number", "boolean", "null"],
+      },
     },
     ["design_system_id", "name", "value"],
   ),
@@ -1131,7 +1137,10 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
   if (activeMatch) {
     const definition = findDesignSystemResourceDefinition(activeMatch[1]);
     if (!definition) throw new Error("Unsupported BlueKiwi resource URI");
-    const activeResponse = await client.request("GET", "/api/design-systems/active");
+    const activeResponse = await client.request(
+      "GET",
+      "/api/design-systems/active",
+    );
     const activeId = extractActiveDesignSystemId(activeResponse);
     if (activeId === null) {
       throw new Error("No active BlueKiwi design system is set");
@@ -1378,10 +1387,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (typeof args.folder_id === "number")
           qs.set("folder_id", String(args.folder_id));
         if (typeof args.q === "string") qs.set("q", args.q);
-        if (typeof args.category === "string") qs.set("category", args.category);
+        if (typeof args.category === "string")
+          qs.set("category", args.category);
         if (typeof args.surface === "string") qs.set("surface", args.surface);
-        if (args.include_inactive === true)
-          qs.set("include_inactive", "true");
+        if (args.include_inactive === true) qs.set("include_inactive", "true");
         const suffix = qs.toString() ? `?${qs.toString()}` : "";
         return wrap(
           await client.request("GET", `/api/design-systems${suffix}`),
@@ -1409,41 +1418,51 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return wrap(await client.request("GET", "/api/design-systems/active"));
       case "set_active_design_system": {
         const designSystemId = requireNumberArg(args, "design_system_id");
-        return wrap(
-          await client.request("PUT", "/api/design-systems/active", {
-            design_system_id: designSystemId,
-          }),
+        const result = await client.request(
+          "PUT",
+          "/api/design-systems/active",
+          { design_system_id: designSystemId },
         );
+        return wrap(addDesignSystemUrl(result, designSystemId));
       }
       case "clear_active_design_system":
-        return wrap(await client.request("DELETE", "/api/design-systems/active"));
-      case "create_design_system":
-        return wrap(await client.request("POST", "/api/design-systems", args));
+        return wrap(
+          await client.request("DELETE", "/api/design-systems/active"),
+        );
+      case "create_design_system": {
+        const result = await client.request(
+          "POST",
+          "/api/design-systems",
+          args,
+        );
+        return wrap(addDesignSystemUrl(result));
+      }
       case "seed_design_systems":
-        return wrap(await client.request("POST", "/api/design-systems/seed", {}));
+        return wrap(
+          await client.request("POST", "/api/design-systems/seed", {}),
+        );
       case "update_design_system": {
         const designSystemId = requireNumberArg(args, "design_system_id");
         const body = { ...args };
         delete body.design_system_id;
-        return wrap(
-          await client.request(
-            "PATCH",
-            `/api/design-systems/${designSystemId}`,
-            body,
-          ),
+        const result = await client.request(
+          "PATCH",
+          `/api/design-systems/${designSystemId}`,
+          body,
         );
+        return wrap(addDesignSystemUrl(result, designSystemId));
       }
       case "create_design_system_version": {
         const designSystemId = requireNumberArg(args, "design_system_id");
         const body = { ...args };
         delete body.design_system_id;
-        return wrap(
-          await client.request(
-            "POST",
-            `/api/design-systems/${designSystemId}/versions`,
-            body,
-          ),
+        const result = await client.request(
+          "POST",
+          `/api/design-systems/${designSystemId}/versions`,
+          body,
         );
+        // New version row has its own id in data.id — let the helper resolve it.
+        return wrap(addDesignSystemUrl(result));
       }
       case "list_design_system_versions": {
         const designSystemId = requireNumberArg(args, "design_system_id");
@@ -1471,34 +1490,31 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
       case "activate_design_system_version": {
         const designSystemId = requireNumberArg(args, "design_system_id");
-        return wrap(
-          await client.request(
-            "POST",
-            `/api/design-systems/${designSystemId}/activate`,
-          ),
+        const result = await client.request(
+          "POST",
+          `/api/design-systems/${designSystemId}/activate`,
         );
+        return wrap(addDesignSystemUrl(result, designSystemId));
       }
       case "add_design_system_asset": {
         const designSystemId = requireNumberArg(args, "design_system_id");
         const body = { ...args };
         delete body.design_system_id;
-        return wrap(
-          await client.request(
-            "POST",
-            `/api/design-systems/${designSystemId}/assets`,
-            body,
-          ),
+        const result = await client.request(
+          "POST",
+          `/api/design-systems/${designSystemId}/assets`,
+          body,
         );
+        return wrap(addDesignSystemUrl(result, designSystemId));
       }
       case "delete_design_system_asset": {
         const designSystemId = requireNumberArg(args, "design_system_id");
         const assetId = requireNumberArg(args, "asset_id");
-        return wrap(
-          await client.request(
-            "DELETE",
-            `/api/design-systems/${designSystemId}/assets/${assetId}`,
-          ),
+        const result = await client.request(
+          "DELETE",
+          `/api/design-systems/${designSystemId}/assets/${assetId}`,
         );
+        return wrap(addDesignSystemUrl(result, designSystemId));
       }
       case "delete_design_system": {
         const designSystemId = requireNumberArg(args, "design_system_id");
@@ -1523,23 +1539,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "update_design_system_section": {
         const designSystemId = requireNumberArg(args, "design_system_id");
         const section = requireStringArg(args, "section");
-        return wrap(
-          await client.request(
-            "PATCH",
-            `/api/design-systems/${designSystemId}/sections/${encodeURIComponent(section)}`,
-            { value: args.value, mode: args.mode },
-          ),
+        const result = await client.request(
+          "PATCH",
+          `/api/design-systems/${designSystemId}/sections/${encodeURIComponent(section)}`,
+          { value: args.value, mode: args.mode },
         );
+        return wrap(addDesignSystemUrl(result, designSystemId));
       }
       case "delete_design_system_section": {
         const designSystemId = requireNumberArg(args, "design_system_id");
         const section = requireStringArg(args, "section");
-        return wrap(
-          await client.request(
-            "DELETE",
-            `/api/design-systems/${designSystemId}/sections/${encodeURIComponent(section)}`,
-          ),
+        const result = await client.request(
+          "DELETE",
+          `/api/design-systems/${designSystemId}/sections/${encodeURIComponent(section)}`,
         );
+        return wrap(addDesignSystemUrl(result, designSystemId));
       }
       case "get_design_system_section_entry": {
         const designSystemId = requireNumberArg(args, "design_system_id");
@@ -1556,24 +1570,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const designSystemId = requireNumberArg(args, "design_system_id");
         const section = requireStringArg(args, "section");
         const key = requireStringArg(args, "key");
-        return wrap(
-          await client.request(
-            "PATCH",
-            `/api/design-systems/${designSystemId}/sections/${encodeURIComponent(section)}/${encodeURIComponent(key)}`,
-            { value: args.value },
-          ),
+        const result = await client.request(
+          "PATCH",
+          `/api/design-systems/${designSystemId}/sections/${encodeURIComponent(section)}/${encodeURIComponent(key)}`,
+          { value: args.value },
         );
+        return wrap(addDesignSystemUrl(result, designSystemId));
       }
       case "delete_design_system_section_entry": {
         const designSystemId = requireNumberArg(args, "design_system_id");
         const section = requireStringArg(args, "section");
         const key = requireStringArg(args, "key");
-        return wrap(
-          await client.request(
-            "DELETE",
-            `/api/design-systems/${designSystemId}/sections/${encodeURIComponent(section)}/${encodeURIComponent(key)}`,
-          ),
+        const result = await client.request(
+          "DELETE",
+          `/api/design-systems/${designSystemId}/sections/${encodeURIComponent(section)}/${encodeURIComponent(key)}`,
         );
+        return wrap(addDesignSystemUrl(result, designSystemId));
       }
       case "get_design_component": {
         const designSystemId = requireNumberArg(args, "design_system_id");
@@ -1588,23 +1600,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "upsert_design_component": {
         const designSystemId = requireNumberArg(args, "design_system_id");
         const name = requireStringArg(args, "name");
-        return wrap(
-          await client.request(
-            "PATCH",
-            `/api/design-systems/${designSystemId}/components/${encodeURIComponent(name)}`,
-            { value: args.value },
-          ),
+        const result = await client.request(
+          "PATCH",
+          `/api/design-systems/${designSystemId}/components/${encodeURIComponent(name)}`,
+          { value: args.value },
         );
+        return wrap(addDesignSystemUrl(result, designSystemId));
       }
       case "delete_design_component": {
         const designSystemId = requireNumberArg(args, "design_system_id");
         const name = requireStringArg(args, "name");
-        return wrap(
-          await client.request(
-            "DELETE",
-            `/api/design-systems/${designSystemId}/components/${encodeURIComponent(name)}`,
-          ),
+        const result = await client.request(
+          "DELETE",
+          `/api/design-systems/${designSystemId}/components/${encodeURIComponent(name)}`,
         );
+        return wrap(addDesignSystemUrl(result, designSystemId));
       }
       case "lint_design_system": {
         const designSystemId = requireNumberArg(args, "design_system_id");
@@ -1628,11 +1638,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           ),
         );
       }
-      case "import_design_system_package":
-        return wrap(await client.request("POST", "/api/design-systems/import", args));
+      case "import_design_system_package": {
+        const result = await client.request(
+          "POST",
+          "/api/design-systems/import",
+          args,
+        );
+        return wrap(addDesignSystemUrl(result));
+      }
       case "analyze_design_system_package":
         return wrap(
-          await client.request("POST", "/api/design-systems/import/analyze", args),
+          await client.request(
+            "POST",
+            "/api/design-systems/import/analyze",
+            args,
+          ),
         );
       case "list_instructions": {
         const qs = new URLSearchParams();
@@ -2273,7 +2293,9 @@ async function readDesignSystemResource(
 }
 
 function stringifyResourceValue(value: unknown): string {
-  return typeof value === "string" ? value : JSON.stringify(value ?? null, null, 2);
+  return typeof value === "string"
+    ? value
+    : JSON.stringify(value ?? null, null, 2);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -2284,6 +2306,46 @@ function wrap(data: unknown) {
   return {
     content: [{ type: "text", text: JSON.stringify(data) }],
   };
+}
+
+/**
+ * Attach webui_url for a design-system detail page so the client agent can
+ * surface (and `open`) it after a mutation. Mirrors the pattern used for
+ * workflows in `create_workflow` / `start_workflow`.
+ *
+ * Resolution order for the id:
+ *   1. explicit `id` argument (caller already has it),
+ *   2. `result.data.id` — used by create/version (new top-level row),
+ *   3. `result.data.design_system.id` — used by section/component/asset endpoints
+ *       which return the keyed entry plus the parent design_system summary.
+ *
+ * Returns the original result merged with `webui_url`. If no id can be
+ * resolved, the result is returned unchanged.
+ */
+function addDesignSystemUrl(result: unknown, id?: number | null): unknown {
+  let resolved = id ?? null;
+  if (resolved == null && isRecord(result)) {
+    const data = (result as { data?: unknown }).data;
+    if (isRecord(data)) {
+      const directId = (data as { id?: unknown }).id;
+      if (typeof directId === "number") {
+        resolved = directId;
+      } else {
+        const ds = (data as { design_system?: unknown }).design_system;
+        if (isRecord(ds)) {
+          const dsId = (ds as { id?: unknown }).id;
+          if (typeof dsId === "number") resolved = dsId;
+        }
+      }
+    }
+  }
+  if (resolved == null) return result;
+  const base = (apiUrl ?? "").replace(/\/$/, "");
+  if (!base) return result;
+  if (!isRecord(result)) {
+    return { data: result, webui_url: `${base}/design-systems/${resolved}` };
+  }
+  return { ...result, webui_url: `${base}/design-systems/${resolved}` };
 }
 
 function wrapError(message: string) {

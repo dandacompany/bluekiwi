@@ -166,10 +166,17 @@ Changed steps: <n>
 
 ### Step 6: Open in Browser + Offer Execution
 
-Open the workflow detail page in the browser:
+Open the workflow detail page in the browser when the host has a desktop
+opener; on headless or remote hosts, skip opening and just show the link. An
+opener failure is cosmetic — the update is already applied, so never retry the
+mutation because the browser failed to open.
 
 ```bash
-open "${WEBUI_URL}/workflows/${WORKFLOW_ID}"
+case "$(uname -s)" in
+  Darwin) open "${WEBUI_URL}/workflows/${WORKFLOW_ID}" || true ;;
+  Linux) command -v xdg-open >/dev/null && xdg-open "${WEBUI_URL}/workflows/${WORKFLOW_ID}" || true ;;
+  MINGW*|MSYS*|CYGWIN*) start "" "${WEBUI_URL}/workflows/${WORKFLOW_ID}" || true ;;
+esac
 ```
 
 `WEBUI_URL` = the `webui_url` field returned by `update_workflow` or `create_workflow`.

@@ -396,7 +396,10 @@ export default function DesignSystemsPage() {
                 ) : null}
 
                 {importMode === "version" ? (
-                  <Select value={importTargetId} onValueChange={setImportTargetId}>
+                  <Select
+                    value={importTargetId}
+                    onValueChange={setImportTargetId}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Target design system" />
                     </SelectTrigger>

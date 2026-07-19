@@ -7,7 +7,9 @@ import type { SkillBundle } from "../runtimes/base.js";
 const here = dirname(fileURLToPath(import.meta.url));
 const SKILLS_ROOT = join(here, "skills");
 
-function readSkillFiles(name: string): Array<{ path: string; content: string }> {
+function readSkillFiles(
+  name: string,
+): Array<{ path: string; content: string }> {
   const root = join(SKILLS_ROOT, name);
   const files: Array<{ path: string; content: string }> = [];
 

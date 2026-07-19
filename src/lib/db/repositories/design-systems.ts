@@ -37,21 +37,27 @@ const SUPPORTED_VISIBILITY_OVERRIDES: Array<Visibility | null> = [
 ];
 const MAX_BASE64_ASSET_BYTES = 256 * 1024;
 
-interface DesignSystemRow
-  extends Omit<DesignSystem, "is_active" | "created_at" | "updated_at"> {
+interface DesignSystemRow extends Omit<
+  DesignSystem,
+  "is_active" | "created_at" | "updated_at"
+> {
   is_active: boolean | number | string;
   created_at: string | Date;
   updated_at: string | Date;
 }
 
-interface DesignSystemVersionRow
-  extends Omit<DesignSystemVersion, "created_at" | "updated_at"> {
+interface DesignSystemVersionRow extends Omit<
+  DesignSystemVersion,
+  "created_at" | "updated_at"
+> {
   created_at: string | Date;
   updated_at: string | Date;
 }
 
-interface DesignSystemAssetRow
-  extends Omit<DesignSystemAsset, "created_at" | "updated_at"> {
+interface DesignSystemAssetRow extends Omit<
+  DesignSystemAsset,
+  "created_at" | "updated_at"
+> {
   created_at: string | Date;
   updated_at: string | Date;
 }
@@ -66,8 +72,10 @@ export interface DesignSystemEvent {
   created_at: string;
 }
 
-interface DesignSystemEventRow
-  extends Omit<DesignSystemEvent, "metadata_json" | "created_at"> {
+interface DesignSystemEventRow extends Omit<
+  DesignSystemEvent,
+  "metadata_json" | "created_at"
+> {
   metadata_json: string | Record<string, unknown>;
   created_at: string | Date;
 }
@@ -79,13 +87,7 @@ export interface DesignSystemDetail extends DesignSystem {
 
 type DesignSystemComponentDoc = {
   name: string;
-  framework:
-    | "react"
-    | "html"
-    | "mixed"
-    | "tokens"
-    | "tailwind"
-    | "shadcn";
+  framework: "react" | "html" | "mixed" | "tokens" | "tailwind" | "shadcn";
   styleSystem: string;
   description: string;
   props: Array<Record<string, unknown>>;
@@ -338,7 +340,9 @@ function normalizeDesignSystemAsset(
   };
 }
 
-function normalizeDesignSystemEvent(row: DesignSystemEventRow): DesignSystemEvent {
+function normalizeDesignSystemEvent(
+  row: DesignSystemEventRow,
+): DesignSystemEvent {
   return {
     ...row,
     metadata_json:
@@ -643,7 +647,9 @@ function normalizeVisibilityOverride(
   if (SUPPORTED_VISIBILITY_OVERRIDES.includes(value as Visibility | null)) {
     return value as Visibility | null;
   }
-  throw new Error("visibility_override must be personal, group, public, or null");
+  throw new Error(
+    "visibility_override must be personal, group, public, or null",
+  );
 }
 
 function incrementVersion(version: string): string {
@@ -658,7 +664,7 @@ function incrementVersion(version: string): string {
 function yamlDoubleQuoted(value: string): string {
   return `"${value
     .replaceAll("\\", "\\\\")
-    .replaceAll("\"", "\\\"")
+    .replaceAll('"', '\\"')
     .replaceAll("\r", "")
     .replaceAll("\n", "\\n")}"`;
 }
@@ -1034,7 +1040,11 @@ export function getDesignSystemSectionEntryValue(
 export function getDesignSystemComponentValue(
   detail: DesignSystemDetail,
   name: string,
-): { name: string; value: unknown; document: DesignSystemComponentDoc | null } | null {
+): {
+  name: string;
+  value: unknown;
+  document: DesignSystemComponentDoc | null;
+} | null {
   const value = getDesignSystemSectionEntryValue(detail, "components", name);
   if (value === null) return null;
   const document =
@@ -1095,7 +1105,9 @@ export async function updateDesignSystemSection(input: {
   } else if (section === "schema") {
     const value = ensureObjectSectionValue(section, input.value);
     const current = parseJsonObject(existing.content.schema_json);
-    schemaJson = JSON.stringify(mode === "merge" ? { ...current, ...value } : value);
+    schemaJson = JSON.stringify(
+      mode === "merge" ? { ...current, ...value } : value,
+    );
   } else if (section === "tokens") {
     const value = ensureObjectSectionValue(section, input.value);
     const current = parseJsonObject(existing.content.tokens_json);
@@ -1578,7 +1590,9 @@ export async function deleteDesignSystemAsset(input: {
 
 export function buildDesignSystemJsonExport(detail: DesignSystemDetail) {
   const colorTokens = parseJsonObject(detail.content.color_tokens_json);
-  const typographyTokens = parseJsonObject(detail.content.typography_tokens_json);
+  const typographyTokens = parseJsonObject(
+    detail.content.typography_tokens_json,
+  );
   const componentTokens = parseJsonObject(detail.content.component_tokens_json);
   return {
     design_system: {
@@ -1639,7 +1653,7 @@ function escapeHtml(value: unknown): string {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
-    .replaceAll("\"", "&quot;");
+    .replaceAll('"', "&quot;");
 }
 
 function safeCssToken(value: string, fallback: string): string {
@@ -1684,7 +1698,13 @@ function stateArrayValue(value: unknown): string[] {
   const normalize = (item: string) =>
     item.trim().toLowerCase().replaceAll("_", "-").replaceAll(" ", "-");
   if (Array.isArray(value)) {
-    return [...new Set(value.map((item) => typeof item === "string" ? normalize(item) : "").filter(Boolean))];
+    return [
+      ...new Set(
+        value
+          .map((item) => (typeof item === "string" ? normalize(item) : ""))
+          .filter(Boolean),
+      ),
+    ];
   }
   if (typeof value === "string" && value.trim()) return [normalize(value)];
   if (isPlainObject(value)) {
@@ -1850,9 +1870,7 @@ function componentDocsMarkdown(docs: DesignSystemComponentDoc[]): string {
           ? doc.install.map((item) => `- \`${item}\``).join("\n")
           : "- No install commands documented.";
       const codeBlocks = [
-        doc.react
-          ? `\n#### React\n\n\`\`\`tsx\n${doc.react}\n\`\`\``
-          : "",
+        doc.react ? `\n#### React\n\n\`\`\`tsx\n${doc.react}\n\`\`\`` : "",
         doc.html ? `\n#### HTML\n\n\`\`\`html\n${doc.html}\n\`\`\`` : "",
         doc.css ? `\n#### CSS\n\n\`\`\`css\n${doc.css}\n\`\`\`` : "",
         Object.keys(doc.tailwind).length > 0
@@ -1910,22 +1928,24 @@ function componentInventoryMarkdown(docs: DesignSystemComponentDoc[]): string {
   return [
     "| Component | Framework | States | Variants | Source |",
     "| --- | --- | --- | --- | --- |",
-    ...docs.map((doc) => {
-      const source = [
-        doc.react ? "React" : "",
-        doc.html ? "HTML" : "",
-        doc.css ? "CSS" : "",
-        Object.keys(doc.tailwind).length > 0 ? "Tailwind" : "",
-        Object.keys(doc.shadcn).length > 0 ? "shadcn/ui" : "",
-      ].filter(Boolean);
-      return [
-        `\`${doc.name}\``,
-        `\`${doc.framework}\``,
-        doc.states.length,
-        doc.variants.length,
-        source.length > 0 ? source.join(", ") : "Tokens",
-      ].join(" | ");
-    }).map((row) => `| ${row} |`),
+    ...docs
+      .map((doc) => {
+        const source = [
+          doc.react ? "React" : "",
+          doc.html ? "HTML" : "",
+          doc.css ? "CSS" : "",
+          Object.keys(doc.tailwind).length > 0 ? "Tailwind" : "",
+          Object.keys(doc.shadcn).length > 0 ? "shadcn/ui" : "",
+        ].filter(Boolean);
+        return [
+          `\`${doc.name}\``,
+          `\`${doc.framework}\``,
+          doc.states.length,
+          doc.variants.length,
+          source.length > 0 ? source.join(", ") : "Tokens",
+        ].join(" | ");
+      })
+      .map((row) => `| ${row} |`),
   ].join("\n");
 }
 
@@ -1935,27 +1955,29 @@ function componentCatalogMarkdown(docs: DesignSystemComponentDoc[]): string {
   return [
     "| Component | Framework | Style System | States | Variants | Source |",
     "| --- | --- | --- | --- | --- | --- |",
-    ...docs.map((doc) => {
-      const source = [
-        doc.react ? "React" : "",
-        doc.html ? "HTML" : "",
-        doc.css ? "CSS" : "",
-        Object.keys(doc.tailwind).length > 0 ? "Tailwind" : "",
-        Object.keys(doc.shadcn).length > 0 ? "shadcn/ui" : "",
-      ].filter(Boolean);
-      return [
-        `\`${doc.name}\``,
-        `\`${doc.framework}\``,
-        markdownValue(doc.styleSystem || "Not specified"),
-        doc.states.length > 0
-          ? doc.states.map((state) => `\`${state}\``).join(", ")
-          : "None",
-        doc.variants.length > 0
-          ? doc.variants.map((variant) => `\`${variant}\``).join(", ")
-          : "None",
-        source.length > 0 ? source.join(", ") : "Tokens only",
-      ].join(" | ");
-    }).map((row) => `| ${row} |`),
+    ...docs
+      .map((doc) => {
+        const source = [
+          doc.react ? "React" : "",
+          doc.html ? "HTML" : "",
+          doc.css ? "CSS" : "",
+          Object.keys(doc.tailwind).length > 0 ? "Tailwind" : "",
+          Object.keys(doc.shadcn).length > 0 ? "shadcn/ui" : "",
+        ].filter(Boolean);
+        return [
+          `\`${doc.name}\``,
+          `\`${doc.framework}\``,
+          markdownValue(doc.styleSystem || "Not specified"),
+          doc.states.length > 0
+            ? doc.states.map((state) => `\`${state}\``).join(", ")
+            : "None",
+          doc.variants.length > 0
+            ? doc.variants.map((variant) => `\`${variant}\``).join(", ")
+            : "None",
+          source.length > 0 ? source.join(", ") : "Tokens only",
+        ].join(" | ");
+      })
+      .map((row) => `| ${row} |`),
   ].join("\n");
 }
 
@@ -2047,7 +2069,9 @@ function missingStates(component: DesignSystemComponentDoc): string[] {
   );
 }
 
-export function lintDesignSystem(detail: DesignSystemDetail): DesignSystemLintResult {
+export function lintDesignSystem(
+  detail: DesignSystemDetail,
+): DesignSystemLintResult {
   const issues: DesignSystemLintIssue[] = [];
   const colors = parseJsonObject(detail.content.color_tokens_json);
   const typography = parseJsonObject(detail.content.typography_tokens_json);
@@ -2061,7 +2085,8 @@ export function lintDesignSystem(detail: DesignSystemDetail): DesignSystemLintRe
       code: "DS_CATEGORY_GENERIC",
       target: "metadata.category",
       message: "Design system category is generic.",
-      suggestion: "Set a product-oriented category such as Education, Developer Tools, SaaS, Dashboard, Docs, or Slides.",
+      suggestion:
+        "Set a product-oriented category such as Education, Developer Tools, SaaS, Dashboard, Docs, or Slides.",
     });
   }
   if (!detail.surface) {
@@ -2070,7 +2095,8 @@ export function lintDesignSystem(detail: DesignSystemDetail): DesignSystemLintRe
       code: "DS_SURFACE_MISSING",
       target: "metadata.surface",
       message: "Design system surface is missing.",
-      suggestion: "Set the primary surface: web, slides, docs, image, video, or audio.",
+      suggestion:
+        "Set the primary surface: web, slides, docs, image, video, or audio.",
     });
   }
 
@@ -2081,10 +2107,15 @@ export function lintDesignSystem(detail: DesignSystemDetail): DesignSystemLintRe
       code: "DS_COLOR_ROLES_SPARSE",
       target: "tokens.colors",
       message: "Color tokens are too sparse for reliable agent use.",
-      suggestion: "Define canvas, surface, ink, muted, line, accent, accentInk, and semantic state colors.",
+      suggestion:
+        "Define canvas, surface, ink, muted, line, accent, accentInk, and semantic state colors.",
     });
   }
-  const canvas = findTokenByHints(colors, [/canvas/i, /surface/i, /background/i]);
+  const canvas = findTokenByHints(colors, [
+    /canvas/i,
+    /surface/i,
+    /background/i,
+  ]);
   const ink = findTokenByHints(colors, [/ink/i, /text/i, /foreground/i]);
   if (canvas && ink) {
     const ratio = contrastRatio(canvas, ink);
@@ -2094,7 +2125,8 @@ export function lintDesignSystem(detail: DesignSystemDetail): DesignSystemLintRe
         code: "DS_CONTRAST_LOW_TEXT",
         target: "tokens.colors",
         message: `Primary text contrast is ${ratio.toFixed(2)}:1, below WCAG AA body-text guidance.`,
-        suggestion: "Adjust ink/canvas tokens to reach at least 4.5:1 contrast.",
+        suggestion:
+          "Adjust ink/canvas tokens to reach at least 4.5:1 contrast.",
       });
     }
   }
@@ -2106,7 +2138,8 @@ export function lintDesignSystem(detail: DesignSystemDetail): DesignSystemLintRe
         code: "DS_AI_DEFAULT_ACCENT",
         target: `tokens.colors.${name}`,
         message: "Palette uses a common AI-default indigo/purple accent.",
-        suggestion: "Keep it only if intentional; otherwise choose a category-specific accent.",
+        suggestion:
+          "Keep it only if intentional; otherwise choose a category-specific accent.",
       });
     }
   }
@@ -2118,7 +2151,8 @@ export function lintDesignSystem(detail: DesignSystemDetail): DesignSystemLintRe
         code: "DS_TYPOGRAPHY_ROLE_MISSING",
         target: `tokens.typography.${role}`,
         message: `Typography role '${role}' is missing.`,
-        suggestion: "Define role-based typography tokens for agent-readable hierarchy.",
+        suggestion:
+          "Define role-based typography tokens for agent-readable hierarchy.",
       });
     }
   }
@@ -2129,7 +2163,8 @@ export function lintDesignSystem(detail: DesignSystemDetail): DesignSystemLintRe
       code: "DS_COMPONENTS_EMPTY",
       target: "components",
       message: "No component documents are registered.",
-      suggestion: "Add at least button, input, card, select, dialog, alert, table, and badge for web/app systems.",
+      suggestion:
+        "Add at least button, input, card, select, dialog, alert, table, and badge for web/app systems.",
     });
   }
   for (const component of components) {
@@ -2148,10 +2183,15 @@ export function lintDesignSystem(detail: DesignSystemDetail): DesignSystemLintRe
         code: "DS_COMPONENT_STATES_MISSING",
         target: `components.${component.name}.states`,
         message: `${component.name} is missing states: ${missing.join(", ")}.`,
-        suggestion: "Document interaction states so agents can render consistent variants.",
+        suggestion:
+          "Document interaction states so agents can render consistent variants.",
       });
     }
-    if ((component.framework === "tailwind" || component.framework === "shadcn") && component.classes.length === 0) {
+    if (
+      (component.framework === "tailwind" ||
+        component.framework === "shadcn") &&
+      component.classes.length === 0
+    ) {
       addIssue(issues, {
         severity: "warning",
         code: "DS_COMPONENT_CLASSES_MISSING",
@@ -2193,7 +2233,10 @@ export function lintDesignSystem(detail: DesignSystemDetail): DesignSystemLintRe
   };
   const score = Math.max(
     0,
-    100 - issueCounts.error * 20 - issueCounts.warning * 8 - issueCounts.info * 2,
+    100 -
+      issueCounts.error * 20 -
+      issueCounts.warning * 8 -
+      issueCounts.info * 2,
   );
   return {
     ok: issueCounts.error === 0,
@@ -2323,7 +2366,11 @@ export function buildDesignSystemSkillExport(
     detail.description.trim() ||
     `Use the ${detail.title} design system from the BlueKiwi registry.`;
   const baseSkill = detail.content.skill_markdown.trim();
-  const schema = JSON.stringify(parseJsonObject(detail.content.schema_json), null, 2);
+  const schema = JSON.stringify(
+    parseJsonObject(detail.content.schema_json),
+    null,
+    2,
+  );
   const designMarkdown = buildDesignSystemDesignMarkdownExport(detail);
   const assetList = detail.assets
     .map((asset) => `- ${asset.kind}: ${asset.filename} (${asset.mime_type})`)
@@ -2409,7 +2456,10 @@ function buildTailwindConfig(detail: DesignSystemDetail): string {
   const fontFamily = Object.fromEntries(
     tokenCssRows(parseJsonObject(detail.content.typography_tokens_json), "")
       .filter(([name]) => /family|body|heading|display|mono|label/i.test(name))
-      .map(([name]) => [tailwindKey(name), `var(${cssVariableName("font", name)})`]),
+      .map(([name]) => [
+        tailwindKey(name),
+        `var(${cssVariableName("font", name)})`,
+      ]),
   );
   return `/** Generated from BlueKiwi design system: ${detail.title} (${detail.slug}) */
 export default {
@@ -2425,9 +2475,10 @@ export default {
 }
 
 function componentFileName(name: string): string {
-  return `${name
-    .replace(/[^a-zA-Z0-9가-힣]+/g, "-")
-    .replace(/^-|-$/g, "") || "Component"}.tsx`;
+  return `${
+    name.replace(/[^a-zA-Z0-9가-힣]+/g, "-").replace(/^-|-$/g, "") ||
+    "Component"
+  }.tsx`;
 }
 
 function componentIdentifier(name: string): string {
@@ -2452,13 +2503,17 @@ function buildReactSource(component: DesignSystemComponentDoc): string {
 
 function buildReactIndex(docs: DesignSystemComponentDoc[]): string {
   const reactDocs = docs.filter(
-    (doc) => doc.react || doc.framework === "react" || doc.framework === "shadcn",
+    (doc) =>
+      doc.react || doc.framework === "react" || doc.framework === "shadcn",
   );
   if (reactDocs.length === 0) {
     return "// No React component sources were registered in this design system.\n";
   }
   return reactDocs
-    .map((doc) => `export * from "./${componentFileName(doc.name).replace(/\.tsx$/, "")}";`)
+    .map(
+      (doc) =>
+        `export * from "./${componentFileName(doc.name).replace(/\.tsx$/, "")}";`,
+    )
     .join("\n");
 }
 
@@ -2490,7 +2545,7 @@ function buildShadcnRegistry(detail: DesignSystemDetail): string {
   }));
   return JSON.stringify(
     {
-      "$schema": "https://ui.shadcn.com/schema/registry.json",
+      $schema: "https://ui.shadcn.com/schema/registry.json",
       name: detail.slug,
       type: "registry:style",
       title: detail.title,
@@ -2502,7 +2557,10 @@ function buildShadcnRegistry(detail: DesignSystemDetail): string {
   );
 }
 
-function buildHtmlKit(detail: DesignSystemDetail): { html: string; css: string } {
+function buildHtmlKit(detail: DesignSystemDetail): {
+  html: string;
+  css: string;
+} {
   const docs = buildDesignSystemComponentDocs(detail);
   const css = [
     buildAdapterTokensCss(detail),
@@ -2541,7 +2599,8 @@ export function buildDesignSystemAdapterExport(detail: DesignSystemDetail) {
   const componentDocs = buildDesignSystemComponentDocs(detail);
   const htmlKit = buildHtmlKit(detail);
   const reactDocs = componentDocs.filter(
-    (doc) => doc.react || doc.framework === "react" || doc.framework === "shadcn",
+    (doc) =>
+      doc.react || doc.framework === "react" || doc.framework === "shadcn",
   );
   const files = [
     {
@@ -2702,20 +2761,31 @@ function fileJson(
   path: string,
   fallback: unknown,
 ): unknown {
-  return files.has(path) ? parseJsonValue(files.get(path) ?? "", fallback) : fallback;
+  return files.has(path)
+    ? parseJsonValue(files.get(path) ?? "", fallback)
+    : fallback;
 }
 
 function fileText(files: Map<string, string>, path: string): string {
   return files.get(path)?.trim() ?? "";
 }
 
-function inferAssetKind(filename: string, mimeType: string): DesignSystemAssetKind {
+function inferAssetKind(
+  filename: string,
+  mimeType: string,
+): DesignSystemAssetKind {
   if (/image\//i.test(mimeType)) return "image";
   if (/css/i.test(mimeType) || /\.css$/i.test(filename)) return "css";
-  if (/html|tsx|jsx|template/i.test(mimeType) || /\.(html|tsx|jsx)$/i.test(filename)) {
+  if (
+    /html|tsx|jsx|template/i.test(mimeType) ||
+    /\.(html|tsx|jsx)$/i.test(filename)
+  ) {
     return "template";
   }
-  if (/markdown|json|text/i.test(mimeType) || /\.(md|json|txt)$/i.test(filename)) {
+  if (
+    /markdown|json|text/i.test(mimeType) ||
+    /\.(md|json|txt)$/i.test(filename)
+  ) {
     return "reference";
   }
   return "other";
@@ -2725,7 +2795,9 @@ function topLevelObjectCount(value: unknown): number {
   return isPlainObject(value) ? Object.keys(value).length : 0;
 }
 
-export function parseDesignSystemPackageExport(input: unknown): ParsedDesignSystemPackage {
+export function parseDesignSystemPackageExport(
+  input: unknown,
+): ParsedDesignSystemPackage {
   const pkg = isPlainObject(input) ? input : {};
   const files = packageFileMap(pkg);
   const manifest = recordValue(pkg.package_manifest);
@@ -2777,14 +2849,17 @@ export function parseDesignSystemPackageExport(input: unknown): ParsedDesignSyst
           )
         : null;
       const mimeType =
-        isPlainObject(manifestAsset) && typeof manifestAsset.mime_type === "string"
+        isPlainObject(manifestAsset) &&
+        typeof manifestAsset.mime_type === "string"
           ? manifestAsset.mime_type
           : "text/plain";
       const rawKind =
         isPlainObject(manifestAsset) && typeof manifestAsset.kind === "string"
           ? manifestAsset.kind
           : "";
-      const kind = SUPPORTED_ASSET_KINDS.includes(rawKind as DesignSystemAssetKind)
+      const kind = SUPPORTED_ASSET_KINDS.includes(
+        rawKind as DesignSystemAssetKind,
+      )
         ? (rawKind as DesignSystemAssetKind)
         : inferAssetKind(filename, mimeType);
       return {
@@ -2817,7 +2892,9 @@ export function parseDesignSystemPackageExport(input: unknown): ParsedDesignSyst
         ? pkg.export_manifest
         : {
             imported_from: "bluekiwi-design-package",
-            package_schema_version: stringValue(manifest.package_schema_version),
+            package_schema_version: stringValue(
+              manifest.package_schema_version,
+            ),
           },
     assets,
   };
@@ -2924,27 +3001,47 @@ export function buildDesignSystemBundleExport(detail: DesignSystemDetail) {
     {
       path: "schema.json",
       mime_type: "application/json",
-      content: JSON.stringify(parseJsonObject(detail.content.schema_json), null, 2),
+      content: JSON.stringify(
+        parseJsonObject(detail.content.schema_json),
+        null,
+        2,
+      ),
     },
     {
       path: "tokens/all.json",
       mime_type: "application/json",
-      content: JSON.stringify(parseJsonObject(detail.content.tokens_json), null, 2),
+      content: JSON.stringify(
+        parseJsonObject(detail.content.tokens_json),
+        null,
+        2,
+      ),
     },
     {
       path: "tokens/colors.json",
       mime_type: "application/json",
-      content: JSON.stringify(parseJsonObject(detail.content.color_tokens_json), null, 2),
+      content: JSON.stringify(
+        parseJsonObject(detail.content.color_tokens_json),
+        null,
+        2,
+      ),
     },
     {
       path: "tokens/typography.json",
       mime_type: "application/json",
-      content: JSON.stringify(parseJsonObject(detail.content.typography_tokens_json), null, 2),
+      content: JSON.stringify(
+        parseJsonObject(detail.content.typography_tokens_json),
+        null,
+        2,
+      ),
     },
     {
       path: "tokens/components.json",
       mime_type: "application/json",
-      content: JSON.stringify(parseJsonObject(detail.content.component_tokens_json), null, 2),
+      content: JSON.stringify(
+        parseJsonObject(detail.content.component_tokens_json),
+        null,
+        2,
+      ),
     },
     {
       path: "components/README.md",
@@ -3010,38 +3107,38 @@ export function buildDesignSystemPackageExport(detail: DesignSystemDetail) {
   };
 }
 
-export function buildDesignSystemPreviewHtml(detail: DesignSystemDetail): string {
+export function buildDesignSystemPreviewHtml(
+  detail: DesignSystemDetail,
+): string {
   const colors = parseJsonObject(detail.content.color_tokens_json);
   const typography = parseJsonObject(detail.content.typography_tokens_json);
   const componentDocs = buildDesignSystemComponentDocs(detail);
   const flatColors = flattenTokenRows(colors).slice(0, 24);
   const flatTypography = flattenTokenRows(typography).slice(0, 16);
-  const primary =
-    safeCssToken(
-      flatColors.find(([, value]) => /^`#[0-9a-fA-F]{6}`$/.test(value))?.[1]
-        .replaceAll("`", "") ?? "#256D85",
-      "#256D85",
-    );
-  const surface =
-    safeCssToken(
-      flatColors
-        .find(([name]) => /surface|paper|background|canvas/i.test(name))?.[1]
-        .replaceAll("`", "") ?? "#FFFFFF",
-      "#FFFFFF",
-    );
-  const text =
-    safeCssToken(
-      flatColors
-        .find(([name]) => /text|ink|foreground/i.test(name))?.[1]
-        .replaceAll("`", "") ?? "#111827",
-      "#111827",
-    );
-  const bodyFont =
-    safeCssToken(
-      flatTypography.find(([name]) => /body|ui|sans|font/i.test(name))?.[1]
-        .replaceAll("`", "") ?? "Inter, system-ui, sans-serif",
-      "Inter, system-ui, sans-serif",
-    );
+  const primary = safeCssToken(
+    flatColors
+      .find(([, value]) => /^`#[0-9a-fA-F]{6}`$/.test(value))?.[1]
+      .replaceAll("`", "") ?? "#256D85",
+    "#256D85",
+  );
+  const surface = safeCssToken(
+    flatColors
+      .find(([name]) => /surface|paper|background|canvas/i.test(name))?.[1]
+      .replaceAll("`", "") ?? "#FFFFFF",
+    "#FFFFFF",
+  );
+  const text = safeCssToken(
+    flatColors
+      .find(([name]) => /text|ink|foreground/i.test(name))?.[1]
+      .replaceAll("`", "") ?? "#111827",
+    "#111827",
+  );
+  const bodyFont = safeCssToken(
+    flatTypography
+      .find(([name]) => /body|ui|sans|font/i.test(name))?.[1]
+      .replaceAll("`", "") ?? "Inter, system-ui, sans-serif",
+    "Inter, system-ui, sans-serif",
+  );
 
   const swatches = flatColors
     .map(

@@ -91,9 +91,10 @@ No visual selection responses recorded.
 ## Compliance Findings
 
 {if findings exist}
-| ID | Severity | Description | File |
-|----|----------|-------------|------|
-| ISMS-001 | BLOCK | Hardcoded secret | src/config.ts:42 |
+
+| ID       | Severity | Description      | File             |
+| -------- | -------- | ---------------- | ---------------- |
+| ISMS-001 | BLOCK    | Hardcoded secret | src/config.ts:42 |
 
 {if no findings}
 No compliance issues found.

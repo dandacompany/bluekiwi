@@ -416,18 +416,18 @@ system:
 
 Use the narrowest MCP tool that matches the user's scope:
 
-| User scope | Read tool | Create/update tool | Delete tool |
-| --- | --- | --- | --- |
-| Whole system metadata | `get_design_system` | `update_design_system` | `delete_design_system` |
-| New version | `get_design_system` | `create_design_system_version` | `delete_design_system` |
-| Colors/palette | `get_design_system_section` | `upsert_design_system_section_entry` or `update_design_system_section` | `delete_design_system_section_entry` or `delete_design_system_section` |
-| Typography/fonts | `get_design_system_section` | `upsert_design_system_section_entry` or `update_design_system_section` | `delete_design_system_section_entry` or `delete_design_system_section` |
-| Foundations/tokens | `get_design_system_section` | `upsert_design_system_section_entry` or `update_design_system_section` | `delete_design_system_section_entry` or `delete_design_system_section` |
-| Component catalog | `get_design_system_section` | `update_design_system_section` with `mode: "merge"` | `delete_design_system_section` |
-| One component | `get_design_component` | `upsert_design_component` | `delete_design_component` |
-| Guidelines | `get_design_system_section` | `update_design_system_section` | `delete_design_system_section` |
-| Skill instructions | `get_design_system_section` | `update_design_system_section` | `delete_design_system_section` |
-| Assets | `get_design_system_section` | `add_design_system_asset` | `delete_design_system_asset` |
+| User scope            | Read tool                   | Create/update tool                                                     | Delete tool                                                            |
+| --------------------- | --------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Whole system metadata | `get_design_system`         | `update_design_system`                                                 | `delete_design_system`                                                 |
+| New version           | `get_design_system`         | `create_design_system_version`                                         | `delete_design_system`                                                 |
+| Colors/palette        | `get_design_system_section` | `upsert_design_system_section_entry` or `update_design_system_section` | `delete_design_system_section_entry` or `delete_design_system_section` |
+| Typography/fonts      | `get_design_system_section` | `upsert_design_system_section_entry` or `update_design_system_section` | `delete_design_system_section_entry` or `delete_design_system_section` |
+| Foundations/tokens    | `get_design_system_section` | `upsert_design_system_section_entry` or `update_design_system_section` | `delete_design_system_section_entry` or `delete_design_system_section` |
+| Component catalog     | `get_design_system_section` | `update_design_system_section` with `mode: "merge"`                    | `delete_design_system_section`                                         |
+| One component         | `get_design_component`      | `upsert_design_component`                                              | `delete_design_component`                                              |
+| Guidelines            | `get_design_system_section` | `update_design_system_section`                                         | `delete_design_system_section`                                         |
+| Skill instructions    | `get_design_system_section` | `update_design_system_section`                                         | `delete_design_system_section`                                         |
+| Assets                | `get_design_system_section` | `add_design_system_asset`                                              | `delete_design_system_asset`                                           |
 
 Use full `update_design_system` only for metadata edits or when the user has
 confirmed a whole-system replacement. For all category work, load the current
@@ -580,6 +580,60 @@ agent-facing view without invoking extra mutation-capable tools. Use
 React/Tailwind/shadcn/HTML. Use `format: "package"` when another agent needs a
 portable import/apply package with `design-package.json`, or `format: "bundle"`
 when a legacy consumer expects that name for the whole payload.
+
+## Surface the detail page after mutations
+
+Every design-system mutation tool returns a `webui_url` field pointing at the
+BlueKiwi detail page (`<host>/design-systems/<id>`). Always include that URL in
+your reply so the user can open it, and optionally open it in a browser once
+per completed batch of mutations — never once per individual call.
+
+Browser-open rules:
+
+- **Batch-aware**: when a task performs several mutations (e.g. token +
+  sections + components), open the browser at most once, after the final
+  mutation of the batch succeeds. Do not open it between intermediate calls.
+- **Platform-aware**: use the opener that exists on the current host —
+  `open` (macOS), `xdg-open` (Linux desktop), or `start ""` (Windows). On
+  headless or remote hosts (no opener available, no display), skip opening
+  entirely and rely on the URL in the reply.
+- **Non-fatal**: an opener failure is a cosmetic issue, not an operation
+  failure. The mutation has already committed on the server. NEVER retry or
+  re-run a mutation because the browser failed to open, and do not report the
+  overall operation as failed.
+
+```bash
+# after the LAST successful mutation of the batch; failure here is ignorable
+case "$(uname -s)" in
+  Darwin) open "${WEBUI_URL}" || true ;;
+  Linux) command -v xdg-open >/dev/null && xdg-open "${WEBUI_URL}" || true ;;
+  MINGW*|MSYS*|CYGWIN*) start "" "${WEBUI_URL}" || true ;;
+esac
+```
+
+Where `${WEBUI_URL}` is the `webui_url` field in the tool response. Tools that
+emit it:
+
+- `create_design_system`, `update_design_system`
+- `create_design_system_version`, `activate_design_system_version`
+- `update_design_system_section`, `delete_design_system_section`
+- `upsert_design_system_section_entry`, `delete_design_system_section_entry`
+- `upsert_design_component`, `delete_design_component`
+- `add_design_system_asset`, `delete_design_system_asset`
+- `import_design_system_package`, `set_active_design_system`
+
+Whether or not a browser was opened, always surface the link in the reply so
+the user can open or re-open it later:
+
+```
+✅ Design system updated
+Title: <title> (ID: <id>)
+🔗 ${WEBUI_URL}
+```
+
+Read-only tools (`get_*`, `list_*`, `lint_design_system`, `export_*`,
+`analyze_design_system_package`, `diff_design_system_versions`) do not emit
+`webui_url` and must not trigger a browser open.
 
 ## Safety
 

@@ -100,8 +100,7 @@ export class JsonMcpAdapter implements RuntimeAdapter {
       if (!existsSync(path)) continue;
       const existing = this.readJson(path);
       const servers = existing[this.serversKey] as
-        | Record<string, unknown>
-        | undefined;
+        Record<string, unknown> | undefined;
       if (servers) delete servers[this.entryKey];
       writeFileSync(path, JSON.stringify(existing, null, 2));
     }

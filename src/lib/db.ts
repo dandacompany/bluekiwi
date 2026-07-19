@@ -156,12 +156,7 @@ export interface WorkflowShare {
 
 export type DesignSystemStatus = "draft" | "published" | "archived";
 export type DesignSystemAssetKind =
-  | "logo"
-  | "image"
-  | "css"
-  | "template"
-  | "reference"
-  | "other";
+  "logo" | "image" | "css" | "template" | "reference" | "other";
 
 export interface DesignSystem {
   id: number;

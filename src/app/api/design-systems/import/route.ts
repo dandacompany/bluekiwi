@@ -22,7 +22,8 @@ export const POST = withAuth(
   async (request: NextRequest, user) => {
     const body = await request.json();
     const mode =
-      body.mode === "version" || typeof body.target_design_system_id === "number"
+      body.mode === "version" ||
+      typeof body.target_design_system_id === "number"
         ? "version"
         : "create";
 
@@ -62,7 +63,9 @@ export const POST = withAuth(
         });
         if (errResp) return errResp;
 
-        const source = await getDesignSystemDetail(body.target_design_system_id);
+        const source = await getDesignSystemDetail(
+          body.target_design_system_id,
+        );
         if (!source) {
           const res = errorResponse(
             "NOT_FOUND",

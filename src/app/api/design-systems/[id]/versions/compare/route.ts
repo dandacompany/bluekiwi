@@ -12,7 +12,10 @@ import { parseDesignSystemId } from "../../../route-helpers";
 
 type Params = { params: Promise<{ id: string }> };
 
-function parseVersionId(value: string | null, name: string): number | NextResponse {
+function parseVersionId(
+  value: string | null,
+  name: string,
+): number | NextResponse {
   const id = Number(value);
   if (!Number.isInteger(id) || id <= 0) {
     const res = errorResponse(

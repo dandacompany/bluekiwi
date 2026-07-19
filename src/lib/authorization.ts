@@ -191,8 +191,9 @@ export async function canEditDesignSystem(
 
   const vis = await effectiveResourceVisibility(resource);
   if (vis === "group") {
-    return (await userFolderShareLevel(user, resource.folder_id)) ===
-      "contributor";
+    return (
+      (await userFolderShareLevel(user, resource.folder_id)) === "contributor"
+    );
   }
   return false;
 }

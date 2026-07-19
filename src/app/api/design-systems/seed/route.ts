@@ -8,7 +8,9 @@ import { findPersonalDesignSystemWorkspaceFolderId } from "@/lib/db/repositories
 export const POST = withAuth(
   "design_systems:create",
   async (_request: NextRequest, user) => {
-    const workspaceId = await findPersonalDesignSystemWorkspaceFolderId(user.id);
+    const workspaceId = await findPersonalDesignSystemWorkspaceFolderId(
+      user.id,
+    );
     if (!workspaceId) {
       const res = errorResponse(
         "WORKSPACE_MISSING",

@@ -248,7 +248,12 @@ describe.each(SPECS)("$name adapter", (spec) => {
 
     expect(
       existsSync(
-        join(adapter.getSkillsDir(), "bk-design", "references", "craft-rules.md"),
+        join(
+          adapter.getSkillsDir(),
+          "bk-design",
+          "references",
+          "craft-rules.md",
+        ),
       ),
     ).toBe(true);
   });

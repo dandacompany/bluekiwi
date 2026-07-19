@@ -4,8 +4,7 @@ import { withAuth } from "./with-auth";
 import type { User, Permission } from "./auth";
 
 export type ResourceLoadResult<T> =
-  | { resource: T; response: null }
-  | { resource: null; response: NextResponse };
+  { resource: T; response: null } | { resource: null; response: NextResponse };
 
 export interface LoadResourceOrFailOptions<T> {
   table: string;

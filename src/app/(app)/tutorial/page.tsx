@@ -741,7 +741,9 @@ export default function TutorialPage() {
                   </ol>
                 </div>
 
-                <h3 className={S.subheading}>{t("tutorial.sDsFormatsTitle")}</h3>
+                <h3 className={S.subheading}>
+                  {t("tutorial.sDsFormatsTitle")}
+                </h3>
                 <BulletList
                   items={[
                     t("tutorial.sDsFormatDesign"),

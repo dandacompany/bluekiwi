@@ -208,10 +208,17 @@ Immediately validate the `create_workflow` result:
 
 ## Step 8: Report Result + Open in Browser
 
-On success:
+On success, open the workflow detail page when the host has a desktop opener;
+on headless or remote hosts, skip opening and just show the link. An opener
+failure is cosmetic — the import is already done, so never retry the import
+because the browser failed to open.
 
 ```bash
-open "${WEBUI_URL}/workflows/${WORKFLOW_ID}"
+case "$(uname -s)" in
+  Darwin) open "${WEBUI_URL}/workflows/${WORKFLOW_ID}" || true ;;
+  Linux) command -v xdg-open >/dev/null && xdg-open "${WEBUI_URL}/workflows/${WORKFLOW_ID}" || true ;;
+  MINGW*|MSYS*|CYGWIN*) start "" "${WEBUI_URL}/workflows/${WORKFLOW_ID}" || true ;;
+esac
 ```
 
 `WEBUI_URL` = the `webui_url` field returned by `create_workflow`.

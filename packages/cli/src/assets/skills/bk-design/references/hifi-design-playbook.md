@@ -48,6 +48,7 @@ For HiFi work, present at least three options plus custom input:
 ## Recommended Design Directions
 
 ### A. [Direction Name]
+
 - Fit: [why this matches the product]
 - Palette: [role names and hex values]
 - Type: [font choices by role]
@@ -57,9 +58,11 @@ For HiFi work, present at least three options plus custom input:
 - Risks: [where the system becomes memorable, with tradeoffs]
 
 ### B. ...
+
 ### C. ...
 
 ### Custom
+
 Describe a reference product, mood, color, font, or constraint.
 ```
 

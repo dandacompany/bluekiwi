@@ -30,12 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 type JsonMap = Record<string, unknown>;
 
 type ExportFormat =
-  | "json"
-  | "skill"
-  | "design"
-  | "bundle"
-  | "package"
-  | "adapters";
+  "json" | "skill" | "design" | "bundle" | "package" | "adapters";
 
 type TokenEntry = {
   path: string;
@@ -106,13 +101,7 @@ interface DesignSystemEventItem {
 
 type ComponentDoc = {
   name: string;
-  framework:
-    | "react"
-    | "html"
-    | "mixed"
-    | "tokens"
-    | "tailwind"
-    | "shadcn";
+  framework: "react" | "html" | "mixed" | "tokens" | "tailwind" | "shadcn";
   styleSystem: string;
   description: string;
   props: Array<JsonMap>;
@@ -252,7 +241,11 @@ function renameJsonPathEntry(json: string, from: string, to: string): string {
     (entry) => entry.path === from,
   );
   if (!source) return json;
-  return setJsonPathEntry(deleteJsonPathEntry(json, from), trimmed, source.value);
+  return setJsonPathEntry(
+    deleteJsonPathEntry(json, from),
+    trimmed,
+    source.value,
+  );
 }
 
 function updateContent(
@@ -484,9 +477,9 @@ export default function DesignSystemDetailPage() {
   const [events, setEvents] = useState<DesignSystemEventItem[]>([]);
   const [versionSummary, setVersionSummary] =
     useState<DesignSystemVersionSummary | null>(null);
-  const [activeDesignSystemId, setActiveDesignSystemId] = useState<number | null>(
-    null,
-  );
+  const [activeDesignSystemId, setActiveDesignSystemId] = useState<
+    number | null
+  >(null);
   const [selectedComponentName, setSelectedComponentName] = useState<
     string | null
   >(null);
@@ -547,7 +540,9 @@ export default function DesignSystemDetailPage() {
   const componentFrameworks = useMemo(
     () => [
       "all",
-      ...Array.from(new Set(componentDocs.map((item) => item.framework))).sort(),
+      ...Array.from(
+        new Set(componentDocs.map((item) => item.framework)),
+      ).sort(),
     ],
     [componentDocs],
   );
@@ -572,8 +567,9 @@ export default function DesignSystemDetailPage() {
   }, [componentDocs, componentSearch, frameworkFilter]);
   const selectedComponent = useMemo(
     () =>
-      componentDocs.find((component) => component.name === selectedComponentName) ??
-      null,
+      componentDocs.find(
+        (component) => component.name === selectedComponentName,
+      ) ?? null,
     [componentDocs, selectedComponentName],
   );
   const componentStats = useMemo(() => {
@@ -606,7 +602,9 @@ export default function DesignSystemDetailPage() {
       const typography_tokens = parseJsonMap(
         detail.content.typography_tokens_json,
       );
-      const component_tokens = parseJsonMap(detail.content.component_tokens_json);
+      const component_tokens = parseJsonMap(
+        detail.content.component_tokens_json,
+      );
       const tokens = {
         ...parseJsonMap(detail.content.tokens_json),
         color: color_tokens,
@@ -646,7 +644,9 @@ export default function DesignSystemDetailPage() {
 
   async function exportAs(format: ExportFormat) {
     setMessage("");
-    const res = await fetch(`/api/design-systems/${id}/export?format=${format}`);
+    const res = await fetch(
+      `/api/design-systems/${id}/export?format=${format}`,
+    );
     const json = await res.json();
     if (!res.ok) {
       setMessage(json?.error?.message ?? "Export failed");
@@ -662,7 +662,9 @@ export default function DesignSystemDetailPage() {
     const content = isJsonExport
       ? JSON.stringify(data, null, 2)
       : String(data.content ?? "");
-    const baseName = safeFilename(detail?.slug || detail?.title || `design-${id}`);
+    const baseName = safeFilename(
+      detail?.slug || detail?.title || `design-${id}`,
+    );
     const filename =
       typeof data.filename === "string"
         ? data.filename
@@ -676,7 +678,11 @@ export default function DesignSystemDetailPage() {
           }[format];
 
     setExportContent(content);
-    downloadTextFile(filename, content, isJsonExport ? "application/json" : "text/markdown");
+    downloadTextFile(
+      filename,
+      content,
+      isJsonExport ? "application/json" : "text/markdown",
+    );
     setMessage(`Downloaded ${filename}`);
   }
 
@@ -707,7 +713,9 @@ export default function DesignSystemDetailPage() {
     const res = await fetch("/api/design-systems/active", { method: "DELETE" });
     if (!res.ok) {
       const json = await res.json().catch(() => null);
-      setMessage(json?.error?.message ?? "Failed to clear active design system");
+      setMessage(
+        json?.error?.message ?? "Failed to clear active design system",
+      );
       return;
     }
     setActiveDesignSystemId(null);
@@ -750,7 +758,9 @@ export default function DesignSystemDetailPage() {
         ? "Version is already active"
         : `Activated version ${versionId}`,
     );
-    const versionsRes = await fetch(`/api/design-systems/${versionId}/versions`);
+    const versionsRes = await fetch(
+      `/api/design-systems/${versionId}/versions`,
+    );
     const versionsJson = await versionsRes.json();
     setVersionSummary(versionsJson.data ?? null);
     if (versionId === Number(id)) {
@@ -886,22 +896,38 @@ export default function DesignSystemDetailPage() {
 
       <div className="grid gap-6 p-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <section className="space-y-5">
-          <Panel title="Registry Overview" icon={<Info className="h-4 w-4" />} id="overview">
+          <Panel
+            title="Registry Overview"
+            icon={<Info className="h-4 w-4" />}
+            id="overview"
+          >
             <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
               <SummaryMetric label="Colors" value={colorEntries.length} />
-              <SummaryMetric label="Type Tokens" value={typographyEntries.length} />
+              <SummaryMetric
+                label="Type Tokens"
+                value={typographyEntries.length}
+              />
               <SummaryMetric label="Components" value={componentDocs.length} />
-              <SummaryMetric label="Frameworks" value={componentStats.frameworks} />
+              <SummaryMetric
+                label="Frameworks"
+                value={componentStats.frameworks}
+              />
               <SummaryMetric label="Assets" value={detail.assets.length} />
               <SummaryMetric
                 label="State Gaps"
-                tone={componentStats.withMissingStates > 0 ? "warning" : "success"}
+                tone={
+                  componentStats.withMissingStates > 0 ? "warning" : "success"
+                }
                 value={componentStats.withMissingStates}
               />
             </div>
           </Panel>
 
-          <Panel title="Identity" icon={<FileText className="h-4 w-4" />} id="identity">
+          <Panel
+            title="Identity"
+            icon={<FileText className="h-4 w-4" />}
+            id="identity"
+          >
             <div className="grid gap-3 md:grid-cols-2">
               <Input
                 value={detail.title}
@@ -939,7 +965,11 @@ export default function DesignSystemDetailPage() {
             </div>
           </Panel>
 
-          <Panel title="Showcase Preview" icon={<Layers className="h-4 w-4" />} id="preview">
+          <Panel
+            title="Showcase Preview"
+            icon={<Layers className="h-4 w-4" />}
+            id="preview"
+          >
             <iframe
               className="h-[520px] w-full rounded-lg border border-border bg-white"
               title={`${detail.title} showcase preview`}
@@ -947,11 +977,15 @@ export default function DesignSystemDetailPage() {
             />
           </Panel>
 
-          <Panel title="Color Palette" icon={<Palette className="h-4 w-4" />} id="colors">
+          <Panel
+            title="Color Palette"
+            icon={<Palette className="h-4 w-4" />}
+            id="colors"
+          >
             <div className="mb-4 overflow-hidden rounded-lg border border-border">
               <div className="flex h-16">
-                {colorEntries.filter((entry) => isHexColor(entry.value)).length >
-                0 ? (
+                {colorEntries.filter((entry) => isHexColor(entry.value))
+                  .length > 0 ? (
                   colorEntries
                     .filter((entry) => isHexColor(entry.value))
                     .slice(0, 12)
@@ -973,7 +1007,10 @@ export default function DesignSystemDetailPage() {
                 <PaletteMetric label="Tokens" value={colorEntries.length} />
                 <PaletteMetric
                   label="Hex Colors"
-                  value={colorEntries.filter((entry) => isHexColor(entry.value)).length}
+                  value={
+                    colorEntries.filter((entry) => isHexColor(entry.value))
+                      .length
+                  }
                 />
                 <PaletteMetric
                   label="Nested Paths"
@@ -1045,7 +1082,11 @@ export default function DesignSystemDetailPage() {
             </Button>
           </Panel>
 
-          <Panel title="Typography" icon={<Type className="h-4 w-4" />} id="typography">
+          <Panel
+            title="Typography"
+            icon={<Type className="h-4 w-4" />}
+            id="typography"
+          >
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {typographyEntries.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
@@ -1123,7 +1164,11 @@ export default function DesignSystemDetailPage() {
             />
           </Panel>
 
-          <Panel title="Component Library" icon={<Box className="h-4 w-4" />} id="components">
+          <Panel
+            title="Component Library"
+            icon={<Box className="h-4 w-4" />}
+            id="components"
+          >
             <ComponentLibraryStats stats={componentStats} />
             <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
               <Input
@@ -1224,7 +1269,10 @@ export default function DesignSystemDetailPage() {
             </div>
           </Panel>
 
-          <Panel title="Component Asset Sources" icon={<Layers className="h-4 w-4" />}>
+          <Panel
+            title="Component Asset Sources"
+            icon={<Layers className="h-4 w-4" />}
+          >
             <div className="space-y-3">
               {detail.assets
                 .filter((item) =>
@@ -1321,7 +1369,11 @@ function VersionHistoryPanel({
   onOpen: (versionId: number) => void;
 }) {
   return (
-    <Panel title="Version History" icon={<History className="h-4 w-4" />} id={id}>
+    <Panel
+      title="Version History"
+      icon={<History className="h-4 w-4" />}
+      id={id}
+    >
       {versions.length === 0 ? (
         <p className="text-sm text-muted-foreground">No version history.</p>
       ) : (
@@ -1344,7 +1396,9 @@ function VersionHistoryPanel({
                       >
                         v{version.version}
                       </button>
-                      {isActive ? <Badge variant="success">Active</Badge> : null}
+                      {isActive ? (
+                        <Badge variant="success">Active</Badge>
+                      ) : null}
                       {isCurrent ? (
                         <Badge variant="secondary">Current</Badge>
                       ) : null}
@@ -1434,7 +1488,10 @@ function Panel({
   children: ReactNode;
 }) {
   return (
-    <section className="scroll-mt-16 rounded-lg border border-border bg-card p-4" id={id}>
+    <section
+      className="scroll-mt-16 rounded-lg border border-border bg-card p-4"
+      id={id}
+    >
       <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
         {icon}
         {title}
@@ -1501,8 +1558,14 @@ function ColorToken({
         onChange={(event) => onChange(event.target.value)}
       />
       <div className="min-w-0 space-y-2">
-        <Input value={name} onChange={(event) => onRename(event.target.value)} />
-        <Input value={value} onChange={(event) => onChange(event.target.value)} />
+        <Input
+          value={name}
+          onChange={(event) => onRename(event.target.value)}
+        />
+        <Input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        />
       </div>
       <Button variant="ghost" size="icon" onClick={onDelete}>
         <Trash2 className="h-4 w-4" />
@@ -1527,7 +1590,10 @@ function TypographyToken({
   return (
     <div className="rounded-lg border border-border p-3">
       <div className="grid grid-cols-[1fr_auto] gap-2">
-        <Input value={name} onChange={(event) => onRename(event.target.value)} />
+        <Input
+          value={name}
+          onChange={(event) => onRename(event.target.value)}
+        />
         <Button variant="ghost" size="icon" onClick={onDelete}>
           <Trash2 className="h-4 w-4" />
         </Button>
@@ -1661,7 +1727,9 @@ function ComponentDetailDialog({
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Badge variant="neutral">{component.props.length} props</Badge>
-              <Badge variant="neutral">{component.variants.length} variants</Badge>
+              <Badge variant="neutral">
+                {component.variants.length} variants
+              </Badge>
               <Badge variant="neutral">{component.states.length} states</Badge>
               <Badge variant="neutral">
                 {sources.length > 0 ? sources.join(" / ") : "tokens only"}
@@ -1741,10 +1809,16 @@ function ComponentDetailDialog({
             component.install.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2">
                 <DetailSection title="Dependencies">
-                  <CodeList items={component.dependencies} empty="No dependencies." />
+                  <CodeList
+                    items={component.dependencies}
+                    empty="No dependencies."
+                  />
                 </DetailSection>
                 <DetailSection title="Install">
-                  <CodeList items={component.install} empty="No install commands." />
+                  <CodeList
+                    items={component.install}
+                    empty="No install commands."
+                  />
                 </DetailSection>
               </div>
             ) : null}
@@ -1809,13 +1883,7 @@ function DetailSection({
   );
 }
 
-function ChipList({
-  items,
-  empty,
-}: {
-  items: string[];
-  empty: string;
-}) {
+function ChipList({ items, empty }: { items: string[]; empty: string }) {
   if (items.length === 0) {
     return <p className="text-sm text-muted-foreground">{empty}</p>;
   }
@@ -1830,20 +1898,17 @@ function ChipList({
   );
 }
 
-function CodeList({
-  items,
-  empty,
-}: {
-  items: string[];
-  empty: string;
-}) {
+function CodeList({ items, empty }: { items: string[]; empty: string }) {
   if (items.length === 0) {
     return <p className="text-sm text-muted-foreground">{empty}</p>;
   }
   return (
     <div className="space-y-1">
       {items.map((item) => (
-        <code key={item} className="block rounded-md bg-muted/50 px-2 py-1 text-xs">
+        <code
+          key={item}
+          className="block rounded-md bg-muted/50 px-2 py-1 text-xs"
+        >
           {item}
         </code>
       ))}

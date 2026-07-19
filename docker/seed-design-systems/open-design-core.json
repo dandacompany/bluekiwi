@@ -8,17 +8,9 @@
     "surface": "web",
     "schema": {
       "version": "1.0",
-      "mediums": [
-        "web",
-        "app"
-      ],
+      "mediums": ["web", "app"],
       "archetype": "product-ui-component-kit",
-      "supports": [
-        "react",
-        "tailwindcss",
-        "shadcn-ui",
-        "html-css"
-      ],
+      "supports": ["react", "tailwindcss", "shadcn-ui", "html-css"],
       "source_reference": {
         "project": "nexu-io/open-design",
         "path": "design-systems/shadcn/DESIGN.md",
@@ -152,9 +144,7 @@
           "class-variance-authority",
           "lucide-react"
         ],
-        "install": [
-          "npx shadcn@latest add button"
-        ],
+        "install": ["npx shadcn@latest add button"],
         "preview": {
           "html": "<div class=\"kit-row\"><button class=\"kit-button\">Save changes</button><button class=\"kit-button kit-button-outline\">Cancel</button></div>",
           "css": ".kit-row{display:flex;gap:8px;align-items:center}.kit-button{height:36px;border:1px solid #2563EB;border-radius:6px;background:#2563EB;color:#FFFFFF;padding:0 12px;font:600 14px Inter, Pretendard, system-ui, sans-serif}.kit-button-outline{background:#FFFFFF;color:#0F172A;border-color:#CBD5E1}"
@@ -180,9 +170,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "button"
-          ],
+          "registry_items": ["button"],
           "dependencies": [
             "@radix-ui/react-slot",
             "class-variance-authority",
@@ -206,19 +194,8 @@
             "description": "Short example value"
           }
         ],
-        "variants": [
-          "default",
-          "with-icon",
-          "invalid",
-          "readonly"
-        ],
-        "states": [
-          "default",
-          "hover",
-          "focus-visible",
-          "disabled",
-          "error"
-        ],
+        "variants": ["default", "with-icon", "invalid", "readonly"],
+        "states": ["default", "hover", "focus-visible", "disabled", "error"],
         "classes": [
           "h-9",
           "rounded-md",
@@ -227,9 +204,7 @@
           "focus-visible:ring-2",
           "aria-invalid:border-destructive"
         ],
-        "install": [
-          "npx shadcn@latest add input label"
-        ],
+        "install": ["npx shadcn@latest add input label"],
         "preview": {
           "html": "<label class=\"kit-field\"><span>Project name</span><input class=\"kit-input\" placeholder=\"Agent Console\" /></label>",
           "css": ".kit-field{display:grid;gap:6px;font:600 13px Inter, Pretendard, system-ui, sans-serif;color:#0F172A}.kit-input{height:36px;border:1px solid #CBD5E1;border-radius:6px;background:#FFFFFF;color:#0F172A;padding:0 10px;font:14px Inter, Pretendard, system-ui, sans-serif}"
@@ -254,9 +229,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "input"
-          ],
+          "registry_items": ["input"],
           "dependencies": []
         }
       },
@@ -271,18 +244,8 @@
             "description": "Default visible height"
           }
         ],
-        "variants": [
-          "default",
-          "invalid",
-          "monospace"
-        ],
-        "states": [
-          "default",
-          "hover",
-          "focus-visible",
-          "disabled",
-          "error"
-        ],
+        "variants": ["default", "invalid", "monospace"],
+        "states": ["default", "hover", "focus-visible", "disabled", "error"],
         "classes": [
           "min-h-24",
           "rounded-md",
@@ -290,9 +253,7 @@
           "p-3",
           "focus-visible:ring-2"
         ],
-        "install": [
-          "npx shadcn@latest add textarea"
-        ],
+        "install": ["npx shadcn@latest add textarea"],
         "preview": {
           "html": "<textarea class=\"kit-textarea\" placeholder=\"Describe the agent behavior\"></textarea>",
           "css": ".kit-textarea{width:100%;min-height:96px;border:1px solid #CBD5E1;border-radius:6px;background:#FFFFFF;color:#0F172A;padding:10px 12px;font:14px/1.5 Inter, Pretendard, system-ui, sans-serif;resize:vertical}"
@@ -316,9 +277,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "textarea"
-          ],
+          "registry_items": ["textarea"],
           "dependencies": []
         }
       },
@@ -333,11 +292,7 @@
             "description": "Available choices"
           }
         ],
-        "variants": [
-          "default",
-          "compact",
-          "invalid"
-        ],
+        "variants": ["default", "compact", "invalid"],
         "states": [
           "default",
           "hover",
@@ -353,12 +308,8 @@
           "bg-background",
           "data-[state=open]:ring-2"
         ],
-        "dependencies": [
-          "@radix-ui/react-select"
-        ],
-        "install": [
-          "npx shadcn@latest add select"
-        ],
+        "dependencies": ["@radix-ui/react-select"],
+        "install": ["npx shadcn@latest add select"],
         "preview": {
           "html": "<button class=\"kit-select\">Published <span>⌄</span></button>",
           "css": ".kit-select{height:36px;min-width:180px;border:1px solid #CBD5E1;border-radius:6px;background:#FFFFFF;color:#0F172A;padding:0 10px;display:flex;justify-content:space-between;align-items:center;font:14px Inter, Pretendard, system-ui, sans-serif}"
@@ -382,12 +333,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "select"
-          ],
-          "dependencies": [
-            "@radix-ui/react-select"
-          ]
+          "registry_items": ["select"],
+          "dependencies": ["@radix-ui/react-select"]
         }
       },
       "Checkbox": {
@@ -401,11 +348,7 @@
             "description": "Current check state"
           }
         ],
-        "variants": [
-          "default",
-          "indeterminate",
-          "invalid"
-        ],
+        "variants": ["default", "indeterminate", "invalid"],
         "states": [
           "default",
           "hover",
@@ -421,12 +364,8 @@
           "border",
           "data-[state=checked]:bg-primary"
         ],
-        "dependencies": [
-          "@radix-ui/react-checkbox"
-        ],
-        "install": [
-          "npx shadcn@latest add checkbox"
-        ],
+        "dependencies": ["@radix-ui/react-checkbox"],
+        "install": ["npx shadcn@latest add checkbox"],
         "preview": {
           "html": "<label class=\"kit-check\"><span class=\"kit-checkbox\">✓</span><span>Include component adapters</span></label>",
           "css": ".kit-check{display:flex;gap:8px;align-items:center;font:14px Inter, Pretendard, system-ui, sans-serif;color:#0F172A}.kit-checkbox{width:16px;height:16px;border-radius:4px;background:#2563EB;color:#FFFFFF;display:grid;place-items:center;font-size:11px}"
@@ -449,12 +388,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "checkbox"
-          ],
-          "dependencies": [
-            "@radix-ui/react-checkbox"
-          ]
+          "registry_items": ["checkbox"],
+          "dependencies": ["@radix-ui/react-checkbox"]
         }
       },
       "RadioGroup": {
@@ -468,11 +403,7 @@
             "description": "Selected option"
           }
         ],
-        "variants": [
-          "default",
-          "card",
-          "segmented"
-        ],
+        "variants": ["default", "card", "segmented"],
         "states": [
           "default",
           "hover",
@@ -481,28 +412,16 @@
           "disabled",
           "error"
         ],
-        "classes": [
-          "grid",
-          "gap-2",
-          "data-[state=checked]:border-primary"
-        ],
-        "dependencies": [
-          "@radix-ui/react-radio-group"
-        ],
-        "install": [
-          "npx shadcn@latest add radio-group"
-        ],
+        "classes": ["grid", "gap-2", "data-[state=checked]:border-primary"],
+        "dependencies": ["@radix-ui/react-radio-group"],
+        "install": ["npx shadcn@latest add radio-group"],
         "preview": {
           "html": "<div class=\"kit-radio-group\"><label><span class=\"kit-radio-dot\"></span> Create new</label><label><span></span> Compare</label></div>",
           "css": ".kit-radio-group{display:grid;gap:8px;font:14px Inter, Pretendard, system-ui, sans-serif;color:#0F172A}.kit-radio-group label{display:flex;gap:8px;align-items:center}.kit-radio-group span{width:16px;height:16px;border:1px solid #CBD5E1;border-radius:999px}.kit-radio-dot{border:5px solid #2563EB!important}"
         },
         "usage": "Use in dense product surfaces and registry tools. Use when exactly one choice must be selected. Show the recommended option first when appropriate.",
         "tailwind": {
-          "classes": [
-            "grid",
-            "gap-2",
-            "data-[state=checked]:border-primary"
-          ],
+          "classes": ["grid", "gap-2", "data-[state=checked]:border-primary"],
           "theme_tokens": [
             "--background",
             "--foreground",
@@ -513,12 +432,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "radio-group"
-          ],
-          "dependencies": [
-            "@radix-ui/react-radio-group"
-          ]
+          "registry_items": ["radio-group"],
+          "dependencies": ["@radix-ui/react-radio-group"]
         }
       },
       "Switch": {
@@ -532,29 +447,16 @@
             "description": "Current toggle state"
           }
         ],
-        "variants": [
-          "default",
-          "danger"
-        ],
-        "states": [
-          "default",
-          "hover",
-          "focus-visible",
-          "checked",
-          "disabled"
-        ],
+        "variants": ["default", "danger"],
+        "states": ["default", "hover", "focus-visible", "checked", "disabled"],
         "classes": [
           "h-5",
           "w-9",
           "rounded-full",
           "data-[state=checked]:bg-primary"
         ],
-        "dependencies": [
-          "@radix-ui/react-switch"
-        ],
-        "install": [
-          "npx shadcn@latest add switch"
-        ],
+        "dependencies": ["@radix-ui/react-switch"],
+        "install": ["npx shadcn@latest add switch"],
         "preview": {
           "html": "<label class=\"kit-switch-row\"><span>Active design system</span><span class=\"kit-switch\"><i></i></span></label>",
           "css": ".kit-switch-row{display:flex;justify-content:space-between;align-items:center;font:14px Inter, Pretendard, system-ui, sans-serif;color:#0F172A}.kit-switch{width:36px;height:20px;border-radius:999px;background:#2563EB;padding:2px}.kit-switch i{display:block;width:16px;height:16px;border-radius:50%;background:#FFFFFF;margin-left:16px}"
@@ -577,12 +479,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "switch"
-          ],
-          "dependencies": [
-            "@radix-ui/react-switch"
-          ]
+          "registry_items": ["switch"],
+          "dependencies": ["@radix-ui/react-switch"]
         }
       },
       "Card": {
@@ -596,12 +494,7 @@
             "description": "Card heading"
           }
         ],
-        "variants": [
-          "default",
-          "interactive",
-          "selected",
-          "warning"
-        ],
+        "variants": ["default", "interactive", "selected", "warning"],
         "states": [
           "default",
           "hover",
@@ -610,29 +503,15 @@
           "disabled",
           "loading"
         ],
-        "classes": [
-          "rounded-lg",
-          "border",
-          "bg-card",
-          "p-4",
-          "shadow-sm"
-        ],
-        "install": [
-          "npx shadcn@latest add card"
-        ],
+        "classes": ["rounded-lg", "border", "bg-card", "p-4", "shadow-sm"],
+        "install": ["npx shadcn@latest add card"],
         "preview": {
           "html": "<article class=\"kit-card\"><h3>Design registry</h3><p>15 components · React, Tailwind, shadcn, HTML adapters</p></article>",
           "css": ".kit-card{border:1px solid #CBD5E1;border-radius:8px;background:#FFFFFF;padding:16px;font:14px Inter, Pretendard, system-ui, sans-serif;color:#0F172A}.kit-card h3{margin:0 0 4px;font-size:16px}.kit-card p{margin:0;color:#64748B}"
         },
         "usage": "Use in dense product surfaces and registry tools. Use for repeated items and compact summaries. Avoid nesting cards inside cards.",
         "tailwind": {
-          "classes": [
-            "rounded-lg",
-            "border",
-            "bg-card",
-            "p-4",
-            "shadow-sm"
-          ],
+          "classes": ["rounded-lg", "border", "bg-card", "p-4", "shadow-sm"],
           "theme_tokens": [
             "--background",
             "--foreground",
@@ -643,9 +522,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "card"
-          ],
+          "registry_items": ["card"],
           "dependencies": []
         }
       },
@@ -660,17 +537,8 @@
             "description": "Dialog visibility"
           }
         ],
-        "variants": [
-          "default",
-          "confirm",
-          "fullscreen"
-        ],
-        "states": [
-          "closed",
-          "opening",
-          "open",
-          "closing"
-        ],
+        "variants": ["default", "confirm", "fullscreen"],
+        "states": ["closed", "opening", "open", "closing"],
         "classes": [
           "fixed",
           "rounded-lg",
@@ -678,12 +546,8 @@
           "bg-background",
           "shadow-lg"
         ],
-        "dependencies": [
-          "@radix-ui/react-dialog"
-        ],
-        "install": [
-          "npx shadcn@latest add dialog"
-        ],
+        "dependencies": ["@radix-ui/react-dialog"],
+        "install": ["npx shadcn@latest add dialog"],
         "preview": {
           "html": "<section class=\"kit-dialog\"><h3>Import package?</h3><p>Related design system found. Importing as a new version is recommended.</p><button>Continue</button></section>",
           "css": ".kit-dialog{width:320px;border:1px solid #CBD5E1;border-radius:8px;background:#FFFFFF;color:#0F172A;padding:18px;font:14px Inter, Pretendard, system-ui, sans-serif;box-shadow:0 8px 24px rgba(15,23,42,.08)}.kit-dialog h3{margin:0 0 6px}.kit-dialog p{color:#64748B}.kit-dialog button{height:34px;border:0;border-radius:6px;background:#2563EB;color:#FFFFFF;padding:0 12px}"
@@ -707,12 +571,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "dialog"
-          ],
-          "dependencies": [
-            "@radix-ui/react-dialog"
-          ]
+          "registry_items": ["dialog"],
+          "dependencies": ["@radix-ui/react-dialog"]
         }
       },
       "DropdownMenu": {
@@ -726,45 +586,18 @@
             "description": "Menu actions"
           }
         ],
-        "variants": [
-          "default",
-          "with-icons",
-          "danger-zone"
-        ],
-        "states": [
-          "closed",
-          "open",
-          "hover",
-          "focus-visible",
-          "disabled"
-        ],
-        "classes": [
-          "min-w-40",
-          "rounded-md",
-          "border",
-          "bg-popover",
-          "p-1"
-        ],
-        "dependencies": [
-          "@radix-ui/react-dropdown-menu",
-          "lucide-react"
-        ],
-        "install": [
-          "npx shadcn@latest add dropdown-menu"
-        ],
+        "variants": ["default", "with-icons", "danger-zone"],
+        "states": ["closed", "open", "hover", "focus-visible", "disabled"],
+        "classes": ["min-w-40", "rounded-md", "border", "bg-popover", "p-1"],
+        "dependencies": ["@radix-ui/react-dropdown-menu", "lucide-react"],
+        "install": ["npx shadcn@latest add dropdown-menu"],
         "preview": {
           "html": "<div class=\"kit-menu\"><button>Duplicate</button><button>Export</button><button class=\"danger\">Delete</button></div>",
           "css": ".kit-menu{width:180px;border:1px solid #CBD5E1;border-radius:8px;background:#FFFFFF;padding:4px;font:14px Inter, Pretendard, system-ui, sans-serif;color:#0F172A}.kit-menu button{display:block;width:100%;border:0;background:transparent;color:inherit;text-align:left;padding:8px;border-radius:6px}.kit-menu .danger{color:#dc2626}"
         },
         "usage": "Use in dense product surfaces and registry tools. Use for secondary actions. Keep primary actions visible instead of hiding them in a menu.",
         "tailwind": {
-          "classes": [
-            "min-w-40",
-            "rounded-md",
-            "border",
-            "bg-popover",
-            "p-1"
-          ],
+          "classes": ["min-w-40", "rounded-md", "border", "bg-popover", "p-1"],
           "theme_tokens": [
             "--background",
             "--foreground",
@@ -775,13 +608,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "dropdown-menu"
-          ],
-          "dependencies": [
-            "@radix-ui/react-dropdown-menu",
-            "lucide-react"
-          ]
+          "registry_items": ["dropdown-menu"],
+          "dependencies": ["@radix-ui/react-dropdown-menu", "lucide-react"]
         }
       },
       "Tabs": {
@@ -795,30 +623,16 @@
             "description": "Initial active tab"
           }
         ],
-        "variants": [
-          "default",
-          "compact",
-          "underline"
-        ],
-        "states": [
-          "default",
-          "hover",
-          "focus-visible",
-          "active",
-          "disabled"
-        ],
+        "variants": ["default", "compact", "underline"],
+        "states": ["default", "hover", "focus-visible", "active", "disabled"],
         "classes": [
           "inline-flex",
           "rounded-md",
           "bg-muted",
           "data-[state=active]:bg-background"
         ],
-        "dependencies": [
-          "@radix-ui/react-tabs"
-        ],
-        "install": [
-          "npx shadcn@latest add tabs"
-        ],
+        "dependencies": ["@radix-ui/react-tabs"],
+        "install": ["npx shadcn@latest add tabs"],
         "preview": {
           "html": "<div class=\"kit-tabs\"><button class=\"active\">Colors</button><button>Components</button><button>Assets</button></div>",
           "css": ".kit-tabs{display:inline-flex;gap:2px;border-radius:6px;background:#F1F5F9;padding:3px;font:13px Inter, Pretendard, system-ui, sans-serif;color:#0F172A}.kit-tabs button{border:0;border-radius:6px;background:transparent;color:inherit;padding:7px 10px}.kit-tabs .active{background:#FFFFFF;box-shadow:0 1px 2px rgba(0,0,0,.08)}"
@@ -841,12 +655,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "tabs"
-          ],
-          "dependencies": [
-            "@radix-ui/react-tabs"
-          ]
+          "registry_items": ["tabs"],
+          "dependencies": ["@radix-ui/react-tabs"]
         }
       },
       "Table": {
@@ -860,12 +670,7 @@
             "description": "Visible rows"
           }
         ],
-        "variants": [
-          "default",
-          "selectable",
-          "compact",
-          "loading"
-        ],
+        "variants": ["default", "selectable", "compact", "loading"],
         "states": [
           "default",
           "hover",
@@ -882,9 +687,7 @@
           "border-spacing-0",
           "data-[selected=true]:bg-muted"
         ],
-        "install": [
-          "npx shadcn@latest add table checkbox"
-        ],
+        "install": ["npx shadcn@latest add table checkbox"],
         "preview": {
           "html": "<table class=\"kit-table\"><thead><tr><th>Name</th><th>Status</th></tr></thead><tbody><tr><td>Product Kit</td><td>Published</td></tr></tbody></table>",
           "css": ".kit-table{width:100%;border-collapse:collapse;font:13px Inter, Pretendard, system-ui, sans-serif;color:#0F172A;background:#FFFFFF}.kit-table th,.kit-table td{border-bottom:1px solid #CBD5E1;padding:10px;text-align:left}.kit-table th{color:#64748B;font-weight:700}"
@@ -908,9 +711,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "table"
-          ],
+          "registry_items": ["table"],
           "dependencies": []
         }
       },
@@ -933,12 +734,7 @@
           "warning",
           "destructive"
         ],
-        "states": [
-          "default",
-          "hover",
-          "focus-visible",
-          "disabled"
-        ],
+        "states": ["default", "hover", "focus-visible", "disabled"],
         "classes": [
           "inline-flex",
           "rounded-md",
@@ -947,9 +743,7 @@
           "text-xs",
           "font-medium"
         ],
-        "install": [
-          "npx shadcn@latest add badge"
-        ],
+        "install": ["npx shadcn@latest add badge"],
         "preview": {
           "html": "<div class=\"kit-badges\"><span>Published</span><span class=\"warn\">Needs review</span></div>",
           "css": ".kit-badges{display:flex;gap:6px}.kit-badges span{border-radius:6px;background:#F1F5F9;color:#2563EB;padding:3px 8px;font:600 12px Inter, Pretendard, system-ui, sans-serif}.kit-badges .warn{background:#FEF3C7;color:#CA8A04}"
@@ -974,9 +768,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "badge"
-          ],
+          "registry_items": ["badge"],
           "dependencies": []
         }
       },
@@ -991,39 +783,17 @@
             "description": "Alert tone"
           }
         ],
-        "variants": [
-          "default",
-          "info",
-          "success",
-          "warning",
-          "destructive"
-        ],
-        "states": [
-          "default",
-          "focus-visible",
-          "dismissible"
-        ],
-        "classes": [
-          "rounded-lg",
-          "border",
-          "p-4",
-          "text-sm"
-        ],
-        "install": [
-          "npx shadcn@latest add alert"
-        ],
+        "variants": ["default", "info", "success", "warning", "destructive"],
+        "states": ["default", "focus-visible", "dismissible"],
+        "classes": ["rounded-lg", "border", "p-4", "text-sm"],
+        "install": ["npx shadcn@latest add alert"],
         "preview": {
           "html": "<div class=\"kit-alert\"><strong>Related system found</strong><p>Importing as a new version is recommended.</p></div>",
           "css": ".kit-alert{border:1px solid #2563EB;border-radius:8px;background:#FFFFFF;color:#0F172A;padding:12px;font:14px Inter, Pretendard, system-ui, sans-serif}.kit-alert p{margin:4px 0 0;color:#64748B}"
         },
         "usage": "Use in dense product surfaces and registry tools. Use near the relevant task. Keep text actionable and specific.",
         "tailwind": {
-          "classes": [
-            "rounded-lg",
-            "border",
-            "p-4",
-            "text-sm"
-          ],
+          "classes": ["rounded-lg", "border", "p-4", "text-sm"],
           "theme_tokens": [
             "--background",
             "--foreground",
@@ -1034,9 +804,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "alert"
-          ],
+          "registry_items": ["alert"],
           "dependencies": []
         }
       },
@@ -1051,41 +819,18 @@
             "description": "Feedback tone"
           }
         ],
-        "variants": [
-          "success",
-          "error",
-          "info",
-          "loading"
-        ],
-        "states": [
-          "enter",
-          "visible",
-          "exit"
-        ],
-        "classes": [
-          "rounded-lg",
-          "border",
-          "bg-background",
-          "shadow-md"
-        ],
-        "dependencies": [
-          "sonner"
-        ],
-        "install": [
-          "npx shadcn@latest add sonner"
-        ],
+        "variants": ["success", "error", "info", "loading"],
+        "states": ["enter", "visible", "exit"],
+        "classes": ["rounded-lg", "border", "bg-background", "shadow-md"],
+        "dependencies": ["sonner"],
+        "install": ["npx shadcn@latest add sonner"],
         "preview": {
           "html": "<div class=\"kit-toast\"><strong>Copied</strong><span>Component source copied.</span></div>",
           "css": ".kit-toast{width:260px;border:1px solid #CBD5E1;border-radius:8px;background:#FFFFFF;color:#0F172A;padding:12px;box-shadow:0 8px 24px rgba(15,23,42,.08);font:13px Inter, Pretendard, system-ui, sans-serif}.kit-toast strong{display:block}.kit-toast span{color:#64748B}"
         },
         "usage": "Use in dense product surfaces and registry tools. Use for confirmation that does not require a decision. Do not hide errors that need correction.",
         "tailwind": {
-          "classes": [
-            "rounded-lg",
-            "border",
-            "bg-background",
-            "shadow-md"
-          ],
+          "classes": ["rounded-lg", "border", "bg-background", "shadow-md"],
           "theme_tokens": [
             "--background",
             "--foreground",
@@ -1096,12 +841,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "toast"
-          ],
-          "dependencies": [
-            "sonner"
-          ]
+          "registry_items": ["toast"],
+          "dependencies": ["sonner"]
         }
       }
     },
@@ -1132,13 +873,7 @@
         "Alert",
         "Toast"
       ],
-      "formats": [
-        "design",
-        "skill",
-        "package",
-        "bundle",
-        "adapters"
-      ]
+      "formats": ["design", "skill", "package", "bundle", "adapters"]
     }
   },
   {
@@ -1150,19 +885,9 @@
     "surface": "web",
     "schema": {
       "version": "1.0",
-      "mediums": [
-        "web",
-        "docs",
-        "slides"
-      ],
+      "mediums": ["web", "docs", "slides"],
       "archetype": "editorial-paper-kit",
-      "supports": [
-        "html-css",
-        "tailwindcss",
-        "react",
-        "slides",
-        "docs"
-      ],
+      "supports": ["html-css", "tailwindcss", "react", "slides", "docs"],
       "source_reference": {
         "project": "nexu-io/open-design",
         "path": "design-systems/kami/DESIGN.md",
@@ -1299,9 +1024,7 @@
           "class-variance-authority",
           "lucide-react"
         ],
-        "install": [
-          "npx shadcn@latest add button"
-        ],
+        "install": ["npx shadcn@latest add button"],
         "preview": {
           "html": "<div class=\"kit-row\"><button class=\"kit-button\">Send manuscript</button><button class=\"kit-button kit-button-outline\">Cancel</button></div>",
           "css": ".kit-row{display:flex;gap:8px;align-items:center}.kit-button{height:36px;border:1px solid #1B365D;border-radius:6px;background:#1B365D;color:#FFFFFF;padding:0 12px;font:600 14px Charter, Georgia, Palatino, \"Times New Roman\", serif}.kit-button-outline{background:#FAF9F5;color:#141413;border-color:#E8E6DC}"
@@ -1327,9 +1050,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "button"
-          ],
+          "registry_items": ["button"],
           "dependencies": [
             "@radix-ui/react-slot",
             "class-variance-authority",
@@ -1353,19 +1074,8 @@
             "description": "Short example value"
           }
         ],
-        "variants": [
-          "default",
-          "with-icon",
-          "invalid",
-          "readonly"
-        ],
-        "states": [
-          "default",
-          "hover",
-          "focus-visible",
-          "disabled",
-          "error"
-        ],
+        "variants": ["default", "with-icon", "invalid", "readonly"],
+        "states": ["default", "hover", "focus-visible", "disabled", "error"],
         "classes": [
           "h-9",
           "rounded-md",
@@ -1374,9 +1084,7 @@
           "focus-visible:ring-2",
           "aria-invalid:border-destructive"
         ],
-        "install": [
-          "npx shadcn@latest add input label"
-        ],
+        "install": ["npx shadcn@latest add input label"],
         "preview": {
           "html": "<label class=\"kit-field\"><span>Author name</span><input class=\"kit-input\" placeholder=\"Chapter 01\" /></label>",
           "css": ".kit-field{display:grid;gap:6px;font:600 13px Charter, Georgia, Palatino, \"Times New Roman\", serif;color:#141413}.kit-input{height:36px;border:1px solid #E8E6DC;border-radius:6px;background:#FAF9F5;color:#141413;padding:0 10px;font:14px Charter, Georgia, Palatino, \"Times New Roman\", serif}"
@@ -1401,9 +1109,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "input"
-          ],
+          "registry_items": ["input"],
           "dependencies": []
         }
       },
@@ -1418,18 +1124,8 @@
             "description": "Default visible height"
           }
         ],
-        "variants": [
-          "default",
-          "invalid",
-          "monospace"
-        ],
-        "states": [
-          "default",
-          "hover",
-          "focus-visible",
-          "disabled",
-          "error"
-        ],
+        "variants": ["default", "invalid", "monospace"],
+        "states": ["default", "hover", "focus-visible", "disabled", "error"],
         "classes": [
           "min-h-24",
           "rounded-md",
@@ -1437,9 +1133,7 @@
           "p-3",
           "focus-visible:ring-2"
         ],
-        "install": [
-          "npx shadcn@latest add textarea"
-        ],
+        "install": ["npx shadcn@latest add textarea"],
         "preview": {
           "html": "<textarea class=\"kit-textarea\" placeholder=\"Draft editorial note\"></textarea>",
           "css": ".kit-textarea{width:100%;min-height:96px;border:1px solid #E8E6DC;border-radius:6px;background:#FAF9F5;color:#141413;padding:10px 12px;font:14px/1.5 Charter, Georgia, Palatino, \"Times New Roman\", serif;resize:vertical}"
@@ -1463,9 +1157,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "textarea"
-          ],
+          "registry_items": ["textarea"],
           "dependencies": []
         }
       },
@@ -1480,11 +1172,7 @@
             "description": "Available choices"
           }
         ],
-        "variants": [
-          "default",
-          "compact",
-          "invalid"
-        ],
+        "variants": ["default", "compact", "invalid"],
         "states": [
           "default",
           "hover",
@@ -1500,12 +1188,8 @@
           "bg-background",
           "data-[state=open]:ring-2"
         ],
-        "dependencies": [
-          "@radix-ui/react-select"
-        ],
-        "install": [
-          "npx shadcn@latest add select"
-        ],
+        "dependencies": ["@radix-ui/react-select"],
+        "install": ["npx shadcn@latest add select"],
         "preview": {
           "html": "<button class=\"kit-select\">Essay section <span>⌄</span></button>",
           "css": ".kit-select{height:36px;min-width:180px;border:1px solid #E8E6DC;border-radius:6px;background:#FAF9F5;color:#141413;padding:0 10px;display:flex;justify-content:space-between;align-items:center;font:14px Charter, Georgia, Palatino, \"Times New Roman\", serif}"
@@ -1529,12 +1213,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "select"
-          ],
-          "dependencies": [
-            "@radix-ui/react-select"
-          ]
+          "registry_items": ["select"],
+          "dependencies": ["@radix-ui/react-select"]
         }
       },
       "Checkbox": {
@@ -1548,11 +1228,7 @@
             "description": "Current check state"
           }
         ],
-        "variants": [
-          "default",
-          "indeterminate",
-          "invalid"
-        ],
+        "variants": ["default", "indeterminate", "invalid"],
         "states": [
           "default",
           "hover",
@@ -1568,12 +1244,8 @@
           "border",
           "data-[state=checked]:bg-primary"
         ],
-        "dependencies": [
-          "@radix-ui/react-checkbox"
-        ],
-        "install": [
-          "npx shadcn@latest add checkbox"
-        ],
+        "dependencies": ["@radix-ui/react-checkbox"],
+        "install": ["npx shadcn@latest add checkbox"],
         "preview": {
           "html": "<label class=\"kit-check\"><span class=\"kit-checkbox\">✓</span><span>Include bibliography</span></label>",
           "css": ".kit-check{display:flex;gap:8px;align-items:center;font:14px/1.55 Charter, Georgia, Palatino, \"Times New Roman\", serif;color:#141413}.kit-checkbox{width:16px;height:16px;border-radius:4px;background:#1B365D;color:#FFFFFF;display:grid;place-items:center;font-size:11px}"
@@ -1596,12 +1268,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "checkbox"
-          ],
-          "dependencies": [
-            "@radix-ui/react-checkbox"
-          ]
+          "registry_items": ["checkbox"],
+          "dependencies": ["@radix-ui/react-checkbox"]
         }
       },
       "RadioGroup": {
@@ -1615,11 +1283,7 @@
             "description": "Selected option"
           }
         ],
-        "variants": [
-          "default",
-          "card",
-          "segmented"
-        ],
+        "variants": ["default", "card", "segmented"],
         "states": [
           "default",
           "hover",
@@ -1628,28 +1292,16 @@
           "disabled",
           "error"
         ],
-        "classes": [
-          "grid",
-          "gap-2",
-          "data-[state=checked]:border-primary"
-        ],
-        "dependencies": [
-          "@radix-ui/react-radio-group"
-        ],
-        "install": [
-          "npx shadcn@latest add radio-group"
-        ],
+        "classes": ["grid", "gap-2", "data-[state=checked]:border-primary"],
+        "dependencies": ["@radix-ui/react-radio-group"],
+        "install": ["npx shadcn@latest add radio-group"],
         "preview": {
           "html": "<div class=\"kit-radio-group\"><label><span class=\"kit-radio-dot\"></span> Web page</label><label><span></span> Compare</label></div>",
           "css": ".kit-radio-group{display:grid;gap:8px;font:14px/1.55 Charter, Georgia, Palatino, \"Times New Roman\", serif;color:#141413}.kit-radio-group label{display:flex;gap:8px;align-items:center}.kit-radio-group span{width:16px;height:16px;border:1px solid #E8E6DC;border-radius:999px}.kit-radio-dot{border:5px solid #1B365D!important}"
         },
         "usage": "Use in document-like experiences where reading quality is the product. Use when exactly one choice must be selected. Show the recommended option first when appropriate.",
         "tailwind": {
-          "classes": [
-            "grid",
-            "gap-2",
-            "data-[state=checked]:border-primary"
-          ],
+          "classes": ["grid", "gap-2", "data-[state=checked]:border-primary"],
           "theme_tokens": [
             "--background",
             "--foreground",
@@ -1660,12 +1312,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "radio-group"
-          ],
-          "dependencies": [
-            "@radix-ui/react-radio-group"
-          ]
+          "registry_items": ["radio-group"],
+          "dependencies": ["@radix-ui/react-radio-group"]
         }
       },
       "Switch": {
@@ -1679,29 +1327,16 @@
             "description": "Current toggle state"
           }
         ],
-        "variants": [
-          "default",
-          "danger"
-        ],
-        "states": [
-          "default",
-          "hover",
-          "focus-visible",
-          "checked",
-          "disabled"
-        ],
+        "variants": ["default", "danger"],
+        "states": ["default", "hover", "focus-visible", "checked", "disabled"],
         "classes": [
           "h-5",
           "w-9",
           "rounded-full",
           "data-[state=checked]:bg-primary"
         ],
-        "dependencies": [
-          "@radix-ui/react-switch"
-        ],
-        "install": [
-          "npx shadcn@latest add switch"
-        ],
+        "dependencies": ["@radix-ui/react-switch"],
+        "install": ["npx shadcn@latest add switch"],
         "preview": {
           "html": "<label class=\"kit-switch-row\"><span>Print mode</span><span class=\"kit-switch\"><i></i></span></label>",
           "css": ".kit-switch-row{display:flex;justify-content:space-between;align-items:center;font:14px/1.55 Charter, Georgia, Palatino, \"Times New Roman\", serif;color:#141413}.kit-switch{width:36px;height:20px;border-radius:999px;background:#1B365D;padding:2px}.kit-switch i{display:block;width:16px;height:16px;border-radius:50%;background:#FFFFFF;margin-left:16px}"
@@ -1724,12 +1359,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "switch"
-          ],
-          "dependencies": [
-            "@radix-ui/react-switch"
-          ]
+          "registry_items": ["switch"],
+          "dependencies": ["@radix-ui/react-switch"]
         }
       },
       "Card": {
@@ -1743,12 +1374,7 @@
             "description": "Card heading"
           }
         ],
-        "variants": [
-          "default",
-          "interactive",
-          "selected",
-          "warning"
-        ],
+        "variants": ["default", "interactive", "selected", "warning"],
         "states": [
           "default",
           "hover",
@@ -1757,29 +1383,15 @@
           "disabled",
           "loading"
         ],
-        "classes": [
-          "rounded-lg",
-          "border",
-          "bg-card",
-          "p-4",
-          "shadow-sm"
-        ],
-        "install": [
-          "npx shadcn@latest add card"
-        ],
+        "classes": ["rounded-lg", "border", "bg-card", "p-4", "shadow-sm"],
+        "install": ["npx shadcn@latest add card"],
         "preview": {
           "html": "<article class=\"kit-card\"><h3>Chapter note</h3><p>Parchment surface · ink-blue accent · serif hierarchy</p></article>",
           "css": ".kit-card{border:1px solid #E8E6DC;border-radius:8px;background:#FAF9F5;padding:16px;font:14px/1.55 Charter, Georgia, Palatino, \"Times New Roman\", serif;color:#141413}.kit-card h3{margin:0 0 4px;font-size:16px}.kit-card p{margin:0;color:#6B6A64}"
         },
         "usage": "Use in document-like experiences where reading quality is the product. Use for repeated items and compact summaries. Avoid nesting cards inside cards.",
         "tailwind": {
-          "classes": [
-            "rounded-lg",
-            "border",
-            "bg-card",
-            "p-4",
-            "shadow-sm"
-          ],
+          "classes": ["rounded-lg", "border", "bg-card", "p-4", "shadow-sm"],
           "theme_tokens": [
             "--background",
             "--foreground",
@@ -1790,9 +1402,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "card"
-          ],
+          "registry_items": ["card"],
           "dependencies": []
         }
       },
@@ -1807,17 +1417,8 @@
             "description": "Dialog visibility"
           }
         ],
-        "variants": [
-          "default",
-          "confirm",
-          "fullscreen"
-        ],
-        "states": [
-          "closed",
-          "opening",
-          "open",
-          "closing"
-        ],
+        "variants": ["default", "confirm", "fullscreen"],
+        "states": ["closed", "opening", "open", "closing"],
         "classes": [
           "fixed",
           "rounded-lg",
@@ -1825,12 +1426,8 @@
           "bg-background",
           "shadow-lg"
         ],
-        "dependencies": [
-          "@radix-ui/react-dialog"
-        ],
-        "install": [
-          "npx shadcn@latest add dialog"
-        ],
+        "dependencies": ["@radix-ui/react-dialog"],
+        "install": ["npx shadcn@latest add dialog"],
         "preview": {
           "html": "<section class=\"kit-dialog\"><h3>Export paper package?</h3><p>Review metadata, references, and export format before continuing.</p><button>Continue</button></section>",
           "css": ".kit-dialog{width:320px;border:1px solid #E8E6DC;border-radius:8px;background:#FAF9F5;color:#141413;padding:18px;font:14px Charter, Georgia, Palatino, \"Times New Roman\", serif;box-shadow:0 4px 24px rgba(20,20,19,.05)}.kit-dialog h3{margin:0 0 6px}.kit-dialog p{color:#6B6A64}.kit-dialog button{height:34px;border:0;border-radius:6px;background:#1B365D;color:#FFFFFF;padding:0 12px}"
@@ -1854,12 +1451,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "dialog"
-          ],
-          "dependencies": [
-            "@radix-ui/react-dialog"
-          ]
+          "registry_items": ["dialog"],
+          "dependencies": ["@radix-ui/react-dialog"]
         }
       },
       "DropdownMenu": {
@@ -1873,45 +1466,18 @@
             "description": "Menu actions"
           }
         ],
-        "variants": [
-          "default",
-          "with-icons",
-          "danger-zone"
-        ],
-        "states": [
-          "closed",
-          "open",
-          "hover",
-          "focus-visible",
-          "disabled"
-        ],
-        "classes": [
-          "min-w-40",
-          "rounded-md",
-          "border",
-          "bg-popover",
-          "p-1"
-        ],
-        "dependencies": [
-          "@radix-ui/react-dropdown-menu",
-          "lucide-react"
-        ],
-        "install": [
-          "npx shadcn@latest add dropdown-menu"
-        ],
+        "variants": ["default", "with-icons", "danger-zone"],
+        "states": ["closed", "open", "hover", "focus-visible", "disabled"],
+        "classes": ["min-w-40", "rounded-md", "border", "bg-popover", "p-1"],
+        "dependencies": ["@radix-ui/react-dropdown-menu", "lucide-react"],
+        "install": ["npx shadcn@latest add dropdown-menu"],
         "preview": {
           "html": "<div class=\"kit-menu\"><button>Export PDF</button><button>Export</button><button class=\"danger\">Delete</button></div>",
           "css": ".kit-menu{width:180px;border:1px solid #E8E6DC;border-radius:8px;background:#FAF9F5;padding:4px;font:14px Charter, Georgia, Palatino, \"Times New Roman\", serif;color:#141413}.kit-menu button{display:block;width:100%;border:0;background:transparent;color:inherit;text-align:left;padding:8px;border-radius:6px}.kit-menu .danger{color:#dc2626}"
         },
         "usage": "Use in document-like experiences where reading quality is the product. Use for secondary actions. Keep primary actions visible instead of hiding them in a menu.",
         "tailwind": {
-          "classes": [
-            "min-w-40",
-            "rounded-md",
-            "border",
-            "bg-popover",
-            "p-1"
-          ],
+          "classes": ["min-w-40", "rounded-md", "border", "bg-popover", "p-1"],
           "theme_tokens": [
             "--background",
             "--foreground",
@@ -1922,13 +1488,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "dropdown-menu"
-          ],
-          "dependencies": [
-            "@radix-ui/react-dropdown-menu",
-            "lucide-react"
-          ]
+          "registry_items": ["dropdown-menu"],
+          "dependencies": ["@radix-ui/react-dropdown-menu", "lucide-react"]
         }
       },
       "Tabs": {
@@ -1942,30 +1503,16 @@
             "description": "Initial active tab"
           }
         ],
-        "variants": [
-          "default",
-          "compact",
-          "underline"
-        ],
-        "states": [
-          "default",
-          "hover",
-          "focus-visible",
-          "active",
-          "disabled"
-        ],
+        "variants": ["default", "compact", "underline"],
+        "states": ["default", "hover", "focus-visible", "active", "disabled"],
         "classes": [
           "inline-flex",
           "rounded-md",
           "bg-muted",
           "data-[state=active]:bg-background"
         ],
-        "dependencies": [
-          "@radix-ui/react-tabs"
-        ],
-        "install": [
-          "npx shadcn@latest add tabs"
-        ],
+        "dependencies": ["@radix-ui/react-tabs"],
+        "install": ["npx shadcn@latest add tabs"],
         "preview": {
           "html": "<div class=\"kit-tabs\"><button class=\"active\">Notes</button><button>Components</button><button>Assets</button></div>",
           "css": ".kit-tabs{display:inline-flex;gap:2px;border-radius:6px;background:#E8E6DC;padding:3px;font:13px Charter, Georgia, Palatino, \"Times New Roman\", serif;color:#141413}.kit-tabs button{border:0;border-radius:6px;background:transparent;color:inherit;padding:7px 10px}.kit-tabs .active{background:#FAF9F5;box-shadow:0 1px 2px rgba(0,0,0,.08)}"
@@ -1988,12 +1535,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "tabs"
-          ],
-          "dependencies": [
-            "@radix-ui/react-tabs"
-          ]
+          "registry_items": ["tabs"],
+          "dependencies": ["@radix-ui/react-tabs"]
         }
       },
       "Table": {
@@ -2007,12 +1550,7 @@
             "description": "Visible rows"
           }
         ],
-        "variants": [
-          "default",
-          "selectable",
-          "compact",
-          "loading"
-        ],
+        "variants": ["default", "selectable", "compact", "loading"],
         "states": [
           "default",
           "hover",
@@ -2029,9 +1567,7 @@
           "border-spacing-0",
           "data-[selected=true]:bg-muted"
         ],
-        "install": [
-          "npx shadcn@latest add table checkbox"
-        ],
+        "install": ["npx shadcn@latest add table checkbox"],
         "preview": {
           "html": "<table class=\"kit-table\"><thead><tr><th>Name</th><th>Status</th></tr></thead><tbody><tr><td>Reference</td><td>Reviewed</td></tr></tbody></table>",
           "css": ".kit-table{width:100%;border-collapse:collapse;font:13px Charter, Georgia, Palatino, \"Times New Roman\", serif;color:#141413;background:#FAF9F5}.kit-table th,.kit-table td{border-bottom:1px solid #E8E6DC;padding:10px;text-align:left}.kit-table th{color:#6B6A64;font-weight:700}"
@@ -2055,9 +1591,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "table"
-          ],
+          "registry_items": ["table"],
           "dependencies": []
         }
       },
@@ -2080,12 +1614,7 @@
           "warning",
           "destructive"
         ],
-        "states": [
-          "default",
-          "hover",
-          "focus-visible",
-          "disabled"
-        ],
+        "states": ["default", "hover", "focus-visible", "disabled"],
         "classes": [
           "inline-flex",
           "rounded-md",
@@ -2094,9 +1623,7 @@
           "text-xs",
           "font-medium"
         ],
-        "install": [
-          "npx shadcn@latest add badge"
-        ],
+        "install": ["npx shadcn@latest add badge"],
         "preview": {
           "html": "<div class=\"kit-badges\"><span>Reviewed</span><span class=\"warn\">Needs review</span></div>",
           "css": ".kit-badges{display:flex;gap:6px}.kit-badges span{border-radius:6px;background:#E4ECF5;color:#1B365D;padding:3px 8px;font:600 12px Charter, Georgia, Palatino, \"Times New Roman\", serif}.kit-badges .warn{background:#FEF3C7;color:#9B6829}"
@@ -2121,9 +1648,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "badge"
-          ],
+          "registry_items": ["badge"],
           "dependencies": []
         }
       },
@@ -2138,39 +1663,17 @@
             "description": "Alert tone"
           }
         ],
-        "variants": [
-          "default",
-          "info",
-          "success",
-          "warning",
-          "destructive"
-        ],
-        "states": [
-          "default",
-          "focus-visible",
-          "dismissible"
-        ],
-        "classes": [
-          "rounded-lg",
-          "border",
-          "p-4",
-          "text-sm"
-        ],
-        "install": [
-          "npx shadcn@latest add alert"
-        ],
+        "variants": ["default", "info", "success", "warning", "destructive"],
+        "states": ["default", "focus-visible", "dismissible"],
+        "classes": ["rounded-lg", "border", "p-4", "text-sm"],
+        "install": ["npx shadcn@latest add alert"],
         "preview": {
           "html": "<div class=\"kit-alert\"><strong>Missing citation</strong><p>Add a citation before publishing this section.</p></div>",
           "css": ".kit-alert{border:1px solid #1B365D;border-radius:8px;background:#FAF9F5;color:#141413;padding:12px;font:14px Charter, Georgia, Palatino, \"Times New Roman\", serif}.kit-alert p{margin:4px 0 0;color:#6B6A64}"
         },
         "usage": "Use in document-like experiences where reading quality is the product. Use near the relevant task. Keep text actionable and specific.",
         "tailwind": {
-          "classes": [
-            "rounded-lg",
-            "border",
-            "p-4",
-            "text-sm"
-          ],
+          "classes": ["rounded-lg", "border", "p-4", "text-sm"],
           "theme_tokens": [
             "--background",
             "--foreground",
@@ -2181,9 +1684,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "alert"
-          ],
+          "registry_items": ["alert"],
           "dependencies": []
         }
       },
@@ -2198,41 +1699,18 @@
             "description": "Feedback tone"
           }
         ],
-        "variants": [
-          "success",
-          "error",
-          "info",
-          "loading"
-        ],
-        "states": [
-          "enter",
-          "visible",
-          "exit"
-        ],
-        "classes": [
-          "rounded-lg",
-          "border",
-          "bg-background",
-          "shadow-md"
-        ],
-        "dependencies": [
-          "sonner"
-        ],
-        "install": [
-          "npx shadcn@latest add sonner"
-        ],
+        "variants": ["success", "error", "info", "loading"],
+        "states": ["enter", "visible", "exit"],
+        "classes": ["rounded-lg", "border", "bg-background", "shadow-md"],
+        "dependencies": ["sonner"],
+        "install": ["npx shadcn@latest add sonner"],
         "preview": {
           "html": "<div class=\"kit-toast\"><strong>Saved</strong><span>Editorial draft saved.</span></div>",
           "css": ".kit-toast{width:260px;border:1px solid #E8E6DC;border-radius:8px;background:#FAF9F5;color:#141413;padding:12px;box-shadow:0 4px 24px rgba(20,20,19,.05);font:13px Charter, Georgia, Palatino, \"Times New Roman\", serif}.kit-toast strong{display:block}.kit-toast span{color:#6B6A64}"
         },
         "usage": "Use in document-like experiences where reading quality is the product. Use for confirmation that does not require a decision. Do not hide errors that need correction.",
         "tailwind": {
-          "classes": [
-            "rounded-lg",
-            "border",
-            "bg-background",
-            "shadow-md"
-          ],
+          "classes": ["rounded-lg", "border", "bg-background", "shadow-md"],
           "theme_tokens": [
             "--background",
             "--foreground",
@@ -2243,12 +1721,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "toast"
-          ],
-          "dependencies": [
-            "sonner"
-          ]
+          "registry_items": ["toast"],
+          "dependencies": ["sonner"]
         }
       }
     },
@@ -2279,13 +1753,7 @@
         "Alert",
         "Toast"
       ],
-      "formats": [
-        "design",
-        "skill",
-        "package",
-        "bundle",
-        "adapters"
-      ]
+      "formats": ["design", "skill", "package", "bundle", "adapters"]
     }
   },
   {
@@ -2297,18 +1765,9 @@
     "surface": "web",
     "schema": {
       "version": "1.0",
-      "mediums": [
-        "web",
-        "app"
-      ],
+      "mediums": ["web", "app"],
       "archetype": "operations-dashboard-dark",
-      "supports": [
-        "react",
-        "tailwindcss",
-        "shadcn-ui",
-        "html-css",
-        "charts"
-      ],
+      "supports": ["react", "tailwindcss", "shadcn-ui", "html-css", "charts"],
       "source_reference": {
         "project": "nexu-io/open-design",
         "path": "design-systems/dashboard/DESIGN.md",
@@ -2445,9 +1904,7 @@
           "class-variance-authority",
           "lucide-react"
         ],
-        "install": [
-          "npx shadcn@latest add button"
-        ],
+        "install": ["npx shadcn@latest add button"],
         "preview": {
           "html": "<div class=\"kit-row\"><button class=\"kit-button\">Run incident scan</button><button class=\"kit-button kit-button-outline\">Cancel</button></div>",
           "css": ".kit-row{display:flex;gap:8px;align-items:center}.kit-button{height:36px;border:1px solid #0C5CAB;border-radius:8px;background:#0C5CAB;color:#FFFFFF;padding:0 12px;font:600 14px IBM Plex Sans, Inter, system-ui, sans-serif}.kit-button-outline{background:#111827;color:#FAFAFA;border-color:#27272A}"
@@ -2474,9 +1931,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "button"
-          ],
+          "registry_items": ["button"],
           "dependencies": [
             "@radix-ui/react-slot",
             "class-variance-authority",
@@ -2500,19 +1955,8 @@
             "description": "Short example value"
           }
         ],
-        "variants": [
-          "default",
-          "with-icon",
-          "invalid",
-          "readonly"
-        ],
-        "states": [
-          "default",
-          "hover",
-          "focus-visible",
-          "disabled",
-          "error"
-        ],
+        "variants": ["default", "with-icon", "invalid", "readonly"],
+        "states": ["default", "hover", "focus-visible", "disabled", "error"],
         "classes": [
           "h-9",
           "rounded-md",
@@ -2521,9 +1965,7 @@
           "focus-visible:ring-2",
           "aria-invalid:border-destructive"
         ],
-        "install": [
-          "npx shadcn@latest add input label"
-        ],
+        "install": ["npx shadcn@latest add input label"],
         "preview": {
           "html": "<label class=\"kit-field\"><span>Metric source</span><input class=\"kit-input\" placeholder=\"api.latency.p95\" /></label>",
           "css": ".kit-field{display:grid;gap:6px;font:600 13px IBM Plex Sans, Inter, system-ui, sans-serif;color:#FAFAFA}.kit-input{height:36px;border:1px solid #27272A;border-radius:8px;background:#111827;color:#FAFAFA;padding:0 10px;font:14px IBM Plex Sans, Inter, system-ui, sans-serif}"
@@ -2549,9 +1991,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "input"
-          ],
+          "registry_items": ["input"],
           "dependencies": []
         }
       },
@@ -2566,18 +2006,8 @@
             "description": "Default visible height"
           }
         ],
-        "variants": [
-          "default",
-          "invalid",
-          "monospace"
-        ],
-        "states": [
-          "default",
-          "hover",
-          "focus-visible",
-          "disabled",
-          "error"
-        ],
+        "variants": ["default", "invalid", "monospace"],
+        "states": ["default", "hover", "focus-visible", "disabled", "error"],
         "classes": [
           "min-h-24",
           "rounded-md",
@@ -2585,9 +2015,7 @@
           "p-3",
           "focus-visible:ring-2"
         ],
-        "install": [
-          "npx shadcn@latest add textarea"
-        ],
+        "install": ["npx shadcn@latest add textarea"],
         "preview": {
           "html": "<textarea class=\"kit-textarea\" placeholder=\"Operational context\"></textarea>",
           "css": ".kit-textarea{width:100%;min-height:96px;border:1px solid #27272A;border-radius:8px;background:#111827;color:#FAFAFA;padding:10px 12px;font:14px/1.5 IBM Plex Sans, Inter, system-ui, sans-serif;resize:vertical}"
@@ -2612,9 +2040,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "textarea"
-          ],
+          "registry_items": ["textarea"],
           "dependencies": []
         }
       },
@@ -2629,11 +2055,7 @@
             "description": "Available choices"
           }
         ],
-        "variants": [
-          "default",
-          "compact",
-          "invalid"
-        ],
+        "variants": ["default", "compact", "invalid"],
         "states": [
           "default",
           "hover",
@@ -2649,12 +2071,8 @@
           "bg-background",
           "data-[state=open]:ring-2"
         ],
-        "dependencies": [
-          "@radix-ui/react-select"
-        ],
-        "install": [
-          "npx shadcn@latest add select"
-        ],
+        "dependencies": ["@radix-ui/react-select"],
+        "install": ["npx shadcn@latest add select"],
         "preview": {
           "html": "<button class=\"kit-select\">Last 24 hours <span>⌄</span></button>",
           "css": ".kit-select{height:36px;min-width:180px;border:1px solid #27272A;border-radius:8px;background:#111827;color:#FAFAFA;padding:0 10px;display:flex;justify-content:space-between;align-items:center;font:14px IBM Plex Sans, Inter, system-ui, sans-serif}"
@@ -2679,12 +2097,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "select"
-          ],
-          "dependencies": [
-            "@radix-ui/react-select"
-          ]
+          "registry_items": ["select"],
+          "dependencies": ["@radix-ui/react-select"]
         }
       },
       "Checkbox": {
@@ -2698,11 +2112,7 @@
             "description": "Current check state"
           }
         ],
-        "variants": [
-          "default",
-          "indeterminate",
-          "invalid"
-        ],
+        "variants": ["default", "indeterminate", "invalid"],
         "states": [
           "default",
           "hover",
@@ -2718,12 +2128,8 @@
           "border",
           "data-[state=checked]:bg-primary"
         ],
-        "dependencies": [
-          "@radix-ui/react-checkbox"
-        ],
-        "install": [
-          "npx shadcn@latest add checkbox"
-        ],
+        "dependencies": ["@radix-ui/react-checkbox"],
+        "install": ["npx shadcn@latest add checkbox"],
         "preview": {
           "html": "<label class=\"kit-check\"><span class=\"kit-checkbox\">✓</span><span>Show degraded services</span></label>",
           "css": ".kit-check{display:flex;gap:8px;align-items:center;font:14px IBM Plex Sans, Inter, system-ui, sans-serif;color:#FAFAFA}.kit-checkbox{width:16px;height:16px;border-radius:4px;background:#0C5CAB;color:#FFFFFF;display:grid;place-items:center;font-size:11px}"
@@ -2747,12 +2153,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "checkbox"
-          ],
-          "dependencies": [
-            "@radix-ui/react-checkbox"
-          ]
+          "registry_items": ["checkbox"],
+          "dependencies": ["@radix-ui/react-checkbox"]
         }
       },
       "RadioGroup": {
@@ -2766,11 +2168,7 @@
             "description": "Selected option"
           }
         ],
-        "variants": [
-          "default",
-          "card",
-          "segmented"
-        ],
+        "variants": ["default", "card", "segmented"],
         "states": [
           "default",
           "hover",
@@ -2779,28 +2177,16 @@
           "disabled",
           "error"
         ],
-        "classes": [
-          "grid",
-          "gap-2",
-          "data-[state=checked]:border-primary"
-        ],
-        "dependencies": [
-          "@radix-ui/react-radio-group"
-        ],
-        "install": [
-          "npx shadcn@latest add radio-group"
-        ],
+        "classes": ["grid", "gap-2", "data-[state=checked]:border-primary"],
+        "dependencies": ["@radix-ui/react-radio-group"],
+        "install": ["npx shadcn@latest add radio-group"],
         "preview": {
           "html": "<div class=\"kit-radio-group\"><label><span class=\"kit-radio-dot\"></span> Incident view</label><label><span></span> Compare</label></div>",
           "css": ".kit-radio-group{display:grid;gap:8px;font:14px IBM Plex Sans, Inter, system-ui, sans-serif;color:#FAFAFA}.kit-radio-group label{display:flex;gap:8px;align-items:center}.kit-radio-group span{width:16px;height:16px;border:1px solid #27272A;border-radius:999px}.kit-radio-dot{border:5px solid #0C5CAB!important}"
         },
         "usage": "Use in data-dense consoles where state, severity, and recency must be visible. Use when exactly one choice must be selected. Show the recommended option first when appropriate.",
         "tailwind": {
-          "classes": [
-            "grid",
-            "gap-2",
-            "data-[state=checked]:border-primary"
-          ],
+          "classes": ["grid", "gap-2", "data-[state=checked]:border-primary"],
           "theme_tokens": [
             "--background",
             "--foreground",
@@ -2812,12 +2198,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "radio-group"
-          ],
-          "dependencies": [
-            "@radix-ui/react-radio-group"
-          ]
+          "registry_items": ["radio-group"],
+          "dependencies": ["@radix-ui/react-radio-group"]
         }
       },
       "Switch": {
@@ -2831,29 +2213,16 @@
             "description": "Current toggle state"
           }
         ],
-        "variants": [
-          "default",
-          "danger"
-        ],
-        "states": [
-          "default",
-          "hover",
-          "focus-visible",
-          "checked",
-          "disabled"
-        ],
+        "variants": ["default", "danger"],
+        "states": ["default", "hover", "focus-visible", "checked", "disabled"],
         "classes": [
           "h-5",
           "w-9",
           "rounded-full",
           "data-[state=checked]:bg-primary"
         ],
-        "dependencies": [
-          "@radix-ui/react-switch"
-        ],
-        "install": [
-          "npx shadcn@latest add switch"
-        ],
+        "dependencies": ["@radix-ui/react-switch"],
+        "install": ["npx shadcn@latest add switch"],
         "preview": {
           "html": "<label class=\"kit-switch-row\"><span>Live refresh</span><span class=\"kit-switch\"><i></i></span></label>",
           "css": ".kit-switch-row{display:flex;justify-content:space-between;align-items:center;font:14px IBM Plex Sans, Inter, system-ui, sans-serif;color:#FAFAFA}.kit-switch{width:36px;height:20px;border-radius:999px;background:#0C5CAB;padding:2px}.kit-switch i{display:block;width:16px;height:16px;border-radius:50%;background:#FFFFFF;margin-left:16px}"
@@ -2877,12 +2246,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "switch"
-          ],
-          "dependencies": [
-            "@radix-ui/react-switch"
-          ]
+          "registry_items": ["switch"],
+          "dependencies": ["@radix-ui/react-switch"]
         }
       },
       "Card": {
@@ -2896,12 +2261,7 @@
             "description": "Card heading"
           }
         ],
-        "variants": [
-          "default",
-          "interactive",
-          "selected",
-          "warning"
-        ],
+        "variants": ["default", "interactive", "selected", "warning"],
         "states": [
           "default",
           "hover",
@@ -2910,29 +2270,15 @@
           "disabled",
           "loading"
         ],
-        "classes": [
-          "rounded-lg",
-          "border",
-          "bg-card",
-          "p-4",
-          "shadow-sm"
-        ],
-        "install": [
-          "npx shadcn@latest add card"
-        ],
+        "classes": ["rounded-lg", "border", "bg-card", "p-4", "shadow-sm"],
+        "install": ["npx shadcn@latest add card"],
         "preview": {
           "html": "<article class=\"kit-card\"><h3>Pipeline health</h3><p>KPI strip · event feed · retention grid · live alerts</p></article>",
           "css": ".kit-card{border:1px solid #27272A;border-radius:8px;background:#111827;padding:16px;font:14px IBM Plex Sans, Inter, system-ui, sans-serif;color:#FAFAFA}.kit-card h3{margin:0 0 4px;font-size:16px}.kit-card p{margin:0;color:#A1A1AA}"
         },
         "usage": "Use in data-dense consoles where state, severity, and recency must be visible. Use for repeated items and compact summaries. Avoid nesting cards inside cards.",
         "tailwind": {
-          "classes": [
-            "rounded-lg",
-            "border",
-            "bg-card",
-            "p-4",
-            "shadow-sm"
-          ],
+          "classes": ["rounded-lg", "border", "bg-card", "p-4", "shadow-sm"],
           "theme_tokens": [
             "--background",
             "--foreground",
@@ -2944,9 +2290,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "card"
-          ],
+          "registry_items": ["card"],
           "dependencies": []
         }
       },
@@ -2961,17 +2305,8 @@
             "description": "Dialog visibility"
           }
         ],
-        "variants": [
-          "default",
-          "confirm",
-          "fullscreen"
-        ],
-        "states": [
-          "closed",
-          "opening",
-          "open",
-          "closing"
-        ],
+        "variants": ["default", "confirm", "fullscreen"],
+        "states": ["closed", "opening", "open", "closing"],
         "classes": [
           "fixed",
           "rounded-lg",
@@ -2979,12 +2314,8 @@
           "bg-background",
           "shadow-lg"
         ],
-        "dependencies": [
-          "@radix-ui/react-dialog"
-        ],
-        "install": [
-          "npx shadcn@latest add dialog"
-        ],
+        "dependencies": ["@radix-ui/react-dialog"],
+        "install": ["npx shadcn@latest add dialog"],
         "preview": {
           "html": "<section class=\"kit-dialog\"><h3>Escalate alert?</h3><p>This action notifies the incident channel and records an audit event.</p><button>Continue</button></section>",
           "css": ".kit-dialog{width:320px;border:1px solid #27272A;border-radius:8px;background:#111827;color:#FAFAFA;padding:18px;font:14px IBM Plex Sans, Inter, system-ui, sans-serif;box-shadow:0 16px 40px rgba(0,0,0,.35)}.kit-dialog h3{margin:0 0 6px}.kit-dialog p{color:#A1A1AA}.kit-dialog button{height:34px;border:0;border-radius:8px;background:#0C5CAB;color:#FFFFFF;padding:0 12px}"
@@ -3009,12 +2340,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "dialog"
-          ],
-          "dependencies": [
-            "@radix-ui/react-dialog"
-          ]
+          "registry_items": ["dialog"],
+          "dependencies": ["@radix-ui/react-dialog"]
         }
       },
       "DropdownMenu": {
@@ -3028,45 +2355,18 @@
             "description": "Menu actions"
           }
         ],
-        "variants": [
-          "default",
-          "with-icons",
-          "danger-zone"
-        ],
-        "states": [
-          "closed",
-          "open",
-          "hover",
-          "focus-visible",
-          "disabled"
-        ],
-        "classes": [
-          "min-w-40",
-          "rounded-md",
-          "border",
-          "bg-popover",
-          "p-1"
-        ],
-        "dependencies": [
-          "@radix-ui/react-dropdown-menu",
-          "lucide-react"
-        ],
-        "install": [
-          "npx shadcn@latest add dropdown-menu"
-        ],
+        "variants": ["default", "with-icons", "danger-zone"],
+        "states": ["closed", "open", "hover", "focus-visible", "disabled"],
+        "classes": ["min-w-40", "rounded-md", "border", "bg-popover", "p-1"],
+        "dependencies": ["@radix-ui/react-dropdown-menu", "lucide-react"],
+        "install": ["npx shadcn@latest add dropdown-menu"],
         "preview": {
           "html": "<div class=\"kit-menu\"><button>Acknowledge</button><button>Export</button><button class=\"danger\">Delete</button></div>",
           "css": ".kit-menu{width:180px;border:1px solid #27272A;border-radius:8px;background:#111827;padding:4px;font:14px IBM Plex Sans, Inter, system-ui, sans-serif;color:#FAFAFA}.kit-menu button{display:block;width:100%;border:0;background:transparent;color:inherit;text-align:left;padding:8px;border-radius:8px}.kit-menu .danger{color:#dc2626}"
         },
         "usage": "Use in data-dense consoles where state, severity, and recency must be visible. Use for secondary actions. Keep primary actions visible instead of hiding them in a menu.",
         "tailwind": {
-          "classes": [
-            "min-w-40",
-            "rounded-md",
-            "border",
-            "bg-popover",
-            "p-1"
-          ],
+          "classes": ["min-w-40", "rounded-md", "border", "bg-popover", "p-1"],
           "theme_tokens": [
             "--background",
             "--foreground",
@@ -3078,13 +2378,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "dropdown-menu"
-          ],
-          "dependencies": [
-            "@radix-ui/react-dropdown-menu",
-            "lucide-react"
-          ]
+          "registry_items": ["dropdown-menu"],
+          "dependencies": ["@radix-ui/react-dropdown-menu", "lucide-react"]
         }
       },
       "Tabs": {
@@ -3098,30 +2393,16 @@
             "description": "Initial active tab"
           }
         ],
-        "variants": [
-          "default",
-          "compact",
-          "underline"
-        ],
-        "states": [
-          "default",
-          "hover",
-          "focus-visible",
-          "active",
-          "disabled"
-        ],
+        "variants": ["default", "compact", "underline"],
+        "states": ["default", "hover", "focus-visible", "active", "disabled"],
         "classes": [
           "inline-flex",
           "rounded-md",
           "bg-muted",
           "data-[state=active]:bg-background"
         ],
-        "dependencies": [
-          "@radix-ui/react-tabs"
-        ],
-        "install": [
-          "npx shadcn@latest add tabs"
-        ],
+        "dependencies": ["@radix-ui/react-tabs"],
+        "install": ["npx shadcn@latest add tabs"],
         "preview": {
           "html": "<div class=\"kit-tabs\"><button class=\"active\">Services</button><button>Components</button><button>Assets</button></div>",
           "css": ".kit-tabs{display:inline-flex;gap:2px;border-radius:8px;background:#18181B;padding:3px;font:13px IBM Plex Sans, Inter, system-ui, sans-serif;color:#FAFAFA}.kit-tabs button{border:0;border-radius:8px;background:transparent;color:inherit;padding:7px 10px}.kit-tabs .active{background:#111827;box-shadow:0 1px 2px rgba(0,0,0,.08)}"
@@ -3145,12 +2426,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "tabs"
-          ],
-          "dependencies": [
-            "@radix-ui/react-tabs"
-          ]
+          "registry_items": ["tabs"],
+          "dependencies": ["@radix-ui/react-tabs"]
         }
       },
       "Table": {
@@ -3164,12 +2441,7 @@
             "description": "Visible rows"
           }
         ],
-        "variants": [
-          "default",
-          "selectable",
-          "compact",
-          "loading"
-        ],
+        "variants": ["default", "selectable", "compact", "loading"],
         "states": [
           "default",
           "hover",
@@ -3186,9 +2458,7 @@
           "border-spacing-0",
           "data-[selected=true]:bg-muted"
         ],
-        "install": [
-          "npx shadcn@latest add table checkbox"
-        ],
+        "install": ["npx shadcn@latest add table checkbox"],
         "preview": {
           "html": "<table class=\"kit-table\"><thead><tr><th>Name</th><th>Status</th></tr></thead><tbody><tr><td>Auth API</td><td>Healthy</td></tr></tbody></table>",
           "css": ".kit-table{width:100%;border-collapse:collapse;font:13px IBM Plex Sans, Inter, system-ui, sans-serif;color:#FAFAFA;background:#111827}.kit-table th,.kit-table td{border-bottom:1px solid #27272A;padding:10px;text-align:left}.kit-table th{color:#A1A1AA;font-weight:700}"
@@ -3213,9 +2483,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "table"
-          ],
+          "registry_items": ["table"],
           "dependencies": []
         }
       },
@@ -3238,12 +2506,7 @@
           "warning",
           "destructive"
         ],
-        "states": [
-          "default",
-          "hover",
-          "focus-visible",
-          "disabled"
-        ],
+        "states": ["default", "hover", "focus-visible", "disabled"],
         "classes": [
           "inline-flex",
           "rounded-md",
@@ -3252,9 +2515,7 @@
           "text-xs",
           "font-medium"
         ],
-        "install": [
-          "npx shadcn@latest add badge"
-        ],
+        "install": ["npx shadcn@latest add badge"],
         "preview": {
           "html": "<div class=\"kit-badges\"><span>Healthy</span><span class=\"warn\">Needs review</span></div>",
           "css": ".kit-badges{display:flex;gap:6px}.kit-badges span{border-radius:8px;background:#0B2F24;color:#7DD3A9;padding:3px 8px;font:600 12px IBM Plex Sans, Inter, system-ui, sans-serif}.kit-badges .warn{background:#FEF3C7;color:#F59E0B}"
@@ -3280,9 +2541,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "badge"
-          ],
+          "registry_items": ["badge"],
           "dependencies": []
         }
       },
@@ -3297,39 +2556,17 @@
             "description": "Alert tone"
           }
         ],
-        "variants": [
-          "default",
-          "info",
-          "success",
-          "warning",
-          "destructive"
-        ],
-        "states": [
-          "default",
-          "focus-visible",
-          "dismissible"
-        ],
-        "classes": [
-          "rounded-lg",
-          "border",
-          "p-4",
-          "text-sm"
-        ],
-        "install": [
-          "npx shadcn@latest add alert"
-        ],
+        "variants": ["default", "info", "success", "warning", "destructive"],
+        "states": ["default", "focus-visible", "dismissible"],
+        "classes": ["rounded-lg", "border", "p-4", "text-sm"],
+        "install": ["npx shadcn@latest add alert"],
         "preview": {
           "html": "<div class=\"kit-alert\"><strong>Latency spike</strong><p>p95 latency is above threshold in us-east-1.</p></div>",
           "css": ".kit-alert{border:1px solid #0C5CAB;border-radius:8px;background:#101827;color:#FAFAFA;padding:12px;font:14px IBM Plex Sans, Inter, system-ui, sans-serif}.kit-alert p{margin:4px 0 0;color:#A1A1AA}"
         },
         "usage": "Use in data-dense consoles where state, severity, and recency must be visible. Use near the relevant task. Keep text actionable and specific.",
         "tailwind": {
-          "classes": [
-            "rounded-lg",
-            "border",
-            "p-4",
-            "text-sm"
-          ],
+          "classes": ["rounded-lg", "border", "p-4", "text-sm"],
           "theme_tokens": [
             "--background",
             "--foreground",
@@ -3341,9 +2578,7 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "alert"
-          ],
+          "registry_items": ["alert"],
           "dependencies": []
         }
       },
@@ -3358,41 +2593,18 @@
             "description": "Feedback tone"
           }
         ],
-        "variants": [
-          "success",
-          "error",
-          "info",
-          "loading"
-        ],
-        "states": [
-          "enter",
-          "visible",
-          "exit"
-        ],
-        "classes": [
-          "rounded-lg",
-          "border",
-          "bg-background",
-          "shadow-md"
-        ],
-        "dependencies": [
-          "sonner"
-        ],
-        "install": [
-          "npx shadcn@latest add sonner"
-        ],
+        "variants": ["success", "error", "info", "loading"],
+        "states": ["enter", "visible", "exit"],
+        "classes": ["rounded-lg", "border", "bg-background", "shadow-md"],
+        "dependencies": ["sonner"],
+        "install": ["npx shadcn@latest add sonner"],
         "preview": {
           "html": "<div class=\"kit-toast\"><strong>Alert acknowledged</strong><span>Incident timeline updated.</span></div>",
           "css": ".kit-toast{width:260px;border:1px solid #27272A;border-radius:8px;background:#111827;color:#FAFAFA;padding:12px;box-shadow:0 16px 40px rgba(0,0,0,.35);font:13px IBM Plex Sans, Inter, system-ui, sans-serif}.kit-toast strong{display:block}.kit-toast span{color:#A1A1AA}"
         },
         "usage": "Use in data-dense consoles where state, severity, and recency must be visible. Use for confirmation that does not require a decision. Do not hide errors that need correction.",
         "tailwind": {
-          "classes": [
-            "rounded-lg",
-            "border",
-            "bg-background",
-            "shadow-md"
-          ],
+          "classes": ["rounded-lg", "border", "bg-background", "shadow-md"],
           "theme_tokens": [
             "--background",
             "--foreground",
@@ -3404,12 +2616,8 @@
           ]
         },
         "shadcn": {
-          "registry_items": [
-            "toast"
-          ],
-          "dependencies": [
-            "sonner"
-          ]
+          "registry_items": ["toast"],
+          "dependencies": ["sonner"]
         }
       }
     },
@@ -3440,13 +2648,7 @@
         "Alert",
         "Toast"
       ],
-      "formats": [
-        "design",
-        "skill",
-        "package",
-        "bundle",
-        "adapters"
-      ]
+      "formats": ["design", "skill", "package", "bundle", "adapters"]
     }
   }
 ]

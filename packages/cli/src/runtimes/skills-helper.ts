@@ -20,7 +20,9 @@ export function installSkills(skillsDir: string, skills: SkillBundle[]): void {
     for (const file of files) {
       const path = normalize(file.path);
       if (isAbsolute(path) || path === ".." || path.startsWith(`..${sep}`)) {
-        throw new Error(`Invalid skill file path for ${skill.name}: ${file.path}`);
+        throw new Error(
+          `Invalid skill file path for ${skill.name}: ${file.path}`,
+        );
       }
       const target = join(dir, path);
       mkdirSync(dirname(target), { recursive: true });

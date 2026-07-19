@@ -125,10 +125,17 @@ Immediately validate the `create_workflow` result before doing anything else:
 
 ### Step 6: Report Result + Open in Browser
 
-On success, open the workflow detail page in the browser:
+On success, open the workflow detail page in the browser when the host has a
+desktop opener; on headless or remote hosts, skip opening and just show the
+link. An opener failure is cosmetic — the workflow is already created, so
+never retry the creation call because the browser failed to open.
 
 ```bash
-open "${WEBUI_URL}/workflows/${WORKFLOW_ID}"
+case "$(uname -s)" in
+  Darwin) open "${WEBUI_URL}/workflows/${WORKFLOW_ID}" || true ;;
+  Linux) command -v xdg-open >/dev/null && xdg-open "${WEBUI_URL}/workflows/${WORKFLOW_ID}" || true ;;
+  MINGW*|MSYS*|CYGWIN*) start "" "${WEBUI_URL}/workflows/${WORKFLOW_ID}" || true ;;
+esac
 ```
 
 `WEBUI_URL` = the `webui_url` field returned by `create_workflow`.

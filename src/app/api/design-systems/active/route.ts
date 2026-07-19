@@ -53,14 +53,15 @@ export const PUT = withAuth(
       return NextResponse.json(res.body, { status: res.status });
     }
 
-    const { resource, response: errResp } = await loadResourceOrFail<DesignSystem>({
-      table: "design_systems",
-      id: designSystemId,
-      user,
-      check: canReadDesignSystem,
-      notFoundMessage: "디자인시스템을 찾을 수 없습니다",
-      forbiddenMessage: "접근 권한 없음",
-    });
+    const { resource, response: errResp } =
+      await loadResourceOrFail<DesignSystem>({
+        table: "design_systems",
+        id: designSystemId,
+        user,
+        check: canReadDesignSystem,
+        notFoundMessage: "디자인시스템을 찾을 수 없습니다",
+        forbiddenMessage: "접근 권한 없음",
+      });
     if (errResp) return errResp;
 
     await setUserSetting(

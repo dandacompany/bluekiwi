@@ -39,9 +39,7 @@ export const POST = withAuth<Params>(
         contentText:
           typeof body.content_text === "string" ? body.content_text : null,
         contentBase64:
-          typeof body.content_base64 === "string"
-            ? body.content_base64
-            : null,
+          typeof body.content_base64 === "string" ? body.content_base64 : null,
       });
       await recordDesignSystemEvent({
         designSystemId,

@@ -30,7 +30,11 @@ export const GET = withAuth<Params>(
     const url = new URL(request.url);
     const limit = Number(url.searchParams.get("limit") ?? "50");
     if (!Number.isFinite(limit)) {
-      const res = errorResponse("VALIDATION_ERROR", "limit must be a number", 400);
+      const res = errorResponse(
+        "VALIDATION_ERROR",
+        "limit must be a number",
+        400,
+      );
       return NextResponse.json(res.body, { status: res.status });
     }
 
