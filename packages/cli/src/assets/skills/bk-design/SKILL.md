@@ -4,6 +4,14 @@ description: Create, update, export, and apply BlueKiwi design systems from the 
 user_invocable: true
 ---
 
+> **Asking questions across runtimes:** wherever this skill says
+> `AskUserQuestion`, use your host runtime's native structured-question
+> tool: `AskUserQuestion` (Claude Code), `clarify` (Hermes Agent),
+> `requestUserInput` (Codex CLI), `question` (opencode). Always present
+> the choices through that tool rather than plain prose. If the runtime
+> has no such tool, list the options as numbered text and wait for the
+> user's reply before proceeding.
+
 # BlueKiwi Design System
 
 Use BlueKiwi's design-system registry through MCP tools. Do not write directly

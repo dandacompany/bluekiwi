@@ -4,6 +4,14 @@ description: BlueKiwi compliance scan skill. Scans a local repository path for s
 user_invocable: true
 ---
 
+> **Asking questions across runtimes:** wherever this skill says
+> `AskUserQuestion`, use your host runtime's native structured-question
+> tool: `AskUserQuestion` (Claude Code), `clarify` (Hermes Agent),
+> `requestUserInput` (Codex CLI), `question` (opencode). Always present
+> the choices through that tool rather than plain prose. If the runtime
+> has no such tool, list the options as numbered text and wait for the
+> user's reply before proceeding.
+
 # BlueKiwi Compliance Scan
 
 Scan a local repository for security and compliance risks using built-in static patterns, then optionally link results to a BlueKiwi task.

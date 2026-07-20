@@ -4,6 +4,14 @@ description: BlueKiwi task report skill. Generates a structured summary report o
 user_invocable: true
 ---
 
+> **Asking questions across runtimes:** wherever this skill says
+> `AskUserQuestion`, use your host runtime's native structured-question
+> tool: `AskUserQuestion` (Claude Code), `clarify` (Hermes Agent),
+> `requestUserInput` (Codex CLI), `question` (opencode). Always present
+> the choices through that tool rather than plain prose. If the runtime
+> has no such tool, list the options as numbered text and wait for the
+> user's reply before proceeding.
+
 # BlueKiwi Task Report
 
 Generate a structured summary report of a completed or in-progress task.

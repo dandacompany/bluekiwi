@@ -4,6 +4,14 @@ description: BlueKiwi resume skill. Finds the active running task and resumes ex
 user_invocable: true
 ---
 
+> **Asking questions across runtimes:** wherever this skill says
+> `AskUserQuestion`, use your host runtime's native structured-question
+> tool: `AskUserQuestion` (Claude Code), `clarify` (Hermes Agent),
+> `requestUserInput` (Codex CLI), `question` (opencode). Always present
+> the choices through that tool rather than plain prose. If the runtime
+> has no such tool, list the options as numbered text and wait for the
+> user's reply before proceeding.
+
 # BlueKiwi Next Step
 
 Find a running task and resume execution from the current step — designed to absorb natural-language continuation intents ("이어서", "계속", "next", "proceed") without forcing the user to remember the slash command.

@@ -4,6 +4,14 @@ description: BlueKiwi workflow improvement skill. Analyzes an existing workflow,
 user_invocable: true
 ---
 
+> **Asking questions across runtimes:** wherever this skill says
+> `AskUserQuestion`, use your host runtime's native structured-question
+> tool: `AskUserQuestion` (Claude Code), `clarify` (Hermes Agent),
+> `requestUserInput` (Codex CLI), `question` (opencode). Always present
+> the choices through that tool rather than plain prose. If the runtime
+> has no such tool, list the options as numbered text and wait for the
+> user's reply before proceeding.
+
 # BlueKiwi Workflow Improve
 
 Improve an existing workflow by creating a new version, then optionally execute it to compare results.

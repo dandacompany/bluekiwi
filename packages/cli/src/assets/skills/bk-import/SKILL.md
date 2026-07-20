@@ -4,6 +4,14 @@ description: Analyzes an external resource (GitHub repo, local skill, URL, or te
 user_invocable: true
 ---
 
+> **Asking questions across runtimes:** wherever this skill says
+> `AskUserQuestion`, use your host runtime's native structured-question
+> tool: `AskUserQuestion` (Claude Code), `clarify` (Hermes Agent),
+> `requestUserInput` (Codex CLI), `question` (opencode). Always present
+> the choices through that tool rather than plain prose. If the runtime
+> has no such tool, list the options as numbered text and wait for the
+> user's reply before proceeding.
+
 # bk-import — External Resource to BlueKiwi Workflow
 
 Analyze an external resource, extract its process logic, convert it into a structured BlueKiwi workflow, and register it directly via MCP.
