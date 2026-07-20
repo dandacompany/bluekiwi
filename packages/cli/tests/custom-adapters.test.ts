@@ -364,3 +364,39 @@ describe("JetbrainsAdapter (fan-out)", () => {
     expect(existsSync(join(JB_BASE, "PyCharm2024.1", "mcp.json"))).toBe(true);
   });
 });
+
+// Empty flow mapping parity with the Hermes adapter (bfdvg-style regression):
+// Goose fresh configs can carry `extensions: {}`, which merges unambiguously.
+describe("GooseAdapter empty flow mapping", () => {
+  const CFG = join(TMP_HOME, ".config", "goose", "config.yaml");
+
+  beforeEach(() => {
+    if (existsSync(join(TMP_HOME, ".config", "goose"))) {
+      rmSync(join(TMP_HOME, ".config", "goose"), {
+        recursive: true,
+        force: true,
+      });
+    }
+  });
+
+  it("merges into `extensions: {}` by converting to block style", () => {
+    mkdirSync(join(TMP_HOME, ".config", "goose"), { recursive: true });
+    writeFileSync(CFG, "GOOSE_PROVIDER: openai\nextensions: {}\n");
+    new GooseAdapter().installMcp(SAMPLE);
+    const yaml = readFileSync(CFG, "utf8");
+    expect(yaml).not.toContain("extensions: {}");
+    expect(yaml.match(/^extensions:/gm) ?? []).toHaveLength(1);
+    expect(yaml).toContain("# bluekiwi:begin");
+    expect(yaml).toContain("GOOSE_PROVIDER: openai");
+  });
+
+  it("still fails closed on a NON-empty flow mapping", () => {
+    mkdirSync(join(TMP_HOME, ".config", "goose"), { recursive: true });
+    const flow = "extensions: {developer: {enabled: true}}\n";
+    writeFileSync(CFG, flow);
+    expect(() => new GooseAdapter().installMcp(SAMPLE)).toThrow(
+      /BlueKiwi cannot merge/,
+    );
+    expect(readFileSync(CFG, "utf8")).toBe(flow);
+  });
+});

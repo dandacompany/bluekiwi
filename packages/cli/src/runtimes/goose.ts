@@ -60,8 +60,11 @@ function buildBlock(config: McpServerConfig): string {
 // followed by whitespace and/or a trailing `# comment`. Children may appear
 // on subsequent lines — this only matches the header itself.
 const BLOCK_HEADER_REGEX = /^extensions:[ \t]*(?:#[^\n]*)?$/m;
-// Flow-style header: `extensions: {...}` or `extensions: [...]`. We cannot
-// merge into these safely without a YAML parser.
+// An EMPTY flow mapping (`extensions: {}`) merges unambiguously — rewrite
+// it to block style and take the header.
+const EMPTY_FLOW_REGEX = /^extensions:[ \t]*\{[ \t]*\}[ \t]*(#[^\n]*)?$/m;
+// NON-empty flow-style header: `extensions: {...}` or `extensions: [...]`.
+// We cannot merge into these safely without a YAML parser.
 const FLOW_HEADER_REGEX = /^extensions:[ \t]*[[{]/m;
 // Catch-all: any top-of-line `extensions:`, used to detect headers our
 // block-style regex missed so we fail closed instead of appending a
@@ -69,7 +72,15 @@ const FLOW_HEADER_REGEX = /^extensions:[ \t]*[[{]/m;
 const ANY_HEADER_REGEX = /^extensions:/m;
 
 function injectBlock(existing: string, block: string): string {
-  const stripped = existing.replace(SENTINEL_REGEX, "\n");
+  let stripped = existing.replace(SENTINEL_REGEX, "\n");
+  const emptyFlow = stripped.match(EMPTY_FLOW_REGEX);
+  if (emptyFlow && emptyFlow.index !== undefined) {
+    const comment = emptyFlow[1] ? ` ${emptyFlow[1]}` : "";
+    stripped =
+      stripped.slice(0, emptyFlow.index) +
+      `extensions:${comment}` +
+      stripped.slice(emptyFlow.index + emptyFlow[0].length);
+  }
   const blockMatch = stripped.match(BLOCK_HEADER_REGEX);
   if (blockMatch && blockMatch.index !== undefined) {
     // Insert our sentinel block as the first child so existing entries below

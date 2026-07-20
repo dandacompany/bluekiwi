@@ -221,3 +221,35 @@ describe("getHermesAdapters (profile enumeration)", () => {
     expect(existsSync(CFG)).toBe(false);
   });
 });
+
+describe("HermesAdapter empty flow mapping", () => {
+  it("merges into an empty flow mapping `mcp_servers: {}` by converting to block style", () => {
+    mkdirSync(HERMES, { recursive: true });
+    writeFileSync(CFG, "agent:\n  name: sophie\nmcp_servers: {}\nplugins:\n  enabled:\n");
+    new HermesAdapter({ name: "hermes", displayName: "Hermes", baseDir: HERMES }).installMcp(SAMPLE);
+    const yaml = readFileSync(CFG, "utf8");
+    expect(yaml).not.toContain("mcp_servers: {}");
+    expect(yaml.match(/^mcp_servers:/gm) ?? []).toHaveLength(1);
+    expect(yaml).toContain("# bluekiwi:begin");
+    expect(yaml).toContain("plugins:");
+  });
+
+  it("preserves a trailing comment on the empty flow mapping", () => {
+    mkdirSync(HERMES, { recursive: true });
+    writeFileSync(CFG, "mcp_servers: {} # none yet\n");
+    new HermesAdapter({ name: "hermes", displayName: "Hermes", baseDir: HERMES }).installMcp(SAMPLE);
+    const yaml = readFileSync(CFG, "utf8");
+    expect(yaml).toContain("mcp_servers: # none yet");
+    expect(yaml).toContain("# bluekiwi:begin");
+  });
+
+  it("still fails closed on a NON-empty flow mapping", () => {
+    mkdirSync(HERMES, { recursive: true });
+    const flow = "mcp_servers: {other: {command: x}}\n";
+    writeFileSync(CFG, flow);
+    expect(() =>
+      new HermesAdapter({ name: "hermes", displayName: "Hermes", baseDir: HERMES }).installMcp(SAMPLE),
+    ).toThrow(/BlueKiwi cannot merge/);
+    expect(readFileSync(CFG, "utf8")).toBe(flow);
+  });
+});

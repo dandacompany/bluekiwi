@@ -59,15 +59,27 @@ function buildBlock(config: McpServerConfig): string {
 // Block-style `mcp_servers:` header: alone on a line, optionally followed
 // by whitespace and/or a trailing `# comment`.
 const BLOCK_HEADER_REGEX = /^mcp_servers:[ \t]*(?:#[^\n]*)?$/m;
-// Flow-style header: `mcp_servers: {...}` or `[...]` — cannot merge safely
-// without a YAML parser.
+// An EMPTY flow mapping (`mcp_servers: {}`) merges unambiguously — we can
+// rewrite it to block style and take the header. Hermes writes this shape
+// into fresh configs, so it must not fail closed.
+const EMPTY_FLOW_REGEX = /^mcp_servers:[ \t]*\{[ \t]*\}[ \t]*(#[^\n]*)?$/m;
+// NON-empty flow-style header: `mcp_servers: {...}` or `[...]` — cannot
+// merge safely without a YAML parser.
 const FLOW_HEADER_REGEX = /^mcp_servers:[ \t]*[[{]/m;
 // Catch-all so unrecognized header shapes fail closed instead of appending
 // a duplicate top-level key.
 const ANY_HEADER_REGEX = /^mcp_servers:/m;
 
 function injectBlock(existing: string, block: string): string {
-  const stripped = existing.replace(SENTINEL_REGEX, "\n");
+  let stripped = existing.replace(SENTINEL_REGEX, "\n");
+  const emptyFlow = stripped.match(EMPTY_FLOW_REGEX);
+  if (emptyFlow && emptyFlow.index !== undefined) {
+    const comment = emptyFlow[1] ? ` ${emptyFlow[1]}` : "";
+    stripped =
+      stripped.slice(0, emptyFlow.index) +
+      `mcp_servers:${comment}` +
+      stripped.slice(emptyFlow.index + emptyFlow[0].length);
+  }
   const blockMatch = stripped.match(BLOCK_HEADER_REGEX);
   if (blockMatch && blockMatch.index !== undefined) {
     const insertAt = blockMatch.index + blockMatch[0].length;
