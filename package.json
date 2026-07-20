@@ -23,7 +23,7 @@
     "start": "next start",
     "lint": "eslint",
     "build:vs": "npx tsx scripts/build-vs-frame.ts",
-    "test": "npx vitest run --dir tests"
+    "test": "npx vitest run"
   },
   "dependencies": {
     "@blocknote/core": "^0.47.3",
