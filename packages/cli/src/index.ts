@@ -119,9 +119,37 @@ program
   .command("logout")
   .option("-p, --profile <name>", "Remove only one profile")
   .action((opts: { profile?: string }) => logoutCommand(opts.profile));
-program.command("runtimes").action(runtimesCommand.list);
 program
-  .command("runtimes:add <name>")
+  .command("runtimes [action] [name]")
+  .description("List runtimes, or add/remove one: runtimes add|remove <name>")
+  .option(
+    "-p, --profile <name>",
+    "Profile to install into runtimes and set active",
+  )
+  .action(
+    async (action?: string, name?: string, opts?: { profile?: string }) => {
+      if (!action || action === "list") {
+        runtimesCommand.list();
+        return;
+      }
+      if (action === "add" || action === "remove") {
+        if (!name) {
+          console.error(`Usage: bluekiwi runtimes ${action} <name>`);
+          process.exit(1);
+        }
+        if (action === "add") await runtimesCommand.add(name, opts?.profile);
+        else await runtimesCommand.remove(name);
+        return;
+      }
+      console.error(
+        `Unknown runtimes action: ${action}. Use list, add <name>, or remove <name>.`,
+      );
+      process.exit(1);
+    },
+  );
+// Colon-style aliases kept for backward compatibility.
+program
+  .command("runtimes:add <name>", { hidden: true })
   .option(
     "-p, --profile <name>",
     "Profile to install into runtimes and set active",
@@ -129,7 +157,9 @@ program
   .action((name: string, opts: { profile?: string }) =>
     runtimesCommand.add(name, opts.profile),
   );
-program.command("runtimes:remove <name>").action(runtimesCommand.remove);
+program
+  .command("runtimes:remove <name>", { hidden: true })
+  .action(runtimesCommand.remove);
 program
   .command("profile [action] [name]")
   .description("List, switch, or remove BlueKiwi profiles")
