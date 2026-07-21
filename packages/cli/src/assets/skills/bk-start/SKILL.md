@@ -190,7 +190,27 @@ Call `start_workflow`. Pass any argument as `context`.
 
 Derive a short `title` (≤60 chars) from the user's goal and pass it alongside `context`. If the argument is already short, use it; otherwise distill it to a noun phrase (e.g. "Hermes AI 아티클 생성", not the full paragraph). The raw prompt becomes `context`; only the short label goes into `title`.
 
-After `start_workflow` returns the `task_id`, open the monitoring page in the user's browser (`open "${WEBUI_URL}/tasks/${TASK_ID}"` on macOS, `xdg-open` on Linux — `WEBUI_URL` is the `webui_url` field in the response).
+After `start_workflow` returns the `task_id`, open the monitoring page in the user's browser. Use the cross-platform opener below (`WEBUI_URL` is the `webui_url` field in the response). Opener failure is cosmetic — the task is already running, so never retry `start_workflow` because the browser failed to open.
+
+```bash
+# Cross-platform opener — macOS, WSL, Linux desktop, Git-Bash. Failure is ignorable.
+bk_open() {
+  local url="$1"
+  # WSL: uname reports "Linux" but xdg-open won't reach the Windows browser.
+  if grep -qi microsoft /proc/version 2>/dev/null; then
+    command -v wslview >/dev/null 2>&1 && { wslview "$url" 2>/dev/null; return; }
+    powershell.exe -NoProfile Start "$url" 2>/dev/null && return
+    cmd.exe /c start "" "$url" 2>/dev/null; return
+  fi
+  case "$(uname -s)" in
+    Darwin) open "$url" 2>/dev/null || true ;;
+    # Skip on headless/remote Linux (no display) — avoids silent xdg-open failures over SSH/Docker.
+    Linux) [ -n "${DISPLAY}${WAYLAND_DISPLAY}" ] && command -v xdg-open >/dev/null 2>&1 && xdg-open "$url" 2>/dev/null || true ;;
+    MINGW*|MSYS*|CYGWIN*) start "" "$url" 2>/dev/null || true ;;
+  esac
+}
+bk_open "${WEBUI_URL}/tasks/${TASK_ID}"
+```
 
 ### 3. Execute First Step + Auto-Advance Loop
 
@@ -257,9 +277,9 @@ Write VS content text (titles, descriptions, option labels) in the user's langua
      ```
 
   2. Call `set_visual_html(task_id, node_id, html)` with the fragment.
-  3. Open the VS deep link so the user sees the selection UI immediately:
+  3. Open the VS deep link so the user sees the selection UI immediately (reuse the `bk_open` helper from §2 — cross-platform, failure ignorable):
      ```bash
-     open "${WEBUI_URL}/tasks/${TASK_ID}?step=${STEP_ORDER}&vs=true"
+     bk_open "${WEBUI_URL}/tasks/${TASK_ID}?step=${STEP_ORDER}&vs=true"
      ```
   4. Poll `get_web_response(task_id)` every 3-5 seconds until a response arrives (max 120 seconds).
   5. The response is a **JSON object** (not a plain string). Parse it to read the user's choices and feedback:

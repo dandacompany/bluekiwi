@@ -139,11 +139,24 @@ link. An opener failure is cosmetic — the workflow is already created, so
 never retry the creation call because the browser failed to open.
 
 ```bash
-case "$(uname -s)" in
-  Darwin) open "${WEBUI_URL}/workflows/${WORKFLOW_ID}" || true ;;
-  Linux) command -v xdg-open >/dev/null && xdg-open "${WEBUI_URL}/workflows/${WORKFLOW_ID}" || true ;;
-  MINGW*|MSYS*|CYGWIN*) start "" "${WEBUI_URL}/workflows/${WORKFLOW_ID}" || true ;;
-esac
+# Cross-platform opener. Failure is always ignorable (cosmetic) — the
+# workflow is already created. Handles macOS, WSL, Linux desktop, and Git-Bash.
+bk_open() {
+  local url="$1"
+  # WSL: uname reports "Linux" but xdg-open won't reach the Windows browser.
+  if grep -qi microsoft /proc/version 2>/dev/null; then
+    command -v wslview >/dev/null 2>&1 && { wslview "$url" 2>/dev/null; return; }
+    powershell.exe -NoProfile Start "$url" 2>/dev/null && return
+    cmd.exe /c start "" "$url" 2>/dev/null; return
+  fi
+  case "$(uname -s)" in
+    Darwin) open "$url" 2>/dev/null || true ;;
+    # Skip on headless/remote Linux (no display) — avoids silent xdg-open failures over SSH/Docker.
+    Linux) [ -n "${DISPLAY}${WAYLAND_DISPLAY}" ] && command -v xdg-open >/dev/null 2>&1 && xdg-open "$url" 2>/dev/null || true ;;
+    MINGW*|MSYS*|CYGWIN*) start "" "$url" 2>/dev/null || true ;;
+  esac
+}
+bk_open "${WEBUI_URL}/workflows/${WORKFLOW_ID}"
 ```
 
 `WEBUI_URL` = the `webui_url` field returned by `create_workflow`.
